@@ -2,48 +2,46 @@
 #include <cstdio>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_texture_types.h"
+#include "types_anim.h"
+#include "types_ob.h"
+#include "types_texture.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_fcurve_driver.h"
-#include "BKE_report.h"
+#include "dune_anim_data.h"
+#include "dune_animsys.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_fcurve_driver.h"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_build.hh"
+#include "graph.hh"
+#include "graph_build.hh"
 
-#include "ED_keyframing.hh"
+#include "ed_keyframing.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_path.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_path.hh"
+#include "api_prototypes.h"
 
-#include "ANIM_fcurve.hh"
+#include "anim_fcurve.hh"
 
 #include "anim_intern.h"
 
-/* ************************************************** */
-/* Animation Data Validation */
-
-FCurve *verify_driver_fcurve(ID *id,
-                             const char rna_path[],
+/* Anim Data Validation */
+FCurve *verify_driver_fcurve(Id *id,
+                             const char api_path[],
                              const int array_index,
                              eDriverFCurveCreationMode creation_mode)
 {
@@ -51,14 +49,14 @@ FCurve *verify_driver_fcurve(ID *id,
   FCurve *fcu;
 
   /* sanity checks */
-  if (ELEM(nullptr, id, rna_path)) {
+  if (ELEM(nullptr, id, api_path)) {
     return nullptr;
   }
 
   /* init animdata if none available yet */
-  adt = BKE_animdata_from_id(id);
+  adt = dune_animdata_from_id(id);
   if (adt == nullptr && creation_mode != DRIVER_FCURVE_LOOKUP_ONLY) {
-    adt = BKE_animdata_ensure_id(id);
+    adt = dune_animdata_ensure_id(id);
   }
   if (adt == nullptr) {
     /* if still none (as not allowed to add, or ID doesn't have animdata for some reason) */
@@ -67,89 +65,84 @@ FCurve *verify_driver_fcurve(ID *id,
 
   /* try to find f-curve matching for this setting
    * - add if not found and allowed to add one
-   * TODO: add auto-grouping support? how this works will need to be resolved
-   */
-  fcu = BKE_fcurve_find(&adt->drivers, rna_path, array_index);
+   * TODO: add auto-grouping support? how this works will need to be resolved */
+  fcu = dune_fcurve_find(&adt->drivers, rna_path, array_index);
 
   if (fcu == nullptr && creation_mode != DRIVER_FCURVE_LOOKUP_ONLY) {
     /* use default settings to make a F-Curve */
-    fcu = alloc_driver_fcurve(rna_path, array_index, creation_mode);
+    fcu = alloc_driver_fcurve(api_path, array_index, creation_mode);
 
     /* just add F-Curve to end of driver list */
-    BLI_addtail(&adt->drivers, fcu);
+    lib_addtail(&adt->drivers, fcu);
   }
 
   /* return the F-Curve */
   return fcu;
 }
 
-FCurve *alloc_driver_fcurve(const char rna_path[],
+FCurve *alloc_driver_fcurve(const char api_path[],
                             const int array_index,
                             eDriverFCurveCreationMode creation_mode)
 {
-  FCurve *fcu = BKE_fcurve_create();
+  FCurve *fcu = dune_fcurve_create();
 
-  fcu->flag = (FCURVE_VISIBLE | FCURVE_SELECTED);
+  fcu->flag = (FCURVE_VISIBLE | FCURVE_SEL);
   fcu->auto_smoothing = U.auto_smoothing_new;
 
   /* store path - make copy, and store that */
   if (rna_path) {
-    fcu->rna_path = BLI_strdup(rna_path);
+    fcu->rna_path = lib_strdup(api_path);
   }
   fcu->array_index = array_index;
 
   if (!ELEM(creation_mode, DRIVER_FCURVE_LOOKUP_ONLY, DRIVER_FCURVE_EMPTY)) {
     /* add some new driver data */
     fcu->driver = static_cast<ChannelDriver *>(
-        MEM_callocN(sizeof(ChannelDriver), "ChannelDriver"));
+        mem_calloc(sizeof(ChannelDriver), "ChannelDriver"));
 
-    /* F-Modifier or Keyframes? */
+    /* F-Mod or Keyframes? */
     if (creation_mode == DRIVER_FCURVE_GENERATOR) {
       /* Python API Backwards compatibility hack:
-       * Create FModifier so that old scripts won't break
-       * for now before 2.7 series -- (September 4, 2013)
-       */
-      add_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_GENERATOR, fcu);
+       * Create FMod so that old scripts won't break
+       * for now before 2.7 series -- (September 4, 2013) */
+      add_fmod(&fcu->mods, FMOD_TYPE_GENERATOR, fcu);
     }
     else {
       /* add 2 keyframes so that user has something to work with
        * - These are configured to 0,0 and 1,1 to give a 1-1 mapping
-       *   which can be easily tweaked from there.
-       */
-      blender::animrig::insert_vert_fcurve(
+       *   which can be easily tweaked from there. */
+      dune::animrig::insert_vert_fcurve(
           fcu, 0.0f, 0.0f, BEZT_KEYTYPE_KEYFRAME, INSERTKEY_FAST | INSERTKEY_NO_USERPREF);
-      blender::animrig::insert_vert_fcurve(
+      dune::animrig::insert_vert_fcurve(
           fcu, 1.0f, 1.0f, BEZT_KEYTYPE_KEYFRAME, INSERTKEY_FAST | INSERTKEY_NO_USERPREF);
       fcu->extend = FCURVE_EXTRAPOLATE_LINEAR;
-      BKE_fcurve_handles_recalc(fcu);
+      dune_fcurve_handles_recalc(fcu);
     }
   }
 
   return fcu;
 }
 
-/* ************************************************** */
 /* Driver Management API */
-
-/* Helper for ANIM_add_driver_with_target - Adds the actual driver */
-static int add_driver_with_target(ReportList * /*reports*/,
-                                  ID *dst_id,
-                                  const char dst_path[],
-                                  int dst_index,
-                                  ID *src_id,
-                                  const char src_path[],
-                                  int src_index,
-                                  PointerRNA *dst_ptr,
-                                  PropertyRNA *dst_prop,
-                                  PointerRNA *src_ptr,
-                                  PropertyRNA *src_prop,
-                                  short flag,
-                                  int driver_type)
+/* Helper for anim_add_driver_w_target - Adds the actual driver */
+static int add_driver_w_target(ReportList * /*reports*/,
+                               Id *dst_id,
+                               const char dst_path[],
+                               int dst_index,
+                               Id *src_id,
+                               const char src_path[],
+                               int src_index,
+                               ApiPtr *dst_ptr,
+                               ApiProp *dst_prop,
+                               ApiPtr *src_ptr,
+                               ApiProp *src_prop,
+                               short flag,
+                               int driver_type)
 {
   FCurve *fcu;
-  short add_mode = (flag & CREATEDRIVER_WITH_FMODIFIER) ? DRIVER_FCURVE_GENERATOR :
-                                                          DRIVER_FCURVE_KEYFRAMES;
-  const char *prop_name = RNA_property_identifier(src_prop);
+  short add_mode = (flag & CREATEDRIVER_W_FMOD) ? DRIVER_FCURVE_GENERATOR :
+                                                  DRIVER_FCURVE_KEYFRAMES;
+  const char *prop_name = api_prop_id(src_prop);
 
   /* Create F-Curve with Driver */
   fcu = verify_driver_fcurve(dst_id, dst_path, dst_index, eDriverFCurveCreationMode(add_mode));
@@ -162,43 +155,38 @@ static int add_driver_with_target(ReportList * /*reports*/,
     driver->type = driver_type;
 
     /* Set driver expression, so that the driver works out of the box
-     *
      * The following checks define a bit of "auto-detection magic" we use
      * to ensure that the drivers will behave as expected out of the box
-     * when faced with properties with different units.
-     */
-    /* XXX: if we have N-1 mapping, should we include all those in the expression? */
-    if ((RNA_property_unit(dst_prop) == PROP_UNIT_ROTATION) &&
-        (RNA_property_unit(src_prop) != PROP_UNIT_ROTATION))
+     * when faced with properties with different units. */
+    /* If we have N-1 mapping, should we include all those in the expression? */
+    if ((api_prop_unit(dst_prop) == PROP_UNIT_ROTATION) &&
+        (api_prop_unit(src_prop) != PROP_UNIT_ROTATION))
     {
       /* Rotation Destination: normal -> radians, so convert src to radians
-       * (However, if both input and output is a rotation, don't apply such corrections)
-       */
+       * (However, if both input and output is a rotation, don't apply such corrections) */
       STRNCPY(driver->expression, "radians(var)");
     }
-    else if ((RNA_property_unit(src_prop) == PROP_UNIT_ROTATION) &&
-             (RNA_property_unit(dst_prop) != PROP_UNIT_ROTATION))
+    else if ((api_prop_unit(src_prop) == PROP_UNIT_ROTATION) &&
+             (api_prop_unit(dst_prop) != PROP_UNIT_ROTATION))
     {
-      /* Rotation Source: radians -> normal, so convert src to degrees
-       * (However, if both input and output is a rotation, don't apply such corrections)
-       */
+      /* Rotation Src: radians -> normal, so convert src to degrees
+       * (However, if both input and output is a rotation, don't apply such corrections) */
       STRNCPY(driver->expression, "degrees(var)");
     }
     else {
-      /* Just a normal property without any unit problems */
+      /* Just a normal prop wo any unit problems */
       STRNCPY(driver->expression, "var");
     }
 
-    /* Create a driver variable for the target
-     *   - For transform properties, we want to automatically use "transform channel" instead
-     *     (The only issue is with quaternion rotations vs euler channels...)
-     *   - To avoid problems with transform properties depending on the final transform that they
-     *     control (thus creating pseudo-cycles - see #48734), we don't use transform channels
-     *     when both the source and destinations are in same places.
-     */
-    dvar = driver_add_new_variable(driver);
+    /* Create a driver var for the target
+     *   - For transform props, we want to automatically use "transform channel" instead
+     *     (The only issue is w quaternion rotations vs euler channels...)
+     *   - To avoid problems w transform props depending on the final transform that they
+     *     ctrl (thus creating pseudo-cycles - see #48734), we don't use transform channels
+     *     when both the src and destinations are in same places */
+    dvar = driver_add_new_var(driver);
 
-    if (ELEM(src_ptr->type, &RNA_Object, &RNA_PoseBone) &&
+    if (ELEM(src_ptr->type, &ApiOb, &ApiPoseBone) &&
         (STREQ(prop_name, "location") || STREQ(prop_name, "scale") ||
          STRPREFIX(prop_name, "rotation_")) &&
         (src_ptr->data != dst_ptr->data))
@@ -206,15 +194,15 @@ static int add_driver_with_target(ReportList * /*reports*/,
       /* Transform Channel */
       DriverTarget *dtar;
 
-      driver_change_variable_type(dvar, DVAR_TYPE_TRANSFORM_CHAN);
+      driver_change_var_type(dvar, DVAR_TYPE_TRANSFORM_CHAN);
       dtar = &dvar->targets[0];
 
-      /* Bone or Object target? */
+      /* Bone or Ob target? */
       dtar->id = src_id;
       dtar->idtype = GS(src_id->name);
 
-      if (src_ptr->type == &RNA_PoseBone) {
-        RNA_string_get(src_ptr, "name", dtar->pchan_name);
+      if (src_ptr->type == &ApiPoseBone) {
+        api_string_get(src_ptr, "name", dtar->pchan_name);
       }
 
       /* Transform channel depends on type */
@@ -241,8 +229,8 @@ static int add_driver_with_target(ReportList * /*reports*/,
         }
       }
       else {
-        /* XXX: With quaternions and axis-angle, this mapping might not be correct...
-         *      But since those have 4 elements instead, there's not much we can do
+        /* W quaternions and axis-angle, this mapping may not be correct...
+         * But bc those have 4 elements instead, there's not much we can do
          */
         if (src_index == 2) {
           dtar->transChan = DTAR_TRANSCHAN_ROTZ;
@@ -256,19 +244,19 @@ static int add_driver_with_target(ReportList * /*reports*/,
       }
     }
     else {
-      /* Single RNA Property */
+      /* Single api Prop */
       DriverTarget *dtar = &dvar->targets[0];
 
-      /* ID is as-is */
+      /* Id is as-is */
       dtar->id = src_id;
       dtar->idtype = GS(src_id->name);
 
-      /* Need to make a copy of the path (or build one with array index built in) */
-      if (RNA_property_array_check(src_prop)) {
-        dtar->rna_path = BLI_sprintfN("%s[%d]", src_path, src_index);
+      /* Need to make a copy of the path (or build 1 w ar index built in) */
+      if (api_prop_array_check(src_prop)) {
+        dtar->api_path = lib_sprintf("%s[%d]", src_path, src_index);
       }
       else {
-        dtar->rna_path = BLI_strdup(src_path);
+        dtar->api_path = lib_strdup(src_path);
       }
     }
   }
@@ -277,28 +265,28 @@ static int add_driver_with_target(ReportList * /*reports*/,
   return (fcu != nullptr);
 }
 
-int ANIM_add_driver_with_target(ReportList *reports,
-                                ID *dst_id,
-                                const char dst_path[],
-                                int dst_index,
-                                ID *src_id,
-                                const char src_path[],
-                                int src_index,
-                                short flag,
-                                int driver_type,
-                                short mapping_type)
+int anim_add_driver_w_target(ReportList *reports,
+                             Id *dst_id,
+                             const char dst_path[],
+                             int dst_index,
+                             Id *src_id,
+                             const char src_path[],
+                             int src_index,
+                             short flag,
+                             int driver_type,
+                             short mapping_type)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
 
-  PointerRNA ptr2;
-  PropertyRNA *prop2;
+  ApiPtr ptr2;
+  ApiProp *prop2;
   int done_tot = 0;
 
-  /* validate pointers first - exit if failure */
-  PointerRNA id_ptr = RNA_id_pointer_create(dst_id);
-  if (RNA_path_resolve_property(&id_ptr, dst_path, &ptr, &prop) == false) {
-    BKE_reportf(
+  /* validate ptrs first - exit if failure */
+  ApiPtr id_ptr = api_id_ptr_create(dst_id);
+  if (api_path_resolve_prop(&id_ptr, dst_path, &ptr, &prop) == false) {
+    dune_reportf(
         reports,
         RPT_ERROR,
         "Could not add driver, as RNA path is invalid for the given ID (ID = %s, path = %s)",
@@ -307,27 +295,27 @@ int ANIM_add_driver_with_target(ReportList *reports,
     return 0;
   }
 
-  PointerRNA id_ptr2 = RNA_id_pointer_create(src_id);
-  if ((RNA_path_resolve_property(&id_ptr2, src_path, &ptr2, &prop2) == false) ||
+  ApiPtr id_ptr2 = api_id_ptr_create(src_id);
+  if ((api_path_resolve_prop(&id_ptr2, src_path, &ptr2, &prop2) == false) ||
       (mapping_type == CREATEDRIVER_MAPPING_NONE))
   {
-    /* No target - So, fall back to default method for adding a "simple" driver normally */
-    return ANIM_add_driver(
+    /* No target: fall back to default method for adding a "simple" driver normally */
+    return anim_add_driver(
         reports, dst_id, dst_path, dst_index, flag | CREATEDRIVER_WITH_DEFAULT_DVAR, driver_type);
   }
 
-  /* handle curve-property mappings based on mapping_type */
+  /* handle curve-prop mappings based on mapping_type */
   switch (mapping_type) {
     /* N-N - Try to match as much as possible, then use the first one. */
     case CREATEDRIVER_MAPPING_N_N: {
       /* Use the shorter of the two (to avoid out of bounds access) */
-      int dst_len = RNA_property_array_check(prop) ? RNA_property_array_length(&ptr, prop) : 1;
-      int src_len = RNA_property_array_check(prop) ? RNA_property_array_length(&ptr2, prop2) : 1;
+      int dst_len = api_prop_array_check(prop) ? api_prop_array_length(&ptr, prop) : 1;
+      int src_len = api_prop_array_check(prop) ? api_prop_array_length(&ptr2, prop2) : 1;
 
       int len = std::min(dst_len, src_len);
 
       for (int i = 0; i < len; i++) {
-        done_tot += add_driver_with_target(reports,
+        done_tot += add_driver_w_target(reports,
                                            dst_id,
                                            dst_path,
                                            i,
@@ -346,10 +334,10 @@ int ANIM_add_driver_with_target(ReportList *reports,
       /* 1-N - Specified target index for all. */
     case CREATEDRIVER_MAPPING_1_N:
     default: {
-      int len = RNA_property_array_check(prop) ? RNA_property_array_length(&ptr, prop) : 1;
+      int len = api_prop_array_check(prop) ? api_prop_array_length(&ptr, prop) : 1;
 
       for (int i = 0; i < len; i++) {
-        done_tot += add_driver_with_target(reports,
+        done_tot += add_driver_w_target(reports,
                                            dst_id,
                                            dst_path,
                                            i,
@@ -368,19 +356,19 @@ int ANIM_add_driver_with_target(ReportList *reports,
 
       /* 1-1 - Use the specified index (unless -1). */
     case CREATEDRIVER_MAPPING_1_1: {
-      done_tot = add_driver_with_target(reports,
-                                        dst_id,
-                                        dst_path,
-                                        dst_index,
-                                        src_id,
-                                        src_path,
-                                        src_index,
-                                        &ptr,
-                                        prop,
-                                        &ptr2,
-                                        prop2,
-                                        flag,
-                                        driver_type);
+      done_tot = add_driver_w_target(reports,
+                                     dst_id,
+                                     dst_path,
+                                     dst_index,
+                                     src_id,
+                                     src_path,
+                                     src_index,
+                                     &ptr,
+                                     prop,
+                                     &ptr2,
+                                     prop2,
+                                     flag,
+                                     driver_type);
       break;
     }
   }
@@ -389,32 +377,30 @@ int ANIM_add_driver_with_target(ReportList *reports,
   return done_tot;
 }
 
-/* --------------------------------- */
-
-int ANIM_add_driver(
-    ReportList *reports, ID *id, const char rna_path[], int array_index, short flag, int type)
+int anim_add_driver(
+    ReportList *reports, Id *id, const char api_path[], int array_index, short flag, int type)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   FCurve *fcu;
   int array_index_max;
   int done_tot = 0;
 
   /* validate pointer first - exit if failure */
-  PointerRNA id_ptr = RNA_id_pointer_create(id);
-  if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
-    BKE_reportf(
+  ApiPtr id_ptr = api_id_ptr_create(id);
+  if (api_path_resolve_prop(&id_ptr, api_path, &ptr, &prop) == false) {
+    dune_reportf(
         reports,
         RPT_ERROR,
-        "Could not add driver, as RNA path is invalid for the given ID (ID = %s, path = %s)",
+        "Could not add driver, as api path is invalid for the given Id (Id = %s, path = %s)",
         id->name,
-        rna_path);
+        api_path);
     return 0;
   }
 
   /* key entire array convenience method */
   if (array_index == -1) {
-    array_index_max = RNA_property_array_length(&ptr, prop);
+    array_index_max = api_prop_array_length(&ptr, prop);
     array_index = 0;
   }
   else {
@@ -428,7 +414,7 @@ int ANIM_add_driver(
 
   /* will only loop once unless the array index was -1 */
   for (; array_index < array_index_max; array_index++) {
-    short add_mode = (flag & CREATEDRIVER_WITH_FMODIFIER) ? 2 : 1;
+    short add_mode = (flag & CREATEDRIVER_WITH_FMOD) ? 2 : 1;
 
     /* create F-Curve with Driver */
     fcu = verify_driver_fcurve(id, rna_path, array_index, eDriverFCurveCreationMode(add_mode));
@@ -450,58 +436,56 @@ int ANIM_add_driver(
        * that way...
        */
       if (type == DRIVER_TYPE_PYTHON) {
-        PropertyType proptype = RNA_property_type(prop);
-        int array = RNA_property_array_length(&ptr, prop);
+        PropType proptype = api_prop_type(prop);
+        int array = api_prop_array_length(&ptr, prop);
         const char *dvar_prefix = (flag & CREATEDRIVER_WITH_DEFAULT_DVAR) ? "var + " : "";
         char *expression = driver->expression;
         const size_t expression_maxncpy = sizeof(driver->expression);
         int val;
         float fval;
 
-        if (proptype == PROP_BOOLEAN) {
+        if (proptype == PROP_BOOL) {
           if (!array) {
-            val = RNA_property_boolean_get(&ptr, prop);
+            val = api_prop_bool_get(&ptr, prop);
           }
           else {
-            val = RNA_property_boolean_get_index(&ptr, prop, array_index);
+            val = api_prop_bool_get_index(&ptr, prop, array_index);
           }
 
-          BLI_snprintf(
+          lib_snprintf(
               expression, expression_maxncpy, "%s%s", dvar_prefix, (val) ? "True" : "False");
         }
         else if (proptype == PROP_INT) {
           if (!array) {
-            val = RNA_property_int_get(&ptr, prop);
+            val = api_prop_int_get(&ptr, prop);
           }
           else {
-            val = RNA_property_int_get_index(&ptr, prop, array_index);
+            val = api_prop_int_get_index(&ptr, prop, array_index);
           }
 
-          BLI_snprintf(expression, expression_maxncpy, "%s%d", dvar_prefix, val);
+          lib_snprintf(expression, expression_maxncpy, "%s%d", dvar_prefix, val);
         }
         else if (proptype == PROP_FLOAT) {
           if (!array) {
-            fval = RNA_property_float_get(&ptr, prop);
+            fval = api_prop_float_get(&ptr, prop);
           }
           else {
-            fval = RNA_property_float_get_index(&ptr, prop, array_index);
+            fval = api_prop_float_get_index(&ptr, prop, array_index);
           }
 
-          BLI_snprintf(expression, expression_maxncpy, "%s%.3f", dvar_prefix, fval);
-          BLI_str_rstrip_float_zero(expression, '\0');
+          lib_snprintf(expression, expression_maxncpy, "%s%.3f", dvar_prefix, fval);
+          lib_str_rstrip_float_zero(expression, '\0');
         }
         else if (flag & CREATEDRIVER_WITH_DEFAULT_DVAR) {
-          BLI_strncpy(expression, "var", expression_maxncpy);
+          lib_strncpy(expression, "var", expression_maxncpy);
         }
       }
 
       /* for easier setup of drivers from UI, a driver variable should be
-       * added if flag is set (UI calls only)
-       */
+       * added if flag is set (UI calls only) */
       if (flag & CREATEDRIVER_WITH_DEFAULT_DVAR) {
         /* assume that users will mostly want this to be of type "Transform Channel" too,
-         * since this allows the easiest setting up of common rig components
-         */
+         * since this allows the easiest setting up of common rig components */
         DriverVar *dvar = driver_add_new_variable(driver);
         driver_change_variable_type(dvar, DVAR_TYPE_TRANSFORM_CHAN);
       }
@@ -515,7 +499,7 @@ int ANIM_add_driver(
   return done_tot;
 }
 
-bool ANIM_remove_driver(
+bool anim_remove_driver(
     ReportList * /*reports*/, ID *id, const char rna_path[], int array_index, short /*flag*/)
 {
   AnimData *adt;
@@ -523,20 +507,20 @@ bool ANIM_remove_driver(
   bool success = false;
 
   /* we don't check the validity of the path here yet, but it should be ok... */
-  adt = BKE_animdata_from_id(id);
+  adt = dune_animdata_from_id(id);
 
   if (adt) {
     if (array_index == -1) {
       /* step through all drivers, removing all of those with the same base path */
       FCurve *fcu_iter = static_cast<FCurve *>(adt->drivers.first);
 
-      while ((fcu = BKE_fcurve_iter_step(fcu_iter, rna_path)) != nullptr) {
+      while ((fcu = dune_fcurve_iter_step(fcu_iter, rna_path)) != nullptr) {
         /* Store the next fcurve for looping. */
         fcu_iter = fcu->next;
 
         /* remove F-Curve from driver stack, then free it */
-        BLI_remlink(&adt->drivers, fcu);
-        BKE_fcurve_free(fcu);
+        lib_remlink(&adt->drivers, fcu);
+        dune_fcurve_free(fcu);
 
         /* done successfully */
         success = true;
