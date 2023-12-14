@@ -832,7 +832,7 @@ static AnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSTEX: {
@@ -931,8 +931,8 @@ static AnimListElem *make_new_animlistelem(void *data,
         }
         break;
       }
-      case ANIMTYPE_GPLAYER: {
-        bGPDlayer *gpl = (bGPDlayer *)data;
+      case ANIMTYPE_PENLAYER: {
+        PenLayer *penl = (PenLayer *)data;
 
         ale->flag = gpl->flag;
 
