@@ -1155,52 +1155,51 @@ static int copy_driver_btn_ex(Cxt *C, WinOp *op)
     }
   }
 
-  /* Since we're just copying, we don't really need to do anything else. */
+  /* Since we're just copying, we don't rly need to do anything else. */
   return (changed) ? OP_FINISHED : OP_CANCELLED;
 }
 
 void ANIM_OT_copy_driver_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Copy Driver";
-  ot->idname = "ANIM_OT_copy_driver_button";
+  ot->idname = "ANIM_OT_copy_driver_btn";
   ot->description = "Copy the driver for the highlighted button";
 
-  /* callbacks */
-  ot->exec = copy_driver_button_exec;
+  /* cbs */
+  ot->ex = copy_driver_btn_ex;
   /* TODO: `op->poll` need to have some driver to be able to do this. */
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-/* Paste Driver Button Operator ------------------------ */
-
-static int paste_driver_button_exec(bContext *C, wmOperator *op)
+/* Paste Driver Btn Op */
+static int paste_driver_btn_ex(Cxt *C, WinOp *op)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   bool changed = false;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
-  if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
-    char *path = RNA_path_from_ID_to_property(&ptr, prop);
+  if (ptr.owner_id && ptr.data && prop && api_prop_animateable(&ptr, prop)) {
+    char *path = api_path_from_id_to_prop(&ptr, prop);
 
     if (path) {
       /* only copy the driver for the button that this was involved for */
-      changed = ANIM_paste_driver(op->reports, ptr.owner_id, path, index, 0);
+      changed = anim_paste_driver(op->reports, ptr.owner_id, path, index, 0);
 
-      UI_context_update_anim_flag(C);
+      ui_cxt_update_anim_flag(C);
 
-      DEG_relations_tag_update(CTX_data_main(C));
+      graph_tag_update(cxt_data_main(C));
 
-      DEG_id_tag_update(ptr.owner_id, ID_RECALC_ANIMATION);
+      graph_id_tag_update(ptr.owner_id, ID_RECALC_ANIM);
 
-      win_ev_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr); /* XXX */
+      win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr); /* XXX */
 
-      MEM_freeN(path);
+      mem_free(path);
     }
   }
 
