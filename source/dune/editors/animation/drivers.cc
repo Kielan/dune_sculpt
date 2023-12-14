@@ -1038,130 +1038,128 @@ void ANIM_OT_driver_btn_add(WinOpType *ot)
 
   /* cbs */
   /* NOTE: No ex, as we need all these to use the current context info */
-  ot->invoke = add_driver_button_invoke;
-  ot->poll = add_driver_button_poll;
+  ot->invoke = add_driver_btn_invoke;
+  ot->poll = add_driver_btn_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-/* Remove Driver Button Operator ------------------------ */
-
-static int remove_driver_button_exec(bContext *C, wmOperator *op)
+/* Remove Driver Btn Op ------------------------ */
+static int remove_driver_btn_ex(Cxt *C, WinOp *op)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   bool changed = false;
   int index;
-  const bool all = RNA_boolean_get(op->ptr, "all");
+  const bool all = api_bool_get(op->ptr, "all");
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
   if (all) {
     index = -1;
   }
 
   if (ptr.owner_id && ptr.data && prop) {
-    char *path = RNA_path_from_ID_to_property(&ptr, prop);
+    char *path = api_path_from_id_to_prop(&ptr, prop);
 
     if (path) {
-      changed = ANIM_remove_driver(op->reports, ptr.owner_id, path, index, 0);
+      changed = anim_remove_driver(op->reports, ptr.owner_id, path, index, 0);
 
-      MEM_freeN(path);
+      mem_free(path);
     }
   }
 
   if (changed) {
     /* send updates */
-    UI_context_update_anim_flag(C);
-    DEG_relations_tag_update(CTX_data_main(C));
-    WM_event_add_notifier(C, NC_ANIMATION | ND_FCURVES_ORDER, nullptr); /* XXX */
+    ui_cxt_update_anim_flag(C);
+    graph_tag_update(cxt_data_main(C));
+    win_eve_add_notifier(C, NC_ANIM | ND_FCURVES_ORDER, nullptr); /* XXX */
   }
 
-  return (changed) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+  return (changed) ? OP_FINISHED : OP_CANCELLED;
 }
 
-void ANIM_OT_driver_button_remove(wmOperatorType *ot)
+void ANIM_OT_driver_btn_remove(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Remove Driver";
-  ot->idname = "ANIM_OT_driver_button_remove";
+  ot->idname = "ANIM_OT_driver_btn_remove";
   ot->description =
-      "Remove the driver(s) for the connected property(s) represented by the highlighted button";
+      "Remove the driver(s) for the connected prop(s) represented by the highlighted btn";
 
-  /* callbacks */
-  ot->exec = remove_driver_button_exec;
+  /* cbs */
+  ot->ex = remove_driver_btn_ex;
   /* TODO: `op->poll` need to have some driver to be able to do this. */
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
-  /* properties */
-  RNA_def_boolean(ot->srna, "all", true, "All", "Delete drivers for all elements of the array");
+  /* props */
+  api_def_bool(ot->sapi, "all", true, "All", "Delete drivers for all elements of the array");
 }
 
-/* Edit Driver Button Operator ------------------------ */
-
-static int edit_driver_button_exec(bContext *C, wmOperator *op)
+/* Edit Driver Btn Op ------------------------ */
+static int edit_driver_btn_ex(Cxt *C, WinOp *op)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id && ptr.data && prop) {
-    UI_popover_panel_invoke(C, "GRAPH_PT_drivers_popover", true, op->reports);
+    ui_popover_pnl_invoke(C, "GRAPH_PT_drivers_popover", true, op->reports);
   }
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void ANIM_OT_driver_button_edit(wmOperatorType *ot)
+void ANIM_OT_driver_btn_edit(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Edit Driver";
   ot->idname = "ANIM_OT_driver_button_edit";
   ot->description =
       "Edit the drivers for the connected property represented by the highlighted button";
 
-  /* callbacks */
-  ot->exec = edit_driver_button_exec;
+  /* cbs */
+  ot->ex = edit_driver_btn_ex;
   /* TODO: `op->poll` need to have some driver to be able to do this. */
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-/* Copy Driver Button Operator ------------------------ */
+/* Copy Driver Btn Op */
 
-static int copy_driver_button_exec(bContext *C, wmOperator *op)
+static int copy_driver_btn_ex(Cxt *C, WinOp *op)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   bool changed = false;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
-  if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
-    char *path = RNA_path_from_ID_to_property(&ptr, prop);
+  if (ptr.owner_id && ptr.data && prop && api_prop_animateable(&ptr, prop)) {
+    char *path = api_path_from_id_to_prop(&ptr, prop);
 
     if (path) {
       /* only copy the driver for the button that this was involved for */
-      changed = ANIM_copy_driver(op->reports, ptr.owner_id, path, index, 0);
+      changed = anim_copy_driver(op->reports, ptr.owner_id, path, index, 0);
 
-      UI_context_update_anim_flag(C);
+      ui_cxt_update_anim_flag(C);
 
-      MEM_freeN(path);
+      mem_free(path);
     }
   }
 
   /* Since we're just copying, we don't really need to do anything else. */
-  return (changed) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+  return (changed) ? OP_FINISHED : OP_CANCELLED;
 }
 
-void ANIM_OT_copy_driver_button(wmOperatorType *ot)
+void ANIM_OT_copy_driver_btn(WinOpType *ot)
 {
   /* identifiers */
   ot->name = "Copy Driver";
