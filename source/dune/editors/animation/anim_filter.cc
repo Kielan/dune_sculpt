@@ -474,8 +474,7 @@ bool anim_animdata_can_have_greasepencil(const eAnimCont_Types type)
  * 2C) allow non-animated data-blocks to be included so that data-blocks can be added
  * 3) drivers: include drivers from animdata block (for Drivers mode in Graph Editor)
  * 4A) nla strip keyframes: these are the per-strip controls for time and influence
- * 4B) normal keyframes: only when there is an active action
- */
+ * 4B) normal keyframes: only when there is an active action */
 #define ANIMDATA_FILTER_CASES(id, adtOk, nlaOk, driversOk, nlaKeysOk, keysOk) \
   { \
     if ((id)->adt) { \
@@ -510,26 +509,22 @@ bool anim_animdata_can_have_greasepencil(const eAnimCont_Types type)
   } \
   (void)0
 
-/* ............................... */
-
-/**
- * Add a new animation channel, taking into account the "peek" flag, which is used to just check
+/* Add a new anim channel, taking into account the "peek" flag, which is used to just check
  * whether any channels will be added (but without needing them to actually get created).
  *
- * \warning This causes the calling function to return early if we're only "peeking" for channels.
+ * warning This causes the calling fn to return early if we're only "peeking" for channels.
  *
- * XXX: ale_statement stuff is really a hack for one special case. It shouldn't really be needed.
- */
+ * ale_statement stuff is rly a hack for 1 special case. It shouldn't really be needed. */
 #define ANIMCHANNEL_NEW_CHANNEL_FULL( \
     channel_data, channel_type, owner_id, fcurve_owner_id, ale_statement) \
   if (filter_mode & ANIMFILTER_TMP_PEEK) { \
     return 1; \
   } \
   { \
-    bAnimListElem *ale = make_new_animlistelem( \
-        channel_data, channel_type, (ID *)owner_id, fcurve_owner_id); \
+    AnimListElem *ale = make_new_animlistelem( \
+        channel_data, channel_type, (Id *)owner_id, fcurve_owner_id); \
     if (ale) { \
-      BLI_addtail(anim_data, ale); \
+      lib_addtail(anim_data, ale); \
       items++; \
       ale_statement \
     } \
@@ -539,53 +534,50 @@ bool anim_animdata_can_have_greasepencil(const eAnimCont_Types type)
 #define ANIMCHANNEL_NEW_CHANNEL(channel_data, channel_type, owner_id, fcurve_owner_id) \
   ANIMCHANNEL_NEW_CHANNEL_FULL(channel_data, channel_type, owner_id, fcurve_owner_id, {})
 
-/* ............................... */
-
 /* quick macro to test if an anim-channel representing an AnimData block is suitably active */
 #define ANIMCHANNEL_ACTIVEOK(ale) \
   (!(filter_mode & ANIMFILTER_ACTIVE) || !(ale->adt) || (ale->adt->flag & ADT_UI_ACTIVE))
 
 /* Quick macro to test if an anim-channel (F-Curve, Group, etc.)
  * is selected in an acceptable way. */
-#define ANIMCHANNEL_SELOK(test_func) \
+#define ANIMCHANNEL_SELOK(test_fn) \
   (!(filter_mode & (ANIMFILTER_SEL | ANIMFILTER_UNSEL)) || \
    ((filter_mode & ANIMFILTER_SEL) && test_func) || \
    ((filter_mode & ANIMFILTER_UNSEL) && test_func == 0))
 
 /**
- * Quick macro to test if an anim-channel (F-Curve) is selected ok for editing purposes
- * - `*_SELEDIT` means that only selected curves will have visible+editable key-frames.
+ * Quick macro to test if an anim-channel (F-Curve) is sel ok for editing purposes
+ * - `*_SELEDIT` means that only sel curves will have visible+editable key-frames.
  *
  * checks here work as follows:
  * 1) SELEDIT off - don't need to consider the implications of this option.
  * 2) FOREDIT off - we're not considering editing, so channel is ok still.
- * 3) test_func (i.e. selection test) - only if selected, this test will pass.
+ * 3) test_func (i.e. sel test) - only if selected, this test will pass.
  */
-#define ANIMCHANNEL_SELEDITOK(test_func) \
+#define ANIMCHANNEL_SELEDITOK(test_fn) \
   (!(filter_mode & ANIMFILTER_SELEDIT) || !(filter_mode & ANIMFILTER_FOREDIT) || (test_func))
 
-/* ----------- 'Private' Stuff --------------- */
+/* 'Private' Stuff */
 
-/* this function allocates memory for a new bAnimListElem struct for the
- * provided animation channel-data.
- */
-static bAnimListElem *make_new_animlistelem(void *data,
+/* this fn allocs mem for a new AnimListElem struct for the
+ * provided anim channel-data. */
+static AnimListElem *make_new_animlistelem(void *data,
                                             short datatype,
-                                            ID *owner_id,
-                                            ID *fcurve_owner_id)
+                                            Id *owner_id,
+                                            Id *fcurve_owner_id)
 {
-  bAnimListElem *ale = nullptr;
+  AnimListElem *ale = nullptr;
 
-  /* only allocate memory if there is data to convert */
+  /* only alloc mem if there is data to convert */
   if (data) {
     /* allocate and set generic data */
-    ale = static_cast<bAnimListElem *>(MEM_callocN(sizeof(bAnimListElem), "bAnimListElem"));
+    ale = static_cast<AnimListElem *>(mem_calloc(sizeof(AnimListElem), "AnimListElem"));
 
     ale->data = data;
     ale->type = datatype;
 
     ale->id = owner_id;
-    ale->adt = BKE_animdata_from_id(owner_id);
+    ale->adt = dune_animdata_from_id(owner_id);
     ale->fcurve_owner_id = fcurve_owner_id;
 
     /* do specifics */
@@ -605,19 +597,19 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = sce;
         ale->datatype = ALE_SCE;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
-      case ANIMTYPE_OBJECT: {
+      case ANIMTYPE_OB: {
         Base *base = (Base *)data;
-        Object *ob = base->object;
+        Object *ob = base->ob;
 
         ale->flag = ob->flag;
 
         ale->key_data = ob;
         ale->datatype = ALE_OB;
 
-        ale->adt = BKE_animdata_from_id(&ob->id);
+        ale->adt = dune_animdata_from_id(&ob->id);
         break;
       }
       case ANIMTYPE_FILLACTD: {
@@ -648,7 +640,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSLAM: {
@@ -660,7 +652,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSCAM: {
@@ -672,7 +664,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSCACHEFILE: {
@@ -684,7 +676,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSCUR: {
@@ -696,7 +688,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSARM: {
@@ -708,7 +700,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSMESH: {
@@ -720,7 +712,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSLAT: {
@@ -732,7 +724,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSSPK: {
@@ -744,7 +736,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSHAIR: {
@@ -756,7 +748,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSPOINTCLOUD: {
@@ -768,7 +760,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSVOLUME: {
@@ -780,7 +772,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSSKEY: {
@@ -792,7 +784,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSWOR: {
@@ -804,11 +796,11 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSNTREE: {
-        bNodeTree *ntree = (bNodeTree *)data;
+        NodeTree *ntree = (NodeTree *)data;
         AnimData *adt = ntree->adt;
 
         ale->flag = FILTER_NTREE_DATA(ntree);
@@ -816,7 +808,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<Id *>(data));
         break;
       }
       case ANIMTYPE_DSLINESTYLE: {
@@ -828,7 +820,7 @@ static bAnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<Id *>(data));
         break;
       }
       case ANIMTYPE_DSPART: {
