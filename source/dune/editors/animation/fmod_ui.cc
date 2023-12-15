@@ -56,13 +56,11 @@ static List *fmod_list_space_specific(const Cxt *C)
   return nullptr;
 }
 
-/**
- * Get a pointer to the panel's FModifier, and also its owner ID if \a r_owner_id is not nullptr.
- * Also in the graph editor, gray out the panel if the FModifier's FCurve has modifiers turned off.
- */
-static PointerRNA *fmodifier_get_pointers(const bContext *C, const Panel *panel, ID **r_owner_id)
+/* Get a ptr to the pnl's FMod, and also its owner Id if \a r_owner_id is not nullptr.
+ * Also in the graph editor, gray out the pnl if the FMod's FCurve has mods turned off. */
+static ApiPtr *fmod_get_ptrs(const Cxt *C, const Pnl *pnl, Id **r_owner_id)
 {
-  PointerRNA *ptr = UI_panel_custom_data_get(panel);
+  ApiPtr *ptr = ui_pnl_custom_data_get(panel);
 
   if (r_owner_id != nullptr) {
     *r_owner_id = ptr->owner_id;
