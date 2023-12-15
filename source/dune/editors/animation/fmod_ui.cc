@@ -68,17 +68,15 @@ static PointerRNA *fmodifier_get_pointers(const bContext *C, const Panel *panel,
     *r_owner_id = ptr->owner_id;
   }
 
-  if (C != nullptr && CTX_win_space_graph(C)) {
-    FCurve *fcu = ANIM_graph_cxt_fcurve(C);
-    uiLayoutSetActive(panel->layout, !(fcu->flag & FCURVE_MOD_OFF));
+  if (C != nullptr && cxt_win_space_graph(C)) {
+    FCurve *fcu = anim_graph_cxt_fcurve(C);
+    uiLayoutSetActive(pnl->layout, !(fcu->flag & FCURVE_MOD_OFF));
   }
 
   return ptr;
 }
 
-/**
- * Move an FModifier to the index it's moved to after a drag and drop.
- */
+/* Move an FMod to the index it's moved to after a drag and drop. */
 static void fmod_reorder(Cxt *C, Pnl *pnl, int new_index)
 {
   Id *owner_id;
@@ -88,183 +86,176 @@ static void fmod_reorder(Cxt *C, Pnl *pnl, int new_index)
 
   /* Cycles mod has to be the first, so make sure it's kept that way. */
   if (fmi->requires_flag & FMI_REQUIRES_ORIGINAL_DATA) {
-    win_report(RPT_ERROR, "Modifier requires original data");
+    win_report(RPT_ERROR, "Mod requires original data");
     return;
   }
 
   List *mods = fmod_list_space_specific(C);
 
-  /* Again, make sure we don't move a modifier before a cycles modifier. */
-  FMod *fcm_first = static_cast<FModifier *>(modifiers->first);
-  const FModifierTypeInfo *fmi_first = get_fmodifier_typeinfo(fcm_first->type);
+  /* Again, make sure we don't move a mod before a cycles mod. */
+  FMod *fcm_first = static_cast<FMod *>(mods->first);
+  const FModTypeInfo *fmi_first = get_fmod_typeinfo(fcm_first->type);
   if (fmi_first->requires_flag & FMI_REQUIRES_ORIGINAL_DATA && new_index == 0) {
-    WM_report(RPT_ERROR, "Modifier requires original data");
+    win_report(RPT_ERROR, "Mod requires original data");
     return;
   }
 
-  int current_index = BLI_findindex(modifiers, fcm);
-  BLI_assert(current_index >= 0);
-  BLI_assert(new_index >= 0);
+  int current_index = lib_findindex(mods, fcm);
+  lib_assert(current_index >= 0);
+  lib_assert(new_index >= 0);
 
   /* Don't do anything if the drag didn't change the index. */
   if (current_index == new_index) {
     return;
   }
 
-  /* Move the FModifier in the list. */
-  BLI_listbase_link_move(modifiers, fcm, new_index - current_index);
+  /* Move the FMod in the list. */
+  lib_list_link_move(mods, fcm, new_index - current_index);
 
-  ED_undo_push(C, "Reorder F-Curve Modifier");
+  ed_undo_push(C, "Reorder F-Curve Mod");
 
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
-  DEG_id_tag_update(owner_id, ID_RECALC_ANIMATION);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
+  graph_id_tag_update(owner_id, ID_RECALC_ANIM);
 }
 
-static short get_fmodifier_expand_flag(const bContext * /*C*/, Panel *panel)
+static short get_fmod_expand_flag(const Cxt * /*C*/, Pnl *pnl)
 {
-  PointerRNA *ptr = fmodifier_get_pointers(nullptr, panel, nullptr);
-  FModifier *fcm = (FModifier *)ptr->data;
+  ApiPtr *ptr = fmod_get_ptrs(nullptr, pnl, nullptr);
+  FMod *fcm = (FMod *)ptr->data;
 
   return fcm->ui_expand_flag;
 }
 
-static void set_fmodifier_expand_flag(const bContext * /*C*/, Panel *panel, short expand_flag)
+static void set_fmod_expand_flag(const Cxt * /*C*/, Pnl *pnl, short expand_flag)
 {
-  PointerRNA *ptr = fmodifier_get_pointers(nullptr, panel, nullptr);
-  FModifier *fcm = (FModifier *)ptr->data;
+  ApiPtr *ptr = fmod_get_ptrs(nullptr, pnl, nullptr);
+  FMod *fcm = (FMod *)ptr->data;
 
   fcm->ui_expand_flag = expand_flag;
 }
 
-static PanelType *fmodifier_panel_register(ARegionType *region_type,
-                                           eFModifier_Types type,
-                                           PanelDrawFn draw,
-                                           PanelTypePollFn poll,
-                                           const char *id_prefix)
+static PnlType *fmod_pnl_register(ARgnType *rgn_type,
+                                  eFModTypes type,
+                                  PnlDrwFn drw,
+                                  PnlTypePollFn poll,
+                                  const char *id_prefix)
 {
-  PanelType *panel_type = static_cast<PanelType *>(MEM_callocN(sizeof(PanelType), __func__));
+  PnlType *pnl_type = static_cast<PnlType *>(mem_calloc(sizeof(PnlType), __func__));
 
-  /* Intentionally leave the label field blank. The header is filled with buttons. */
-  const FModifierTypeInfo *fmi = get_fmodifier_typeinfo(type);
-  SNPRINTF(panel_type->idname, "%s_PT_%s", id_prefix, fmi->name);
-  STRNCPY(panel_type->category, "Modifiers");
-  STRNCPY(panel_type->translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  /* Intentionally leave the label field blank. The header is filled with btns. */
+  const FModTypeInfo *fmi = get_fmod_typeinfo(type);
+  SNPRINTF(pnl_type->idname, "%s_PT_%s", id_prefix, fmi->name);
+  STRNCPY(pnl_type->category, "Mods");
+  STRNCPY(pnl_type->lang_cxt, LANG_CXT_DEFAULT_BPYAPI);
 
-  panel_type->draw_header = fmodifier_panel_header;
-  panel_type->draw = draw;
-  panel_type->poll = poll;
+  pnl_type->drw_header = fmod_pnl_header;
+  pnl_type->drw = drw;
+  pnl_type->poll = poll;
 
-  /* Give the panel the special flag that says it was built here and corresponds to a
-   * modifier rather than a #PanelType. */
-  panel_type->flag = PANEL_TYPE_HEADER_EXPAND | PANEL_TYPE_INSTANCED;
-  panel_type->reorder = fmodifier_reorder;
-  panel_type->get_list_data_expand_flag = get_fmodifier_expand_flag;
-  panel_type->set_list_data_expand_flag = set_fmodifier_expand_flag;
+  /* Give the pnl the special flag that says it was built here and corresponds to a
+   * modifier rather than a PnlType. */
+  pnl_type->flag = PNL_TYPE_HEADER_EXPAND | PNL_TYPE_INSTANCED;
+  pnl_type->reorder = fmod_reorder;
+  pnl_type->get_list_data_expand_flag = get_fmod_expand_flag;
+  pnl_type->set_list_data_expand_flag = set_fmod_expand_flag;
 
-  BLI_addtail(&region_type->paneltypes, panel_type);
+  lib_addtail(&rgn_type->pnltypes, pnl_type);
 
-  return panel_type;
+  return pnl_type;
 }
 
-/**
- * Add a child panel to the parent.
- *
- * \note To create the panel type's idname, it appends the \a name argument to the \a parent's
- * idname.
- */
-static PanelType *fmodifier_subpanel_register(ARegionType *region_type,
-                                              const char *name,
-                                              const char *label,
-                                              PanelDrawFn draw_header,
-                                              PanelDrawFn draw,
-                                              PanelTypePollFn poll,
-                                              PanelType *parent)
+/* Add a child pnl to the parent.
+ * To create the pnl type's idname, appends the name arg to parent's
+ * idname. */
+static PnlType *fmod_subpnl_register(ARgnType *rgn_type,
+                                     const char *name,
+                                     const char *label,
+                                     PnlDrwFn drw_header,
+                                     PnlDrwFn drw,
+                                     PnlTypePollFn poll,
+                                     PnlType *parent)
 {
-  PanelType *panel_type = static_cast<PanelType *>(MEM_callocN(sizeof(PanelType), __func__));
+  PnlType *pnl_type = static_cast<PnlType *>(mem_calloc(sizeof(PnlType), __func__));
 
-  SNPRINTF(panel_type->idname, "%s_%s", parent->idname, name);
-  STRNCPY(panel_type->label, label);
-  STRNCPY(panel_type->category, "Modifiers");
-  STRNCPY(panel_type->translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  SNPRINTF(pnl_type->idname, "%s_%s", parent->idname, name);
+  STRNCPY(pnl_type->label, label);
+  STRNCPY(pnl_type->category, "Mods");
+  STRNCPY(pnl_type->lang_cxt, LANG_CXT_DEFAULT_BPYAPI);
 
-  panel_type->draw_header = draw_header;
-  panel_type->draw = draw;
-  panel_type->poll = poll;
-  panel_type->flag = PANEL_TYPE_DEFAULT_CLOSED;
+  pnl_type->drw_header = drw_header;
+  pnl_type->drw = drw;
+  pnl_type->poll = poll;
+  pnl_type->flag = PNL_TYPE_DEFAULT_CLOSED;
 
-  BLI_assert(parent != nullptr);
+  lib_assert(parent != nullptr);
   STRNCPY(panel_type->parent_id, parent->idname);
-  panel_type->parent = parent;
-  BLI_addtail(&parent->children, BLI_genericNodeN(panel_type));
-  BLI_addtail(&region_type->paneltypes, panel_type);
+  pnl_type->parent = parent;
+  lib_addtail(&parent->children, lib_genericNode(pnl_type));
+  lib_addtail(&rgn_type->pnltypes, pnl_type);
 
-  return panel_type;
+  return pnl_type;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name General UI Callbacks and Drawing
- * \{ */
+/* General UI Cbs and Drwing */
 
 #define B_REDR 1
-#define B_FMODIFIER_REDRAW 20
+#define B_FMOD_REDRW 20
 
-/* Callback to remove the given modifier. */
-struct FModifierDeleteContext {
-  ID *owner_id;
-  ListBase *modifiers;
+/* Cb to remove the given mod. */
+struct FModDelCxt {
+  Id *owner_id;
+  List *mods;
 };
 
-static void delete_fmodifier_cb(bContext *C, void *ctx_v, void *fcm_v)
+static void del_fmod_cb(Cxt *C, void *cxt_v, void *fcm_v)
 {
-  FModifierDeleteContext *ctx = (FModifierDeleteContext *)ctx_v;
-  ListBase *modifiers = ctx->modifiers;
-  FModifier *fcm = (FModifier *)fcm_v;
+  FModDelCxt *cxt = (FModDelCxt *)cxt_v;
+  List *mods = cxt->mods;
+  FMod *fcm = (FMod *)fcm_v;
 
-  /* remove the given F-Modifier from the active modifier-stack */
-  remove_fmodifier(modifiers, fcm);
+  /* remove the given F-Mod from the active mod-stack */
+  remove_fmod(mods, fcm);
 
-  ED_undo_push(C, "Delete F-Curve Modifier");
+  ed_undo_push(C, "Delete F-Curve Mod");
 
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
-  DEG_id_tag_update(ctx->owner_id, ID_RECALC_ANIMATION);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
+  graph_id_tag_update(ctx->owner_id, ID_RECALC_ANIM);
 }
 
-static void fmodifier_influence_draw(uiLayout *layout, PointerRNA *ptr)
+static void fmod_influence_drw(uiLayout *layout, ApiPtr *ptr)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   uiItemS(layout);
 
   uiLayout *row = uiLayoutRowWithHeading(layout, true, IFACE_("Influence"));
   uiItemR(row, ptr, "use_influence", UI_ITEM_NONE, "", ICON_NONE);
   uiLayout *sub = uiLayoutRow(row, true);
 
-  uiLayoutSetActive(sub, fcm->flag & FMODIFIER_FLAG_USEINFLUENCE);
+  uiLayoutSetActive(sub, fcm->flag & FMOD_FLAG_USEINFLUENCE);
   uiItemR(sub, ptr, "influence", UI_ITEM_NONE, "", ICON_NONE);
 }
 
-static void fmodifier_frame_range_header_draw(const bContext *C, Panel *panel)
+static void fmod_frame_range_header_drw(const Cxt *C, Pnl *pnl)
 {
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiItemR(layout, ptr, "use_restricted_range", UI_ITEM_NONE, nullptr, ICON_NONE);
 }
 
-static void fmodifier_frame_range_draw(const bContext *C, Panel *panel)
+static void fmod_frame_range_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
 
-  FModifier *fcm = (FModifier *)ptr->data;
-  uiLayoutSetActive(layout, fcm->flag & FMODIFIER_FLAG_RANGERESTRICT);
+  FMod *fcm = (FMod *)ptr->data;
+  uiLayoutSetActive(layout, fcm->flag & FMOD_FLAG_RANGERESTRICT);
 
   col = uiLayoutColumn(layout, true);
   uiItemR(col, ptr, "frame_start", UI_ITEM_NONE, IFACE_("Start"), ICON_NONE);
@@ -275,7 +266,7 @@ static void fmodifier_frame_range_draw(const bContext *C, Panel *panel)
   uiItemR(col, ptr, "blend_out", UI_ITEM_NONE, IFACE_("Out"), ICON_NONE);
 }
 
-static void fmodifier_panel_header(const bContext *C, Panel *panel)
+static void fmodifier_panel_header(const bContext *C, Pnl *pnl)
 {
   uiLayout *layout = panel->layout;
 
