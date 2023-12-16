@@ -177,59 +177,57 @@ void clean_fcurve(AnimCxt *ac,
         }
         else if (IS_EQT(cur[1], next[1], thresh) == 0) {
           /* add new keyframe */
-          blender::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
+          dune::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
         }
       }
       else {
         /* add if value doesn't equal that of previous */
         if (IS_EQT(cur[1], prev[1], thresh) == 0) {
           /* add new keyframe */
-          blender::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
+          dune::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
         }
       }
     }
   }
 
-  /* now free the memory used by the old BezTriples */
+  /* now free the mem used by the old BezTriples */
   if (old_bezts) {
-    MEM_freeN(old_bezts);
+    mem_free(old_bezts);
   }
 
   /* final step, if there is just one key in fcurve, check if it's
-   * the default value and if is, remove fcurve completely. */
+   * the default val and if is, remove fcurve completely. */
   if (cleardefault && fcu->totvert == 1) {
-    float default_value = 0.0f;
-    PointerRNA ptr;
-    PropertyRNA *prop;
-    PointerRNA id_ptr = RNA_id_pointer_create(ale->id);
+    float default_val = 0.0f;
+    ApiPtr ptr;
+    ApiProp *prop;
+    ApiPtr id_ptr = api_id_ptr_create(ale->id);
 
-    /* get property to read from, and get value as appropriate */
-    if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
-      if (RNA_property_type(prop) == PROP_FLOAT) {
-        default_value = RNA_property_float_get_default_index(&ptr, prop, fcu->array_index);
+    /* get prop to read from, and get val as appropriate */
+    if (api_path_resolve_prop(&id_ptr, fcu->api_path, &ptr, &prop)) {
+      if (api_prop_type(prop) == PROP_FLOAT) {
+        default_val = api_prop_float_get_default_index(&ptr, prop, fcu->arr_index);
       }
     }
 
-    if (fcu->bezt->vec[1][1] == default_value) {
-      BKE_fcurve_delete_keys_all(fcu);
+    if (fcu->bezt->vec[1][1] == default_val) {
+      dune_fcurve_del_keys_all(fcu);
 
-      /* check if curve is really unused and if it is, return signal for deletion */
-      if (BKE_fcurve_is_empty(fcu)) {
+      /* check if curve is unused and if it is, return signal for del */
+      if (dune_fcurve_is_empty(fcu)) {
         AnimData *adt = ale->adt;
-        blender::animrig::animdata_fcurve_delete(ac, adt, fcu);
+        dune::animrig::animdata_fcurve_del(ac, adt, fcu);
         ale->key_data = nullptr;
       }
     }
   }
 }
 
-/**
- * Find the first segment of consecutive selected curve points, starting from \a start_index.
- * Keys that have BEZT_FLAG_IGNORE_TAG set are treated as unselected.
- * \param r_segment_start_idx: returns the start index of the segment.
- * \param r_segment_len: returns the number of curve points in the segment.
- * \return whether such a segment was found or not.
- */
+/* Find the first segment of consecutive selected curve points, starting from \a start_index.
+ * Keys that have BEZT_FLAG_IGNORE_TAG set are treated as unsel.
+ * param r_segment_start_idx: returns the start index of the segment.
+ * param r_segment_len: returns the number of curve points in the segment.
+ * return whether such a segment was found or not */
 static bool find_fcurve_segment(FCurve *fcu,
                                 const int start_index,
                                 int *r_segment_start_idx,
@@ -241,10 +239,10 @@ static bool find_fcurve_segment(FCurve *fcu,
   bool in_segment = false;
 
   for (int i = start_index; i < fcu->totvert; i++) {
-    const bool point_is_selected = fcu->bezt[i].f2 & SELECT;
+    const bool point_is_sel = fcu->bezt[i].f2 & SEL;
     const bool point_is_ignored = fcu->bezt[i].f2 & BEZT_FLAG_IGNORE_TAG;
 
-    if (point_is_selected && !point_is_ignored) {
+    if (point_is_sel && !point_is_ignored) {
       if (!in_segment) {
         *r_segment_start_idx = i;
         in_segment = true;
@@ -259,13 +257,13 @@ static bool find_fcurve_segment(FCurve *fcu,
   }
 
   /* If the last curve point was in the segment, `r_segment_len` and `r_segment_start_idx`
-   * are already updated and true is returned. */
+   * are alrdy updated and true is returned. */
   return in_segment;
 }
 
-ListBase find_fcurve_segments(FCurve *fcu)
+List find_fcurve_segments(FCurve *fcu)
 {
-  ListBase segments = {nullptr, nullptr};
+  List segments = {nullptr, nullptr};
 
   /* Ignore baked curves. */
   if (!fcu->bezt) {
@@ -278,10 +276,10 @@ ListBase find_fcurve_segments(FCurve *fcu)
 
   while (find_fcurve_segment(fcu, current_index, &segment_start_idx, &segment_len)) {
     FCurveSegment *segment;
-    segment = static_cast<FCurveSegment *>(MEM_callocN(sizeof(*segment), "FCurveSegment"));
+    segment = static_cast<FCurveSegment *>(mem_calloc(sizeof(*segment), "FCurveSegment"));
     segment->start_index = segment_start_idx;
     segment->length = segment_len;
-    BLI_addtail(&segments, segment);
+    lib_addtail(&segments, segment);
     current_index = segment_start_idx + segment_len;
   }
   return segments;
@@ -299,9 +297,7 @@ static const BezTriple *fcurve_segment_end_get(FCurve *fcu, int index)
   return end_bezt;
 }
 
-/* ---------------- */
-
-void blend_to_neighbor_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
+void dune_to_neighbor_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
   const BezTriple *target_bezt;
   /* Find which key to blend towards. */
@@ -314,34 +310,32 @@ void blend_to_neighbor_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const
   const float lerp_factor = fabs(factor);
   /* Blend each key individually. */
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
-    const float key_y_value = interpf(target_bezt->vec[1][1], fcu->bezt[i].vec[1][1], lerp_factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = interpf(target_bezt->vec[1][1], fcu->bezt[i].vec[1][1], lerp_factor);
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
 
-/* ---------------- */
-
-float get_default_rna_value(FCurve *fcu, PropertyRNA *prop, PointerRNA *ptr)
+float get_default_api_val(FCurve *fcu, ApiProp *prop, ApiPtr *ptr)
 {
-  const int len = RNA_property_array_length(ptr, prop);
+  const int len = api_prop_array_length(ptr, prop);
 
-  float default_value = 0;
-  /* Find the default value of that property. */
-  switch (RNA_property_type(prop)) {
-    case PROP_BOOLEAN:
+  float default_val = 0;
+  /* Find the default val of that prop. */
+  switch (api_prop_type(prop)) {
+    case PROP_BOOL:
       if (len) {
-        default_value = RNA_property_boolean_get_default_index(ptr, prop, fcu->array_index);
+        default_val = api_prop_bool_get_default_index(ptr, prop, fcu->arr_index);
       }
       else {
-        default_value = RNA_property_boolean_get_default(ptr, prop);
+        default_val = api_prop_bool_get_default(ptr, prop);
       }
       break;
     case PROP_INT:
       if (len) {
-        default_value = RNA_property_int_get_default_index(ptr, prop, fcu->array_index);
+        default_value = RNA_prop_int_get_default_index(ptr, prop, fcu->array_index);
       }
       else {
-        default_value = RNA_property_int_get_default(ptr, prop);
+        default_val = RNA_prop_int_get_default(ptr, prop);
       }
       break;
     case PROP_FLOAT:
