@@ -223,10 +223,10 @@ void clean_fcurve(AnimCxt *ac,
   }
 }
 
-/* Find the first segment of consecutive selected curve points, starting from \a start_index.
+/* Find the first segment of consecutive sel curve points, starting from start_index.
  * Keys that have BEZT_FLAG_IGNORE_TAG set are treated as unsel.
  * param r_segment_start_idx: returns the start index of the segment.
- * param r_segment_len: returns the number of curve points in the segment.
+ * param r_segment_len: returns the num of curve points in the segment.
  * return whether such a segment was found or not */
 static bool find_fcurve_segment(FCurve *fcu,
                                 const int start_index,
@@ -414,17 +414,17 @@ ButterworthCoefficients *ED_anim_allocate_butterworth_coefficients(const int fil
   return bw_coeff;
 }
 
-void ED_anim_free_butterworth_coefficients(ButterworthCoefficients *bw_coeff)
+void ed_anim_free_butterworth_coefficients(ButterworthCoefficients *bw_coeff)
 {
-  MEM_freeN(bw_coeff->d1);
-  MEM_freeN(bw_coeff->d2);
-  MEM_freeN(bw_coeff->A);
-  MEM_freeN(bw_coeff);
+  mem_free(bw_coeff->d1);
+  mem_free(bw_coeff->d2);
+  mem_free(bw_coeff->A);
+  mem_free(bw_coeff);
 }
 
-void ED_anim_calculate_butterworth_coefficients(const float cutoff_frequency,
-                                                const float sampling_frequency,
-                                                ButterworthCoefficients *bw_coeff)
+void ed_anim_cal_butterworth_coefficients(const float cutoff_frequency,
+                                          const float sampling_frequency,
+                                          ButterworthCoefficients *bw_coeff)
 {
   double s = double(sampling_frequency);
   const double a = tan(M_PI * cutoff_frequency / s);
@@ -439,7 +439,7 @@ void ED_anim_calculate_butterworth_coefficients(const float cutoff_frequency,
   }
 }
 
-static double butterworth_filter_value(
+static double butterworth_filter_val(
     double x, double *w0, double *w1, double *w2, ButterworthCoefficients *bw_coeff)
 {
   for (int i = 0; i < bw_coeff->filter_order; i++) {
@@ -451,12 +451,12 @@ static double butterworth_filter_value(
   return x;
 }
 
-static float butterworth_calculate_blend_value(float *samples,
-                                               float *filtered_values,
-                                               const int start_index,
-                                               const int end_index,
-                                               const int sample_index,
-                                               const int blend_in_out)
+static float butterworth_calc_blend_val(float *samples,
+                                              float *filtered_vals,
+                                             const int start_index,
+                                              const int end_index,
+                                              const int sample_index,
+                                              const int blend_in_out)
 {
   if (start_index == end_index || blend_in_out == 0) {
     return samples[start_index];
@@ -465,15 +465,15 @@ static float butterworth_calculate_blend_value(float *samples,
   const float blend_in_y_samples = samples[start_index];
   const float blend_out_y_samples = samples[end_index];
 
-  const float blend_in_y_filtered = filtered_values[start_index + blend_in_out];
-  const float blend_out_y_filtered = filtered_values[end_index - blend_in_out];
+  const float blend_in_y_filtered = filtered_vals[start_index + blend_in_out];
+  const float blend_out_y_filtered = filtered_vals[end_index - blend_in_out];
 
   const float slope_in_samples = samples[start_index] - samples[start_index - 1];
   const float slope_out_samples = samples[end_index] - samples[end_index + 1];
-  const float slope_in_filtered = filtered_values[start_index + blend_in_out - 1] -
-                                  filtered_values[start_index + blend_in_out];
-  const float slope_out_filtered = filtered_values[end_index - blend_in_out] -
-                                   filtered_values[end_index - blend_in_out - 1];
+  const float slope_in_filtered = filtered_vals[start_index + blend_in_out - 1] -
+                                  filtered_vals[start_index + blend_in_out];
+  const float slope_out_filtered = filtered_vals[end_index - blend_in_out] -
+                                   filtered_vals[end_index - blend_in_out - 1];
 
   if (sample_index - start_index <= blend_in_out) {
     const int blend_index = sample_index - start_index;
@@ -482,7 +482,7 @@ static float butterworth_calculate_blend_value(float *samples,
                                           slope_in_filtered * (blend_in_out - blend_index),
                                       blend_in_y_samples + slope_in_samples * blend_index,
                                       blend_in_out_factor);
-    return blend_value;
+    return blend_val;
   }
   if (end_index - sample_index <= blend_in_out) {
     const int blend_index = end_index - sample_index;
@@ -496,10 +496,8 @@ static float butterworth_calculate_blend_value(float *samples,
   return 0;
 }
 
-/**
- * \param samples: Are expected to start at the first frame of the segment with a buffer of size
- * `segment->filter_order` at the left.
- */
+/* param samples: Are expected to start at the first frame of the segment with a buffer of size
+ * `segment->filter_order` at the left. */
 void butterworth_smooth_fcurve_segment(FCurve *fcu,
                                        FCurveSegment *segment,
                                        float *samples,
@@ -511,12 +509,12 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
 {
   const int filter_order = bw_coeff->filter_order;
 
-  float *filtered_values = static_cast<float *>(
-      MEM_callocN(sizeof(float) * sample_count, "Butterworth Filtered FCurve Values"));
+  float *filtered_vals = static_cast<float *>(
+      mem_calloc(sizeof(float) * sample_count, "Butterworth Filtered FCurve Vals"));
 
-  double *w0 = static_cast<double *>(MEM_callocN(sizeof(double) * filter_order, "w0"));
-  double *w1 = static_cast<double *>(MEM_callocN(sizeof(double) * filter_order, "w1"));
-  double *w2 = static_cast<double *>(MEM_callocN(sizeof(double) * filter_order, "w2"));
+  double *w0 = static_cast<double *>(mem_calloc(sizeof(double) * filter_order, "w0"));
+  double *w1 = static_cast<double *>(mem_calloc(sizeof(double) * filter_order, "w1"));
+  double *w2 = static_cast<double *>(mem_calloc(sizeof(double) * filter_order, "w2"));
 
   /* The values need to be offset so the first sample starts at 0. This avoids oscillations at the
    * start and end of the curve. */
@@ -524,8 +522,8 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
 
   for (int i = 0; i < sample_count; i++) {
     const double x = double(samples[i] - fwd_offset);
-    const double filtered_value = butterworth_filter_value(x, w0, w1, w2, bw_coeff);
-    filtered_values[i] = float(filtered_value) + fwd_offset;
+    const double filtered_val = butterworth_filter_val(x, w0, w1, w2, bw_coeff);
+    filtered_vals[i] = float(filtered_val) + fwd_offset;
   }
 
   for (int i = 0; i < filter_order; i++) {
@@ -538,9 +536,9 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
 
   /* Run the filter backwards as well to remove phase offset. */
   for (int i = sample_count - 1; i >= 0; i--) {
-    const double x = double(filtered_values[i] - bwd_offset);
-    const double filtered_value = butterworth_filter_value(x, w0, w1, w2, bw_coeff);
-    filtered_values[i] = float(filtered_value) + bwd_offset;
+    const double x = double(filtered_vals[i] - bwd_offset);
+    const double filtered_val = butterworth_filter_val(x, w0, w1, w2, bw_coeff);
+    filtered_values[i] = float(filtered_val) + bwd_offset;
   }
 
   const int segment_end_index = segment->start_index + segment->length;
@@ -568,34 +566,32 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
 
     const float x_delta = fcu->bezt[i].vec[1][0] - left_bezt.vec[1][0] + filter_order;
     /* Using round() instead of casting to int. Casting would introduce a stepping issue when the
-     * x-value is just below a full frame. */
+     * x-val is just below a full frame. */
     const int filter_index = round(x_delta * sample_rate);
-    const float blend_value = butterworth_calculate_blend_value(samples,
-                                                                filtered_values,
+    const float blend_val = butterworth_calculate_blend_val(samples,
+                                                                filtered_vals,
                                                                 samples_start_index,
                                                                 samples_end_index,
                                                                 filter_index,
                                                                 blend_in_out_clamped);
 
-    const float blended_value = interpf(
-        filtered_values[filter_index], blend_value, blend_in_out_factor);
-    const float key_y_value = interpf(blended_value, samples[filter_index], factor);
+    const float blended_val = interpf(
+        filtered_vals[filter_index], blend_val, blend_in_out_factor);
+    const float key_y_val= interpf(blended_val, samples[filter_index], factor);
 
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    dune_fcurve_keyframe_move_val_with_handles(&fcu->bezt[i], key_y_value);
   }
 
-  MEM_freeN(filtered_values);
-  MEM_freeN(w0);
-  MEM_freeN(w1);
-  MEM_freeN(w2);
+  mem_free(filtered_vals);
+  mem_free(w0);
+  mem_free(w1);
+  mem_free(w2);
 }
 
-/* ---------------- */
-
-void ED_ANIM_get_1d_gauss_kernel(const float sigma, const int kernel_size, double *r_kernel)
+void ed_anim_get_1d_gauss_kernel(const float sigma, const int kernel_size, double *r_kernel)
 {
-  BLI_assert(sigma > 0.0f);
-  BLI_assert(kernel_size > 0);
+  lib_assert(sigma > 0.0f);
+  lib_assert(kernel_size > 0);
   const double sigma_sq = 2.0 * sigma * sigma;
   double sum = 0.0;
 
@@ -606,13 +602,13 @@ void ED_ANIM_get_1d_gauss_kernel(const float sigma, const int kernel_size, doubl
       sum += r_kernel[i];
     }
     else {
-      /* We only calculate half the kernel,
+      /* We only calc half the kernel,
        * the normalization needs to take that into account. */
       sum += r_kernel[i] * 2;
     }
   }
 
-  /* Normalize kernel values. */
+  /* Normalize kernel vals. */
   for (int i = 0; i < kernel_size; i++) {
     r_kernel[i] /= sum;
   }
@@ -634,15 +630,14 @@ void smooth_fcurve_segment(FCurve *fcu,
     /* Apply the kernel. */
     double filter_result = samples[sample_index] * kernel[0];
     for (int j = 1; j <= kernel_size; j++) {
-      const double kernel_value = kernel[j];
-      filter_result += samples[sample_index + j] * kernel_value;
-      filter_result += samples[sample_index - j] * kernel_value;
+      const double kernel_val = kernel[j];
+      filter_result += samples[sample_index + j] * kernel_val;
+      filter_result += samples[sample_index - j] * kernel_val;
     }
-    const float key_y_value = interpf(float(filter_result), samples[sample_index], factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = interpf(float(filter_result), samples[sample_index], factor);
+    dune_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
   }
 }
-/* ---------------- */
 
 void ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
@@ -667,7 +662,7 @@ void ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor
   const float exponent = 1 + fabs(factor) * 4;
 
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
-    /* For easy calculation of the curve, the values are normalized. */
+    /* For easy calc of the curve, the values are normalized. */
     const float normalized_x = (fcu->bezt[i].vec[1][0] - left_x) / key_x_range;
 
     float normalized_y = 0;
@@ -679,7 +674,7 @@ void ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor
     }
 
     const float key_y_value = left_y + normalized_y * key_y_range;
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    dune_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
   }
 }
 
