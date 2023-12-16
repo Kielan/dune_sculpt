@@ -416,54 +416,54 @@ short anim_animchanneldata_keyframes_loop(KeyframeEditData *ked,
   return 0;
 }
 
-void anim_animdata_keyframe_callback(AnimCxt *ac,
-                                     eAnimFilterFlags filter,
-                                     KeyframeEditFn cb_fn)
+void animdata_keyframe_cb(AnimCxt *ac,
+                          eAnimFilterFlags filter,
+                          KeyframeEditFn cb_fn)
 {
   List anim_data = {nullptr, nullptr};
 
-  ANIM_animdata_filter(
-      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+  animdata_filter(
+      ac, &anim_data, eAnimFilterFlags(filter), ac->data, eAnimCont_Types(ac->datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    ANIM_fcurve_keyframes_loop(nullptr,
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    anim_fcurve_keyframes_loop(nullptr,
                                static_cast<FCurve *>(ale->key_data),
                                nullptr,
-                               callback_fn,
-                               BKE_fcurve_handles_recalc);
+                               cb_fn,
+                               dune_fcurve_handles_recalc);
     ale->update |= ANIM_UPDATE_DEFAULT;
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  animdata_update(ac, &anim_data);
+  animdata_freelist(&anim_data);
 }
 
 /* ************************************************************************** */
 /* Keyframe Integrity Tools */
 
-void ANIM_editkeyframes_refresh(bAnimContext *ac)
+void anim_editkeyframes_refresh(AnimCxt *ac)
 {
   ListBase anim_data = {nullptr, nullptr};
   int filter;
 
   /* filter animation data */
   filter = ANIMFILTER_DATA_VISIBLE;
-  ANIM_animdata_filter(
-      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+  animdata_filter(
+      ac, &anim_data, eAnimFilterFlags(filter), ac->data, eAnimCont_Types(ac->datatype));
 
   /* Loop over F-Curves that are likely to have been edited, and tag them to
    * ensure the keyframes are in order and handles are in a valid position. */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LISTB_FOREACH (AnimListElem *, ale, &anim_data) {
     ale->update |= ANIM_UPDATE_DEPS | ANIM_UPDATE_HANDLES | ANIM_UPDATE_ORDER;
   }
 
-  /* free temp data */
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  /* free tmp data */
+  animdata_update(ac, &anim_data);
+  animdata_freelist(&anim_data);
 }
 
 /* ************************************************************************** */
-/* BezTriple Validation Callbacks */
+/* BezTriple Validation Cbs */
 
 /* ------------------------ */
 /* Some macros to make this easier... */
@@ -472,8 +472,7 @@ void ANIM_editkeyframes_refresh(bAnimContext *ac)
  * - Check should be a macro, which takes the handle index as its single arg,
  *   which it substitutes later.
  * - Requires that a var, of type short, is named 'ok',
- *   and has been initialized to 0.
- */
+ *   and has been initialized to 0 */
 #define KEYFRAME_OK_CHECKS(check) \
   { \
     CHECK_TYPE(ok, short); \
@@ -496,8 +495,6 @@ void ANIM_editkeyframes_refresh(bAnimContext *ac)
     } \
   } \
   (void)0
-
-/* ------------------------ */
 
 static short ok_bezier_frame(KeyframeEditData *ked, BezTriple *bezt)
 {
@@ -525,26 +522,24 @@ static short ok_bezier_framerange(KeyframeEditData *ked, BezTriple *bezt)
   return ok;
 }
 
-static short ok_bezier_selected(KeyframeEditData * /*ked*/, BezTriple *bezt)
+static short ok_bezier_sel(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
   /* this macro checks all beztriple handles for selection...
-   * only one of the verts has to be selected for this to be ok...
-   */
+   * only one of the verts has to be selected for this to be ok... */
   if (BEZT_ISSEL_ANY(bezt)) {
     return KEYFRAME_OK_ALL;
   }
   return 0;
 }
 
-static short ok_bezier_value(KeyframeEditData *ked, BezTriple *bezt)
+static short ok_bezier_val(KeyframeEditData *ked, BezTriple *bezt)
 {
   short ok = 0;
 
-  /* Value is stored in f1 property:
+  /* Val is stored in f1 property:
    * - This float accuracy check may need to be dropped?
-   * - Should value be stored in f2 instead
-   *   so that we won't have conflicts when using f1 for frames too?
-   */
+   * - Should val be stored in f2 instead
+   * so that we won't have conflicts when using f1 for frames too? */
 #define KEY_CHECK_OK(_index) IS_EQF(bezt->vec[_index][1], ked->f1)
   KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 #undef KEY_CHECK_OK
@@ -553,11 +548,11 @@ static short ok_bezier_value(KeyframeEditData *ked, BezTriple *bezt)
   return ok;
 }
 
-static short ok_bezier_valuerange(KeyframeEditData *ked, BezTriple *bezt)
+static short ok_bezier_valrange(KeyframeEditData *ked, BezTriple *bezt)
 {
   short ok = 0;
 
-  /* value range is stored in float properties */
+  /* value range is stored in float props */
 #define KEY_CHECK_OK(_index) ((bezt->vec[_index][1] > ked->f1) && (bezt->vec[_index][1] < ked->f2))
   KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 #undef KEY_CHECK_OK
@@ -566,9 +561,9 @@ static short ok_bezier_valuerange(KeyframeEditData *ked, BezTriple *bezt)
   return ok;
 }
 
-static short ok_bezier_region(KeyframeEditData *ked, BezTriple *bezt)
+static short ok_bezier_rgn(KeyframeEditData *ked, BezTriple *bezt)
 {
-  /* rect is stored in data property (it's of type rectf, but may not be set) */
+  /* rect is stored in data prop (it's of type rectf, but may not be set) */
   if (ked->data) {
     short ok = 0;
 
@@ -582,14 +577,14 @@ static short ok_bezier_region(KeyframeEditData *ked, BezTriple *bezt)
   return 0;
 }
 
-bool keyframe_region_lasso_test(const KeyframeEdit_LassoData *data_lasso, const float xy[2])
+bool keyframe_rgn_lasso_test(const KeyframeEdit_LassoData *data_lasso, const float xy[2])
 {
-  if (BLI_rctf_isect_pt_v(data_lasso->rectf_scaled, xy)) {
+  if ib_rctf_isect_pt_v(data_lasso->rectf_scaled, xy)) {
     float xy_view[2];
 
-    BLI_rctf_transform_pt_v(data_lasso->rectf_view, data_lasso->rectf_scaled, xy_view, xy);
+    lib_rctf_transform_pt_v(data_lasso->rectf_view, data_lasso->rectf_scaled, xy_view, xy);
 
-    if (BLI_lasso_is_point_inside(
+    if (lib_lasso_is_point_inside(
             data_lasso->mcoords, data_lasso->mcoords_len, xy_view[0], xy_view[1], INT_MAX))
     {
       return true;
@@ -599,14 +594,14 @@ bool keyframe_region_lasso_test(const KeyframeEdit_LassoData *data_lasso, const 
   return false;
 }
 
-static short ok_bezier_region_lasso(KeyframeEditData *ked, BezTriple *bezt)
+static short ok_bezier_rgn_lasso(KeyframeEditData *ked, BezTriple *bezt)
 {
   /* check for lasso customdata (KeyframeEdit_LassoData) */
   if (ked->data) {
     short ok = 0;
 
 #define KEY_CHECK_OK(_index) \
-  keyframe_region_lasso_test(static_cast<KeyframeEdit_LassoData *>(ked->data), bezt->vec[_index])
+  keyframe_rgn_lasso_test(static_cast<KeyframeEditLassoData *>(ked->data), bezt->vec[_index])
     KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 #undef KEY_CHECK_OK
 
@@ -624,10 +619,9 @@ static short ok_bezier_channel_lasso(KeyframeEditData *ked, BezTriple *bezt)
     float pt[2];
 
     /* late-binding remap of the x values (for summary channels) */
-    /* XXX: Ideally we reset, but it should be fine just leaving it as-is
+    /* Ideally we reset, but it should be fine just leaving it as-is
      * as the next channel will reset it properly, while the next summary-channel
-     * curve will also reset by itself...
-     */
+     * curve will also reset by itself... */
     if (ked->iterflags & (KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP)) {
       data->rectf_scaled->xmin = ked->f1;
       data->rectf_scaled->xmax = ked->f2;
@@ -637,19 +631,19 @@ static short ok_bezier_channel_lasso(KeyframeEditData *ked, BezTriple *bezt)
     pt[0] = bezt->vec[1][0];
     pt[1] = ked->channel_y;
 
-    if (keyframe_region_lasso_test(data, pt)) {
+    if (keyframe_rgn_lasso_test(data, pt)) {
       return KEYFRAME_OK_KEY;
     }
   }
   return 0;
 }
 
-bool keyframe_region_circle_test(const KeyframeEdit_CircleData *data_circle, const float xy[2])
+bool keyframe_rgn_circle_test(const KeyframeEditCircleData *data_circle, const float xy[2])
 {
-  if (BLI_rctf_isect_pt_v(data_circle->rectf_scaled, xy)) {
+  if (lib_rctf_isect_pt_v(data_circle->rectf_scaled, xy)) {
     float xy_view[2];
 
-    BLI_rctf_transform_pt_v(data_circle->rectf_view, data_circle->rectf_scaled, xy_view, xy);
+    lib_rctf_transform_pt_v(data_circle->rectf_view, data_circle->rectf_scaled, xy_view, xy);
 
     xy_view[0] = xy_view[0] - data_circle->mval[0];
     xy_view[1] = xy_view[1] - data_circle->mval[1];
@@ -659,14 +653,14 @@ bool keyframe_region_circle_test(const KeyframeEdit_CircleData *data_circle, con
   return false;
 }
 
-static short ok_bezier_region_circle(KeyframeEditData *ked, BezTriple *bezt)
+static short ok_bezier_rgn_circle(KeyframeEditData *ked, BezTriple *bezt)
 {
-  /* check for circle select customdata (KeyframeEdit_CircleData) */
+  /* check for circle select customdata (KeyframeEditCircleData) */
   if (ked->data) {
     short ok = 0;
 
 #define KEY_CHECK_OK(_index) \
-  keyframe_region_circle_test(static_cast<KeyframeEdit_CircleData *>(ked->data), bezt->vec[_index])
+  keyframe_rgn_circle_test(static_cast<KeyframeEditCircleData *>(ked->data), bezt->vec[_index])
     KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 #undef KEY_CHECK_OK
 
@@ -678,13 +672,13 @@ static short ok_bezier_region_circle(KeyframeEditData *ked, BezTriple *bezt)
 
 static short ok_bezier_channel_circle(KeyframeEditData *ked, BezTriple *bezt)
 {
-  /* check for circle select customdata (KeyframeEdit_CircleData) */
+  /* check for circle sel customdata (KeyframeEdit_CircleData) */
   if (ked->data) {
-    KeyframeEdit_CircleData *data = static_cast<KeyframeEdit_CircleData *>(ked->data);
+    KeyframeEditCircleData *data = static_cast<KeyframeEdit_CircleData *>(ked->data);
     float pt[2];
 
     /* late-binding remap of the x values (for summary channels) */
-    /* XXX: Ideally we reset, but it should be fine just leaving it as-is
+    /* Ideally we reset, but it should be fine just leaving it as-is
      * as the next channel will reset it properly, while the next summary-channel
      * curve will also reset by itself...
      */
@@ -693,20 +687,20 @@ static short ok_bezier_channel_circle(KeyframeEditData *ked, BezTriple *bezt)
       data->rectf_scaled->xmax = ked->f2;
     }
 
-    /* only use the x-coordinate of the point; the y is the channel range... */
+    /* only use the x-coord of the point; the y is the channel range... */
     pt[0] = bezt->vec[1][0];
     pt[1] = ked->channel_y;
 
-    if (keyframe_region_circle_test(data, pt)) {
+    if (keyframe_rgn_circle_test(data, pt)) {
       return KEYFRAME_OK_KEY;
     }
   }
   return 0;
 }
 
-KeyframeEditFunc ANIM_editkeyframes_ok(short mode)
+KeyframeEditFn anim_editkeyframes_ok(short mode)
 {
-  /* eEditKeyframes_Validate */
+  /* eEditKeyframesValidate */
   switch (mode) {
     case BEZT_OK_FRAME:
       /* only if bezt falls on the right frame (float) */
@@ -714,16 +708,16 @@ KeyframeEditFunc ANIM_editkeyframes_ok(short mode)
     case BEZT_OK_FRAMERANGE:
       /* only if bezt falls within the specified frame range (floats) */
       return ok_bezier_framerange;
-    case BEZT_OK_SELECTED:
-      /* only if bezt is selected (self) */
-      return ok_bezier_selected;
-    case BEZT_OK_VALUE:
-      /* only if bezt value matches (float) */
-      return ok_bezier_value;
-    case BEZT_OK_VALUERANGE:
+    case BEZT_OK_SEL:
+      /* only if bezt is sel (self) */
+      return ok_bezier_sel;
+    case BEZT_OK_VAL:
+      /* only if bezt val matches (float) */
+      return ok_bezier_val;
+    case BEZT_OK_VALRANGE:
       /* only if bezier falls within the specified value range (floats) */
-      return ok_bezier_valuerange;
-    case BEZT_OK_REGION:
+      return ok_bezier_valrange;
+    case BEZT_OK_RGN:
       /* only if bezier falls within the specified rect (data -> rectf) */
       return ok_bezier_region;
     case BEZT_OK_REGION_LASSO:
@@ -743,19 +737,16 @@ KeyframeEditFunc ANIM_editkeyframes_ok(short mode)
   }
 }
 
-/* ******************************************* */
-/* Assorted Utility Functions */
-
-short bezt_calc_average(KeyframeEditData *ked, BezTriple *bezt)
+/* Assorted Util Fns */
+short bezt_calc_avg(KeyframeEditData *ked, BezTriple *bezt)
 {
-  /* only if selected */
-  if (bezt->f2 & SELECT) {
+  /* only if sel */
+  if (bezt->f2 & SEL) {
     /* store average time in float 1 (only do rounding at last step) */
     ked->f1 += bezt->vec[1][0];
 
-    /* store average value in float 2 (only do rounding at last step)
-     * - this isn't always needed, but some operators may also require this
-     */
+    /* store avg val in float 2 (only do rounding at last step)
+     * - this isn't always needed, but some operators may also require this  */
     ked->f2 += bezt->vec[1][1];
 
     /* increment number of items */
@@ -768,9 +759,9 @@ short bezt_calc_average(KeyframeEditData *ked, BezTriple *bezt)
 short bezt_to_cfraelem(KeyframeEditData *ked, BezTriple *bezt)
 {
   /* only if selected */
-  if (bezt->f2 & SELECT) {
-    CfraElem *ce = static_cast<CfraElem *>(MEM_callocN(sizeof(CfraElem), "cfraElem"));
-    BLI_addtail(&ked->list, ce);
+  if (bezt->f2 & SEL) {
+    CfraElem *ce = static_cast<CfraElem *>(mem_calloc(sizeof(CfraElem), "cfraElem"));
+    lib_addtail(&ked->list, ce);
 
     ce->cfra = bezt->vec[1][0];
   }
@@ -780,24 +771,22 @@ short bezt_to_cfraelem(KeyframeEditData *ked, BezTriple *bezt)
 
 void bezt_remap_times(KeyframeEditData *ked, BezTriple *bezt)
 {
-  KeyframeEditCD_Remap *rmap = (KeyframeEditCD_Remap *)ked->data;
+  KeyframeEditCDRemap *rmap = (KeyframeEditCD_Remap *)ked->data;
   const float scale = (rmap->newMax - rmap->newMin) / (rmap->oldMax - rmap->oldMin);
 
   /* perform transform on all three handles unless indicated otherwise */
-  /* TODO: need to include some checks for that */
+  /* Need to include some checks for that */
 
   bezt->vec[0][0] = scale * (bezt->vec[0][0] - rmap->oldMin) + rmap->newMin;
   bezt->vec[1][0] = scale * (bezt->vec[1][0] - rmap->oldMin) + rmap->newMin;
   bezt->vec[2][0] = scale * (bezt->vec[2][0] - rmap->oldMin) + rmap->newMin;
 }
 
-/* ******************************************* */
 /* Transform */
-
 /* snaps the keyframe to the nearest frame */
 static short snap_bezier_nearest(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->vec[1][0] = float(floorf(bezt->vec[1][0] + 0.5f));
   }
   return 0;
@@ -809,7 +798,7 @@ static short snap_bezier_nearestsec(KeyframeEditData *ked, BezTriple *bezt)
   const Scene *scene = ked->scene;
   const float secf = float(FPS);
 
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->vec[1][0] = float(floorf(bezt->vec[1][0] / secf + 0.5f)) * secf;
   }
   return 0;
@@ -819,7 +808,7 @@ static short snap_bezier_nearestsec(KeyframeEditData *ked, BezTriple *bezt)
 static short snap_bezier_cframe(KeyframeEditData *ked, BezTriple *bezt)
 {
   const Scene *scene = ked->scene;
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->vec[1][0] = float(scene->r.cfra);
   }
   return 0;
@@ -828,8 +817,8 @@ static short snap_bezier_cframe(KeyframeEditData *ked, BezTriple *bezt)
 /* snaps the keyframe time to the nearest marker's frame */
 static short snap_bezier_nearmarker(KeyframeEditData *ked, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
-    bezt->vec[1][0] = float(ED_markers_find_nearest_marker_time(&ked->list, bezt->vec[1][0]));
+  if (bezt->f2 & SEL) {
+    bezt->vec[1][0] = float(ed_markers_find_nearest_marker_time(&ked->list, bezt->vec[1][0]));
   }
   return 0;
 }
@@ -837,7 +826,7 @@ static short snap_bezier_nearmarker(KeyframeEditData *ked, BezTriple *bezt)
 /* make the handles have the same value as the key */
 static short snap_bezier_horizontal(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->vec[0][1] = bezt->vec[2][1] = bezt->vec[1][1];
 
     if (ELEM(bezt->h1, HD_AUTO, HD_AUTO_ANIM, HD_VECT)) {
@@ -853,14 +842,14 @@ static short snap_bezier_horizontal(KeyframeEditData * /*ked*/, BezTriple *bezt)
 /* frame to snap to is stored in the custom data -> first float value slot */
 static short snap_bezier_time(KeyframeEditData *ked, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->vec[1][0] = ked->f1;
   }
   return 0;
 }
 
 /* value to snap to is stored in the custom data -> first float value slot */
-static short snap_bezier_value(KeyframeEditData *ked, BezTriple *bezt)
+static short snap_bezier_val(KeyframeEditData *ked, BezTriple *bezt)
 {
   if (bezt->f2 & SELECT) {
     bezt->vec[1][1] = ked->f1;
