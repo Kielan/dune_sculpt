@@ -375,13 +375,11 @@ void blend_to_default_fcurve(ApiPtr *id_ptr, FCurve *fcu, const float factor)
   }
 }
 
-/* ---------------- */
-
-void scale_average_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
+void scale_avg_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
   float y = 0;
 
-  /* Find first the average of the y values to then use it in the final calculation. */
+  /* Find first the avg of the y vals to then use it in the final calc. */
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
     y += fcu->bezt[i].vec[1][1];
   }
@@ -389,27 +387,25 @@ void scale_average_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const flo
   const float y_average = y / segment->length;
 
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
-    const float key_y_value = interpf(y_average, fcu->bezt[i].vec[1][1], 1 - factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = interpf(y_avg, fcu->bezt[i].vec[1][1], 1 - factor);
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
-
-/* ---------------- */
 
 struct ButterworthCoefficients {
   double *A, *d1, *d2;
   int filter_order;
 };
 
-ButterworthCoefficients *ED_anim_allocate_butterworth_coefficients(const int filter_order)
+ButterworthCoefficients *ed_anim_alloc_butterworth_coefficients(const int filter_order)
 {
   ButterworthCoefficients *bw_coeff = static_cast<ButterworthCoefficients *>(
-      MEM_callocN(sizeof(ButterworthCoefficients), "Butterworth Coefficients"));
+      mem_calloc(sizeof(ButterworthCoefficients), "Butterworth Coefficients"));
   bw_coeff->filter_order = filter_order;
   bw_coeff->d1 = static_cast<double *>(
-      MEM_callocN(sizeof(double) * filter_order, "coeff filtered"));
+      mem_calloc(sizeof(double) * filter_order, "coeff filtered"));
   bw_coeff->d2 = static_cast<double *>(
-      MEM_callocN(sizeof(double) * filter_order, "coeff samples"));
+      mem_calloc(sizeof(double) * filter_order, "coeff samples"));
   bw_coeff->A = static_cast<double *>(MEM_callocN(sizeof(double) * filter_order, "Butterworth A"));
   return bw_coeff;
 }
@@ -491,7 +487,7 @@ static float butterworth_calc_blend_val(float *samples,
                                           slope_out_filtered * (blend_in_out - blend_index),
                                       blend_out_y_samples + slope_out_samples * blend_index,
                                       blend_in_out_factor);
-    return blend_value;
+    return blend_val;
   }
   return 0;
 }
@@ -516,7 +512,7 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
   double *w1 = static_cast<double *>(mem_calloc(sizeof(double) * filter_order, "w1"));
   double *w2 = static_cast<double *>(mem_calloc(sizeof(double) * filter_order, "w2"));
 
-  /* The values need to be offset so the first sample starts at 0. This avoids oscillations at the
+  /* The vals need to be offset so the first sample starts at 0. This avoids oscillations at the
    * start and end of the curve. */
   const float fwd_offset = samples[0];
 
@@ -538,7 +534,7 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
   for (int i = sample_count - 1; i >= 0; i--) {
     const double x = double(filtered_vals[i] - bwd_offset);
     const double filtered_val = butterworth_filter_val(x, w0, w1, w2, bw_coeff);
-    filtered_values[i] = float(filtered_val) + bwd_offset;
+    filtered_vals[i] = float(filtered_val) + bwd_offset;
   }
 
   const int segment_end_index = segment->start_index + segment->length;
@@ -568,18 +564,18 @@ void butterworth_smooth_fcurve_segment(FCurve *fcu,
     /* Using round() instead of casting to int. Casting would introduce a stepping issue when the
      * x-val is just below a full frame. */
     const int filter_index = round(x_delta * sample_rate);
-    const float blend_val = butterworth_calculate_blend_val(samples,
-                                                                filtered_vals,
-                                                                samples_start_index,
-                                                                samples_end_index,
-                                                                filter_index,
-                                                                blend_in_out_clamped);
+    const float blend_val = butterworth_calc_blend_val(samples,
+                                                       filtered_vals,
+                                                       samples_start_index,
+                                                       samples_end_index,
+                                                       filter_index,
+                                                       blend_in_out_clamped);
 
     const float blended_val = interpf(
         filtered_vals[filter_index], blend_val, blend_in_out_factor);
     const float key_y_val= interpf(blended_val, samples[filter_index], factor);
 
-    dune_fcurve_keyframe_move_val_with_handles(&fcu->bezt[i], key_y_value);
+    dune_fcurve_keyframe_move_val_with_handles(&fcu->bezt[i], key_y_val);
   }
 
   mem_free(filtered_vals);
@@ -635,7 +631,7 @@ void smooth_fcurve_segment(FCurve *fcu,
       filter_result += samples[sample_index - j] * kernel_val;
     }
     const float key_y_val = interpf(float(filter_result), samples[sample_index], factor);
-    dune_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
 
@@ -673,12 +669,10 @@ void ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor
       normalized_y = pow(normalized_x, exponent);
     }
 
-    const float key_y_value = left_y + normalized_y * key_y_range;
-    dune_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = left_y + normalized_y * key_y_range;
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
-
-/* ---------------- */
 
 void blend_offset_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
@@ -696,19 +690,17 @@ void blend_offset_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const floa
     y_delta = left_key->vec[1][1] - segment_first_key.vec[1][1];
   }
 
-  const float offset_value = y_delta * fabs(factor);
+  const float offset_val = y_delta * fabs(factor);
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
-    const float key_y_value = fcu->bezt[i].vec[1][1] + offset_value;
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = fcu->bezt[i].vec[1][1] + offset_val;
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
-
-/* ---------------- */
 
 static float s_curve(float x, float slope, float width, float height, float xshift, float yshift)
 {
   /* Formula for 'S' curve we use for the "ease" sliders.
-   * The shift values move the curve vertically or horizontally.
+   * The shift vals move the curve vertically or horizontally.
    * The range of the curve used is from 0 to 1 on "x" and "y"
    * so we can scale it (width and height) and move it (`xshift` and y `yshift`)
    * to crop the part of the curve we need. Slope determines how curvy the shape is. */
@@ -746,7 +738,7 @@ void blend_to_ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const flo
   const float height = 2.0;
   float xy_shift;
 
-  /* Shifting the x and y values we can decide what side of the "S" shape to use. */
+  /* Shifting the x and y vals we can decide what side of the "S" shape to use. */
   if (factor > 0) {
     xy_shift = -1.0;
   }
@@ -768,12 +760,10 @@ void blend_to_ease_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const flo
       y_delta = fcu->bezt[i].vec[1][1] - base;
     }
 
-    const float key_y_value = fcu->bezt[i].vec[1][1] + y_delta * factor;
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = fcu->bezt[i].vec[1][1] + y_delta * factor;
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_value);
   }
 }
-
-/* ---------------- */
 
 bool match_slope_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
@@ -784,24 +774,24 @@ bool match_slope_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float
   const BezTriple *reference_key;
 
   if (factor >= 0) {
-    /* Stop the function if there is no key beyond the right neighboring one. */
+    /* Stop the fn if there is no key beyond the right neighboring one. */
     if (segment->start_index + segment->length >= fcu->totvert - 1) {
       return false;
     }
-    reference_key = right_key;
+    ref_key = right_key;
     beyond_key = fcu->bezt[segment->start_index + segment->length + 1];
   }
   else {
-    /* Stop the function if there is no key beyond the left neighboring one. */
+    /* Stop the fn if there is no key beyond the left neighboring one. */
     if (segment->start_index <= 1) {
       return false;
     }
-    reference_key = left_key;
+    ref_key = left_key;
     beyond_key = fcu->bezt[segment->start_index - 2];
   }
 
-  /* This delta values are used to get the relationship between the bookend keys and the
-   * reference keys beyond those. */
+  /* This delta vals are used to get the relationship between the bookend keys and the
+   * ref keys beyond those. */
   const float y_delta = beyond_key.vec[1][1] - reference_key->vec[1][1];
   const float x_delta = beyond_key.vec[1][0] - reference_key->vec[1][0];
 
@@ -817,15 +807,13 @@ bool match_slope_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float
     const float new_x_delta = fcu->bezt[i].vec[1][0] - reference_key->vec[1][0];
     const float new_y_delta = new_x_delta * y_delta / x_delta;
 
-    const float delta = reference_key->vec[1][1] + new_y_delta - fcu->bezt[i].vec[1][1];
+    const float delta = ref_key->vec[1][1] + new_y_delta - fcu->bezt[i].vec[1][1];
 
-    const float key_y_value = fcu->bezt[i].vec[1][1] + delta * fabs(factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = fcu->bezt[i].vec[1][1] + delta * fabs(factor);
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
   return true;
 }
-
-/* ---------------- */
 
 void shear_fcurve_segment(FCurve *fcu,
                           FCurveSegment *segment,
