@@ -3,53 +3,49 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_lasso_2d.h"
-#include "BLI_math_vector.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_lasso_2d.h"
+#include "lib_math_vector.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BKE_fcurve.h"
-#include "BKE_nla.h"
+#include "dune_fcurve.h"
+#include "dune_nla.h"
 
-#include "ED_anim_api.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_markers.hh"
+#include "ed_anim_api.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_markers.hh"
 
 /* This file defines an API and set of callback-operators for
  * non-destructive editing of keyframe data.
  *
- * Two API functions are defined for actually performing the operations on the data:
- * ANIM_fcurve_keyframes_loop()
- * which take the data they operate on, a few callbacks defining what operations to perform.
+ * Two API fns are defined for actually performing the ops on the data:
+ * anim_fcurve_keyframes_loop()
+ * which take the data they op on, a few cbs defining what ops to perform.
  *
- * As operators which work on keyframes usually apply the same operation on all BezTriples in
- * every channel, the code has been optimized providing a set of functions which will get the
- * appropriate bezier-modify function to set. These functions (ANIM_editkeyframes_*) will need
+ * As ops which work on keyframes usually apply the same op on all BezTriples in
+ * every channel, the code has been optimized providing a set of fns which will get the
+ * appropriate bezier-modify fn to set. These fns (anim_editkeyframes_*) will need
  * to be called before getting any channels.
  *
- * A set of 'validation' callbacks are provided for checking if a BezTriple should be operated on.
+ * A set of 'validation' cbs are provided for checking if a BezTriple should be operated on.
  * These should only be used when using a 'general' BezTriple editor (i.e. selection setters which
- * don't check existing selection status).
+ * don't check existing sel status).
  *
- * - Joshua Leung, Dec 2008
- */
+ * - Joshua Leung, Dec 2008 */
 
-/* ************************************************************************** */
 /* Keyframe Editing Loops - Exposed API */
-
-/* --------------------------- Base Functions ------------------------------------ */
-
-short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
+/* Base Fns */
+short anim_fcurve_keyframes_loop(KeyframeEditData *ked,
                                  FCurve *fcu,
-                                 KeyframeEditFunc key_ok,
-                                 KeyframeEditFunc key_cb,
-                                 FcuEditFunc fcu_cb)
+                                 KeyframeEditFn key_ok,
+                                 KeyframeEditFn key_cb,
+                                 FcuEditFn fcu_cb)
 {
   BezTriple *bezt;
   short ok = 0;
@@ -67,11 +63,10 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
     ked->curflags = KEYFRAME_NONE;
   }
 
-  /* if function to apply to bezier curves is set, then loop through executing it on beztriples */
+  /* if fn to apply to bezier curves is set, then loop through ex it on beztriples */
   if (key_cb) {
-    /* if there's a validation func, include that check in the loop
-     * (this is should be more efficient than checking for it in every loop)
-     */
+    /* if there's a validation fn, include that check in the loop
+     * (this is should be more efficient than checking for it in every loop) */
     if (key_ok) {
       for (bezt = fcu->bezt, i = 0; i < fcu->totvert; bezt++, i++) {
         if (ked) {
@@ -80,15 +75,14 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
           ked->curflags = KEYFRAME_NONE;
         }
 
-        /* Only operate on this BezTriple if it fulfills the criteria of the validation func */
+        /* Only op on this BezTriple if it fulfills the criteria of the validation fn */
         if ((ok = key_ok(ked, bezt))) {
           if (ked) {
             ked->curflags = eKeyframeVertOk(ok);
           }
 
-          /* Exit with return-code '1' if function returns positive
-           * This is useful if finding if some BezTriple satisfies a condition.
-           */
+          /* Exit with return-code '1' if fn returns positive
+           * This is useful if finding if some BezTriple satisfies a condition.  */
           if (key_cb(ked, bezt)) {
             return 1;
           }
@@ -102,8 +96,7 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
         }
 
         /* Exit with return-code '1' if function returns positive
-         * This is useful if finding if some BezTriple satisfies a condition.
-         */
+         * This is useful if finding if some BezTriple satisfies a condition. */
         if (key_cb(ked, bezt)) {
           return 1;
         }
@@ -118,7 +111,7 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
     ked->curflags = KEYFRAME_NONE;
   }
 
-  /* if fcu_cb (F-Curve post-editing callback) has been specified then execute it */
+  /* if fcu_cb (F-Curve post-editing cb) has been specified then ex it */
   if (fcu_cb) {
     fcu_cb(fcu);
   }
@@ -127,24 +120,24 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked,
   return 0;
 }
 
-/* --------------------- Further Abstracted (Not Exposed Directly) ----------------------------- */
+/* Further Abstracted (Not Exposed Directly) */
 
-/* This function is used to loop over the keyframe data in an Action Group */
+/* This fn is used to loop over the keyframe data in an Action Group */
 static short agrp_keyframes_loop(KeyframeEditData *ked,
-                                 bActionGroup *agrp,
-                                 KeyframeEditFunc key_ok,
-                                 KeyframeEditFunc key_cb,
-                                 FcuEditFunc fcu_cb)
+                                 ActionGroup *agrp,
+                                 KeyframeEditFn key_ok,
+                                 KeyframeEditFn key_cb,
+                                 FcuEditFn fcu_cb)
 {
   /* sanity check */
   if (agrp == nullptr) {
     return 0;
   }
 
-  /* only iterate over the F-Curves that are in this group */
-  LISTBASE_FOREACH (FCurve *, fcu, &agrp->channels) {
+  /* only iter over the F-Curves that are in this group */
+  LIST_FOREACH (FCurve *, fcu, &agrp->channels) {
     if (fcu->grp == agrp) {
-      if (ANIM_fcurve_keyframes_loop(ked, fcu, key_ok, key_cb, fcu_cb)) {
+      if (anim_fcurve_keyframes_loop(ked, fcu, key_ok, key_cb, fcu_cb)) {
         return 1;
       }
     }
@@ -153,12 +146,12 @@ static short agrp_keyframes_loop(KeyframeEditData *ked,
   return 0;
 }
 
-/* This function is used to loop over the keyframe data in an Action */
+/* This fn is used to loop over the keyframe data in an Action */
 static short act_keyframes_loop(KeyframeEditData *ked,
-                                bAction *act,
-                                KeyframeEditFunc key_ok,
-                                KeyframeEditFunc key_cb,
-                                FcuEditFunc fcu_cb)
+                                Action *act,
+                                KeyframeEditFn key_ok,
+                                KeyframeEditFn key_cb,
+                                FcuEditFn fcu_cb)
 {
   /* sanity check */
   if (act == nullptr) {
@@ -166,8 +159,8 @@ static short act_keyframes_loop(KeyframeEditData *ked,
   }
 
   /* just loop through all F-Curves */
-  LISTBASE_FOREACH (FCurve *, fcu, &act->curves) {
-    if (ANIM_fcurve_keyframes_loop(ked, fcu, key_ok, key_cb, fcu_cb)) {
+  LIST_FOREACH (FCurve *, fcu, &act->curves) {
+    if (anim_fcurve_keyframes_loop(ked, fcu, key_ok, key_cb, fcu_cb)) {
       return 1;
     }
   }
@@ -175,20 +168,20 @@ static short act_keyframes_loop(KeyframeEditData *ked,
   return 0;
 }
 
-/* This function is used to loop over the keyframe data in an Object */
+/* This fn is used to loop over the keyframe data in an Object */
 static short ob_keyframes_loop(KeyframeEditData *ked,
-                               bDopeSheet *ads,
-                               Object *ob,
+                               DopeSheet *ads,
+                               Ob *ob,
                                KeyframeEditFunc key_ok,
                                KeyframeEditFunc key_cb,
-                               FcuEditFunc fcu_cb)
+                               FcuEditFn fcu_cb)
 {
-  bAnimContext ac = {nullptr};
-  ListBase anim_data = {nullptr, nullptr};
+  AnimCxt ac = {nullptr};
+  List anim_data = {nullptr, nullptr};
   int filter;
   int ret = 0;
 
-  bAnimListElem dummy_chan = {nullptr};
+  AnimListElem dummy_chan = {nullptr};
   Base dummy_base = {nullptr};
 
   if (ob == nullptr) {
@@ -196,9 +189,9 @@ static short ob_keyframes_loop(KeyframeEditData *ked,
   }
 
   /* create a dummy wrapper data to work with */
-  dummy_base.object = ob;
+  dummy_base.ob = ob;
 
-  dummy_chan.type = ANIMTYPE_OBJECT;
+  dummy_chan.type = ANIMTYPE_OB;
   dummy_chan.data = &dummy_base;
   dummy_chan.id = &ob->id;
   dummy_chan.adt = ob->adt;
@@ -209,38 +202,38 @@ static short ob_keyframes_loop(KeyframeEditData *ked,
 
   /* get F-Curves to take keyframes from */
   filter = ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FCURVESONLY;
-  ANIM_animdata_filter(
-      &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(
+      &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
-  /* Loop through each F-Curve, applying the operation as required,
+  /* Loop through each F-Curve, applying the op as required,
    * but stopping on the first one. */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    if (ANIM_fcurve_keyframes_loop(ked, (FCurve *)ale->data, key_ok, key_cb, fcu_cb)) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    if (anim_fcurve_keyframes_loop(ked, (FCurve *)ale->data, key_ok, key_cb, fcu_cb)) {
       ret = 1;
       break;
     }
   }
 
-  ANIM_animdata_freelist(&anim_data);
+  animdata_freelist(&anim_data);
 
   /* Return the return code (defaults to zero if nothing happened). */
   return ret;
 }
 
-/* This function is used to loop over the keyframe data in a Scene */
+/* This fn is used to loop over the keyframe data in a Scene */
 static short scene_keyframes_loop(KeyframeEditData *ked,
-                                  bDopeSheet *ads,
+                                  DopeSheet *ads,
                                   Scene *sce,
-                                  KeyframeEditFunc key_ok,
-                                  KeyframeEditFunc key_cb,
-                                  FcuEditFunc fcu_cb)
+                                  KeyframeEditFn key_ok,
+                                  KeyframeEditFn key_cb,
+                                  FcuEditFn fcu_cb)
 {
-  bAnimContext ac = {nullptr};
-  ListBase anim_data = {nullptr, nullptr};
+  AnimCxt ac = {nullptr};
+  List anim_data = {nullptr, nullptr};
   int filter;
   int ret = 0;
 
-  bAnimListElem dummy_chan = {nullptr};
+  AnimListElem dummy_chan = {nullptr};
 
   if (sce == nullptr) {
     return 0;
@@ -258,32 +251,32 @@ static short scene_keyframes_loop(KeyframeEditData *ked,
 
   /* get F-Curves to take keyframes from */
   filter = ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FCURVESONLY;
-  ANIM_animdata_filter(
-      &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  animdata_filter(
+      &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimCont_Types(ac.datatype));
 
-  /* Loop through each F-Curve, applying the operation as required,
+  /* Loop through each F-Curve, applying the op as required,
    * but stopping on the first one. */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    if (ANIM_fcurve_keyframes_loop(ked, (FCurve *)ale->data, key_ok, key_cb, fcu_cb)) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    if (anim_fcurve_keyframes_loop(ked, (FCurve *)ale->data, key_ok, key_cb, fcu_cb)) {
       ret = 1;
       break;
     }
   }
 
-  ANIM_animdata_freelist(&anim_data);
+  animdata_freelist(&anim_data);
 
   /* Return the return code (defaults to zero if nothing happened). */
   return ret;
 }
 
-/* This function is used to loop over the keyframe data in a DopeSheet summary */
+/* This fn is used to loop over the keyframe data in a DopeSheet summary */
 static short summary_keyframes_loop(KeyframeEditData *ked,
-                                    bAnimContext *ac,
-                                    KeyframeEditFunc key_ok,
-                                    KeyframeEditFunc key_cb,
-                                    FcuEditFunc fcu_cb)
+                                    AnimCxt *ac,
+                                    KeyframeEditFn key_ok,
+                                    KeyframeEditFn key_cb,
+                                    FcuEditFn fcu_cb)
 {
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
   int filter, ret_code = 0;
 
   /* sanity check */
@@ -293,38 +286,37 @@ static short summary_keyframes_loop(KeyframeEditData *ked,
 
   /* get F-Curves to take keyframes from */
   filter = ANIMFILTER_DATA_VISIBLE;
-  ANIM_animdata_filter(
-      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+  animdata_filter(
+      ac, &anim_data, eAnimFilterFlags(filter), ac->data, eAnimContTypes(ac->datatype));
 
   /* loop through each F-Curve, working on the keyframes until the first curve aborts */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->datatype) {
       case ALE_MASKLAY:
-      case ALE_GPFRAME:
+      case ALE_PENFRAME:
         break;
 
       case ALE_FCURVE:
       default: {
         if (ked && ked->iterflags) {
-          /* make backups of the current values, so that a localized fix
-           * (e.g. NLA time remapping) can be applied to these values
-           */
+          /* make backups of the current vals, so that a localized fix
+           * (e.g. NLA time remapping) can be applied to these vals */
           float f1 = ked->f1;
           float f2 = ked->f2;
 
           if (ked->iterflags & (KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP)) {
-            AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+            AnimData *adt = anim_nla_mapping_get(ac, ale);
 
             if (ked->iterflags & KED_F1_NLA_UNMAP) {
-              ked->f1 = BKE_nla_tweakedit_remap(adt, f1, NLATIME_CONVERT_UNMAP);
+              ked->f1 = dune_nla_tweakedit_remap(adt, f1, NLATIME_CONVERT_UNMAP);
             }
             if (ked->iterflags & KED_F2_NLA_UNMAP) {
-              ked->f2 = BKE_nla_tweakedit_remap(adt, f2, NLATIME_CONVERT_UNMAP);
+              ked->f2 = dune_nla_tweakedit_remap(adt, f2, NLATIME_CONVERT_UNMAP);
             }
           }
 
-          /* now operate on the channel as per normal */
-          ret_code = ANIM_fcurve_keyframes_loop(
+          /* now op on the channel as per normal */
+          ret_code = anim_fcurve_keyframes_loop(
               ked, static_cast<FCurve *>(ale->data), key_ok, key_cb, fcu_cb);
 
           /* reset */
@@ -333,7 +325,7 @@ static short summary_keyframes_loop(KeyframeEditData *ked,
         }
         else {
           /* no special handling required... */
-          ret_code = ANIM_fcurve_keyframes_loop(
+          ret_code = anim_fcurve_keyframes_loop(
               ked, static_cast<FCurve *>(ale->data), key_ok, key_cb, fcu_cb);
         }
         break;
@@ -345,19 +337,17 @@ static short summary_keyframes_loop(KeyframeEditData *ked,
     }
   }
 
-  ANIM_animdata_freelist(&anim_data);
+  animdata_freelist(&anim_data);
 
   return ret_code;
 }
 
-/* --- */
-
-short ANIM_animchannel_keyframes_loop(KeyframeEditData *ked,
-                                      bDopeSheet *ads,
-                                      bAnimListElem *ale,
-                                      KeyframeEditFunc key_ok,
-                                      KeyframeEditFunc key_cb,
-                                      FcuEditFunc fcu_cb)
+short anim_animchannel_keyframes_loop(KeyframeEditData *ked,
+                                      DopeSheet *ads,
+                                      AnimListElem *ale,
+                                      KeyframeEditFn key_ok,
+                                      KeyframeEditFn key_cb,
+                                      FcuEditFn fcu_cb)
 {
   /* sanity checks */
   if (ale == nullptr) {
@@ -368,35 +358,34 @@ short ANIM_animchannel_keyframes_loop(KeyframeEditData *ked,
   switch (ale->datatype) {
     /* direct keyframe data (these loops are exposed) */
     case ALE_FCURVE: /* F-Curve */
-      return ANIM_fcurve_keyframes_loop(
+      return anim_fcurve_keyframes_loop(
           ked, static_cast<FCurve *>(ale->key_data), key_ok, key_cb, fcu_cb);
 
     /* indirect 'summaries' (these are not exposed directly)
-     * NOTE: must keep this code in sync with the drawing code and also the filtering code!
-     */
+     * Must keep this code in sync with the drawing code and also the filtering code! */
     case ALE_GROUP: /* action group */
       return agrp_keyframes_loop(ked, (bActionGroup *)ale->data, key_ok, key_cb, fcu_cb);
     case ALE_ACT: /* action */
-      return act_keyframes_loop(ked, (bAction *)ale->key_data, key_ok, key_cb, fcu_cb);
+      return act_keyframes_loop(ked, (Action *)ale->key_data, key_ok, key_cb, fcu_cb);
 
     case ALE_OB: /* object */
-      return ob_keyframes_loop(ked, ads, (Object *)ale->key_data, key_ok, key_cb, fcu_cb);
+      return ob_keyframes_loop(ked, ads, (Ob *)ale->key_data, key_ok, key_cb, fcu_cb);
     case ALE_SCE: /* scene */
       return scene_keyframes_loop(ked, ads, (Scene *)ale->data, key_ok, key_cb, fcu_cb);
     case ALE_ALL: /* 'all' (DopeSheet summary) */
-      return summary_keyframes_loop(ked, (bAnimContext *)ale->data, key_ok, key_cb, fcu_cb);
+      return summary_keyframes_loop(ked, (AnimCxt *)ale->data, key_ok, key_cb, fcu_cb);
   }
 
   return 0;
 }
 
-short ANIM_animchanneldata_keyframes_loop(KeyframeEditData *ked,
-                                          bDopeSheet *ads,
+short anim_animchanneldata_keyframes_loop(KeyframeEditData *ked,
+                                          DopeSheet *ads,
                                           void *data,
                                           int keytype,
-                                          KeyframeEditFunc key_ok,
-                                          KeyframeEditFunc key_cb,
-                                          FcuEditFunc fcu_cb)
+                                          KeyframeEditFn key_ok,
+                                          KeyframeEditFn key_cb,
+                                          FcuEditFn fcu_cb)
 {
   /* sanity checks */
   if (data == nullptr) {
@@ -407,32 +396,31 @@ short ANIM_animchanneldata_keyframes_loop(KeyframeEditData *ked,
   switch (keytype) {
     /* direct keyframe data (these loops are exposed) */
     case ALE_FCURVE: /* F-Curve */
-      return ANIM_fcurve_keyframes_loop(ked, static_cast<FCurve *>(data), key_ok, key_cb, fcu_cb);
+      return anim_fcurve_keyframes_loop(ked, static_cast<FCurve *>(data), key_ok, key_cb, fcu_cb);
 
     /* indirect 'summaries' (these are not exposed directly)
-     * NOTE: must keep this code in sync with the drawing code and also the filtering code!
-     */
+     * NOTE: must keep this code in sync with the drawing code and also the filtering code! */
     case ALE_GROUP: /* action group */
-      return agrp_keyframes_loop(ked, (bActionGroup *)data, key_ok, key_cb, fcu_cb);
+      return agrp_keyframes_loop(ked, (ActionGroup *)data, key_ok, key_cb, fcu_cb);
     case ALE_ACT: /* action */
-      return act_keyframes_loop(ked, (bAction *)data, key_ok, key_cb, fcu_cb);
+      return act_keyframes_loop(ked, (Action *)data, key_ok, key_cb, fcu_cb);
 
-    case ALE_OB: /* object */
-      return ob_keyframes_loop(ked, ads, (Object *)data, key_ok, key_cb, fcu_cb);
+    case ALE_OB: /* ob */
+      return ob_keyframes_loop(ked, ads, (Ob *)data, key_ok, key_cb, fcu_cb);
     case ALE_SCE: /* scene */
       return scene_keyframes_loop(ked, ads, (Scene *)data, key_ok, key_cb, fcu_cb);
     case ALE_ALL: /* 'all' (DopeSheet summary) */
-      return summary_keyframes_loop(ked, (bAnimContext *)data, key_ok, key_cb, fcu_cb);
+      return summary_keyframes_loop(ked, (AnimCxt *)data, key_ok, key_cb, fcu_cb);
   }
 
   return 0;
 }
 
-void ANIM_animdata_keyframe_callback(bAnimContext *ac,
-                                     eAnimFilter_Flags filter,
-                                     KeyframeEditFunc callback_fn)
+void anim_animdata_keyframe_callback(AnimCxt *ac,
+                                     eAnimFilterFlags filter,
+                                     KeyframeEditFn cb_fn)
 {
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
 
   ANIM_animdata_filter(
       ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
