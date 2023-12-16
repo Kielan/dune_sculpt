@@ -332,46 +332,46 @@ float get_default_api_val(FCurve *fcu, ApiProp *prop, ApiPtr *ptr)
       break;
     case PROP_INT:
       if (len) {
-        default_value = RNA_prop_int_get_default_index(ptr, prop, fcu->array_index);
+        default_val = api_prop_int_get_default_index(ptr, prop, fcu->array_index);
       }
       else {
-        default_val = RNA_prop_int_get_default(ptr, prop);
+        default_val = api_prop_int_get_default(ptr, prop);
       }
       break;
     case PROP_FLOAT:
       if (len) {
-        default_value = RNA_property_float_get_default_index(ptr, prop, fcu->array_index);
+        default_val = api_prop_float_get_default_index(ptr, prop, fcu->array_index);
       }
       else {
-        default_value = RNA_property_float_get_default(ptr, prop);
+        default_val = api_prop_float_get_default(ptr, prop);
       }
       break;
 
     default:
       break;
   }
-  return default_value;
+  return default_val;
 }
 
-void blend_to_default_fcurve(PointerRNA *id_ptr, FCurve *fcu, const float factor)
+void blend_to_default_fcurve(ApiPtr *id_ptr, FCurve *fcu, const float factor)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
 
   /* Check if path is valid. */
-  if (!RNA_path_resolve_property(id_ptr, fcu->rna_path, &ptr, &prop)) {
+  if (!api_path_resolve_prop(id_ptr, fcu->api_path, &ptr, &prop)) {
     return;
   }
 
-  const float default_value = get_default_rna_value(fcu, prop, &ptr);
+  const float default_val = get_default_api_val(fcu, prop, &ptr);
 
-  /* Blend selected keys to default. */
+  /* Blend sel keys to default. */
   for (int i = 0; i < fcu->totvert; i++) {
-    if (!(fcu->bezt[i].f2 & SELECT)) {
+    if (!(fcu->bezt[i].f2 & SEL)) {
       continue;
     }
-    const float key_y_value = interpf(default_value, fcu->bezt[i].vec[1][1], factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = interpf(default_val, fcu->bezt[i].vec[1][1], factor);
+    dune_fcurve_keyframe_move_val_with_handles(&fcu->bezt[i], key_y_value);
   }
 }
 
