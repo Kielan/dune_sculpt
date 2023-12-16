@@ -675,41 +675,36 @@ static void envelope_pnl_drw(const Cxt *C, Pnl *pnl)
                        0.0,
                        0.0,
                        0.0,
-                       TIP_("Delete envelope control point"));
-    ui_btn_fn_set(btn, fmod_envelope_deletepoint_cb, env, POINTER_FROM_INT(i));
+                       TIP_("Del envelope ctrl point"));
+    ui_btn_fn_set(btn, fmod_envelope_delpoint_cb, env, PTR_FROM_INT(i));
     ui_block_align_begin(block);
   }
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_envelope(ARegionType *region_type,
-                                    const char *id_prefix,
-                                    PanelTypePollFn poll_fn)
+static void pnl_register_envelope(ARgnType *rgn_type,
+                                  const char *id_prefix,
+                                  PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_ENVELOPE, envelope_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
-                              "frame_range",
-                              "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
-                              poll_fn,
-                              panel_type);
+  PnlType *panel_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_ENVELOPE, envelope_pnl_drw, poll_fn, id_prefix);
+  fmod_subpnl_register(rgn_type,
+                       "frame_range",
+                       "",
+                       fmod_frame_range_header_drw,
+                       fmod_frame_range_drw,
+                       poll_fn,
+                       pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Limits Modifier
- * \{ */
-
-static void limits_panel_draw(const bContext *C, Panel *panel)
+/* Limits Mod */
+static void limits_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col, *row, *sub;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -725,7 +720,7 @@ static void limits_panel_draw(const bContext *C, Panel *panel)
   row = uiLayoutRowWithHeading(col, true, IFACE_("Y"));
   uiItemR(row, ptr, "use_min_y", UI_ITEM_NONE, "", ICON_NONE);
   sub = uiLayoutColumn(row, true);
-  uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_min_y"));
+  uiLayoutSetActive(sub, api_bool_get(ptr, "use_min_y"));
   uiItemR(sub, ptr, "min_y", UI_ITEM_NONE, "", ICON_NONE);
 
   /* Maximums. */
@@ -739,39 +734,34 @@ static void limits_panel_draw(const bContext *C, Panel *panel)
   row = uiLayoutRowWithHeading(col, true, IFACE_("Y"));
   uiItemR(row, ptr, "use_max_y", UI_ITEM_NONE, "", ICON_NONE);
   sub = uiLayoutColumn(row, true);
-  uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_max_y"));
+  uiLayoutSetActive(sub, api_bool_get(ptr, "use_max_y"));
   uiItemR(sub, ptr, "max_y", UI_ITEM_NONE, "", ICON_NONE);
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
 static void pnl_register_limits(ARgnType *rgn_type,
-                                  const char *id_prefix,
-                                  PnlTypePollFn poll_fn)
+                                const char *id_prefix,
+                                PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmod_pnl_register(
-      region_type, FMOD_TYPE_LIMITS, limits_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpnl_register(region_type,
-                              "frame_range",
-                              "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
-                              poll_fn,
-                              panel_type);
+  PnlType *pnl_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_LIMITS, limits_pnl_drw, poll_fn, id_prefix);
+  fmod_subpnl_register(rgn_type,
+                       "frame_range",
+                       "",
+                       fmod_frame_range_header_drw,
+                       fmod_frame_range_drw,
+                       poll_fn,
+                       pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Stepped Interpolation Modifier
- * \{ */
-
-static void stepped_panel_draw(const bContext *C, Panel *panel)
+/* Stepped Interpolation Mod */
+static void stepped_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col, *sub, *row;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -785,146 +775,133 @@ static void stepped_panel_draw(const bContext *C, Panel *panel)
   row = uiLayoutRowWithHeading(layout, true, IFACE_("Start Frame"));
   uiItemR(row, ptr, "use_frame_start", UI_ITEM_NONE, "", ICON_NONE);
   sub = uiLayoutColumn(row, true);
-  uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_frame_start"));
+  uiLayoutSetActive(sub, api_bool_get(ptr, "use_frame_start"));
   uiItemR(sub, ptr, "frame_start", UI_ITEM_NONE, "", ICON_NONE);
 
   /* End range settings. */
   row = uiLayoutRowWithHeading(layout, true, IFACE_("End Frame"));
   uiItemR(row, ptr, "use_frame_end", UI_ITEM_NONE, "", ICON_NONE);
   sub = uiLayoutColumn(row, true);
-  uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_frame_end"));
+  uiLayoutSetActive(sub, api_bool_get(ptr, "use_frame_end"));
   uiItemR(sub, ptr, "frame_end", UI_ITEM_NONE, "", ICON_NONE);
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_stepped(ARegionType *region_type,
+static void pnl_register_stepped(ARgnType *rgn_type,
                                    const char *id_prefix,
-                                   PanelTypePollFn poll_fn)
+                                   PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_STEPPED, stepped_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
+  PnlType *pnl_type = fmod_pnl_register(
+      pnl_type, FMOD_TYPE_STEPPED, stepped_pnl_drw, poll_fn, id_prefix);
+  fmod_subpnl_register(pnl_type,
                               "frame_range",
                               "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
+                              fmod_frame_range_header_drw,
+                              fmod_frame_range_drw,
                               poll_fn,
-                              panel_type);
+                              pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Panel Creation
- * \{ */
-
-void ANIM_fmodifier_panels(const bContext *C,
-                           ID *owner_id,
-                           ListBase *fmodifiers,
-                           uiListPanelIDFromDataFunc panel_id_fn)
+/* Pnl Creation */
+void anim_fmod_pnls(const Cxt *C,
+                    Id *owner_id,
+                    List *fmods,
+                    uiListPnlIdFromDataFn pnl_id_fn)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
-  bool panels_match = UI_panel_list_matches_data(region, fmodifiers, panel_id_fn);
+  bool pnls_match = ui_pnl_list_matches_data(rgn, fmods, panel_id_fn);
 
-  if (!panels_match) {
-    UI_panels_free_instanced(C, region);
-    LISTBASE_FOREACH (FModifier *, fcm, fmodifiers) {
-      char panel_idname[MAX_NAME];
-      panel_id_fn(fcm, panel_idname);
+  if (!pnls_match) {
+    ui_pnls_free_instanced(C, rgn);
+    LIST_FOREACH (FMod *, fcm, fmods) {
+      char pnl_idname[MAX_NAME];
+      pnl_id_fn(fcm, pnl_idname);
 
-      PointerRNA *fcm_ptr = static_cast<PointerRNA *>(
-          MEM_mallocN(sizeof(PointerRNA), "panel customdata"));
-      *fcm_ptr = RNA_pointer_create(owner_id, &RNA_FModifier, fcm);
+      ApiPtr *fcm_ptr = static_cast<ApiPtr *>(
+          mem_malloc(sizeof(ApiPtr), "pnl customdata"));
+      *fcm_ptr = api_ptr_create(owner_id, &ApiFMod, fcm);
 
-      UI_panel_add_instanced(C, region, &region->panels, panel_idname, fcm_ptr);
+      ui_pnl_add_instanced(C, rgn, &rgn->pnls, pnl_idname, fcm_ptr);
     }
   }
   else {
-    /* Assuming there's only one group of instanced panels, update the custom data pointers. */
-    Panel *panel = static_cast<Panel *>(region->panels.first);
-    LISTBASE_FOREACH (FModifier *, fcm, fmodifiers) {
+    /* Assuming there's only one group of instanced pnls, update the custom data ptr. */
+    Pnl *pnl = static_cast<Pnl *>(rgn->pnls.first);
+    LIST_FOREACH (FMod *, fcm, fmods) {
 
       /* Move to the next instanced panel corresponding to the next modifier. */
-      while ((panel->type == nullptr) || !(panel->type->flag & PANEL_TYPE_INSTANCED)) {
-        panel = panel->next;
-        BLI_assert(panel !=
+      while ((pnl->type == nullptr) || !(panel->type->flag & PANEL_TYPE_INSTANCED)) {
+        pnl = pnl->next;
+        lib_assert(pnl !=
                    nullptr); /* There shouldn't be fewer panels than modifiers with UIs. */
       }
 
-      PointerRNA *fcm_ptr = static_cast<PointerRNA *>(
-          MEM_mallocN(sizeof(PointerRNA), "panel customdata"));
-      *fcm_ptr = RNA_pointer_create(owner_id, &RNA_FModifier, fcm);
-      UI_panel_custom_data_set(panel, fcm_ptr);
+      ApiPtr *fcm_ptr = static_cast<ApiPtr *>(
+          mem_malloc(sizeof(ApiPtr), "pnl customdata"));
+      *fcm_ptr = api_ptr_create(owner_id, &ApiFMod, fcm);
+      ui_pnl_custom_data_set(pnl, fcm_ptr);
 
-      panel = panel->next;
+      pnl = pnl->next;
     }
   }
 }
 
-void ANIM_modifier_panels_register_graph_and_NLA(ARegionType *region_type,
-                                                 const char *modifier_panel_prefix,
-                                                 PanelTypePollFn poll_function)
+void anim_mod_pnls_register_graph_and_NLA(ARgnType *rgn_type,
+                                          const char *mod_pnl_prefix,
+                                          PnlTypePollFn poll_fn)
 {
-  panel_register_generator(region_type, modifier_panel_prefix, poll_function);
-  panel_register_fn_generator(region_type, modifier_panel_prefix, poll_function);
-  panel_register_noise(region_type, modifier_panel_prefix, poll_function);
-  panel_register_envelope(region_type, modifier_panel_prefix, poll_function);
-  panel_register_limits(region_type, modifier_panel_prefix, poll_function);
-  panel_register_stepped(region_type, modifier_panel_prefix, poll_function);
+  pnl_register_generator(rgn_type, mod_pnl_prefix, poll_fn);
+  pnl_register_fn_generator(rgn_type, mod_pnl_prefix, poll_fn);
+  pnl_register_noise(rgn_type, mod_pnl_prefix, poll_function);
+  pbl_register_envelope(rgn_type, modifier_panel_prefix, poll_function);
+  pnl_register_limits(rgn_type, modifier_panel_prefix, poll_function);
+  panel_register_stepped(rgn_type, mod_pnl_prefix, poll_fn);
 }
 
-void ANIM_modifier_panels_register_graph_only(ARegionType *region_type,
-                                              const char *modifier_panel_prefix,
-                                              PanelTypePollFn poll_function)
+void anim_mod_pnls_register_graph_only(ARgnType *rgn_type,
+                                       const char *mod_pnl_prefix,
+                                       PnlTypePollFn poll_function)
 {
-  panel_register_cycles(region_type, modifier_panel_prefix, poll_function);
+  pnl_register_cycles(rgn_type, mod_pnl_prefix, poll_fn);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Copy / Paste Buffer Code
- *
+/* Copy/Paste Buf Code
  * For now, this is also defined in this file so that it can be shared between the graph editor
- * and the NLA editor.
- * \{ */
+ * and the NLA editor. */
+/* Copy/Paste Buf itself (list of FMod's) */
+static List fmod_copypaste_buf = {nullptr, nullptr};
 
-/* Copy/Paste Buffer itself (list of FModifier 's) */
-static ListBase fmodifier_copypaste_buf = {nullptr, nullptr};
-
-/* ---------- */
-
-void ANIM_fmodifiers_copybuf_free()
+void anim_fmods_copybuf_free()
 {
-  /* just free the whole buffer */
-  free_fmodifiers(&fmodifier_copypaste_buf);
+  /* free the whole buf */
+  free_fmod(&fmod_copypaste_buf);
 }
 
-bool ANIM_fmodifiers_copy_to_buf(ListBase *modifiers, bool active)
+bool anim_fmods_copy_tobuf(List *mods, bool active)
 {
   bool ok = true;
 
   /* sanity checks */
-  if (ELEM(nullptr, modifiers, modifiers->first)) {
+  if (ELEM(nullptr, mods, mods->first)) {
     return false;
   }
 
   /* copy the whole list, or just the active one? */
   if (active) {
-    FModifier *fcm = find_active_fmodifier(modifiers);
+    FMod *fcm = find_active_fmod(mods);
 
     if (fcm) {
-      FModifier *fcmN = copy_fmodifier(fcm);
-      BLI_addtail(&fmodifier_copypaste_buf, fcmN);
+      FMod *fcmN = copy_fmod(fcm);
+      lib_addtail(&fmod_copypaste_buf, fcmN);
     }
     else {
       ok = false;
     }
   }
   else {
-    copy_fmodifiers(&fmodifier_copypaste_buf, modifiers);
+    copy_fmods(&fmod_copypaste_buf, mods);
   }
 
   /* did we succeed? */
@@ -950,25 +927,23 @@ bool anim_fmods_paste_from_buf(List *mods, bool replace, FCurve *curve)
   /* now copy over all the mods in the buf to the end of the list */
   LIST_FOREACH (FMod *, fcm, &fmod_copypaste_buf) {
     /* make a copy of it */
-    FMod *fcmN = copy_fmodifier(fcm);
+    FMod *fcmN = copy_fmod(fcm);
 
     fcmN->curve = curve;
 
     /* make sure the new one isn't active, otherwise the list may get several actives */
-    fcmN->flag &= ~FMODIFIER_FLAG_ACTIVE;
+    fcmN->flag &= ~FMOD_FLAG_ACTIVE;
 
     /* now add it to the end of the list */
-    BLI_addtail(modifiers, fcmN);
+    lib_addtail(mods, fcmN);
     ok = true;
   }
 
-  /* adding or removing the Cycles modifier requires an update to handles */
-  if (curve && BKE_fcurve_is_cyclic(curve) != was_cyclic) {
-    BKE_fcurve_handles_recalc(curve);
+  /* adding or removing the Cycles mod requires an update to handles */
+  if (curve && dune_fcurve_is_cyclic(curve) != was_cyclic) {
+    dune_fcurve_handles_recalc(curve);
   }
 
   /* did we succeed? */
   return ok;
 }
-
-/** \} */
