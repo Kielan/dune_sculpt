@@ -1,55 +1,52 @@
-/* System includes ----------------------------------------------------- */
-
+/* Sys Includes */
 #include <cfloat>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BKE_grease_pencil.hh"
+#include "dune_pen.hh"
 
-#include "BLI_dlrbTree.h"
-#include "BLI_listbase.h"
-#include "BLI_rect.h"
+#include "lib_dlrbTree.h"
+#include "lib_list.h"
+#include "lib_rect.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_grease_pencil_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_pen_legacy.h"
+#include "types_pen.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "GPU_immediate.h"
-#include "GPU_shader_shared.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_shader_shared.h"
+#include "gpu_state.h"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_keyframes_draw.hh"
-#include "ED_keyframes_keylist.hh"
+#include "ed_anim_api.hh"
+#include "ed_keyframes_drw.hh"
+#include "ed_keyframes_keylist.hh"
 
-/* *************************** Keyframe Drawing *************************** */
-
-void draw_keyframe_shape(float x,
-                         float y,
-                         float size,
-                         bool sel,
-                         short key_type,
-                         short mode,
-                         float alpha,
-                         const KeyframeShaderBindings *sh_bindings,
-                         short handle_type,
-                         short extreme_type)
+/* Keyframe Drawing */
+void drw_keyframe_shape(float x,
+                        float y,
+                        float size,
+                        bool sel,
+                        short key_type,
+                        short mode,
+                        float alpha,
+                        const KeyframeShaderBindings *sh_bindings,
+                        short handle_type,
+                        short extreme_type)
 {
-  bool draw_fill = ELEM(mode, KEYFRAME_SHAPE_INSIDE, KEYFRAME_SHAPE_BOTH);
-  bool draw_outline = ELEM(mode, KEYFRAME_SHAPE_FRAME, KEYFRAME_SHAPE_BOTH);
+  bool drw_fill = ELEM(mode, KEYFRAME_SHAPE_INSIDE, KEYFRAME_SHAPE_BOTH);
+  bool drw_outline = ELEM(mode, KEYFRAME_SHAPE_FRAME, KEYFRAME_SHAPE_BOTH);
 
-  BLI_assert(draw_fill || draw_outline);
+  lib_assert(drw_fill || drw_outline);
 
   /* tweak size of keyframe shape according to type of keyframe
-   * - 'proper' keyframes have key_type = 0, so get drawn at full size
-   */
+   * - 'proper' keyframes have key_type = 0, so get drawn at full size */
   switch (key_type) {
     case BEZT_KEYTYPE_KEYFRAME: /* must be full size */
       break;
@@ -75,30 +72,29 @@ void draw_keyframe_shape(float x,
   uchar outline_col[4];
   uint flags = 0;
 
-  /* draw! */
-  if (draw_fill) {
-    /* get interior colors from theme (for selected and unselected only) */
+  /* drw! */
+  if (drw_fill) {
+    /* get interior colors from theme (for sel and unsel only) */
     switch (key_type) {
       case BEZT_KEYTYPE_BREAKDOWN: /* bluish frames (default theme) */
-        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_BREAKDOWN_SELECT : TH_KEYTYPE_BREAKDOWN, fill_col);
+        ui_GetThemeColor4ubv(sel ? TH_KEYTYPE_BREAKDOWN_SEL : TH_KEYTYPE_BREAKDOWN, fill_col);
         break;
       case BEZT_KEYTYPE_EXTREME: /* reddish frames (default theme) */
-        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_EXTREME_SELECT : TH_KEYTYPE_EXTREME, fill_col);
+        ui_GetThemeColor4ubv(sel ? TH_KEYTYPE_EXTREME_SEL : TH_KEYTYPE_EXTREME, fill_col);
         break;
       case BEZT_KEYTYPE_JITTER: /* greenish frames (default theme) */
-        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_JITTER_SELECT : TH_KEYTYPE_JITTER, fill_col);
+        ui_GetThemeColor4ubv(sel ? TH_KEYTYPE_JITTER_SEL : TH_KEYTYPE_JITTER, fill_col);
         break;
       case BEZT_KEYTYPE_MOVEHOLD: /* similar to traditional keyframes, but different... */
-        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_MOVEHOLD_SELECT : TH_KEYTYPE_MOVEHOLD, fill_col);
+        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_MOVEHOLD_SEL : TH_KEYTYPE_MOVEHOLD, fill_col);
         break;
       case BEZT_KEYTYPE_KEYFRAME: /* traditional yellowish frames (default theme) */
       default:
-        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_KEYFRAME_SELECT : TH_KEYTYPE_KEYFRAME, fill_col);
+        UI_GetThemeColor4ubv(sel ? TH_KEYTYPE_KEYFRAME_SEL : TH_KEYTYPE_KEYFRAME, fill_col);
     }
 
     /* NOTE: we don't use the straight alpha from the theme, or else effects such as
-     * graying out protected/muted channels doesn't work correctly!
-     */
+     * graying out protected/muted channels doesn't work correctly! */
     fill_col[3] *= alpha;
 
     if (!draw_outline) {
@@ -110,12 +106,12 @@ void draw_keyframe_shape(float x,
     }
   }
 
-  if (draw_outline) {
+  if (drw_outline) {
     /* exterior - black frame */
-    UI_GetThemeColor4ubv(sel ? TH_KEYBORDER_SELECT : TH_KEYBORDER, outline_col);
+    ui_GetThemeColor4ubv(sel ? TH_KEYBORDER_SELECT : TH_KEYBORDER, outline_col);
     outline_col[3] *= alpha;
 
-    if (!draw_fill) {
+    if (!drw_fill) {
       /* fill color needs to be (outline.rgb, 0) */
       fill_col[0] = outline_col[0];
       fill_col[1] = outline_col[1];
@@ -162,8 +158,8 @@ void draw_keyframe_shape(float x,
   immVertex2f(sh_bindings->pos_id, x, y);
 }
 
-/* Common attributes shared between the draw calls. */
-struct DrawKeylistUIData {
+/* Common attributes shared between the drw calls. */
+struct DrwKeylistUIData {
   float alpha;
   float icon_size;
   float half_icon_size;
@@ -182,7 +178,7 @@ struct DrawKeylistUIData {
   bool show_ipo;
 };
 
-static void channel_ui_data_init(DrawKeylistUIData *ctx,
+static void channel_ui_data_init(DrwKeylistUIData *ctx,
                                  View2D *v2d,
                                  float yscale_fac,
                                  bool channel_locked,
@@ -193,35 +189,35 @@ static void channel_ui_data_init(DrawKeylistUIData *ctx,
   ctx->alpha = channel_locked ? 0.25f : 1.0f;
 
   ctx->icon_size = U.widget_unit * 0.5f * yscale_fac;
-  ctx->half_icon_size = 0.5f * ctx->icon_size;
-  ctx->smaller_size = 0.35f * ctx->icon_size;
-  ctx->ipo_size = 0.1f * ctx->icon_size;
-  ctx->gpencil_size = ctx->smaller_size * 0.8f;
+  ctx->half_icon_size = 0.5f * cxt->icon_size;
+  ctx->smaller_size = 0.35f * cxt->icon_size;
+  ctx->ipo_size = 0.1f * cxt->icon_size;
+  ctx->pen_size = cxt->smaller_size * 0.8f;
   ctx->screenspace_margin = (0.35f * float(UI_UNIT_X)) / UI_view2d_scale_get_x(v2d);
 
   ctx->show_ipo = (saction_flag & SACTION_SHOW_INTERPOLATION) != 0;
 
-  UI_GetThemeColor4fv(TH_STRIP_SELECT, ctx->sel_color);
-  UI_GetThemeColor4fv(TH_STRIP, ctx->unsel_color);
-  UI_GetThemeColor4fv(TH_DOPESHEET_IPOLINE, ctx->ipo_color);
+  ui_GetThemeColor4fv(TH_STRIP_SEL, ctx->sel_color);
+  ui_GetThemeColor4fv(TH_STRIP, ctx->unsel_color);
+  ui_GetThemeColor4fv(TH_DOPESHEET_IPOLINE, ctx->ipo_color);
 
-  ctx->sel_color[3] *= ctx->alpha;
-  ctx->unsel_color[3] *= ctx->alpha;
-  ctx->ipo_color[3] *= ctx->alpha;
+  ctx->sel_color[3] *= cxt->alpha;
+  ctx->unsel_color[3] *= cxt->alpha;
+  ctx->ipo_color[3] *= cxt->alpha;
 
-  copy_v4_v4(ctx->sel_mhcol, ctx->sel_color);
+  copy_v4_v4(ctx->sel_mhcol, cxt->sel_color);
   ctx->sel_mhcol[3] *= 0.8f;
-  copy_v4_v4(ctx->unsel_mhcol, ctx->unsel_color);
+  copy_v4_v4(cxt->unsel_mhcol, cxt->unsel_color);
   ctx->unsel_mhcol[3] *= 0.8f;
-  copy_v4_v4(ctx->ipo_color_mix, ctx->ipo_color);
+  copy_v4_v4(cxt->ipo_color_mix, cxt->ipo_color);
   ctx->ipo_color_mix[3] *= 0.5f;
 }
 
-static void draw_keylist_block_gpencil(const DrawKeylistUIData *ctx,
-                                       const ActKeyColumn *ab,
-                                       float ypos)
+static void drw_keylist_block_pen(const DrwKeylistUIData *ctx,
+                                  const ActKeyColumn *ab,
+                                  float ypos)
 {
-  UI_draw_roundbox_corner_set(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT);
+  ui_drw_roundbox_corner_set(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT);
   float size = 1.0f;
   switch (ab->next->key_type) {
     case BEZT_KEYTYPE_BREAKDOWN:
@@ -238,17 +234,17 @@ static void draw_keylist_block_gpencil(const DrawKeylistUIData *ctx,
 
   rctf box;
   box.xmin = ab->cfra;
-  box.xmax = min_ff(ab->next->cfra - (ctx->screenspace_margin * size), ab->next->cfra);
-  box.ymin = ypos - ctx->gpencil_size;
-  box.ymax = ypos + ctx->gpencil_size;
+  box.xmax = min_ff(ab->next->cfra - (cxt->screenspace_margin * size), ab->next->cfra);
+  box.ymin = ypos - cxt->pen_size;
+  box.ymax = ypos + cxt->pen_size;
 
-  UI_draw_roundbox_4fv(
+  ui_drw_roundbox_4fv(
       &box, true, 0.25f * float(UI_UNIT_X), (ab->block.sel) ? ctx->sel_mhcol : ctx->unsel_mhcol);
 }
 
-static void draw_keylist_block_moving_hold(const DrawKeylistUIData *ctx,
-                                           const ActKeyColumn *ab,
-                                           float ypos)
+static void drw_keylist_block_moving_hold(const DrwKeylistUIData *ctx,
+                                          const ActKeyColumn *ab,
+                                          float ypos)
 {
   rctf box;
   box.xmin = ab->cfra;
@@ -256,10 +252,10 @@ static void draw_keylist_block_moving_hold(const DrawKeylistUIData *ctx,
   box.ymin = ypos - ctx->smaller_size;
   box.ymax = ypos + ctx->smaller_size;
 
-  UI_draw_roundbox_4fv(&box, true, 3.0f, (ab->block.sel) ? ctx->sel_mhcol : ctx->unsel_mhcol);
+  ui_drw_roundbox_4fv(&box, true, 3.0f, (ab->block.sel) ? cxt->sel_mhcol : ctx->unsel_mhcol);
 }
 
-static void draw_keylist_block_standard(const DrawKeylistUIData *ctx,
+static void drw_keylist_block_standard(const DrwKeylistUIData *ctx,
                                         const ActKeyColumn *ab,
                                         float ypos)
 {
@@ -269,12 +265,12 @@ static void draw_keylist_block_standard(const DrawKeylistUIData *ctx,
   box.ymin = ypos - ctx->half_icon_size;
   box.ymax = ypos + ctx->half_icon_size;
 
-  UI_draw_roundbox_4fv(&box, true, 3.0f, (ab->block.sel) ? ctx->sel_color : ctx->unsel_color);
+  ui_drw_roundbox_4fv(&box, true, 3.0f, (ab->block.sel) ? cxt->sel_color : cxt->unsel_color);
 }
 
-static void draw_keylist_block_interpolation_line(const DrawKeylistUIData *ctx,
-                                                  const ActKeyColumn *ab,
-                                                  float ypos)
+static void drw_keylist_block_interpolation_line(const DrwKeylistUIData *cxt,
+                                                 const ActKeyColumn *ab,
+                                                 float ypos)
 {
   rctf box;
   box.xmin = ab->cfra;
@@ -282,18 +278,18 @@ static void draw_keylist_block_interpolation_line(const DrawKeylistUIData *ctx,
   box.ymin = ypos - ctx->ipo_size;
   box.ymax = ypos + ctx->ipo_size;
 
-  UI_draw_roundbox_4fv(&box,
+  ui_drw_roundbox_4fv(&box,
                        true,
                        3.0f,
                        (ab->block.conflict & ACTKEYBLOCK_FLAG_NON_BEZIER) ? ctx->ipo_color_mix :
                                                                             ctx->ipo_color);
 }
 
-static void draw_keylist_block(const DrawKeylistUIData *ctx, const ActKeyColumn *ab, float ypos)
+static void drw_keylist_block(const DrwKeylistUIData *cxt, const ActKeyColumn *ab, float ypos)
 {
-  /* Draw grease pencil bars between keyframes. */
-  if ((ab->next != nullptr) && (ab->block.flag & ACTKEYBLOCK_FLAG_GPENCIL)) {
-    draw_keylist_block_gpencil(ctx, ab, ypos);
+  /* Drw pen bars between keyframes. */
+  if ((ab->next != nullptr) && (ab->block.flag & ACTKEYBLOCK_FLAG_PEN)) {
+    drw_keylist_block_pen(ctx, ab, ypos);
   }
   else {
     /* Draw other types. */
