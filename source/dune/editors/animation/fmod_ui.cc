@@ -321,9 +321,7 @@ static void fmod_pnl_header(const Cxt *C, Pnl *pnl)
   uiItemS(layout);
 }
 
-/* -------------------------------------------------------------------- */
 /* Generator Mod */
-
 static void generator_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *layout = pnl->layout;
@@ -363,7 +361,7 @@ static void generator_pnl_drw(const Cxt *C, Pnl *pnl)
     {
       {
         /* Add column labels above the buttons to prevent confusion.
-         * Fake the property split layout, otherwise the labels use the full row. */
+         * Fake the prop split layout, otherwise the labels use the full row. */
         uiLayout *split = uiLayoutSplit(col, 0.4f, false);
         uiLayoutColumn(split, false);
         uiLayout *title_col = uiLayoutColumn(split, false);
@@ -426,36 +424,31 @@ static void fn_generator_pnl_drw(const Cxt *C, Pnl *pnl)
   uiItemR(col, ptr, "phase_offset", UI_ITEM_NONE, nullptr, ICON_NONE);
   uiItemR(col, ptr, "value_offset", UI_ITEM_NONE, nullptr, ICON_NONE);
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_fn_generator(ARegionType *region_type,
-                                        const char *id_prefix,
-                                        PanelTypePollFn poll_fn)
+static void pnl_register_fn_generator(ARgnType *rgn_type,
+                                      const char *id_prefix,
+                                      PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_FN_GENERATOR, fn_generator_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
-                              "frame_range",
-                              "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
-                              poll_fn,
-                              panel_type);
+  PnlType *pnl_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_FN_GENERATOR, fn_generator_pnl_drw, poll_fn, id_prefix);
+  fmod_subpbl_register(rgn_type,
+                       "frame_range",
+                       "",
+                       fmod_frame_range_header_drw,
+                       fmod_frame_range_drw,
+                       poll_fn,
+                       pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Cycles Modifier
- * \{ */
-
-static void cycles_panel_draw(const bContext *C, Panel *panel)
+/* Cycles Mod */
+static void cycles_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -470,36 +463,31 @@ static void cycles_panel_draw(const bContext *C, Panel *panel)
   uiItemR(col, ptr, "mode_after", UI_ITEM_NONE, nullptr, ICON_NONE);
   uiItemR(col, ptr, "cycles_after", UI_ITEM_NONE, IFACE_("Count"), ICON_NONE);
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_cycles(ARegionType *region_type,
-                                  const char *id_prefix,
-                                  PanelTypePollFn poll_fn)
+static void pnl_register_cycles(ARgnType *rgn_type,
+                                const char *id_prefix,
+                                PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_CYCLES, cycles_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
-                              "frame_range",
-                              "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
-                              poll_fn,
-                              panel_type);
+  PnlType *pnl_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_CYCLES, cycles_pnl_drw, poll_fn, id_prefix);
+  fmod_subpnl_register(rgn_type,
+                       "frame_range",
+                        "",
+                        fmod_frame_range_header_drw,
+                        fmod_frame_range_drw,
+                        poll_fn,
+                        pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Noise Modifier
- * \{ */
-
-static void noise_panel_draw(const bContext *C, Panel *panel)
+/* Noise Mod */
+static void noise_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, nullptr);
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, nullptr);
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -513,47 +501,42 @@ static void noise_panel_draw(const bContext *C, Panel *panel)
   uiItemR(col, ptr, "phase", UI_ITEM_NONE, nullptr, ICON_NONE);
   uiItemR(col, ptr, "depth", UI_ITEM_NONE, nullptr, ICON_NONE);
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_noise(ARegionType *region_type,
-                                 const char *id_prefix,
-                                 PanelTypePollFn poll_fn)
+static void pno_register_noise(ARgnType *rgn_type,
+                               const char *id_prefix,
+                               PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_NOISE, noise_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
+  PnlType *pnl_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_NOISE, noise_pnl_drw, poll_fn, id_prefix);
+  fmod_subpnl_register(rgn_type,
                               "frame_range",
                               "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
+                              fmod_frame_range_header_drw,
+                              fmod_frame_range_drw,
                               poll_fn,
-                              panel_type);
+                              pnl_type);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Envelope Modifier
- * \{ */
-
+/* Envelope Mod */
 static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void * /*arg*/)
 {
-  Scene *scene = CTX_data_scene(C);
-  FMod_Envelope *env = (FMod_Envelope *)fcm_dv;
-  FCM_EnvelopeData *fedn;
-  FCM_EnvelopeData fed;
+  Scene *scene = cxt_data_scene(C);
+  FModEnvelope *env = (FModEnvelope *)fcm_dv;
+  FCMEnvelopeData *fedn;
+  FCMEnvelopeData fed;
 
   /* init template data */
   fed.min = -1.0f;
   fed.max = 1.0f;
-  fed.time = float(scene->r.cfra); /* XXX make this int for ease of use? */
+  fed.time = float(scene->r.cfra); /* make this int for ease of use? */
   fed.f1 = fed.f2 = 0;
 
   /* check that no data exists for the current frame... */
   if (env->data) {
     bool exists;
-    int i = BKE_fcm_envelope_find_index(env->data, float(scene->r.cfra), env->totvert, &exists);
+    int i = dune_fcm_envelope_find_index(env->data, float(scene->r.cfra), env->totvert, &exists);
 
     /* binarysearch_...() will set exists by default to 0,
      * so if it is non-zero, that means that the point exists already */
@@ -562,12 +545,12 @@ static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void * /*arg*/)
     }
 
     /* add new */
-    fedn = static_cast<FCM_EnvelopeData *>(
-        MEM_callocN((env->totvert + 1) * sizeof(FCM_EnvelopeData), "FCM_EnvelopeData"));
+    fedn = static_cast<FCMEnvelopeData *>(
+        mem_calloc((env->totvert + 1) * sizeof(FCMEnvelopeData), "FCMEnvelopeData"));
 
     /* add the points that should occur before the point to be pasted */
     if (i > 0) {
-      memcpy(fedn, env->data, i * sizeof(FCM_EnvelopeData));
+      memcpy(fedn, env->data, i * sizeof(FCMEnvelopeData));
     }
 
     /* add point to paste at index i */
@@ -579,80 +562,79 @@ static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void * /*arg*/)
     }
 
     /* replace (+ free) old with new */
-    MEM_freeN(env->data);
+    mem_free(env->data);
     env->data = fedn;
 
     env->totvert++;
   }
   else {
-    env->data = static_cast<FCM_EnvelopeData *>(
-        MEM_callocN(sizeof(FCM_EnvelopeData), "FCM_EnvelopeData"));
+    env->data = static_cast<FCMEnvelopeData *>(
+        mem_calloc(sizeof(FCMEnvelopeData), "FCMEnvelopeData"));
     *(env->data) = fed;
 
     env->totvert = 1;
   }
 }
 
-/* callback to remove envelope data point */
+/* cb to remove envelope data point */
 /* TODO: should we have a separate file for things like this? */
-static void fmod_envelope_deletepoint_cb(bContext * /*C*/, void *fcm_dv, void *ind_v)
+static void fmod_envelope_delpoint_cb(Cxt * /*C*/, void *fcm_dv, void *ind_v)
 {
-  FMod_Envelope *env = (FMod_Envelope *)fcm_dv;
-  FCM_EnvelopeData *fedn;
-  int index = POINTER_AS_INT(ind_v);
+  FModEnvelope *env = (FModEnvelope *)fcm_dv;
+  FCMEnvelopeData *fedn;
+  int index = PTR_AS_INT(ind_v);
 
   /* check that no data exists for the current frame... */
   if (env->totvert > 1) {
     /* allocate a new smaller array */
-    fedn = static_cast<FCM_EnvelopeData *>(
-        MEM_callocN(sizeof(FCM_EnvelopeData) * (env->totvert - 1), "FCM_EnvelopeData"));
+    fedn = static_cast<FCMEnvelopeData *>(
+        mem_calloc(sizeof(FCMEnvelopeData) * (env->totvert - 1), "FCMEnvelopeData"));
 
-    memcpy(fedn, env->data, sizeof(FCM_EnvelopeData) * (index));
+    memcpy(fedn, env->data, sizeof(FCMEnvelopeData) * (index));
     memcpy(fedn + index,
            env->data + (index + 1),
-           sizeof(FCM_EnvelopeData) * ((env->totvert - index) - 1));
+           sizeof(FCMEnvelopeData) * ((env->totvert - index) - 1));
 
     /* free old array, and set the new */
-    MEM_freeN(env->data);
+    mem_free(env->data);
     env->data = fedn;
     env->totvert--;
   }
   else {
-    /* just free array, since the only vert was deleted */
+    /* just free arr, since the only vert was deleted */
     MEM_SAFE_FREE(env->data);
     env->totvert = 0;
   }
 }
 
-/* draw settings for envelope modifier */
-static void envelope_panel_draw(const bContext *C, Panel *panel)
+/* drw settings for envelope mod */
+static void envelope_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *row, *col;
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  ID *owner_id;
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, &owner_id);
-  FModifier *fcm = (FModifier *)ptr->data;
-  FMod_Envelope *env = (FMod_Envelope *)fcm->data;
+  Id *owner_id;
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, &owner_id);
+  FMod *fcm = (FMod *)ptr->data;
+  FModEnvelope *env = (FModEnvelope *)fcm->data;
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
 
   /* General settings. */
   col = uiLayoutColumn(layout, true);
-  uiItemR(col, ptr, "reference_value", UI_ITEM_NONE, IFACE_("Reference"), ICON_NONE);
+  uiItemR(col, ptr, "ref_val", UI_ITEM_NONE, IFACE_("Ref"), ICON_NONE);
   uiItemR(col, ptr, "default_min", UI_ITEM_NONE, IFACE_("Min"), ICON_NONE);
   uiItemR(col, ptr, "default_max", UI_ITEM_NONE, IFACE_("Max"), ICON_NONE);
 
-  /* Control points list. */
-
+  /* Ctrl points list. */
   row = uiLayoutRow(layout, false);
   uiBlock *block = uiLayoutGetBlock(row);
 
-  uiBut *but = uiDefBut(block,
-                        UI_BTYPE_BUT,
-                        B_FMODIFIER_REDRAW,
-                        IFACE_("Add Control Point"),
+  Btn *btn = Btn(block,
+                 UI_BTYPE_BTN,
+                 B_FMOD_REDRW,
+                 IFACE_("Add Ctrl Point"),
                         0,
                         0,
                         7.5 * UI_UNIT_X,
@@ -663,16 +645,16 @@ static void envelope_panel_draw(const bContext *C, Panel *panel)
                         0,
                         0,
                         TIP_("Add a new control-point to the envelope on the current frame"));
-  UI_but_func_set(but, fmod_envelope_addpoint_cb, env, nullptr);
+  ui_btn_fn_set(btn, fmod_envelope_addpoint_cb, env, nullptr);
 
   col = uiLayoutColumn(layout, false);
   uiLayoutSetPropSep(col, false);
 
-  FCM_EnvelopeData *fed = env->data;
+  FCMEnvelopeData *fed = env->data;
   for (int i = 0; i < env->totvert; i++, fed++) {
-    PointerRNA ctrl_ptr = RNA_pointer_create(owner_id, &RNA_FModifierEnvelopeControlPoint, fed);
+    ApiPtr ctrl_ptr = api_ptr_create(owner_id, &ApiFModEnvelopeCtrlPoint, fed);
 
-    /* get a new row to operate on */
+    /* get a new row to op on */
     row = uiLayoutRow(col, true);
     block = uiLayoutGetBlock(row);
 
@@ -680,9 +662,9 @@ static void envelope_panel_draw(const bContext *C, Panel *panel)
     uiItemR(row, &ctrl_ptr, "min", UI_ITEM_NONE, IFACE_("Min"), ICON_NONE);
     uiItemR(row, &ctrl_ptr, "max", UI_ITEM_NONE, IFACE_("Max"), ICON_NONE);
 
-    but = uiDefIconBut(block,
-                       UI_BTYPE_BUT,
-                       B_FMODIFIER_REDRAW,
+    btn = uiDefIconBtn(block,
+                       UI_BTYPE_BTN,
+                       B_FMOD_REDRW,
                        ICON_X,
                        0,
                        0,
@@ -694,8 +676,8 @@ static void envelope_panel_draw(const bContext *C, Panel *panel)
                        0.0,
                        0.0,
                        TIP_("Delete envelope control point"));
-    UI_but_func_set(but, fmod_envelope_deletepoint_cb, env, POINTER_FROM_INT(i));
-    UI_block_align_begin(block);
+    ui_btn_fn_set(btn, fmod_envelope_deletepoint_cb, env, POINTER_FROM_INT(i));
+    ui_block_align_begin(block);
   }
 
   fmodifier_influence_draw(layout, ptr);
