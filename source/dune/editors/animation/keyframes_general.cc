@@ -3,33 +3,33 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.hh"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_math_vector.h"
+#include "lib_string_utils.hh"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_space_types.h"
+#include "types_anim.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_space.h"
 
-#include "BKE_action.h"
-#include "BKE_curve.hh"
-#include "BKE_fcurve.h"
-#include "BKE_main.hh"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_action.h"
+#include "dune_curve.hh"
+#include "dune_fcurve.h"
+#include "dune_main.hh"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "RNA_access.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_path.hh"
+#include "api_access.hh"
+#include "api_enum_types.hh"
+#include "api_path.hh"
 
-#include "ED_keyframes_edit.hh"
+#include "ed_keyframes_edit.hh"
 
-#include "ANIM_animdata.hh"
-#include "ANIM_fcurve.hh"
+#include "anim_animdata.hh"
+#include "anim_fcurve.hh"
 
 /* This file contains code for various keyframe-editing tools which are 'destructive'
  * (i.e. they will modify the order of the keyframes, and change the size of the array).
@@ -39,12 +39,11 @@
  * There are also a few tools here which cannot be easily coded for in the other system (yet).
  * These may also be moved around at some point, but for now, they are best added here.
  *
- * - Joshua Leung, Dec 2008
- */
+ * - Joshua Leung, Dec 2008 */
 
 /* **************************************************** */
 
-bool duplicate_fcurve_keys(FCurve *fcu)
+bool dup_fcurve_keys(FCurve *fcu)
 {
   bool changed = false;
 
@@ -58,37 +57,35 @@ bool duplicate_fcurve_keys(FCurve *fcu)
     if (fcu->bezt[i].f2 & SELECT) {
       /* Expand the list */
       BezTriple *newbezt = static_cast<BezTriple *>(
-          MEM_callocN(sizeof(BezTriple) * (fcu->totvert + 1), "beztriple"));
+          mem_calloc(sizeof(BezTriple) * (fcu->totvert + 1), "beztriple"));
 
       memcpy(newbezt, fcu->bezt, sizeof(BezTriple) * (i + 1));
       memcpy(newbezt + i + 1, fcu->bezt + i, sizeof(BezTriple));
       memcpy(newbezt + i + 2, fcu->bezt + i + 1, sizeof(BezTriple) * (fcu->totvert - (i + 1)));
       fcu->totvert++;
       changed = true;
-      /* reassign pointers... (free old, and add new) */
-      MEM_freeN(fcu->bezt);
+      /* reassign ptr... (free old, and add new) */
+      mem_free(fcu->bezt);
       fcu->bezt = newbezt;
 
-      /* Unselect the current key */
+      /* Unsel the current key */
       BEZT_DESEL_ALL(&fcu->bezt[i]);
       i++;
 
-      /* Select the copied key */
+      /* Sel the copied key */
       BEZT_SEL_ALL(&fcu->bezt[i]);
     }
   }
   return changed;
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Various Tools
- * \{ */
+/* Various Tools */
 
-void clean_fcurve(bAnimContext *ac,
-                  bAnimListElem *ale,
+void clean_fcurve(AnimCxt *ac,
+                  AnimListElem *ale,
                   float thresh,
                   bool cleardefault,
-                  const bool only_selected_keys)
+                  const bool only_sel_keys)
 {
   FCurve *fcu = (FCurve *)ale->key_data;
   BezTriple *old_bezts, *bezt, *beztn;
@@ -110,15 +107,14 @@ void clean_fcurve(bAnimContext *ac,
 
   /* now insert first keyframe, as it should be ok */
   bezt = old_bezts;
-  blender::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
-  if (!(bezt->f2 & SELECT)) {
+  dune::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
+  if (!(bezt->f2 & SEL)) {
     lastb = fcu->bezt;
     lastb->f1 = lastb->f2 = lastb->f3 = 0;
   }
 
   /* Loop through BezTriples, comparing them. Skip any that do
-   * not fit the criteria for "ok" points.
-   */
+   * not fit the criteria for "ok" points. */
   for (i = 1; i < totCount; i++) {
     float prev[2], cur[2], next[2];
 
@@ -135,14 +131,14 @@ void clean_fcurve(bAnimContext *ac,
     lastb = (fcu->bezt + (fcu->totvert - 1));
     bezt = (old_bezts + i);
 
-    /* get references for quicker access */
+    /* get refs for quicker access */
     prev[0] = lastb->vec[1][0];
     prev[1] = lastb->vec[1][1];
     cur[0] = bezt->vec[1][0];
     cur[1] = bezt->vec[1][1];
 
-    if (only_selected_keys && !(bezt->f2 & SELECT)) {
-      blender::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
+    if (only_selected_keys && !(bezt->f2 & SEL)) {
+      dune::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
       lastb = (fcu->bezt + (fcu->totvert - 1));
       lastb->f1 = lastb->f2 = lastb->f3 = 0;
       continue;
