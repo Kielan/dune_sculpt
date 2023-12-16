@@ -292,71 +292,71 @@ static void drw_keylist_block(const DrwKeylistUIData *cxt, const ActKeyColumn *a
     drw_keylist_block_pen(ctx, ab, ypos);
   }
   else {
-    /* Draw other types. */
-    UI_draw_roundbox_corner_set(UI_CNR_NONE);
+    /* Drw other types. */
+    ui_drw_roundbox_corner_set(UI_CNR_NONE);
 
     int valid_hold = actkeyblock_get_valid_hold(ab);
     if (valid_hold != 0) {
       if ((valid_hold & ACTKEYBLOCK_FLAG_STATIC_HOLD) == 0) {
-        /* draw "moving hold" long-keyframe block - slightly smaller */
-        draw_keylist_block_moving_hold(ctx, ab, ypos);
+        /* drw "moving hold" long-keyframe block - slightly smaller */
+        drw_keylist_block_moving_hold(ctx, ab, ypos);
       }
       else {
         /* draw standard long-keyframe block */
         draw_keylist_block_standard(ctx, ab, ypos);
       }
     }
-    if (ctx->show_ipo && actkeyblock_is_valid(ab) &&
+    if (cxt->show_ipo && actkeyblock_is_valid(ab) &&
         (ab->block.flag & ACTKEYBLOCK_FLAG_NON_BEZIER)) {
-      /* draw an interpolation line */
-      draw_keylist_block_interpolation_line(ctx, ab, ypos);
+      /* drw an interpolation line */
+      drw_keylist_block_interpolation_line(ctx, ab, ypos);
     }
   }
 }
 
-static void draw_keylist_blocks(const DrawKeylistUIData *ctx,
+static void drw_keylist_blocks(const DrwKeylistUIData *ctx,
                                 const ActKeyColumn *keys,
                                 const int key_len,
                                 float ypos)
 {
   for (int i = 0; i < key_len; i++) {
     const ActKeyColumn *ab = &keys[i];
-    draw_keylist_block(ctx, ab, ypos);
+    drw_keylist_block(ctx, ab, ypos);
   }
 }
 
-static bool draw_keylist_is_visible_key(const View2D *v2d, const ActKeyColumn *ak)
+static bool drw_keylist_is_visible_key(const View2D *v2d, const ActKeyColumn *ak)
 {
   return IN_RANGE_INCL(ak->cfra, v2d->cur.xmin, v2d->cur.xmax);
 }
 
-static void draw_keylist_keys(const DrawKeylistUIData *ctx,
+static void drw_keylist_keys(const DrwKeylistUIData *cxt,
                               View2D *v2d,
                               const KeyframeShaderBindings *sh_bindings,
                               const ActKeyColumn *keys,
                               const int key_len,
                               float ypos,
-                              eSAction_Flag saction_flag)
+                              eSActionFlag saction_flag)
 {
   short handle_type = KEYFRAME_HANDLE_NONE, extreme_type = KEYFRAME_EXTREME_NONE;
 
   for (int i = 0; i < key_len; i++) {
     const ActKeyColumn *ak = &keys[i];
-    if (draw_keylist_is_visible_key(v2d, ak)) {
-      if (ctx->show_ipo) {
+    if (drw_keylist_is_visible_key(v2d, ak)) {
+      if (cxt->show_ipo) {
         handle_type = ak->handle_type;
       }
       if (saction_flag & SACTION_SHOW_EXTREMES) {
         extreme_type = ak->extreme_type;
       }
 
-      draw_keyframe_shape(ak->cfra,
+      drw_keyframe_shape(ak->cfra,
                           ypos,
-                          ctx->icon_size,
-                          (ak->sel & SELECT),
+                          cxt->icon_size,
+                          (ak->sel & SEL),
                           ak->key_type,
                           KEYFRAME_SHAPE_BOTH,
-                          ctx->alpha,
+                          cxt->alpha,
                           sh_bindings,
                           handle_type,
                           extreme_type);
@@ -364,18 +364,18 @@ static void draw_keylist_keys(const DrawKeylistUIData *ctx,
   }
 }
 
-/* *************************** Drawing Stack *************************** */
+/* Drawing Stack */
 enum class ChannelType {
   SUMMARY,
   SCENE,
-  OBJECT,
+  OB,
   FCURVE,
   ACTION,
   ACTION_GROUP,
-  GREASE_PENCIL_CELS,
-  GREASE_PENCIL_GROUP,
-  GREASE_PENCIL_DATA,
-  GREASE_PENCIL_LAYER,
+  PEN_CELS,
+  PEN_GROUP,
+  PEN_DATA,
+  PEN_LAYER,
   MASK_LAYER,
 };
 
@@ -386,21 +386,21 @@ struct ChannelListElement {
 
   float yscale_fac;
   float ypos;
-  eSAction_Flag saction_flag;
+  eSActionFlag saction_flag;
   bool channel_locked;
 
-  bAnimContext *ac;
-  bDopeSheet *ads;
+  AnimCxt *ac;
+  DopeSheet *ads;
   Scene *sce;
-  Object *ob;
+  Ob *ob;
   AnimData *adt;
   FCurve *fcu;
-  bAction *act;
-  bActionGroup *agrp;
-  bGPDlayer *gpl;
-  const GreasePencilLayer *grease_pencil_layer;
-  const GreasePencilLayerTreeGroup *grease_pencil_layer_group;
-  const GreasePencil *grease_pencil;
+  Action *act;
+  ActionGroup *agrp;
+  PenLayer *penl;
+  const PenLayer *pen_layer;
+  const PenLayerTreeGroup *pen_layer_group;
+  const Pen *pen;
   MaskLayer *masklay;
 };
 
