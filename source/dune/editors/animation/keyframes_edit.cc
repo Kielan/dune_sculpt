@@ -712,13 +712,13 @@ KeyframeEditFn anim_editkeyframes_ok(short mode)
       return ok_bezier_valrange;
     case BEZT_OK_RGN:
       /* only if bezier falls within the specified rect (data -> rectf) */
-      return ok_bezier_region;
-    case BEZT_OK_REGION_LASSO:
+      return ok_bezier_rgn;
+    case BEZT_OK_RGN_LASSO:
       /* only if the point falls within KeyframeEdit_LassoData defined data */
-      return ok_bezier_region_lasso;
-    case BEZT_OK_REGION_CIRCLE:
+      return ok_bezier_rgn_lasso;
+    case BEZT_OK_RGN_CIRCLE:
       /* only if the point falls within KeyframeEdit_CircleData defined data */
-      return ok_bezier_region_circle;
+      return ok_bezier_rgn_circle;
     case BEZT_OK_CHANNEL_LASSO:
       /* same as BEZT_OK_REGION_LASSO, but we're only using the x-value of the points */
       return ok_bezier_channel_lasso;
@@ -742,7 +742,7 @@ short bezt_calc_avg(KeyframeEditData *ked, BezTriple *bezt)
      * - this isn't always needed, but some operators may also require this  */
     ked->f2 += bezt->vec[1][1];
 
-    /* increment number of items */
+    /* increment num of items */
     ked->i1++;
   }
 
@@ -751,7 +751,7 @@ short bezt_calc_avg(KeyframeEditData *ked, BezTriple *bezt)
 
 short bezt_to_cfraelem(KeyframeEditData *ked, BezTriple *bezt)
 {
-  /* only if selected */
+  /* only if sel */
   if (bezt->f2 & SEL) {
     CfraElem *ce = static_cast<CfraElem *>(mem_calloc(sizeof(CfraElem), "cfraElem"));
     lib_addtail(&ked->list, ce);
@@ -841,7 +841,7 @@ static short snap_bezier_time(KeyframeEditData *ked, BezTriple *bezt)
   return 0;
 }
 
-/* value to snap to is stored in the custom data -> first float value slot */
+/* val to snap to is stored in the custom data -> first float value slot */
 static short snap_bezier_val(KeyframeEditData *ked, BezTriple *bezt)
 {
   if (bezt->f2 & SEL) {
@@ -1054,8 +1054,7 @@ static short set_bezier_vector(KeyframeEditData * /*ked*/, BezTriple *bezt)
 /* Queries if the handle should be set to 'free' or 'align'.
  *
  * This was used for the 'toggle free/align' option
- * currently this isn't used, but may be restored later.
- */
+ * currently this isn't used, but may be restored later. */
 static short bezier_isfree(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
   if ((bezt->f1 & SEL) && (bezt->h1)) {
@@ -1231,7 +1230,7 @@ static short set_bezt_sine(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static void handle_flatten(float vec[3][3], const int idx, const float direction[2])
 {
-  BLI_assert_msg(idx == 0 || idx == 2, "handle_flatten() expects a handle index");
+  lob_assert_msg(idx == 0 || idx == 2, "handle_flatten() expects a handle index");
 
   add_v2_v2v2(vec[idx], vec[1], direction);
 }
@@ -1336,7 +1335,7 @@ KeyframeEditFn anim_editkeyframes_ipo(short mode)
 
 static short set_keytype_keyframe(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     BEZKEYTYPE(bezt) = BEZT_KEYTYPE_KEYFRAME;
   }
   return 0;
@@ -1344,7 +1343,7 @@ static short set_keytype_keyframe(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_keytype_breakdown(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     BEZKEYTYPE(bezt) = BEZT_KEYTYPE_BREAKDOWN;
   }
   return 0;
@@ -1352,7 +1351,7 @@ static short set_keytype_breakdown(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_keytype_extreme(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     BEZKEYTYPE(bezt) = BEZT_KEYTYPE_EXTREME;
   }
   return 0;
@@ -1360,7 +1359,7 @@ static short set_keytype_extreme(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_keytype_jitter(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     BEZKEYTYPE(bezt) = BEZT_KEYTYPE_JITTER;
   }
   return 0;
@@ -1368,13 +1367,13 @@ static short set_keytype_jitter(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_keytype_moving_hold(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     BEZKEYTYPE(bezt) = BEZT_KEYTYPE_MOVEHOLD;
   }
   return 0;
 }
 
-KeyframeEditFunc ANIM_editkeyframes_keytype(short mode)
+KeyframeEditFn anim_editkeyframes_keytype(short mode)
 {
   switch (mode) {
     case BEZT_KEYTYPE_BREAKDOWN: /* breakdown */
@@ -1395,11 +1394,9 @@ KeyframeEditFunc ANIM_editkeyframes_keytype(short mode)
   }
 }
 
-/* ------- */
-
 static short set_easingtype_easein(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->easing = BEZT_IPO_EASE_IN;
   }
   return 0;
@@ -1407,7 +1404,7 @@ static short set_easingtype_easein(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_easingtype_easeout(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->easing = BEZT_IPO_EASE_OUT;
   }
   return 0;
@@ -1415,7 +1412,7 @@ static short set_easingtype_easeout(KeyframeEditData * /*ked*/, BezTriple *bezt)
 
 static short set_easingtype_easeinout(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->easing = BEZT_IPO_EASE_IN_OUT;
   }
   return 0;
@@ -1423,13 +1420,13 @@ static short set_easingtype_easeinout(KeyframeEditData * /*ked*/, BezTriple *bez
 
 static short set_easingtype_easeauto(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  if (bezt->f2 & SELECT) {
+  if (bezt->f2 & SEL) {
     bezt->easing = BEZT_IPO_EASE_AUTO;
   }
   return 0;
 }
 
-KeyframeEditFunc ANIM_editkeyframes_easing(short mode)
+KeyframeEditFn anim_editkeyframes_easing(short mode)
 {
   switch (mode) {
     case BEZT_IPO_EASE_IN: /* ease in */
@@ -1446,10 +1443,8 @@ KeyframeEditFunc ANIM_editkeyframes_easing(short mode)
   }
 }
 
-/* ******************************************* */
-/* Selection */
-
-static short select_bezier_add(KeyframeEditData *ked, BezTriple *bezt)
+/* Sel */
+static short sel_bezier_add(KeyframeEditData *ked, BezTriple *bezt)
 {
   /* Only act on visible items, so check handle visibility state. */
   const bool handles_visible = ked && ((ked->iterflags & KEYFRAME_ITER_HANDLES_DEFAULT_INVISIBLE) ?
@@ -1459,13 +1454,13 @@ static short select_bezier_add(KeyframeEditData *ked, BezTriple *bezt)
   /* if we've got info on what to select, use it, otherwise select all */
   if ((ked) && (ked->iterflags & KEYFRAME_ITER_INCL_HANDLES) && handles_visible) {
     if (ked->curflags & KEYFRAME_OK_KEY) {
-      bezt->f2 |= SELECT;
+      bezt->f2 |= SEL;
     }
     if (ked->curflags & KEYFRAME_OK_H1) {
-      bezt->f1 |= SELECT;
+      bezt->f1 |= SEL;
     }
     if (ked->curflags & KEYFRAME_OK_H2) {
-      bezt->f3 |= SELECT;
+      bezt->f3 |= SEL;
     }
   }
   else {
@@ -1475,14 +1470,14 @@ static short select_bezier_add(KeyframeEditData *ked, BezTriple *bezt)
   return 0;
 }
 
-static short select_bezier_subtract(KeyframeEditData *ked, BezTriple *bezt)
+static short sel_bezier_subtract(KeyframeEditData *ked, BezTriple *bezt)
 {
   /* Only act on visible items, so check handle visibility state. */
   const bool handles_visible = ked && ((ked->iterflags & KEYFRAME_ITER_HANDLES_DEFAULT_INVISIBLE) ?
                                            BEZT_ISSEL_ANY(bezt) :
                                            true);
 
-  /* if we've got info on what to deselect, use it, otherwise deselect all */
+  /* if we've got info on what to deselect, use it, otherwise desel all */
   if ((ked) && (ked->iterflags & KEYFRAME_ITER_INCL_HANDLES) && handles_visible) {
     if (ked->curflags & KEYFRAME_OK_KEY) {
       bezt->f2 &= ~SELECT;
@@ -1501,45 +1496,40 @@ static short select_bezier_subtract(KeyframeEditData *ked, BezTriple *bezt)
   return 0;
 }
 
-static short select_bezier_invert(KeyframeEditData * /*ked*/, BezTriple *bezt)
+static short sel_bezier_invert(KeyframeEditData * /*ked*/, BezTriple *bezt)
 {
-  /* Invert the selection for the whole bezier triple */
-  bezt->f2 ^= SELECT;
-  if (bezt->f2 & SELECT) {
-    bezt->f1 |= SELECT;
-    bezt->f3 |= SELECT;
+  /* Invert the sel for the whole bezier triple */
+  bezt->f2 ^= SEL;
+  if (bezt->f2 & SEL) {
+    bezt->f1 |= SEL;
+    bezt->f3 |= SEL;
   }
   else {
-    bezt->f1 &= ~SELECT;
-    bezt->f3 &= ~SELECT;
+    bezt->f1 &= ~SEL;
+    bezt->f3 &= ~SEL;
   }
   return 0;
 }
 
-KeyframeEditFunc ANIM_editkeyframes_select(short selectmode)
+KeyframeEditFn anim_editkeyframes_sel(short selmode)
 {
-  switch (selectmode) {
-    case SELECT_ADD: /* add */
-      return select_bezier_add;
-    case SELECT_SUBTRACT: /* subtract */
-      return select_bezier_subtract;
-    case SELECT_INVERT: /* invert */
-      return select_bezier_invert;
+  switch (selmode) {
+    case SEL_ADD: /* add */
+      return sel_bezier_add;
+    case SEL_SUBTRACT: /* subtract */
+      return sel_bezier_subtract;
+    case SEL_INVERT: /* invert */
+      return sel_bezier_invert;
     default: /* replace (need to clear all, then add) */
-      return select_bezier_add;
+      return sel_bezier_add;
   }
 }
 
-/* ******************************************* */
-/* Selection Maps */
-
-/* Selection maps are simply fancy names for char arrays that store on/off
- * info for whether the selection status. The main purpose for these is to
+/* Sel Maps */
+/* Sel maps are simply fancy names for char arrays that store on/off
+ * info for whether the sel status. The main purpose for these is to
  * allow extra info to be tagged to the keyframes without influencing their
- * values or having to be removed later.
- */
-
-/* ----------- */
+ * vals or having to be removed later. */
 
 static short selmap_build_bezier_more(KeyframeEditData *ked, BezTriple *bezt)
 {
@@ -1547,13 +1537,13 @@ static short selmap_build_bezier_more(KeyframeEditData *ked, BezTriple *bezt)
   char *map = static_cast<char *>(ked->data);
   int i = ked->curIndex;
 
-  /* if current is selected, just make sure it stays this way */
+  /* if current is sel, just make sure it stays this way */
   if (BEZT_ISSEL_ANY(bezt)) {
     map[i] = 1;
     return 0;
   }
 
-  /* if previous is selected, that means that selection should extend across */
+  /* if prev is sel, that means that sel should extend across */
   if (i > 0) {
     BezTriple *prev = bezt - 1;
 
@@ -1563,7 +1553,7 @@ static short selmap_build_bezier_more(KeyframeEditData *ked, BezTriple *bezt)
     }
   }
 
-  /* if next is selected, that means that selection should extend across */
+  /* if next is sel, that means that sel should extend across */
   if (i < (fcu->totvert - 1)) {
     BezTriple *next = bezt + 1;
 
@@ -1583,10 +1573,9 @@ static short selmap_build_bezier_less(KeyframeEditData *ked, BezTriple *bezt)
   int i = ked->curIndex;
 
   /* if current is selected, check the left/right keyframes
-   * since it might need to be deselected (but otherwise no)
-   */
+   * since it might need to be desel (but otherwise no) */
   if (BEZT_ISSEL_ANY(bezt)) {
-    /* if previous is not selected, we're on the tip of an iceberg */
+    /* if previous is not sel, we're on the tip of an iceberg */
     if (i > 0) {
       BezTriple *prev = bezt - 1;
 
@@ -1599,7 +1588,7 @@ static short selmap_build_bezier_less(KeyframeEditData *ked, BezTriple *bezt)
       return 0;
     }
 
-    /* if next is not selected, we're on the tip of an iceberg */
+    /* if next is not sel, we're on the tip of an iceberg */
     if (i < (fcu->totvert - 1)) {
       BezTriple *next = bezt + 1;
 
@@ -1608,7 +1597,7 @@ static short selmap_build_bezier_less(KeyframeEditData *ked, BezTriple *bezt)
       }
     }
     else if (i == (fcu->totvert - 1)) {
-      /* current keyframe is selected at an endpoint, so should get deselected */
+      /* current keyframe is sel at an endpoint, so should get desel */
       return 0;
     }
 
@@ -1619,7 +1608,7 @@ static short selmap_build_bezier_less(KeyframeEditData *ked, BezTriple *bezt)
   return 0;
 }
 
-KeyframeEditFn ANIM_editkeyframes_buildselmap(short mode)
+KeyframeEditFn anim_editkeyframes_buildselmap(short mode)
 {
   switch (mode) {
     case SELMAP_LESS: /* less */
@@ -1636,7 +1625,7 @@ short bezt_selmap_flush(KeyframeEditData *ked, BezTriple *bezt)
   const char *map = static_cast<char *>(ked->data);
   short on = map[ked->curIndex];
 
-  /* select or deselect based on whether the map allows it or not */
+  /* sel or des based on whether the map allows it or not */
   if (on) {
     BEZT_SEL_ALL(bezt);
   }
