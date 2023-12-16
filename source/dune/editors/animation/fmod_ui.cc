@@ -214,7 +214,7 @@ static void del_fmod_cb(Cxt *C, void *cxt_v, void *fcm_v)
   /* remove the given F-Mod from the active mod-stack */
   remove_fmod(mods, fcm);
 
-  ed_undo_push(C, "Delete F-Curve Mod");
+  ed_undo_push(C, "Del F-Curve Mod");
 
   win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
   graph_id_tag_update(ctx->owner_id, ID_RECALC_ANIM);
@@ -264,14 +264,14 @@ static void fmod_frame_range_drw(const Cxt *C, Pnl *pnl)
   uiItemR(col, ptr, "blend_out", UI_ITEM_NONE, IFACE_("Out"), ICON_NONE);
 }
 
-static void fmodifier_panel_header(const bContext *C, Pnl *pnl)
+static void fmod_pnl_header(const Cxt *C, Pnl *pnl)
 {
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  ID *owner_id;
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, &owner_id);
-  FModifier *fcm = (FModifier *)ptr->data;
-  const FModifierTypeInfo *fmi = fmodifier_get_typeinfo(fcm);
+  Id *owner_id;
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, &owner_id);
+  FMod *fcm = (FMod *)ptr->data;
+  const FModTypeInfo *fmi = fmod_get_typeinfo(fcm);
 
   uiBlock *block = uiLayoutGetBlock(layout);
 
@@ -285,19 +285,19 @@ static void fmodifier_panel_header(const bContext *C, Pnl *pnl)
     uiItemR(sub, ptr, "name", UI_ITEM_NONE, "", ICON_NONE);
   }
   else {
-    uiItemL(sub, IFACE_("<Unknown Modifier>"), ICON_NONE);
+    uiItemL(sub, IFACE_("<Unknown Mod>"), ICON_NONE);
   }
   /* Right align. */
   sub = uiLayoutRow(layout, true);
   uiLayoutSetAlignment(sub, UI_LAYOUT_ALIGN_RIGHT);
   uiLayoutSetEmboss(sub, UI_EMBOSS_NONE);
 
-  /* 'Mute' button. */
+  /* 'Mute' btn. */
   uiItemR(sub, ptr, "mute", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
-  /* Delete button. */
-  uiBut *but = uiDefIconBut(block,
-                            UI_BTYPE_BUT,
+  /* Del btn. */
+  uiBtn *btn = uiDefIconBtn(block,
+                            UI_BTYPE_BTN,
                             B_REDR,
                             ICON_X,
                             0,
@@ -309,32 +309,29 @@ static void fmodifier_panel_header(const bContext *C, Pnl *pnl)
                             0.0,
                             0.0,
                             0.0,
-                            TIP_("Delete Modifier"));
-  FModifierDeleteContext *ctx = static_cast<FModifierDeleteContext *>(
-      MEM_mallocN(sizeof(FModifierDeleteContext), __func__));
+                            TIP_("Del Mod"));
+  FModDelCxt *ctx = static_cast<FModDelCxt *>(
+      mem_malloc(sizeof(FModDelCxt), __func__));
   ctx->owner_id = owner_id;
-  ctx->modifiers = fmodifier_list_space_specific(C);
-  BLI_assert(ctx->modifiers != nullptr);
+  ctx->mods = fmod_list_space_specific(C);
+  lib_assert(cxt->mods != nullptr);
 
-  UI_but_funcN_set(but, delete_fmodifier_cb, ctx, fcm);
+  ui_btn_fn_set(btn, del_fmod_cb, cxt, fcm);
 
   uiItemS(layout);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generator Modifier
- * \{ */
+/* Generator Mod */
 
-static void generator_panel_draw(const bContext *C, Panel *panel)
+static void generator_pnl_drw(const Cxt *C, Pnl *pnl)
 {
-  uiLayout *layout = panel->layout;
+  uiLayout *layout = pnl->layout;
 
-  ID *owner_id;
-  PointerRNA *ptr = fmodifier_get_pointers(C, panel, &owner_id);
-  FModifier *fcm = (FModifier *)ptr->data;
-  FMod_Generator *data = (FMod_Generator *)fcm->data;
+  Id *owner_id;
+  ApiPtr *ptr = fmod_get_ptrs(C, pnl, &owner_id);
+  FMod *fcm = (FMod *)ptr->data;
+  FMod_Generator *data = (FModGenerator *)fcm->data;
 
   uiItemR(layout, ptr, "mode", UI_ITEM_NONE, "", ICON_NONE);
 
@@ -345,7 +342,7 @@ static void generator_panel_draw(const bContext *C, Panel *panel)
 
   uiItemR(layout, ptr, "poly_order", UI_ITEM_NONE, IFACE_("Order"), ICON_NONE);
 
-  PropertyRNA *prop = RNA_struct_find_property(ptr, "coefficients");
+  ApiProp *prop = api_struct_find_prop(ptr, "coefficients");
   uiLayout *col = uiLayoutColumn(layout, true);
   switch (data->mode) {
     case FCM_GENERATOR_POLYNOMIAL: /* Polynomial expression. */
@@ -353,7 +350,7 @@ static void generator_panel_draw(const bContext *C, Panel *panel)
 
       char xval[32];
 
-      /* The first value gets a "Coefficient" label. */
+      /* The first val gets a "Coefficient" label. */
       STRNCPY(xval, N_("Coefficient"));
 
       for (int i = 0; i < data->arraysize; i++) {
@@ -371,8 +368,8 @@ static void generator_panel_draw(const bContext *C, Panel *panel)
         uiLayoutColumn(split, false);
         uiLayout *title_col = uiLayoutColumn(split, false);
         uiLayout *title_row = uiLayoutRow(title_col, true);
-        uiItemL(title_row, CTX_IFACE_(BLT_I18NCONTEXT_ID_ACTION, "A"), ICON_NONE);
-        uiItemL(title_row, CTX_IFACE_(BLT_I18NCONTEXT_ID_ACTION, "B"), ICON_NONE);
+        uiItemL(title_row, CXT_IFACE_(LANG_CXT_ID_ACTION, "A"), ICON_NONE);
+        uiItemL(title_row, CXT_IFACE_(LANG_CXT_ID_ACTION, "B"), ICON_NONE);
       }
 
       uiLayout *first_row = uiLayoutRow(col, true);
@@ -388,31 +385,27 @@ static void generator_panel_draw(const bContext *C, Panel *panel)
     }
   }
 
-  fmodifier_influence_draw(layout, ptr);
+  fmod_influence_drw(layout, ptr);
 }
 
-static void panel_register_generator(ARegionType *region_type,
-                                     const char *id_prefix,
-                                     PanelTypePollFn poll_fn)
+static void pnl_register_generator(ARgnType *rgn_type,
+                                   const char *id_prefix,
+                                   PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_GENERATOR, generator_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
-                              "frame_range",
-                              "",
-                              fmodifier_frame_range_header_draw,
-                              fmodifier_frame_range_draw,
-                              poll_fn,
-                              panel_type);
+  PnlType *pnl_type = fmod_pnl_register(
+      rgn_type, FMOD_TYPE_GENERATOR, generator_pnl_dre, poll_fn, id_prefix);
+  fmod_subpnl_register(rgn_type,
+                      "frame_range",
+                      "",
+                      fmod_frame_range_header_drw,
+                      fmod_frame_range_drw,
+                      poll_fn,
+                      pnl_type);
 }
 
-/** \} */
+/* Fn Generator Mod */
 
-/* -------------------------------------------------------------------- */
-/** \name Function Generator Modifier
- * \{ */
-
-static void fn_generator_panel_draw(const bContext *C, Panel *panel)
+static void fn_generator_pnl_drw(const Cxt *C, Pnl *pnl)
 {
   uiLayout *col;
   uiLayout *layout = panel->layout;
