@@ -134,55 +134,54 @@ Action *ed_id_action_ensure(Main *main, Id *id)
     dune_animdata_action_ensure_idroot(id, adt->action);
 
     /* Tag graph to be rebuilt to include time dependency. */
-    graoh_relations_tag_update(bmain);
+    graph_tag_update(main);
   }
 
-  graph_id_tag_update(&adt->action->id, ID_RECALC_ANIMATION_NO_FLUSH);
+  graph_id_tag_update(&adt->action->id, ID_RECALC_ANIM_NO_FLUSH);
 
   /* return the action */
   return adt->action;
 }
 
-/** Helper for #update_autoflags_fcurve(). */
-void update_autoflags_fcurve_direct(FCurve *fcu, PropertyRNA *prop)
+/* Helper for update_autoflags_fcurve(). */
+void update_autoflags_fcurve_direct(FCurve *fcu, ApiProp *prop)
 {
-  /* set additional flags for the F-Curve (i.e. only integer values) */
-  fcu->flag &= ~(FCURVE_INT_VALUES | FCURVE_DISCRETE_VALUES);
-  switch (RNA_property_type(prop)) {
+  /* set additional flags for the F-Curve (i.e. only int vals) */
+  fcu->flag &= ~(FCURVE_INT_VALS | FCURVE_DISCRETE_VALS);
+  switch (api_prop_type(prop)) {
     case PROP_FLOAT:
       /* do nothing */
       break;
     case PROP_INT:
       /* do integer (only 'whole' numbers) interpolation between all points */
-      fcu->flag |= FCURVE_INT_VALUES;
+      fcu->flag |= FCURVE_INT_VALS;
       break;
     default:
-      /* do 'discrete' (i.e. enum, boolean values which cannot take any intermediate
-       * values at all) interpolation between all points
-       *    - however, we must also ensure that evaluated values are only integers still
-       */
-      fcu->flag |= (FCURVE_DISCRETE_VALUES | FCURVE_INT_VALUES);
+      /* do 'discrete' (i.e. enum, bool vals which cannot take any intermediate
+       * vals at all) interpolation between all points
+       *    - however, we must also ensure that eval vals are only ints still */
+      fcu->flag |= (FCURVE_DISCRETE_VALS | FCURVE_INT_VALS);
       break;
   }
 }
 
-void update_autoflags_fcurve(FCurve *fcu, bContext *C, ReportList *reports, PointerRNA *ptr)
+void update_autoflags_fcurve(FCurve *fcu, Cxt *C, ReportList *reports, ApiPtr *ptr)
 {
-  PointerRNA tmp_ptr;
-  PropertyRNA *prop;
+  ApiPtr tmp_ptr;
+  ApiProp *prop;
   int old_flag = fcu->flag;
 
   if ((ptr->owner_id == nullptr) && (ptr->data == nullptr)) {
-    BKE_report(reports, RPT_ERROR, "No RNA pointer available to retrieve values for this F-curve");
+    dune_report(reports, RPT_ERROR, "No api ptr available to retrieve vals for this F-curve");
     return;
   }
 
-  /* try to get property we should be affecting */
-  if (RNA_path_resolve_property(ptr, fcu->rna_path, &tmp_ptr, &prop) == false) {
-    /* property not found... */
-    const char *idname = (ptr->owner_id) ? ptr->owner_id->name : TIP_("<No ID pointer>");
+  /* try to get prop we should be affecting */
+  if (api_path_resolve_prop(ptr, fcu->api_path, &tmp_ptr, &prop) == false) {
+    /* prop not found... */
+    const char *idname = (ptr->owner_id) ? ptr->owner_id->name : TIP_("<No Id ptr>");
 
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Could not update flags for this F-curve, as RNA path is invalid for the given ID "
                 "(ID = %s, path = %s)",
@@ -196,22 +195,22 @@ void update_autoflags_fcurve(FCurve *fcu, bContext *C, ReportList *reports, Poin
 
   if (old_flag != fcu->flag) {
     /* Same as if keyframes had been changed */
-    WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
+    win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
   }
 }
 
 /* ------------------------- Insert Key API ------------------------- */
 
-void ED_keyframes_add(FCurve *fcu, int num_keys_to_add)
+void ed_keyframes_add(FCurve *fcu, int num_keys_to_add)
 {
-  BLI_assert_msg(num_keys_to_add >= 0, "cannot remove keyframes with this function");
+  lib_assert_msg(num_keys_to_add >= 0, "cannot remove keyframes with this function");
 
   if (num_keys_to_add == 0) {
     return;
   }
 
   fcu->bezt = static_cast<BezTriple *>(
-      MEM_recallocN(fcu->bezt, sizeof(BezTriple) * (fcu->totvert + num_keys_to_add)));
+      mem_recalloc(fcu->bezt, sizeof(BezTriple) * (fcu->totvert + num_keys_to_add)));
   BezTriple *bezt = fcu->bezt + fcu->totvert; /* Pointer to the first new one. '*/
 
   fcu->totvert += num_keys_to_add;
@@ -219,31 +218,27 @@ void ED_keyframes_add(FCurve *fcu, int num_keys_to_add)
   /* Iterate over the new keys to update their settings. */
   while (num_keys_to_add--) {
     /* Defaults, ignoring user-preference gives predictable results for API. */
-    bezt->f1 = bezt->f2 = bezt->f3 = SELECT;
+    bezt->f1 = bezt->f2 = bezt->f3 = SEL;
     bezt->ipo = BEZT_IPO_BEZ;
     bezt->h1 = bezt->h2 = HD_AUTO_ANIM;
     bezt++;
   }
 }
 
-/* ******************************************* */
 /* KEYFRAME MODIFICATION */
-
 /* mode for commonkey_modifykey */
 enum {
   COMMONKEY_MODE_INSERT = 0,
-  COMMONKEY_MODE_DELETE,
+  COMMONKEY_MODE_DEL,
 } /*eCommonModifyKey_Modes*/;
 
-/**
- * Polling callback for use with `ANIM_*_keyframe()` operators
- * This is based on the standard ED_operator_areaactive callback,
- * except that it does special checks for a few space-types too.
- */
-static bool modify_key_op_poll(bContext *C)
+/* Polling cb for use with `anim_*_keyframe()` operators
+ * This is based on the standard ed_op_areaactive cb,
+ * except that it does special checks for a few space-types too. */
+static bool modify_key_op_poll(Cxt *C)
 {
-  ScrArea *area = CTX_wm_area(C);
-  Scene *scene = CTX_data_scene(C);
+  ScrArea *area = cxt_win_area(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* if no area or active scene */
   if (ELEM(nullptr, area, scene)) {
@@ -254,28 +249,27 @@ static bool modify_key_op_poll(bContext *C)
   return true;
 }
 
-/* Insert Key Operator ------------------------ */
-
-static int insert_key_with_keyingset(bContext *C, wmOperator *op, KeyingSet *ks)
+/* Insert Key Op */
+static int insert_key_with_keyingset(Cxt *C, Op *op, KeyingSet *ks)
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *obedit = CTX_data_edit_object(C);
+  Scene *scene = cxt_data_scene(C);
+  Ob *obedit = cxt_data_edit_ob(C);
   bool ob_edit_mode = false;
 
-  const float cfra = BKE_scene_frame_get(scene);
+  const float cfra = dune_scene_frame_get(scene);
   const bool confirm = op->flag & OP_IS_INVOKE;
   /* exit the edit mode to make sure that those object data properties that have been
    * updated since the last switching to the edit mode will be keyframed correctly
    */
-  if (obedit && ANIM_keyingset_find_id(ks, (ID *)obedit->data)) {
-    ED_object_mode_set(C, OB_MODE_OBJECT);
+  if (obedit && anim_keyingset_find_id(ks, (ID *)obedit->data)) {
+    ed_ob_mode_set(C, OB_MODE_OBJECT);
     ob_edit_mode = true;
   }
 
   /* try to insert keyframes for the channels specified by KeyingSet */
-  const int num_channels = ANIM_apply_keyingset(C, nullptr, ks, MODIFYKEY_MODE_INSERT, cfra);
+  const int num_channels = anim_apply_keyingset(C, nullptr, ks, MODIFYKEY_MODE_INSERT, cfra);
   if (G.debug & G_DEBUG) {
-    BKE_reportf(op->reports,
+    dune_reportf(op->reports,
                 RPT_INFO,
                 "Keying set '%s' - successfully added %d keyframes",
                 ks->name,
@@ -284,13 +278,13 @@ static int insert_key_with_keyingset(bContext *C, wmOperator *op, KeyingSet *ks)
 
   /* restore the edit mode if necessary */
   if (ob_edit_mode) {
-    ED_object_mode_set(C, OB_MODE_EDIT);
+    ed_ob_mode_set(C, OB_MODE_EDIT);
   }
 
   /* report failure or do updates? */
   if (num_channels < 0) {
-    BKE_report(op->reports, RPT_ERROR, "No suitable context info for active keying set");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No suitable context info for active keying set");
+    return OP_CANCELLED;
   }
 
   if (num_channels > 0) {
