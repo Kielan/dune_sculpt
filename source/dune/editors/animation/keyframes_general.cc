@@ -41,8 +41,6 @@
  *
  * - Joshua Leung, Dec 2008 */
 
-/* **************************************************** */
-
 bool dup_fcurve_keys(FCurve *fcu)
 {
   bool changed = false;
@@ -80,7 +78,6 @@ bool dup_fcurve_keys(FCurve *fcu)
 }
 
 /* Various Tools */
-
 void clean_fcurve(AnimCxt *ac,
                   AnimListElem *ale,
                   float thresh,
@@ -771,7 +768,7 @@ bool match_slope_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float
   const BezTriple *right_key = fcurve_segment_end_get(fcu, segment->start_index + segment->length);
 
   BezTriple beyond_key;
-  const BezTriple *reference_key;
+  const BezTriple *ref_key;
 
   if (factor >= 0) {
     /* Stop the fn if there is no key beyond the right neighboring one. */
@@ -844,12 +841,10 @@ void shear_fcurve_segment(FCurve *fcu,
 
     const float y_delta = key_y_range * normalized_x;
 
-    const float key_y_value = fcu->bezt[i].vec[1][1] + y_delta * factor;
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = fcu->bezt[i].vec[1][1] + y_delta * factor;
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_value);
   }
 }
-
-/* ---------------- */
 
 void push_pull_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
@@ -891,10 +886,10 @@ void time_offset_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float
 
   const float first_key_x = first_key->vec[1][0];
 
-  /* If we operate directly on the fcurve there will be a feedback loop
+  /* If we op directly on the fcurve there will be a feedback loop
    * so we need to capture the "y" values on an array to then apply them on a second loop. */
-  float *y_values = static_cast<float *>(
-      MEM_callocN(sizeof(float) * segment->length, "Time Offset Samples"));
+  float *y_vals = static_cast<float *>(
+      mem_calloc(sizeof(float) * segment->length, "Time Offset Samples"));
 
   for (int i = 0; i < segment->length; i++) {
     /* This simulates the fcu curve moving in time. */
@@ -910,10 +905,8 @@ void time_offset_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float
   for (int i = 0; i < segment->length; i++) {
     BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[segment->start_index + i], y_values[i]);
   }
-  MEM_freeN(y_values);
+  mem_free(y_vals);
 }
-
-/* ---------------- */
 
 void breakdown_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float factor)
 {
@@ -923,17 +916,12 @@ void breakdown_fcurve_segment(FCurve *fcu, FCurveSegment *segment, const float f
 
   const float lerp_factor = (factor + 1) / 2;
   for (int i = segment->start_index; i < segment->start_index + segment->length; i++) {
-    const float key_y_value = interpf(right_bezt->vec[1][1], left_bezt->vec[1][1], lerp_factor);
-    BKE_fcurve_keyframe_move_value_with_handles(&fcu->bezt[i], key_y_value);
+    const float key_y_val = interpf(right_bezt->vec[1][1], left_bezt->vec[1][1], lerp_factor);
+    dune_fcurve_keyframe_move_val_w_handles(&fcu->bezt[i], key_y_val);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name FCurve Decimate
- * \{ */
-
+/* FCurve Decimate */
 /* Check if the keyframe interpolation type is supported */
 static bool prepare_for_decimate(FCurve *fcu, int i)
 {
@@ -977,10 +965,10 @@ static void decimate_fcurve_segment(FCurve *fcu,
                                     float remove_ratio,
                                     float error_sq_max)
 {
-  int selected_len = bezt_segment_len;
+  int sel_len = bezt_segment_len;
 
   /* Make sure that we can remove the start/end point of the segment if they
-   * are not the start/end point of the curve. BKE_curve_decimate_bezt_array
+   * are not the start/end point of the curve. dune_curve_decimate_bezt_array
    * has a check that prevents removal of the first and last index in the
    * passed array. */
   if (bezt_segment_len + bezt_segment_start_idx != fcu->totvert &&
@@ -995,7 +983,7 @@ static void decimate_fcurve_segment(FCurve *fcu,
 
   const int target_fcurve_verts = ceil(bezt_segment_len - sel_len * remove_ratio);
 
-  dune_curve_decimate_bezt_array(&fcu->bezt[bezt_segment_start_idx],
+  dune_curve_decimate_bezt_arr(&fcu->bezt[bezt_segment_start_idx],
                                 bezt_segment_len,
                                 12, /* The actual resolution displayed in the viewport is dynamic
                                      * so we just pick a value that preserves the curve shape. */
@@ -1024,7 +1012,7 @@ bool decimate_fcurve(AnimListElem *ale, float remove_ratio, float error_sq_max)
       can_decimate_all_sel = false;
       fcu->bezt[i].f2 |= BEZT_FLAG_IGNORE_TAG;
     }
-    /* Make sure that the temp flag is unset as we use it to determine what to remove. */
+    /* Make sure that the tmp flag is unset as we use it to determine what to remove. */
     fcu->bezt[i].f2 &= ~BEZT_FLAG_TEMP_TAG;
   }
 
@@ -1086,11 +1074,11 @@ void smooth_fcurve(FCurve *fcu)
     tsb = tarray = static_cast<tSmooth_Bezt *>(
         mem_calloc(totSel * sizeof(tSmooth_Bezt), "tSmooth_Bezt Array"));
 
-    /* populate tarray with data of sel points */
+    /* populate tarr with data of sel points */
     bezt = fcu->bezt;
     for (int i = 0, x = 0; (i < fcu->totvert) && (x < totSel); i++, bezt++) {
       if (BEZT_ISSEL_ANY(bezt)) {
-        /* tsb simply needs pointer to vec, and index */
+        /* tsb simply needs ptr to vec, and index */
         tsb->h1 = &bezt->vec[0][1];
         tsb->h2 = &bezt->vec[1][1];
         tsb->h3 = &bezt->vec[2][1];
@@ -1107,16 +1095,15 @@ void smooth_fcurve(FCurve *fcu)
 
     /* calc the new smoothed F-Curve's with weighted avgs:
      * - this is done with two passes to avoid progressive corruption errors
-     * - uses 5 points for each operation (which stores in the relevant handles)
-     * -   previous: w/a ratio = 3:5:2:1:1
-     * -   next: w/a ratio = 1:1:2:5:3
-     */
+     * - uses 5 points for each op (which stores in the relevant handles)
+     * -   prev: w/a ratio = 3:5:2:1:1
+     * -   next: w/a ratio = 1:1:2:5:3 */
 
     /* round 1: calc smoothing deltas and new vale */
     tsb = tarray;
     for (int i = 0; i < totSel; i++, tsb++) {
       /* Don't touch end points (otherwise, curves slowly explode,
-       * as we don't have enough data there). */
+       * bc don't have enough data there). */
       if (ELEM(i, 0, (totSel - 1)) == 0) {
         const tSmooth_Bezt *tP1 = tsb - 1;
         const tSmooth_Bezt *tP2 = (i - 2 > 0) ? (tsb - 2) : (nullptr);
@@ -1180,7 +1167,7 @@ void sample_fcurve_segment(FCurve *fcu,
 void bake_fcurve_segments(FCurve *fcu)
 {
   BezTriple *bezt, *start = nullptr, *end = nullptr;
-  TempFrameValCache *value_cache, *fp;
+  TmpFrameValCache *val_cache, *fp;
   int sfra, range;
   int i, n;
 
@@ -1188,16 +1175,15 @@ void bake_fcurve_segments(FCurve *fcu)
     return;
   }
 
-  /* Find selected keyframes... once pair has been found, add keyframes. */
+  /* Find sel keyframes... once pair has been found, add keyframes. */
   for (i = 0, bezt = fcu->bezt; i < fcu->totvert; i++, bezt++) {
-    /* check if selected, and which end this is */
+    /* check if sel, and which end this is */
     if (BEZT_ISSEL_ANY(bezt)) {
       if (start) {
-        /* If next bezt is also selected, don't start sampling yet,
+        /* If next bezt is also sel, don't start sampling yet,
          * but instead wait for that one to reconsider, to avoid
          * changing the curve when sampling consecutive segments
-         * (#53229)
-         */
+         * (#53229) */
         if (i < fcu->totvert - 1) {
           BezTriple *next = &fcu->bezt[i + 1];
           if (BEZT_ISSEL_ANY(next)) {
@@ -1208,38 +1194,37 @@ void bake_fcurve_segments(FCurve *fcu)
         /* set end */
         end = bezt;
 
-        /* cache values then add keyframes using these values, as adding
+        /* cache vals then add keyframes using these vals, as adding
          * keyframes while sampling will affect the outcome...
-         * - only start sampling+adding from index=1, so that we don't overwrite original keyframe
-         */
+         * - only start sampling+adding from index=1, so that we don't overwrite original keyframe  */
         range = int(ceil(end->vec[1][0] - start->vec[1][0]));
         sfra = int(floor(start->vec[1][0]));
 
         if (range) {
-          value_cache = static_cast<TempFrameValCache *>(
-              MEM_callocN(sizeof(TempFrameValCache) * range, "IcuFrameValCache"));
+          val_cache = static_cast<TmpFrameValCache *>(
+              mem_calloc(sizeof(TmpFrameValCache) * range, "IcuFrameValCache"));
 
-          /* sample values */
-          for (n = 1, fp = value_cache; n < range && fp; n++, fp++) {
+          /* sample vals */
+          for (n = 1, fp = val_cache; n < range && fp; n++, fp++) {
             fp->frame = float(sfra + n);
-            fp->val = evaluate_fcurve(fcu, fp->frame);
+            fp->val = eval_fcurve(fcu, fp->frame);
           }
 
-          /* add keyframes with these, tagging as 'breakdowns' */
-          for (n = 1, fp = value_cache; n < range && fp; n++, fp++) {
-            blender::animrig::insert_vert_fcurve(
+          /* add keyframes w these, tagging as 'breakdowns' */
+          for (n = 1, fp = val_cache; n < range && fp; n++, fp++) {
+            dune::animrig::insert_vert_fcurve(
                 fcu, fp->frame, fp->val, BEZT_KEYTYPE_BREAKDOWN, eInsertKeyFlags(1));
           }
 
-          /* free temp cache */
-          MEM_freeN(value_cache);
+          /* free tmp cache */
+          mem_free(val_cache);
 
           /* as we added keyframes, we need to compensate so that bezt is at the right place */
           bezt = fcu->bezt + i + range - 1;
           i += (range - 1);
         }
 
-        /* the current selection island has ended, so start again from scratch */
+        /* the current sel island has ended, so start again from scratch */
         start = nullptr;
         end = nullptr;
       }
