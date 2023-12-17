@@ -1,75 +1,73 @@
 #include <cstddef>
 #include <cstdio>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
+#include "lib_dunelib.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_ID.h"
-#include "DNA_action_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_key_types.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_id.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_key.h"
+#include "types_material.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h"
-#include "BKE_armature.hh"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_nla.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_animsys.h"
+#include "dune_armature.hh"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_nla.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_build.hh"
+#include "graph.hh"
+#include "graph_build.hh"
 
-#include "ED_keyframing.hh"
-#include "ED_object.hh"
-#include "ED_screen.hh"
+#include "ed_keyframing.hh"
+#include "ed_ob.hh"
+#include "ed_screen.hh"
 
-#include "ANIM_animdata.hh"
-#include "ANIM_bone_collections.hh"
-#include "ANIM_fcurve.hh"
-#include "ANIM_keyframing.hh"
-#include "ANIM_rna.hh"
-#include "ANIM_visualkey.hh"
+#include "animdata.hh"
+#include "anim_bone_collections.hh"
+#include "anim_fcurve.hh"
+#include "anim_keyframing.hh"
+#include "anim_api.hh"
+#include "anim_visualkey.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_path.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
+#include "api_path.hh"
+#include "api_prototypes.h"
 
 #include "anim_intern.h"
 
-static KeyingSet *keyingset_get_from_op_with_error(wmOperator *op,
-                                                   PropertyRNA *prop,
+static KeyingSet *keyingset_get_from_op_with_error(WinOp *op,
+                                                   ApiProp *prop,
                                                    Scene *scene);
 
-static int delete_key_using_keying_set(bContext *C, wmOperator *op, KeyingSet *ks);
+static int del_key_using_keying_set(Cxt *C, WinOp *op, KeyingSet *ks);
 
-/* ************************************************** */
 /* Keyframing Setting Wrangling */
-
-eInsertKeyFlags ANIM_get_keyframing_flags(Scene *scene, const bool use_autokey_mode)
+eInsertKeyFlags anim_get_keyframing_flags(Scene *scene, const bool use_autokey_mode)
 {
-  using namespace blender::animrig;
+  using namespace dune::animrig;
   eInsertKeyFlags flag = INSERTKEY_NOFLAGS;
 
   /* standard flags */
@@ -86,9 +84,9 @@ eInsertKeyFlags ANIM_get_keyframing_flags(Scene *scene, const bool use_autokey_m
   }
 
   /* only if including settings from the autokeying mode... */
-  /* TODO: The fact that this flag needs to be passed as true is confusing because it is not clear
-   * why those two flags would be exclusive to autokeying. Refactor flags so they are separate
-   * between normal keying and autokeying. */
+  /* TODO: This flag needs to be passed as true: confusing bc its unclear
+   * why those 2 flags would be exclusive to autokeying.
+   * Refactor flags to be separate between normal keying and autokeying. */
   if (use_autokey_mode) {
     /* keyframing mode - only replace existing keyframes */
     if (is_autokey_mode(scene, AUTOKEY_MODE_EDITKEYS)) {
@@ -104,21 +102,19 @@ eInsertKeyFlags ANIM_get_keyframing_flags(Scene *scene, const bool use_autokey_m
   return flag;
 }
 
-/* ******************************************* */
-/* Animation Data Validation */
-
-bAction *ED_id_action_ensure(Main *bmain, ID *id)
+/* Anim Data Validation */
+Action *ed_id_action_ensure(Main *main, Id *id)
 {
   AnimData *adt;
 
   /* init animdata if none available yet */
-  adt = BKE_animdata_from_id(id);
+  adt = dune_animdata_from_id(id);
   if (adt == nullptr) {
-    adt = BKE_animdata_ensure_id(id);
+    adt = dune_animdata_ensure_id(id);
   }
   if (adt == nullptr) {
-    /* if still none (as not allowed to add, or ID doesn't have animdata for some reason) */
-    printf("ERROR: Couldn't add AnimData (ID = %s)\n", (id) ? (id->name) : "<None>");
+    /* if still none (as not allowed to add, or Id doesn't have animdata for some reason) */
+    printf("ERROR: Couldn't add AnimData (Id = %s)\n", (id) ? (id->name) : "<None>");
     return nullptr;
   }
 
@@ -130,19 +126,18 @@ bAction *ED_id_action_ensure(Main *bmain, ID *id)
     SNPRINTF(actname, "%sAction", id->name + 2);
 
     /* create action */
-    adt->action = BKE_action_add(bmain, actname);
+    adt->action = dune_action_add(bmain, actname);
 
-    /* set ID-type from ID-block that this is going to be assigned to
+    /* set Id-type from Id-block that this is going to be assigned to
      * so that users can't accidentally break actions by assigning them
-     * to the wrong places
-     */
-    BKE_animdata_action_ensure_idroot(id, adt->action);
+     * to the wrong places */
+    dune_animdata_action_ensure_idroot(id, adt->action);
 
-    /* Tag depsgraph to be rebuilt to include time dependency. */
-    DEG_relations_tag_update(bmain);
+    /* Tag graph to be rebuilt to include time dependency. */
+    graoh_relations_tag_update(bmain);
   }
 
-  DEG_id_tag_update(&adt->action->id, ID_RECALC_ANIMATION_NO_FLUSH);
+  graph_id_tag_update(&adt->action->id, ID_RECALC_ANIMATION_NO_FLUSH);
 
   /* return the action */
   return adt->action;
