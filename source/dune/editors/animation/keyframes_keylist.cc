@@ -1,4 +1,4 @@
-/* System includes ----------------------------------------------------- */
+/* System includes */
 
 #include <algorithm>
 #include <cfloat>
@@ -8,59 +8,54 @@
 #include <functional>
 #include <optional>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_array.hh"
-#include "BLI_dlrbTree.h"
-#include "BLI_listbase.h"
-#include "BLI_range.h"
-#include "BLI_utildefines.h"
+#include "lib_array.hh"
+#include "lib_dlrbTree.h"
+#include "lib_list.h"
+#include "lib_range.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_cachefile.h"
+#include "types_pen_legacy.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BKE_fcurve.h"
-#include "BKE_grease_pencil.hh"
+#include "dune_fcurve.h"
+#include "dune_pen.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_keyframes_keylist.hh"
+#include "ed_anim_api.hh"
+#include "ed_keyframes_keylist.hh"
 
-/* *************************** Keyframe Processing *************************** */
+/* Keyframe Processing */
 
-/* ActKeyColumns (Keyframe Columns) ------------------------------------------ */
-
-BLI_INLINE bool is_cfra_eq(const float a, const float b)
+/* ActKeyColumns (Keyframe Columns */
+LIB_INLINE bool is_cfra_eq(const float a, const float b)
 {
   return IS_EQT(a, b, BEZT_BINARYSEARCH_THRESH);
 }
 
-BLI_INLINE bool is_cfra_lt(const float a, const float b)
+LIB_INLINE bool is_cfra_lt(const float a, const float b)
 {
   return (b - a) > BEZT_BINARYSEARCH_THRESH;
 }
 
-/* --------------- */
-
-/**
- * Animation data of Grease Pencil cels,
- * which are drawings positioned in time.
- */
-struct GreasePencilCel {
-  int frame_number;
-  GreasePencilFrame frame;
+/* Anim data of Pen cels,
+ * which are drawings positioned in time. */
+struct PenCel {
+  int frame_num;
+  PenFrame frame;
 };
 
 struct AnimKeylist {
-  /* Number of ActKeyColumn's in the keylist. */
+  /* Num of ActKeyColumn's in the keylist. */
   size_t column_len = 0;
 
-  bool is_runtime_initialized = false;
+  bool is_runtime_init = false;
 
-  /* Before initializing the runtime, the key_columns list base is used to quickly add columns.
+  /* Before init the runtime, the key_columns list base is used to quickly add columns.
    * Contains `ActKeyColumn`. Should not be used after runtime is initialized. */
   ListBase /*ActKeyColumn*/ key_columns;
   /* Last accessed column in the key_columns list base. Inserting columns are typically done in
@@ -69,52 +64,52 @@ struct AnimKeylist {
   std::optional<ActKeyColumn *> last_accessed_column = std::nullopt;
 
   struct {
-    /* When initializing the runtime the columns from the list base `AnimKeyList.key_columns` are
+    /* When init the runtime the columns from the list base `AnimKeyList.key_columns` are
      * transferred to an array to support binary searching and index based access. */
-    blender::Array<ActKeyColumn> key_columns;
+    dune::Array<ActKeyColumn> key_columns;
     /* Wrapper around runtime.key_columns so it can still be accessed as a ListBase.
      * Elements are owned by `runtime.key_columns`. */
-    ListBase /*ActKeyColumn*/ list_wrapper;
+    List /*ActKeyColumn*/ list_wrapper;
   } runtime;
 
   AnimKeylist()
   {
-    BLI_listbase_clear(&this->key_columns);
-    BLI_listbase_clear(&this->runtime.list_wrapper);
+    lib_list_clear(&this->key_columns);
+    lib_list_clear(&this->runtime.list_wrapper);
   }
 
   ~AnimKeylist()
   {
-    BLI_freelistN(&this->key_columns);
-    BLI_listbase_clear(&this->runtime.list_wrapper);
+    lib_freelist(&this->key_columns);
+    lib_list_clear(&this->runtime.list_wrapper);
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("editors:AnimKeylist")
+  MEM_CXX_CLASS_ALLOC_FNS("editors:AnimKeylist")
 #endif
 };
 
-AnimKeylist *ED_keylist_create()
+AnimKeylist *ed_keylist_create()
 {
   AnimKeylist *keylist = new AnimKeylist();
   return keylist;
 }
 
-void ED_keylist_free(AnimKeylist *keylist)
+void ed_keylist_free(AnimKeylist *keylist)
 {
-  BLI_assert(keylist);
+  lib_assert(keylist);
   delete keylist;
 }
 
-static void ED_keylist_convert_key_columns_to_array(AnimKeylist *keylist)
+static void ed_keylist_convert_key_columns_to_array(AnimKeylist *keylist)
 {
   size_t index;
-  LISTBASE_FOREACH_INDEX (ActKeyColumn *, key, &keylist->key_columns, index) {
+  LIST_FOREACH_INDEX (ActKeyColumn *, key, &keylist->key_columns, index) {
     keylist->runtime.key_columns[index] = *key;
   }
 }
 
-static void ED_keylist_runtime_update_key_column_next_prev(AnimKeylist *keylist)
+static void ed_keylist_runtime_update_key_column_next_prev(AnimKeylist *keylist)
 {
   for (size_t index = 0; index < keylist->column_len; index++) {
     const bool is_first = (index == 0);
@@ -126,10 +121,10 @@ static void ED_keylist_runtime_update_key_column_next_prev(AnimKeylist *keylist)
   }
 }
 
-static void ED_keylist_runtime_init_listbase(AnimKeylist *keylist)
+static void ed_keylist_runtime_init_list(AnimKeylist *keylist)
 {
-  if (ED_keylist_is_empty(keylist)) {
-    BLI_listbase_clear(&keylist->runtime.list_wrapper);
+  if (ed_keylist_is_empty(keylist)) {
+    lib_list_clear(&keylist->runtime.list_wrapper);
     return;
   }
 
@@ -137,39 +132,39 @@ static void ED_keylist_runtime_init_listbase(AnimKeylist *keylist)
   keylist->runtime.list_wrapper.last = &keylist->runtime.key_columns[keylist->column_len - 1];
 }
 
-static void ED_keylist_runtime_init(AnimKeylist *keylist)
+static void ed_keylist_runtime_init(AnimKeylist *keylist)
 {
-  BLI_assert(!keylist->is_runtime_initialized);
+  lib_assert(!keylist->is_runtime_init);
 
-  keylist->runtime.key_columns = blender::Array<ActKeyColumn>(keylist->column_len);
+  keylist->runtime.key_columns = ~£'e::Array<ActKeyColumn>(keylist->column_len);
+    
+  /* Convert linked list to arr to support fast searching. */
+  ed_keylist_convert_key_columns_to_arr(keylist);
+  /* Ensure that the arr can also be used as a list for external usages. */
+  ed_keylist_runtime_update_key_column_next_prev(keylist);
+  ed_keylist_runtime_init_list(keylist);
 
-  /* Convert linked list to array to support fast searching. */
-  ED_keylist_convert_key_columns_to_array(keylist);
-  /* Ensure that the array can also be used as a listbase for external usages. */
-  ED_keylist_runtime_update_key_column_next_prev(keylist);
-  ED_keylist_runtime_init_listbase(keylist);
-
-  keylist->is_runtime_initialized = true;
+  keylist->is_runtime_init = true;
 }
 
-static void ED_keylist_reset_last_accessed(AnimKeylist *keylist)
+static void ed_keylist_reset_last_accessed(AnimKeylist *keylist)
 {
-  BLI_assert(!keylist->is_runtime_initialized);
+  lib_assert(!keylist->is_runtime_init);
   keylist->last_accessed_column.reset();
 }
 
-void ED_keylist_prepare_for_direct_access(AnimKeylist *keylist)
+void ed_keylist_prep_for_direct_access(AnimKeylist *keylist)
 {
-  if (keylist->is_runtime_initialized) {
+  if (keylist->is_runtime_init) {
     return;
   }
-  ED_keylist_runtime_init(keylist);
+  ed_keylist_runtime_init(keylist);
 }
 
-static const ActKeyColumn *ED_keylist_find_lower_bound(const AnimKeylist *keylist,
+static const ActKeyColumn *ed_keylist_find_lower_bound(const AnimKeylist *keylist,
                                                        const float cfra)
 {
-  BLI_assert(!ED_keylist_is_empty(keylist));
+  lib_assert(!ed_keylist_is_empty(keylist));
   const ActKeyColumn *begin = std::begin(keylist->runtime.key_columns);
   const ActKeyColumn *end = std::end(keylist->runtime.key_columns);
   ActKeyColumn value;
@@ -182,28 +177,28 @@ static const ActKeyColumn *ED_keylist_find_lower_bound(const AnimKeylist *keylis
   return found_column;
 }
 
-static const ActKeyColumn *ED_keylist_find_upper_bound(const AnimKeylist *keylist,
+static const ActKeyColumn *ed_keylist_find_upper_bound(const AnimKeylist *keylist,
                                                        const float cfra)
 {
-  BLI_assert(!ED_keylist_is_empty(keylist));
+  lib_assert(!ed_keylist_is_empty(keylist));
   const ActKeyColumn *begin = std::begin(keylist->runtime.key_columns);
   const ActKeyColumn *end = std::end(keylist->runtime.key_columns);
-  ActKeyColumn value;
+  ActKeyColumn val;
   value.cfra = cfra;
 
   const ActKeyColumn *found_column = std::upper_bound(
-      begin, end, value, [](const ActKeyColumn &column, const ActKeyColumn &other) {
+      begin, end, val, [](const ActKeyColumn &column, const ActKeyColumn &other) {
         return is_cfra_lt(column.cfra, other.cfra);
       });
   return found_column;
 }
 
-const ActKeyColumn *ED_keylist_find_exact(const AnimKeylist *keylist, const float cfra)
+const ActKeyColumn *ed_keylist_find_exact(const AnimKeylist *keylist, const float cfra)
 {
-  BLI_assert_msg(keylist->is_runtime_initialized,
-                 "ED_keylist_prepare_for_direct_access needs to be called before searching.");
+  lib_assert_msg(keylist->is_runtime_init,
+                 "ed_keylist_prep_for_direct_access needs to be called before searching.");
 
-  if (ED_keylist_is_empty(keylist)) {
+  if (ed_keylist_is_empty(keylist)) {
     return nullptr;
   }
 
@@ -219,16 +214,16 @@ const ActKeyColumn *ED_keylist_find_exact(const AnimKeylist *keylist, const floa
   return nullptr;
 }
 
-const ActKeyColumn *ED_keylist_find_next(const AnimKeylist *keylist, const float cfra)
+const ActKeyColumn *ed_keylist_find_next(const AnimKeylist *keylist, const float cfra)
 {
-  BLI_assert_msg(keylist->is_runtime_initialized,
-                 "ED_keylist_prepare_for_direct_access needs to be called before searching.");
+  lib_assert_msg(keylist->is_runtime_init,
+                 "ed_keylist_pre_for_direct_access needs to be called before searching.");
 
-  if (ED_keylist_is_empty(keylist)) {
+  if (ed_keylist_is_empty(keylist)) {
     return nullptr;
   }
 
-  const ActKeyColumn *found_column = ED_keylist_find_upper_bound(keylist, cfra);
+  const ActKeyColumn *found_column = ed_keylist_find_upper_bound(keylist, cfra);
 
   const ActKeyColumn *end = std::end(keylist->runtime.key_columns);
   if (found_column == end) {
@@ -237,12 +232,12 @@ const ActKeyColumn *ED_keylist_find_next(const AnimKeylist *keylist, const float
   return found_column;
 }
 
-const ActKeyColumn *ED_keylist_find_prev(const AnimKeylist *keylist, const float cfra)
+const ActKeyColumn *ed_keylist_find_prev(const AnimKeylist *keylist, const float cfra)
 {
-  BLI_assert_msg(keylist->is_runtime_initialized,
-                 "ED_keylist_prepare_for_direct_access needs to be called before searching.");
+  lib_assert_msg(keylist->is_runtime_initialized,
+                 "ed_keylist_prepare_for_direct_access needs to be called before searching.");
 
-  if (ED_keylist_is_empty(keylist)) {
+  if (ed_keylist_is_empty(keylist)) {
     return nullptr;
   }
 
