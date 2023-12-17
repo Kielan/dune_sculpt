@@ -4,56 +4,54 @@
 #include <cstdio>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BKE_animsys.h"
-#include "BKE_context.hh"
-#include "BKE_main.hh"
-#include "BKE_report.h"
+#include "dune_animsys.h"
+#include "dune_cxt.hh"
+#include "dune_main.hh"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "ANIM_keyframing.hh"
-#include "ED_keyframing.hh"
-#include "ED_screen.hh"
+#include "anim_keyframing.hh"
+#include "ed_keyframing.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_path.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
+#include "api_path.hh"
 
 #include "anim_intern.h"
 
-/* ************************************************** */
-/* KEYING SETS - OPERATORS (for use in UI panels) */
-/* These operators are really duplication of existing functionality, but just for completeness,
- * they're here too, and will give the basic data needed...
- */
+/* KEYING SETS - OPS (for use in UI pnla) */
+/* These ops are rly dup of existing functionality, but just for completeness,
+ * they're here too, and will give the basic data needed... */
 
-/* poll callback for adding default KeyingSet */
-static bool keyingset_poll_default_add(bContext *C)
+/* poll cb for adding default KeyingSet */
+static bool keyingset_poll_default_add(Cxt *C)
 {
   /* as long as there's an active Scene, it's fine */
-  return (CTX_data_scene(C) != nullptr);
+  return (cxt_data_scene(C) != nullptr);
 }
 
-/* poll callback for editing active KeyingSet */
-static bool keyingset_poll_active_edit(bContext *C)
+/* poll cb for editing active KeyingSet */
+static bool keyingset_poll_active_edit(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   if (scene == nullptr) {
     return false;
@@ -63,10 +61,10 @@ static bool keyingset_poll_active_edit(bContext *C)
   return ((scene->active_keyingset > 0) && (scene->keyingsets.first));
 }
 
-/* poll callback for editing active KeyingSet Path */
-static bool keyingset_poll_activePath_edit(bContext *C)
+/* poll cb for editing active KeyingSet Path */
+static bool keyingset_poll_activePath_edit(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   KeyingSet *ks;
 
   if (scene == nullptr) {
@@ -76,65 +74,61 @@ static bool keyingset_poll_activePath_edit(bContext *C)
     return false;
   }
 
-  ks = static_cast<KeyingSet *>(BLI_findlink(&scene->keyingsets, scene->active_keyingset - 1));
+  ks = static_cast<KeyingSet *>(lib_findlink(&scene->keyingsets, scene->active_keyingset - 1));
 
   /* there must be an active KeyingSet and an active path */
   return ((ks) && (ks->paths.first) && (ks->active_path > 0));
 }
 
-/* Add a Default (Empty) Keying Set ------------------------- */
-
-static int add_default_keyingset_exec(bContext *C, wmOperator * /*op*/)
+/* Add a Default (Empty) Keying Set */
+static int add_default_keyingset_ex(Cxt *C, WinOp * /*op*/)
 {
-  Scene *scene = CTX_data_scene(C);
-  eKS_Settings flag = eKS_Settings(0);
+  Scene *scene = cxt_data_scene(C);
+  eKSSettings flag = eKS_Settings(0);
   eInsertKeyFlags keyingflag = eInsertKeyFlags(0);
 
   /* validate flags
-   * - absolute KeyingSets should be created by default
-   */
+   * - absolute KeyingSets should be created by default */
   flag |= KEYINGSET_ABSOLUTE;
 
   /* 2nd arg is 0 to indicate that we don't want to include autokeying mode related settings */
-  keyingflag = ANIM_get_keyframing_flags(scene, false);
+  keyingflag = anim_get_keyframing_flags(scene, false);
 
   /* call the API func, and set the active keyingset index */
-  BKE_keyingset_add(&scene->keyingsets, nullptr, nullptr, flag, keyingflag);
+  dune_keyingset_add(&scene->keyingsets, nullptr, nullptr, flag, keyingflag);
 
-  scene->active_keyingset = BLI_listbase_count(&scene->keyingsets);
+  scene->active_keyingset = lib_list_count(&scene->keyingsets);
 
   /* send notifiers */
-  WM_event_add_notifier(C, NC_SCENE | ND_KEYINGSET, nullptr);
+  win_ev_add_notifier(C, NC_SCENE | ND_KEYINGSET, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ANIM_OT_keying_set_add(wmOperatorType *ot)
+void anim_ot_keying_set_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Empty Keying Set";
-  ot->idname = "ANIM_OT_keying_set_add";
+  ot->idname = "anim_ot_keying_set_add";
   ot->description = "Add a new (empty) keying set to the active Scene";
 
-  /* callbacks */
-  ot->exec = add_default_keyingset_exec;
+  /* cbs */
+  ot->ex = add_default_keyingset_ex;
   ot->poll = keyingset_poll_default_add;
 }
 
-/* Remove 'Active' Keying Set ------------------------- */
-
-static int remove_active_keyingset_exec(bContext *C, wmOperator *op)
+/* Remove 'Active' Keying Set */
+static int remove_active_keyingset_ex(Cxt *C, WinApi *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   KeyingSet *ks;
 
   /* verify the Keying Set to use:
    * - use the active one
-   * - return error if it doesn't exist
-   */
+   * - return error if it doesn't exist */
   if (scene->active_keyingset == 0) {
-    BKE_report(op->reports, RPT_ERROR, "No active Keying Set to remove");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No active Keying Set to remove");
+    return OP_CANCELLED;
   }
 
   if (scene->active_keyingset < 0) {
