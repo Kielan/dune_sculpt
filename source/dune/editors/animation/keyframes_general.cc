@@ -993,20 +993,20 @@ static void decimate_fcurve_segment(FCurve *fcu,
     bezt_segment_len++;
   }
 
-  const int target_fcurve_verts = ceil(bezt_segment_len - selected_len * remove_ratio);
+  const int target_fcurve_verts = ceil(bezt_segment_len - sel_len * remove_ratio);
 
-  BKE_curve_decimate_bezt_array(&fcu->bezt[bezt_segment_start_idx],
+  dune_curve_decimate_bezt_array(&fcu->bezt[bezt_segment_start_idx],
                                 bezt_segment_len,
                                 12, /* The actual resolution displayed in the viewport is dynamic
                                      * so we just pick a value that preserves the curve shape. */
                                 false,
-                                SELECT,
-                                BEZT_FLAG_TEMP_TAG,
+                                SEL,
+                                BEZT_FLAG_TMP_TAG,
                                 error_sq_max,
                                 target_fcurve_verts);
 }
 
-bool decimate_fcurve(bAnimListElem *ale, float remove_ratio, float error_sq_max)
+bool decimate_fcurve(AnimListElem *ale, float remove_ratio, float error_sq_max)
 {
   FCurve *fcu = (FCurve *)ale->key_data;
   /* Check if the curve actually has any points. */
@@ -1021,19 +1021,19 @@ bool decimate_fcurve(bAnimListElem *ale, float remove_ratio, float error_sq_max)
   for (int i = 0; i < fcu->totvert; i++) {
     /* Ignore keyframes that are not supported. */
     if (!prepare_for_decimate(fcu, i)) {
-      can_decimate_all_selected = false;
+      can_decimate_all_sel = false;
       fcu->bezt[i].f2 |= BEZT_FLAG_IGNORE_TAG;
     }
     /* Make sure that the temp flag is unset as we use it to determine what to remove. */
     fcu->bezt[i].f2 &= ~BEZT_FLAG_TEMP_TAG;
   }
 
-  ListBase segments = find_fcurve_segments(fcu);
-  LISTBASE_FOREACH (FCurveSegment *, segment, &segments) {
+  List segments = find_fcurve_segments(fcu);
+  LIST_FOREACH (FCurveSegment *, segment, &segments) {
     decimate_fcurve_segment(
         fcu, segment->start_index, segment->length, remove_ratio, error_sq_max);
   }
-  BLI_freelistN(&segments);
+  lib_freelist(&segments);
 
   uint old_totvert = fcu->totvert;
   fcu->bezt = nullptr;
@@ -1043,24 +1043,20 @@ bool decimate_fcurve(bAnimListElem *ale, float remove_ratio, float error_sq_max)
     BezTriple *bezt = (old_bezts + i);
     bezt->f2 &= ~BEZT_FLAG_IGNORE_TAG;
     if ((bezt->f2 & BEZT_FLAG_TEMP_TAG) == 0) {
-      blender::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
+      dune::animrig::insert_bezt_fcurve(fcu, bezt, eInsertKeyFlags(0));
     }
   }
-  /* now free the memory used by the old BezTriples */
+  /* now free the mem used by the old BezTriples */
   if (old_bezts) {
-    MEM_freeN(old_bezts);
+    mem_free(old_bezts);
   }
 
-  return can_decimate_all_selected;
+  return can_decimate_all_sel;
 }
 
-/** \} */
+/* FCurve Smooth */
 
-/* -------------------------------------------------------------------- */
-/** \name FCurve Smooth
- * \{ */
-
-/* temp struct used for smooth_fcurve */
+/* tmp struct used for smooth_fcurve */
 struct tSmooth_Bezt {
   float *h1, *h2, *h3; /* bezt->vec[0,1,2][1] */
   float y1, y2, y3;    /* averaged before/new/after y-values */
@@ -1086,11 +1082,11 @@ void smooth_fcurve(FCurve *fcu)
   if (totSel >= 3) {
     tSmooth_Bezt *tarray, *tsb;
 
-    /* allocate memory in one go */
+    /* alloc mem in one go */
     tsb = tarray = static_cast<tSmooth_Bezt *>(
-        MEM_callocN(totSel * sizeof(tSmooth_Bezt), "tSmooth_Bezt Array"));
+        mem_calloc(totSel * sizeof(tSmooth_Bezt), "tSmooth_Bezt Array"));
 
-    /* populate tarray with data of selected points */
+    /* populate tarray with data of sel points */
     bezt = fcu->bezt;
     for (int i = 0, x = 0; (i < fcu->totvert) && (x < totSel); i++, bezt++) {
       if (BEZT_ISSEL_ANY(bezt)) {
@@ -1109,14 +1105,14 @@ void smooth_fcurve(FCurve *fcu)
       }
     }
 
-    /* calculate the new smoothed F-Curve's with weighted averages:
+    /* calc the new smoothed F-Curve's with weighted avgs:
      * - this is done with two passes to avoid progressive corruption errors
      * - uses 5 points for each operation (which stores in the relevant handles)
      * -   previous: w/a ratio = 3:5:2:1:1
      * -   next: w/a ratio = 1:1:2:5:3
      */
 
-    /* round 1: calculate smoothing deltas and new values */
+    /* round 1: calc smoothing deltas and new vale */
     tsb = tarray;
     for (int i = 0; i < totSel; i++, tsb++) {
       /* Don't touch end points (otherwise, curves slowly explode,
@@ -1133,7 +1129,7 @@ void smooth_fcurve(FCurve *fcu)
         const float n1 = *tN1->h2;
         const float n2 = (tN2) ? (*tN2->h2) : (*tN1->h2);
 
-        /* calculate previous and next, then new position by averaging these */
+        /* calc prev and next, then new position by avging these */
         tsb->y1 = (3 * p2 + 5 * p1 + 2 * c1 + n1 + n2) / 12;
         tsb->y3 = (p2 + p1 + 2 * c1 + 5 * n1 + 3 * n2) / 12;
 
@@ -1141,36 +1137,31 @@ void smooth_fcurve(FCurve *fcu)
       }
     }
 
-    /* round 2: apply new values */
+    /* round 2: apply new vals */
     tsb = tarray;
     for (int i = 0; i < totSel; i++, tsb++) {
-      /* don't touch end points, as their values weren't touched above */
+      /* don't touch end points, as their vals weren't touched above */
       if (ELEM(i, 0, (totSel - 1)) == 0) {
-        /* y2 takes the average of the 2 points */
+        /* y2 takes the avg of the 2 points */
         *tsb->h2 = tsb->y2;
 
-        /* handles are weighted between their original values and the averaged values */
+        /* handles are weighted between their original vals and the avg valg */
         *tsb->h1 = ((*tsb->h1) * 0.7f) + (tsb->y1 * 0.3f);
         *tsb->h3 = ((*tsb->h3) * 0.7f) + (tsb->y3 * 0.3f);
       }
     }
-
-    /* free memory required for tarray */
-    MEM_freeN(tarray);
+    
+    /* free mem required for tarray */
+    mem_free(tarray);
   }
 
-  /* recalculate handles */
-  BKE_fcurve_handles_recalc(fcu);
+  /* recalc handles */
+  dune_fcurve_handles_recalc(fcu);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name FCurve Sample
- * \{ */
-
-/* little cache for values... */
-struct TempFrameValCache {
+/* FCurve Sample */
+/* little cache for vals... */
+struct TmpFrameValCache {
   float frame, val;
 };
 
@@ -1181,8 +1172,8 @@ void sample_fcurve_segment(FCurve *fcu,
                            const int sample_count)
 {
   for (int i = 0; i < sample_count; i++) {
-    const float evaluation_time = start_frame + (float(i) / sample_rate);
-    samples[i] = evaluate_fcurve(fcu, evaluation_time);
+    const float eval_time = start_frame + (float(i) / sample_rate);
+    samples[i] = eval_fcurve(fcu, eval_time);
   }
 }
 
