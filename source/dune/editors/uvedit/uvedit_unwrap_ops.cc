@@ -134,19 +134,14 @@ static bool ed_uvedit_ensure_uvs(Ob *obedit)
   return true;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name UDIM Access
- * \{ */
-
-void blender::geometry::UVPackIsland_Params::setUDIMOffsetFromSpaceImage(const SpaceImage *sima)
+/* UDIM Access */
+void dune::geometry::UVPackIsland_Params::setUDIMOffsetFromSpaceImage(const SpaceImage *sima)
 {
-  if (!sima) {
+  if (!simg) {
     return; /* Nothing to do. */
   }
 
-  /* NOTE: Presently, when UDIM grid and tiled image are present together, only active tile for
+  /* Presently, when UDIM grid and tiled image are present together, only active tile for
    * the tiled image is considered. */
   const Img *img = simg->img;
   if (img && img->src == IMG_SRC_TILED) {
@@ -406,24 +401,23 @@ static void construct_param_edge_set_seams(ParamHandle *handle,
 
     /* Pinned vertices might have more than one ParamKey per MeshVert.
      * Check all the MESH_LOOPS_OF_EDGE to find all the ParamKeys. */
-    BMLoop *l;
-    BMIter liter;
-    BM_ITER_ELEM (l, &liter, edge, BM_LOOPS_OF_EDGE) {
-      float *luv = BM_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
-      float *luv_next = BM_ELEM_CD_GET_FLOAT_P(l->next, offsets.uv);
+    MeshLoop *l;
+    MeshIter liter;
+    MESH_ITER_ELEM (l, &liter, edge, MESH_LOOPS_OF_EDGE) {
+      float *luv = MESH_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
+      float *luv_next = MESH_ELEM_CD_GET_FLOAT_P(l->next, offsets.uv);
       ParamKey vkeys[2];
-      vkeys[0] = blender::geometry::uv_find_pin_index(handle, BM_elem_index_get(l->v), luv);
-      vkeys[1] = blender::geometry::uv_find_pin_index(
-          handle, BM_elem_index_get(l->next->v), luv_next);
+      vkeys[0] = dune::geometry::uv_find_pin_index(handle, mesh_elem_index_get(l->v), luv);
+      vkeys[1] = dune::geometry::uv_find_pin_index(
+          handle, mesh_elem_index_get(l->next->v), luv_next);
 
       /* Set the seam. */
-      blender::geometry::uv_parametrizer_edge_set_seam(handle, vkeys);
+      dune::geometry::uv_parametrizer_edge_set_seam(handle, vkeys);
     }
   }
 }
 
-/*
- * Version of #construct_param_handle_multi with a separate BMesh parameter.
+/* Version of construct_param_handle_multi with a separate BMesh parameter.
  */
 static ParamHandle *construct_param_handle(const Scene *scene,
                                            Object *ob,
