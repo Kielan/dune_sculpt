@@ -2,16 +2,16 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_meshdata.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_win.h"
 
-#include "BLI_ghash.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
+#include "lib_ghash.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
 #include "BLI_math_vector.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
