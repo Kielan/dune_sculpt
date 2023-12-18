@@ -2,91 +2,90 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_camera_types.h"
+#include "typee_mesh_types.h"
+#include "types_meshdata_types.h"
+#include "types_mod_types.h"
+#include "types_ob_types.h"
+#include "types_scene_types.h"
 
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "BLI_array.hh"
-#include "BLI_convexhull_2d.h"
-#include "BLI_linklist.h"
-#include "BLI_listbase.h"
-#include "BLI_math_geom.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
-#include "BLI_memarena.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
-#include "BLI_uvproject.h"
-#include "BLI_vector.hh"
+#include "lib_array.hh"
+#include "lib_convexhull_2d.h"
+#include "lib_linklist.h"
+#include "lib_list.h"
+#include "lib_math_geom.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
+#include "lib_memarena.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
+#include "lib_uvproject.h"
+#include "lib_vector.hh"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_context.hh"
-#include "BKE_customdata.hh"
-#include "BKE_editmesh.hh"
-#include "BKE_image.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.hh"
-#include "BKE_material.h"
-#include "BKE_mesh.hh"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_subdiv.hh"
-#include "BKE_subdiv_mesh.hh"
-#include "BKE_subdiv_modifier.hh"
+#include "dune_cxt.hh"
+#include "dune_customdata.hh"
+#include "dune_meshedit.hh"
+#include "dune_img.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_main.hh"
+#include "dune_material.h"
+#include "dune_mesh.hh"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_subdiv.hh"
+#include "dune_subdiv_mesh.hh"
+#include "dune_subdiv_mod.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
 #include "GEO_uv_pack.hh"
 #include "GEO_uv_parametrizer.hh"
 
 #include "PIL_time.h"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "ED_image.hh"
-#include "ED_mesh.hh"
-#include "ED_screen.hh"
-#include "ED_undo.hh"
-#include "ED_uvedit.hh"
-#include "ED_view3d.hh"
+#include "ed_img.hh"
+#include "ed_mesh.hh"
+#include "ed_screen.hh"
+#include "ed_undo.hh"
+#include "ed_uvedit.hh"
+#include "ed_view3d.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
 #include "uvedit_intern.h"
 
-using blender::geometry::ParamHandle;
-using blender::geometry::ParamKey;
+using dune::geometry::ParamHandle;
+using dune::geometry::ParamKey;
 
 /* -------------------------------------------------------------------- */
-/** \name Utility Functions
- * \{ */
+/* Util Fns */
 
-static void modifier_unwrap_state(Object *obedit, const Scene *scene, bool *r_use_subsurf)
+static void mod_unwrap_state(Object *obedit, const Scene *scene, bool *r_use_subsurf)
 {
-  ModifierData *md;
+  ModData *md;
   bool subsurf = (scene->toolsettings->uvcalc_flag & UVCALC_USESUBSURF) != 0;
 
-  md = static_cast<ModifierData *>(obedit->modifiers.first);
+  md = static_cast<ModData *>(obedit->mods.first);
 
-  /* subsurf will take the modifier settings only if modifier is first or right after mirror */
+  /* subsurf will take the mod settings only if mod is 1st or right after mirror */
   if (subsurf) {
-    if (md && md->type == eModifierType_Subsurf) {
+    if (md && md->type == eModTypeSubsurf) {
       subsurf = true;
     }
     else {
@@ -97,13 +96,13 @@ static void modifier_unwrap_state(Object *obedit, const Scene *scene, bool *r_us
   *r_use_subsurf = subsurf;
 }
 
-static bool ED_uvedit_ensure_uvs(Object *obedit)
+static bool ed_uvedit_ensure_uvs(Ob *obedit)
 {
-  if (ED_uvedit_test(obedit)) {
+  if (ed_uvedit_test(obedit)) {
     return true;
   }
 
-  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  MeshEdit *em = dube_meshedit_from_object(obedit);
   BMFace *efa;
   BMIter iter;
 
