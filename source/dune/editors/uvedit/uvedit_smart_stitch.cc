@@ -972,12 +972,9 @@ static int stitch_process_data(StitchStateContainer *ssc,
   }
 
   /* store indices to editVerts and Faces. May be unneeded but ensuring anyway */
-  mesh_elem_index_ensure(bm, MESH_VERT | MESH_FACE);
+  mesh_elem_index_ensure(mesh, MESH_VERT | MESH_FACE);
 
-  /****************************************
-   * First determine stitchability of uvs *
-   ****************************************/
-
+  /* 1: determine stitchability of uvs */
   for (i = 0; i < state->selection_size; i++) {
     if (ssc->mode == STITCH_VERT) {
       UvElement *element = (UvElement *)state->sel_stack[i];
