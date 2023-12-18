@@ -148,10 +148,10 @@ void blender::geometry::UVPackIsland_Params::setUDIMOffsetFromSpaceImage(const S
 
   /* NOTE: Presently, when UDIM grid and tiled image are present together, only active tile for
    * the tiled image is considered. */
-  const Image *image = sima->image;
-  if (image && image->source == IMA_SRC_TILED) {
-    ImageTile *active_tile = static_cast<ImageTile *>(
-        BLI_findlink(&image->tiles, image->active_tile_index));
+  const Img *img = simg->img;
+  if (img && img->src == IMG_SRC_TILED) {
+    ImgTile *active_tile = static_cast<ImgTile *>(
+        lib_findlink(&img->tiles, img->active_tile_index));
     if (active_tile) {
       udim_base_offset[0] = (active_tile->tile_number - 1001) % 10;
       udim_base_offset[1] = (active_tile->tile_number - 1001) / 10;
@@ -161,9 +161,9 @@ void blender::geometry::UVPackIsland_Params::setUDIMOffsetFromSpaceImage(const S
 
   /* TODO: Support storing an active UDIM when there are no tiles present.
    * Until then, use 2D cursor to find the active tile index for the UDIM grid. */
-  if (uv_coords_isect_udim(sima->image, sima->tile_grid_shape, sima->cursor)) {
-    udim_base_offset[0] = floorf(sima->cursor[0]);
-    udim_base_offset[1] = floorf(sima->cursor[1]);
+  if (uv_coords_isect_udim(simg->img, simg->tile_grid_shape, simg->cursor)) {
+    udim_base_offset[0] = floorf(simg->cursor[0]);
+    udim_base_offset[1] = floorf(simg->cursor[1]);
   }
 }
 
@@ -175,9 +175,7 @@ bool dune::geometry::UVPackIsland_Params::isCancelled() const
   return false;
 }
 
-/* -------------------------------------------------------------------- */
 /* Parametrizer Conversion */
-
 struct UnwrapOptions {
   /* Connectivity based on UV coordinates instead of seams. */
   bool topology_from_uvs;
@@ -203,7 +201,7 @@ void dune::geometry::UVPackIsland_Params::setFromUnwrapOptions(const UnwrapOptio
   only_sel_faces = options.only_sel_faces;
   use_seams = !options.topology_from_uvs || options.topology_from_uvs_use_seams;
   correct_aspect = options.correct_aspect;
-  pin_unselected = options.pin_unsel;
+  pin_unsel = options.pin_unsel;
 }
 
 static bool uvedit_have_sel(const Scene *scene, MeshEdit *me, const UnwrapOptions *options)
@@ -219,23 +217,23 @@ static bool uvedit_have_sel(const Scene *scene, MeshEdit *me, const UnwrapOption
 
   /* verify if we have any selected uv's before unwrapping,
    * so we can cancel the operator early */
-  MESH_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-    if (scene->toolsettings->uv_flag & UV_SYNC_SELECTION) {
-      if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+  MESH_ITER_MESH (efa, &iter, me->mesh, MESH_FACES_OF) {
+    if (scene->toolsettings->uv_flag & UV_SYNC_SEL) {
+      if (mesh_elem_flag_test(efa, MESH_ELEM_HIDDEN)) {
         continue;
       }
     }
-    else if (!BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+    else if (!mesh_elem_flag_test(efa, MESH_ELEM_SEL)) {
       continue;
     }
 
-    BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-      if (uvedit_uv_select_test(scene, l, offsets)) {
+    MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+      if (uvedit_uv_sel_test(scene, l, offsets)) {
         break;
       }
     }
 
-    if (options->only_selected_uvs && !l) {
+    if (options->only_sel_uvs && !l) {
       continue;
     }
 
@@ -245,24 +243,24 @@ static bool uvedit_have_sel(const Scene *scene, MeshEdit *me, const UnwrapOption
   return false;
 }
 
-static bool uvedit_have_selection_multi(const Scene *scene,
-                                        Object **objects,
-                                        const uint objects_len,
+static bool uvedit_have_sel_multi(const Scene *scene,
+                                        Ob **obs,
+                                        const uint obs_len,
                                         const UnwrapOptions *options)
 {
-  bool have_select = false;
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
-    if (uvedit_have_selection(scene, em, options)) {
-      have_select = true;
+  bool have_sel = false;
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    MeshEdit *em = dune_meshedit_from_ob(obedit);
+    if (uvedit_have_sel(scene, me, options)) {
+      have_sel = true;
       break;
     }
   }
-  return have_select;
+  return have_sel;
 }
 
-void ED_uvedit_get_aspect_from_material(Object *ob,
+void ed_uvedit_get_aspect_from_material(Ob *ob,
                                         const int material_index,
                                         float *r_aspx,
                                         float *r_aspy)
@@ -272,52 +270,52 @@ void ED_uvedit_get_aspect_from_material(Object *ob,
     *r_aspy = 1.0f;
     return;
   }
-  Image *ima;
-  ED_object_get_active_image(ob, material_index + 1, &ima, nullptr, nullptr, nullptr);
-  ED_image_get_uv_aspect(ima, nullptr, r_aspx, r_aspy);
+  Img *ima;
+  ed_ob_get_active_img(ob, material_index + 1, &img, nullptr, nullptr, nullptr);
+  ed_img_get_uv_aspect(img, nullptr, r_aspx, r_aspy);
 }
 
-void ED_uvedit_get_aspect(Object *ob, float *r_aspx, float *r_aspy)
+void ed_uvedit_get_aspect(Ob *ob, float *r_aspx, float *r_aspy)
 {
-  BMEditMesh *em = BKE_editmesh_from_object(ob);
-  BLI_assert(em != nullptr);
+  MeshEdit *me = dune_meshedit_from_ob(ob);
+  lib_assert(me != nullptr);
   bool sloppy = true;
-  bool selected = false;
-  BMFace *efa = BM_mesh_active_face_get(em->bm, sloppy, selected);
+  bool sel = false;
+  MeshFace *efa = mesh_active_face_get(me->mesh, sloppy, sel);
   if (!efa) {
     *r_aspx = 1.0f;
     *r_aspy = 1.0f;
     return;
   }
 
-  ED_uvedit_get_aspect_from_material(ob, efa->mat_nr, r_aspx, r_aspy);
+  ed_uvedit_get_aspect_from_material(ob, efa->mat_nr, r_aspx, r_aspy);
 }
 
-float ED_uvedit_get_aspect_y(Object *ob)
+float ed_uvedit_get_aspect_y(Ob *ob)
 {
   float aspect[2];
-  ED_uvedit_get_aspect(ob, &aspect[0], &aspect[1]);
+  ed_uvedit_get_aspect(ob, &aspect[0], &aspect[1]);
   return aspect[0] / aspect[1];
 }
 
 static bool uvedit_is_face_affected(const Scene *scene,
-                                    BMFace *efa,
+                                    MeshFace *efa,
                                     const UnwrapOptions *options,
-                                    const BMUVOffsets offsets)
+                                    const MeshUVOffsets offsets)
 {
-  if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(efa, MESH_ELEM_HIDDEN)) {
     return false;
   }
 
-  if (options->only_selected_faces && !BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+  if (options->only_sel_faces && !mesh_elem_flag_test(efa, BM_ELEM_SELECT)) {
     return false;
   }
 
-  if (options->only_selected_uvs) {
-    BMLoop *l;
-    BMIter iter;
-    BM_ITER_ELEM (l, &iter, efa, BM_LOOPS_OF_FACE) {
-      if (uvedit_uv_select_test(scene, l, offsets)) {
+  if (options->only_sel_uvs) {
+    MeshLoop *l;
+    MeshIter iter;
+    MESH_ITER_ELEM (l, &iter, efa, MESH_LOOPS_OF_FACE) {
+      if (uvedit_uv_sel_test(scene, l, offsets)) {
         return true;
       }
     }
@@ -327,89 +325,87 @@ static bool uvedit_is_face_affected(const Scene *scene,
   return true;
 }
 
-/* Prepare unique indices for each unique pinned UV, even if it shares a BMVert.
- */
-static void uvedit_prepare_pinned_indices(ParamHandle *handle,
+/* Prep unique indices for each unique pinned UV, even if it shares a MeshVert. */
+static void uvedit_prep_pinned_indices(ParamHandle *handle,
                                           const Scene *scene,
-                                          BMFace *efa,
+                                          MeshFace *efa,
                                           const UnwrapOptions *options,
-                                          const BMUVOffsets offsets)
+                                          const MeshUVOffsets offsets)
 {
-  BMIter liter;
-  BMLoop *l;
-  BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-    bool pin = BM_ELEM_CD_GET_BOOL(l, offsets.pin);
-    if (options->pin_unselected && !pin) {
-      pin = !uvedit_uv_select_test(scene, l, offsets);
+  MeshIter liter;
+  MeshLoop *l;
+  MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+    bool pin = MESH_ELEM_CD_GET_BOOL(l, offsets.pin);
+    if (options->pin_unsel && !pin) {
+      pin = !uvedit_uv_sel_test(scene, l, offsets);
     }
     if (pin) {
-      int bmvertindex = BM_elem_index_get(l->v);
-      const float *luv = BM_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
-      blender::geometry::uv_prepare_pin_index(handle, bmvertindex, luv);
+      int meshvertindex = mesh_elem_index_get(l->v);
+      const float *luv = MESH_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
+      dune::geometry::uv_prepare_pin_index(handle, bmvertindex, luv);
     }
   }
 }
 
 static void construct_param_handle_face_add(ParamHandle *handle,
                                             const Scene *scene,
-                                            BMFace *efa,
-                                            blender::geometry::ParamKey face_index,
+                                            MeshFace *efa,
+                                            dune::geometry::ParamKey face_index,
                                             const UnwrapOptions *options,
-                                            const BMUVOffsets offsets)
+                                            const MeshUVOffsets offsets)
 {
-  blender::Array<ParamKey, BM_DEFAULT_NGON_STACK_SIZE> vkeys(efa->len);
-  blender::Array<bool, BM_DEFAULT_NGON_STACK_SIZE> pin(efa->len);
-  blender::Array<bool, BM_DEFAULT_NGON_STACK_SIZE> select(efa->len);
-  blender::Array<const float *, BM_DEFAULT_NGON_STACK_SIZE> co(efa->len);
-  blender::Array<float *, BM_DEFAULT_NGON_STACK_SIZE> uv(efa->len);
+  dune::Array<ParamKey, MESH_DEFAULT_NGON_STACK_SIZE> vkeys(efa->len);
+  dune::Array<bool, MESH_DEFAULT_NGON_STACK_SIZE> pin(efa->len);
+  dune::Array<bool, MESH_DEFAULT_NGON_STACK_SIZE> sel(efa->len);
+  dune::Array<const float *, MESH_DEFAULT_NGON_STACK_SIZE> co(efa->len);
+  dune::Array<float *, MESH_DEFAULT_NGON_STACK_SIZE> uv(efa->len);
   int i;
 
-  BMIter liter;
-  BMLoop *l;
+  MeshIter liter;
+  MeshLoop *l;
 
   /* let parametrizer split the ngon, it can make better decisions
    * about which split is best for unwrapping than poly-fill. */
-  BM_ITER_ELEM_INDEX (l, &liter, efa, BM_LOOPS_OF_FACE, i) {
-    float *luv = BM_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
+  MESH_ITER_ELEM_INDEX (l, &liter, efa, MESH_LOOPS_OF_FACE, i) {
+    float *luv = MESH_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
 
-    vkeys[i] = blender::geometry::uv_find_pin_index(handle, BM_elem_index_get(l->v), luv);
+    vkeys[i] = dune::geometry::uv_find_pin_index(handle, mesh_elem_index_get(l->v), luv);
     co[i] = l->v->co;
     uv[i] = luv;
-    pin[i] = BM_ELEM_CD_GET_BOOL(l, offsets.pin);
-    select[i] = uvedit_uv_select_test(scene, l, offsets);
-    if (options->pin_unselected && !select[i]) {
+    pin[i] = MESH_ELEM_CD_GET_BOOL(l, offsets.pin);
+    select[i] = uvedit_uv_sel_test(scene, l, offsets);
+    if (options->pin_unsel && !sel[i]) {
       pin[i] = true;
     }
   }
 
-  blender::geometry::uv_parametrizer_face_add(
+  dune::geometry::uv_parametrizer_face_add(
       handle, face_index, i, vkeys.data(), co.data(), uv.data(), pin.data(), select.data());
 }
 
 /* Set seams on UV Parametrizer based on options. */
 static void construct_param_edge_set_seams(ParamHandle *handle,
-                                           BMesh *bm,
+                                           Mesh *mesh,
                                            const UnwrapOptions *options)
 {
   if (options->topology_from_uvs && !options->topology_from_uvs_use_seams) {
     return; /* Seams are not required with these options. */
   }
 
-  const BMUVOffsets offsets = BM_uv_map_get_offsets(bm);
+  const MeshUVOffsets offsets = mesh_uv_map_get_offsets(mesh);
   if (offsets.uv == -1) {
-    return; /* UVs aren't present on BMesh. Nothing to do. */
+    return; /* UVs aren't present on Mesh. Nothing to do. */
   }
 
-  BMEdge *edge;
-  BMIter iter;
-  BM_ITER_MESH (edge, &iter, bm, BM_EDGES_OF_MESH) {
-    if (!BM_elem_flag_test(edge, BM_ELEM_SEAM)) {
+  MeshEdge *edge;
+  MeshIter iter;
+  MESH_ITER_MESH (edge, &iter, meeh, MESH_EDGES_OF_MESH) {
+    if (!mesh_elem_flag_test(edge, MESH_ELEM_SEAM)) {
       continue; /* No seam on this edge, nothing to do. */
     }
 
-    /* Pinned vertices might have more than one ParamKey per BMVert.
-     * Check all the BM_LOOPS_OF_EDGE to find all the ParamKeys.
-     */
+    /* Pinned vertices might have more than one ParamKey per MeshVert.
+     * Check all the MESH_LOOPS_OF_EDGE to find all the ParamKeys. */
     BMLoop *l;
     BMIter liter;
     BM_ITER_ELEM (l, &liter, edge, BM_LOOPS_OF_EDGE) {
