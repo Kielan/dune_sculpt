@@ -167,9 +167,8 @@ void blender::geometry::UVPackIsland_Params::setUDIMOffsetFromSpaceImage(const S
     udim_base_offset[1] = floorf(sima->cursor[1]);
   }
 }
-/** \} */
 
-bool blender::geometry::UVPackIsland_Params::isCancelled() const
+bool dune::geometry::UVPackIsland_Params::isCancelled() const
 {
   if (stop) {
     return *stop;
@@ -178,53 +177,50 @@ bool blender::geometry::UVPackIsland_Params::isCancelled() const
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Parametrizer Conversion
- * \{ */
+/* Parametrizer Conversion */
 
 struct UnwrapOptions {
-  /** Connectivity based on UV coordinates instead of seams. */
+  /* Connectivity based on UV coordinates instead of seams. */
   bool topology_from_uvs;
-  /** Also use seams as well as UV coordinates (only valid when `topology_from_uvs` is enabled). */
+  /* Also use seams as well as UV coordinates (only valid when `topology_from_uvs` is enabled). */
   bool topology_from_uvs_use_seams;
-  /** Only affect selected faces. */
-  bool only_selected_faces;
-  /**
-   * Only affect selected UVs.
-   * \note Disable this for operations that don't run in the image-window.
-   * Unwrapping from the 3D view for example, where only 'only_selected_faces' should be used.
-   */
-  bool only_selected_uvs;
-  /** Fill holes to better preserve shape. */
+  /* Only affect selected faces. */
+  bool only_sel_faces;
+  /* Only affect sel UVs.
+   * Disable this for ops that don't run in the img-win.
+   * Unwrapping from the 3D view for example, where only 'only_sel_faces' should be used. */
+  bool only_sel_uvs;
+  /* Fill holes to better preserve shape. */
   bool fill_holes;
-  /** Correct for mapped image texture aspect ratio. */
+  /* Correct for mapped img texture aspect ratio. */
   bool correct_aspect;
-  /** Treat unselected uvs as if they were pinned. */
-  bool pin_unselected;
+  /* Treat unselected uvs as if they were pinned. */
+  bool pin_unsel;
 };
 
-void blender::geometry::UVPackIsland_Params::setFromUnwrapOptions(const UnwrapOptions &options)
+void dune::geometry::UVPackIsland_Params::setFromUnwrapOptions(const UnwrapOptions &options)
 {
-  only_selected_uvs = options.only_selected_uvs;
-  only_selected_faces = options.only_selected_faces;
+  only_sel_uvs = options.only_sel_uvs;
+  only_sel_faces = options.only_sel_faces;
   use_seams = !options.topology_from_uvs || options.topology_from_uvs_use_seams;
   correct_aspect = options.correct_aspect;
-  pin_unselected = options.pin_unselected;
+  pin_unselected = options.pin_unsel;
 }
 
-static bool uvedit_have_selection(const Scene *scene, BMEditMesh *em, const UnwrapOptions *options)
+static bool uvedit_have_sel(const Scene *scene, MeshEdit *me, const UnwrapOptions *options)
 {
-  BMFace *efa;
-  BMLoop *l;
-  BMIter iter, liter;
-  const BMUVOffsets offsets = BM_uv_map_get_offsets(em->bm);
+  MeshFace *efa;
+  MeshLoop *l;
+  MeshIter iter, liter;
+  const MeshUVOffsets offsets = mesh_uv_map_get_offsets(me->mesh);
 
   if (offsets.uv == -1) {
-    return (em->bm->totfacesel != 0);
+    return (me->mesh->totfacesel != 0);
   }
 
   /* verify if we have any selected uv's before unwrapping,
    * so we can cancel the operator early */
-  BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+  MESH_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
     if (scene->toolsettings->uv_flag & UV_SYNC_SELECTION) {
       if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
         continue;
