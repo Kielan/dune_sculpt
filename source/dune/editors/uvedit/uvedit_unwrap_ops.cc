@@ -806,7 +806,7 @@ static void minimize_stretch_iter(Cxt *C, WinOp *op, bool interactive)
 
     if (area) {
       SNPRINTF(str, TIP_("Minimize Stretch. Blend %.2f"), ms->blend);
-      ed_area_status_text(area, str);
+      ed_area_status_txt(area, str);
       ed_workspace_status_txt(C, TIP_("Press + and -, or scroll wheel to set blending"));
     }
 
@@ -855,11 +855,11 @@ static void minimize_stretch_exit(Cxt *C, WinOp *op, bool cancel)
     Ob *obedit = ms->obs_edit[ob_index];
     MeshEdit *me = dune_meshedit_from_ob(obedit);
 
-    if (synced_sel && (em->mesh->totfacesel == 0)) {
+    if (synced_sel && (me->mesh->totfacesel == 0)) {
       continue;
     }
 
-    graph_id_tag_update(static_cast<ID *>(obedit->data), ID_RECALC_GEOMETRY);
+    graph_id_tag_update(static_cast<Id *>(obedit->data), ID_RECALC_GEOMETRY);
     win_ev_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
   }
 
@@ -894,8 +894,8 @@ static int minimize_stretch_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
   minimize_stretch_iter(C, op, true);
 
   MinStretch *ms = static_cast<MinStretch *>(op->customdata);
-  WM_event_add_modal_handler(C, op);
-  ms->timer = WM_event_timer_add(CTX_wm_manager(C), CTX_wm_window(C), TIMER, 0.01f);
+  win_ev_add_modal_handler(C, op);
+  ms->timer = win_ev_timer_add(cxt_win(C), CTX_wm_window(C), TIMER, 0.01f);
 
   return OP_RUNNING_MODAL;
 }
