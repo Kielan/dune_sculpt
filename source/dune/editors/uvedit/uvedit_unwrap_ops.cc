@@ -1653,19 +1653,19 @@ void UV_OT_pack_islands(WinOpType *ot)
                "Margin Method",
                "");
   api_def_float_factor(
-      ot->srna, "margin", 0.001f, 0.0f, 1.0f, "Margin", "Space between islands", 0.0f, 1.0f);
-  RNA_def_boolean(ot->srna,
+      ot->sapi, "margin", 0.001f, 0.0f, 1.0f, "Margin", "Space between islands", 0.0f, 1.0f);
+  api_def_bool(ot->sapi,
                   "pin",
                   false,
                   "Lock Pinned Islands",
                   "Constrain islands containing any pinned UV's");
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "pin_method",
                pinned_islands_method_items,
                ED_UVPACK_PIN_LOCK_ALL,
                "Pin Method",
                "");
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "shape_method",
                pack_shape_method_items,
                ED_UVPACK_SHAPE_CONCAVE,
@@ -1673,169 +1673,155 @@ void UV_OT_pack_islands(WinOpType *ot)
                "");
 }
 
-/** \} */
+/* Avg UV Islands Scale Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Average UV Islands Scale Operator
- * \{ */
-
-static int average_islands_scale_exec(bContext *C, wmOperator *op)
+static int average_islands_scale_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   ToolSettings *ts = scene->toolsettings;
-  const bool synced_selection = (ts->uv_flag & UV_SYNC_SELECTION) != 0;
+  const bool synced_sel = (ts->uv_flag & UV_SYNC_SEL) != 0;
 
   UnwrapOptions options{};
   options.topology_from_uvs = true;
-  options.only_selected_faces = true;
-  options.only_selected_uvs = true;
+  options.only_sel_faces = true;
+  options.only_sel_uvs = true;
   options.fill_holes = false;
   options.correct_aspect = true;
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data_with_uvs(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data_w¥_uvs(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
 
-  if (!uvedit_have_selection_multi(scene, objects, objects_len, &options)) {
-    MEM_freeN(objects);
-    return OPERATOR_CANCELLED;
+  if (!uvedit_have_sel_multi(scene, obs, obs_len, &options)) {
+    mem_free(obs);
+    return OP_CANCELLED;
   }
 
-  /* RNA props */
-  const bool scale_uv = RNA_boolean_get(op->ptr, "scale_uv");
-  const bool shear = RNA_boolean_get(op->ptr, "shear");
+  /* api props */
+  const bool scale_uv = api_bool_get(op->ptr, "scale_uv");
+  const bool shear = api_bool_get(op->ptr, "shear");
 
   ParamHandle *handle = construct_param_handle_multi(scene, objects, objects_len, &options);
-  blender::geometry::uv_parametrizer_average(handle, false, scale_uv, shear);
-  blender::geometry::uv_parametrizer_flush(handle);
+  dune::geometry::uv_parametrizer_avg(handle, false, scale_uv, shear);
+  dune::geometry::uv_parametrizer_flush(handle);
   delete (handle);
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    MesgEdit *me = dune_meshedit_from_ob(obedit);
 
-    if (synced_selection && (em->bm->totvertsel == 0)) {
+    if (synced_sel && (me->mesh->totvertsel == 0)) {
       continue;
     }
 
-    DEG_id_tag_update(static_cast<ID *>(obedit->data), ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+    graph_id_tag_update(static_cast<Id *>(obedit->data), ID_RECALC_GEOMETRY);
+    win_ev_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
   }
-  MEM_freeN(objects);
-  return OPERATOR_FINISHED;
+  mem_free(obs);
+  return OP_FINISHED;
 }
 
-void UV_OT_average_islands_scale(wmOperatorType *ot)
+void UV_OT_avg_islands_scale(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Average Islands Scale";
-  ot->idname = "UV_OT_average_islands_scale";
-  ot->description = "Average the size of separate UV islands, based on their area in 3D space";
+  /* ids */
+  ot->name = "Avg Islands Scale";
+  ot->idname = "UV_OT_avg_islands_scale";
+  ot->description = "Avg the size of separate UV islands, based on their area in 3D space";
 
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* api callbacks */
-  ot->exec = average_islands_scale_exec;
-  ot->poll = ED_operator_uvedit;
+  /* api cbs */
+  ot->ex = avg_islands_scale_ex;
+  ot->poll = ed_op_uvedit;
 
-  /* properties */
-  RNA_def_boolean(ot->srna, "scale_uv", false, "Non-Uniform", "Scale U and V independently");
-  RNA_def_boolean(ot->srna, "shear", false, "Shear", "Reduce shear within islands");
+  /* props */
+  api_def_bool(ot->sapi, "scale_uv", false, "Non-Uniform", "Scale U and V independently");
+  api_def_bool(ot->sapi, "shear", false, "Shear", "Reduce shear within islands");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Live UV Unwrap
- * \{ */
-
+/* Live UV Unwrap */
 static struct {
   ParamHandle **handles;
   uint len, len_alloc;
 } g_live_unwrap = {nullptr};
 
-void ED_uvedit_live_unwrap_begin(Scene *scene, Object *obedit)
+void ed_uvedit_live_unwrap_begin(Scene *scene, Ob *obedit)
 {
   ParamHandle *handle = nullptr;
-  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  MeshEdit *me = dune_meshedit_from_ob(obedit);
   const bool abf = (scene->toolsettings->unwrapper == 0);
   bool use_subsurf;
 
-  modifier_unwrap_state(obedit, scene, &use_subsurf);
+  mod_unwrap_state(obedit, scene, &use_subsurf);
 
-  if (!ED_uvedit_test(obedit)) {
+  if (!ed_uvedit_test(obedit)) {
     return;
   }
 
   UnwrapOptions options{};
   options.topology_from_uvs = false;
-  options.only_selected_faces = false;
-  options.only_selected_uvs = false;
+  options.only_sel_faces = false;
+  options.only_sel_uvs = false;
   options.fill_holes = (scene->toolsettings->uvcalc_flag & UVCALC_FILLHOLES) != 0;
   options.correct_aspect = (scene->toolsettings->uvcalc_flag & UVCALC_NO_ASPECT_CORRECT) == 0;
 
   if (use_subsurf) {
-    handle = construct_param_handle_subsurfed(scene, obedit, em, &options, nullptr);
+    handle = construct_param_handle_subsurfed(scene, obedit, mesh, &options, nullptr);
   }
   else {
-    handle = construct_param_handle(scene, obedit, em->bm, &options, nullptr);
+    handle = construct_param_handle(scene, obedit, me->mesh, &options, nullptr);
   }
 
-  blender::geometry::uv_parametrizer_lscm_begin(handle, true, abf);
+  dune::geometry::uv_parametrizer_lscm_begin(handle, true, abf);
 
   /* Create or increase size of g_live_unwrap.handles array */
   if (g_live_unwrap.handles == nullptr) {
     g_live_unwrap.len_alloc = 32;
-    g_live_unwrap.handles = static_cast<ParamHandle **>(MEM_mallocN(
+    g_live_unwrap.handles = static_cast<ParamHandle **>(mem_malloc(
         sizeof(ParamHandle *) * g_live_unwrap.len_alloc, "uvedit_live_unwrap_liveHandles"));
     g_live_unwrap.len = 0;
   }
   if (g_live_unwrap.len >= g_live_unwrap.len_alloc) {
     g_live_unwrap.len_alloc *= 2;
     g_live_unwrap.handles = static_cast<ParamHandle **>(
-        MEM_reallocN(g_live_unwrap.handles, sizeof(ParamHandle *) * g_live_unwrap.len_alloc));
+        mem_realloc(g_live_unwrap.handles, sizeof(ParamHandle *) * g_live_unwrap.len_alloc));
   }
   g_live_unwrap.handles[g_live_unwrap.len] = handle;
   g_live_unwrap.len++;
 }
 
-void ED_uvedit_live_unwrap_re_solve()
+void ed_uvedit_live_unwrap_re_solve()
 {
   if (g_live_unwrap.handles) {
     for (int i = 0; i < g_live_unwrap.len; i++) {
-      blender::geometry::uv_parametrizer_lscm_solve(g_live_unwrap.handles[i], nullptr, nullptr);
-      blender::geometry::uv_parametrizer_flush(g_live_unwrap.handles[i]);
+      dune::geometry::uv_parametrizer_lscm_solve(g_live_unwrap.handles[i], nullptr, nullptr);
+      dune::geometry::uv_parametrizer_flush(g_live_unwrap.handles[i]);
     }
   }
 }
 
-void ED_uvedit_live_unwrap_end(short cancel)
+void ed_uvedit_live_unwrap_end(short cancel)
 {
   if (g_live_unwrap.handles) {
     for (int i = 0; i < g_live_unwrap.len; i++) {
-      blender::geometry::uv_parametrizer_lscm_end(g_live_unwrap.handles[i]);
+      dune::geometry::uv_parametrizer_lscm_end(g_live_unwrap.handles[i]);
       if (cancel) {
-        blender::geometry::uv_parametrizer_flush_restore(g_live_unwrap.handles[i]);
+        dune::geometry::uv_parametrizer_flush_restore(g_live_unwrap.handles[i]);
       }
       delete (g_live_unwrap.handles[i]);
     }
-    MEM_freeN(g_live_unwrap.handles);
+    mem_free(g_live_unwrap.handles);
     g_live_unwrap.handles = nullptr;
     g_live_unwrap.len = 0;
     g_live_unwrap.len_alloc = 0;
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name UV Map Common Transforms
- * \{ */
-
+/* UV Map Common Transform */
 #define VIEW_ON_EQUATOR 0
 #define VIEW_ON_POLES 1
-#define ALIGN_TO_OBJECT 2
+#define ALIGN_TO_OB 2
 
 #define POLAR_ZX 0
 #define POLAR_ZY 1
@@ -1845,28 +1831,28 @@ enum {
   FAN = 1,
 };
 
-static void uv_map_transform_calc_bounds(BMEditMesh *em, float r_min[3], float r_max[3])
+static void uv_map_transform_calc_bounds(MeshEdit *me, float r_min[3], float r_max[3])
 {
-  BMFace *efa;
-  BMIter iter;
+  MeshFace *efa;
+  MeshIter iter;
   INIT_MINMAX(r_min, r_max);
-  BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-    if (BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
-      BM_face_calc_bounds_expand(efa, r_min, r_max);
+  MESH_ITER_MESH (efa, &iter, me->mesh, MESH_FACES_OF_MESH) {
+    if (mesh_elem_flag_test(efa, MESH_ELEM_SEL)) {
+      mesh_face_calc_bounds_expand(efa, r_min, r_max);
     }
   }
 }
 
-static void uv_map_transform_calc_center_median(BMEditMesh *em, float r_center[3])
+static void uv_map_transform_calc_center_median(MeshEdit *me, float r_center[3])
 {
-  BMFace *efa;
-  BMIter iter;
+  MeshFace *efa;
+  MeshIter iter;
   uint center_accum_num = 0;
   zero_v3(r_center);
-  BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-    if (BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+  MESH_ITER_MESH (efa, &iter, me->mesh, MESH_FACES_OF_MESH) {
+    if (mesh_elem_flag_test(efa, MESH_ELEM_SEL)) {
       float center[3];
-      BM_face_calc_center_median(efa, center);
+      mesh_face_calc_center_median(efa, center);
       add_v3_v3(r_center, center);
       center_accum_num += 1;
     }
@@ -1876,12 +1862,12 @@ static void uv_map_transform_calc_center_median(BMEditMesh *em, float r_center[3
 
 static void uv_map_transform_center(const Scene *scene,
                                     View3D *v3d,
-                                    Object *ob,
-                                    BMEditMesh *em,
+                                    Ob *ob,
+                                    MeshEdit *mesh,
                                     float r_center[3],
                                     float r_bounds[2][3])
 {
-  /* only operates on the edit object - this is all that's needed now */
+  /* only ops on the edit ob - this is all that's needed now */
   const int around = (v3d) ? scene->toolsettings->transform_pivot_point :
                              int(V3D_AROUND_CENTER_BOUNDS);
 
@@ -1892,7 +1878,7 @@ static void uv_map_transform_center(const Scene *scene,
   switch (around) {
     case V3D_AROUND_CENTER_BOUNDS: /* bounding box center */
     {
-      uv_map_transform_calc_bounds(em, bounds[0], bounds[1]);
+      uv_map_transform_calc_bounds(me, bounds[0], bounds[1]);
       is_minmax_set = true;
       mid_v3_v3v3(r_center, bounds[0], bounds[1]);
       break;
@@ -1903,14 +1889,14 @@ static void uv_map_transform_center(const Scene *scene,
     }
     case V3D_AROUND_CURSOR: /* cursor center */
     {
-      invert_m4_m4(ob->world_to_object, ob->object_to_world);
-      mul_v3_m4v3(r_center, ob->world_to_object, scene->cursor.location);
+      invert_m4_m4(ob->world_to_ob, ob->ob_to_world);
+      mul_v3_m4v3(r_center, ob->world_to_ob, scene->cursor.location);
       break;
     }
     case V3D_AROUND_ACTIVE: {
-      BMEditSelection ese;
-      if (BM_select_history_active_get(em->bm, &ese)) {
-        BM_editselection_center(&ese, r_center);
+      MeshEditSel ese;
+      if (mesh_sel_history_active_get(me->mesh, &ese)) {
+        mesh_editsel_center(&ese, r_center);
         break;
       }
       ATTR_FALLTHROUGH;
@@ -1924,7 +1910,7 @@ static void uv_map_transform_center(const Scene *scene,
   /* if this is passed, always set! */
   if (r_bounds) {
     if (!is_minmax_set) {
-      uv_map_transform_calc_bounds(em, bounds[0], bounds[1]);
+      uv_map_transform_calc_bounds(me, bounds[0], bounds[1]);
     }
     copy_v3_v3(r_bounds[0], bounds[0]);
     copy_v3_v3(r_bounds[1], bounds[1]);
@@ -1932,8 +1918,8 @@ static void uv_map_transform_center(const Scene *scene,
 }
 
 static void uv_map_rotation_matrix_ex(float result[4][4],
-                                      RegionView3D *rv3d,
-                                      Object *ob,
+                                      RgnView3D *rv3d,
+                                      Ob *ob,
                                       float upangledeg,
                                       float sideangledeg,
                                       float radius,
@@ -1953,8 +1939,8 @@ static void uv_map_rotation_matrix_ex(float result[4][4],
   /* but shifting */
   zero_v3(viewmatrix[3]);
 
-  /* get rotation of the current object matrix */
-  copy_m4_m4(rotobj, ob->object_to_world);
+  /* get rotation of the current ob matrix */
+  copy_m4_m4(rotobj, ob->ob_to_world);
   zero_v3(rotobj[3]);
 
   /* but shifting */
@@ -1981,14 +1967,14 @@ static void uv_map_rotation_matrix_ex(float result[4][4],
   rotup[2][2] = cosf(upangle) / radius;
   rotup[0][0] = 1.0f / radius;
 
-  /* Calculate transforms. */
+  /* Calc transforms. */
   mul_m4_series(result, rotup, rotside, viewmatrix, rotobj);
 }
 
-static void uv_map_transform(bContext *C, wmOperator *op, float rotmat[3][3])
+static void uv_map_transform(Cxt *C, WinOp *op, float rotmat[3][3])
 {
-  Object *obedit = CTX_data_edit_object(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  Ob *obedit = cxt_data_edit_object(C);
+  RgnView3D *rv3d = CTX_wm_region_view3d(C);
 
   const int align = RNA_enum_get(op->ptr, "align");
   const int direction = RNA_enum_get(op->ptr, "direction");
