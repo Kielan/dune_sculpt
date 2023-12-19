@@ -4,12 +4,12 @@
 
 #include "mem_guardedalloc.h"
 
-#include "types_camera_types.h"
-#include "typee_mesh_types.h"
-#include "types_meshdata_types.h"
-#include "types_mod_types.h"
-#include "types_ob_types.h"
-#include "types_scene_types.h"
+#include "types_camera.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_mod.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
 #include "dune_global.h"
 
@@ -102,32 +102,32 @@ static bool ed_uvedit_ensure_uvs(Ob *obedit)
     return true;
   }
 
-  MeshEdit *em = dube_meshedit_from_object(obedit);
-  BMFace *efa;
-  BMIter iter;
+  MeshEdit *em = dune_meshedit_from_ob(obedit);
+  MeshFace *efa;
+  MeshIter iter;
 
-  if (em && em->bm->totface && !CustomData_has_layer(&em->bm->ldata, CD_PROP_FLOAT2)) {
-    ED_mesh_uv_add(static_cast<Mesh *>(obedit->data), nullptr, true, true, nullptr);
+  if (me && me->mesh->totface && !CustomData_has_layer(&me->mesh->ldata, CD_PROP_FLOAT2)) {
+    ed_mesh_uv_add(static_cast<Mesh *>(obedit->data), nullptr, true, true, nullptr);
   }
 
   /* Happens when there are no faces. */
-  if (!ED_uvedit_test(obedit)) {
+  if (!ed_uvedit_test(obedit)) {
     return false;
   }
 
-  const char *active_uv_name = CustomData_get_active_layer_name(&em->bm->ldata, CD_PROP_FLOAT2);
-  BM_uv_map_ensure_vert_select_attr(em->bm, active_uv_name);
-  BM_uv_map_ensure_edge_select_attr(em->bm, active_uv_name);
-  const BMUVOffsets offsets = BM_uv_map_get_offsets(em->bm);
+  const char *active_uv_name = CustomData_get_active_layer_name(&me->mesh->ldata, CD_PROP_FLOAT2);
+  mesh_uv_map_ensure_vert_sel_attr(me->mesh, active_uv_name);
+  mesh_uv_map_ensure_edge_sel_attr(me->mesh, active_uv_name);
+  const MeshUVOffsets offsets = mesh_uv_map_get_offsets(me->mesh);
 
-  /* select new UVs (ignore UV_SYNC_SELECTION in this case) */
-  BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-    BMIter liter;
-    BMLoop *l;
+  /* select new UVs (ignore UV_SYNC_SEL in this case) */
+  MESH_ITER_MESH (efa, &iter, ne->mesh, MESH_FACES_OF_MESH) {
+    MeshIter liter;
+    MeshLoop *l;
 
-    BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-      BM_ELEM_CD_SET_BOOL(l, offsets.select_vert, true);
-      BM_ELEM_CD_SET_BOOL(l, offsets.select_edge, true);
+    MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+      MESH_ELEM_CD_SET_BOOL(l, offsets.sel_vert, true);
+      MESH_ELEM_CD_SET_BOOL(l, offsets.sel_edge, true);
     }
   }
 
@@ -265,7 +265,7 @@ void ed_uvedit_get_aspect_from_material(Ob *ob,
     *r_aspy = 1.0f;
     return;
   }
-  Img *ima;
+  Img *img;
   ed_ob_get_active_img(ob, material_index + 1, &img, nullptr, nullptr, nullptr);
   ed_img_get_uv_aspect(img, nullptr, r_aspx, r_aspy);
 }
@@ -302,7 +302,7 @@ static bool uvedit_is_face_affected(const Scene *scene,
     return false;
   }
 
-  if (options->only_sel_faces && !mesh_elem_flag_test(efa, BM_ELEM_SELECT)) {
+  if (options->only_sel_faces && !mesh_elem_flag_test(efa, MESH_ELEM_SEL)) {
     return false;
   }
 
@@ -322,10 +322,10 @@ static bool uvedit_is_face_affected(const Scene *scene,
 
 /* Prep unique indices for each unique pinned UV, even if it shares a MeshVert. */
 static void uvedit_prep_pinned_indices(ParamHandle *handle,
-                                          const Scene *scene,
-                                          MeshFace *efa,
-                                          const UnwrapOptions *options,
-                                          const MeshUVOffsets offsets)
+                                       const Scene *scene,
+                                       MeshFace *efa,
+                                       const UnwrapOptions *options,
+                                       const MeshUVOffsets offsets)
 {
   MeshIter liter;
   MeshLoop *l;
@@ -417,65 +417,62 @@ static void construct_param_edge_set_seams(ParamHandle *handle,
   }
 }
 
-/* Version of construct_param_handle_multi with a separate BMesh parameter.
- */
+/* Version of construct_param_handle_multi with a separate Mesh param. */
 static ParamHandle *construct_param_handle(const Scene *scene,
-                                           Object *ob,
-                                           BMesh *bm,
+                                           Ob *ob,
+                                           Mesh *mesh,
                                            const UnwrapOptions *options,
                                            int *r_count_failed = nullptr)
 {
-  BMFace *efa;
-  BMIter iter;
+  MeshFace *efa;
+  MeshIter iter;
   int i;
 
-  ParamHandle *handle = new blender::geometry::ParamHandle();
+  ParamHandle *handle = new dune::geometry::ParamHandle();
 
   if (options->correct_aspect) {
-    blender::geometry::uv_parametrizer_aspect_ratio(handle, ED_uvedit_get_aspect_y(ob));
+    dune::geometry::uv_parametrizer_aspect_ratio(handle, ed_uvedit_get_aspect_y(ob));
   }
 
   /* we need the vert indices */
-  BM_mesh_elem_index_ensure(bm, BM_VERT);
+  mesh_elem_index_ensure(mesh, MESH_VERT);
 
-  const BMUVOffsets offsets = BM_uv_map_get_offsets(bm);
-  BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
+  const MeshUVOffsets offsets = mesh_uv_map_get_offsets(mesh);
+  MESH_ITER_MESH_INDEX (efa, &iter, mesh, MESH_FACES_OF_MESH, i) {
     if (uvedit_is_face_affected(scene, efa, options, offsets)) {
       uvedit_prepare_pinned_indices(handle, scene, efa, options, offsets);
     }
   }
 
-  BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
+  MESH_ITER_MESH_INDEX (efa, &iter, mesh, MESH_FACES_OF_MESH, i) {
     if (uvedit_is_face_affected(scene, efa, options, offsets)) {
       construct_param_handle_face_add(handle, scene, efa, i, options, offsets);
     }
   }
 
-  construct_param_edge_set_seams(handle, bm, options);
+  construct_param_edge_set_seams(handle, mesh, options);
 
-  blender::geometry::uv_parametrizer_construct_end(
+  dune::geometry::uv_parametrizer_construct_end(
       handle, options->fill_holes, options->topology_from_uvs, r_count_failed);
 
   return handle;
 }
 
-/**
- * Version of #construct_param_handle that handles multiple objects.
- */
+/* Version of construct_param_handle that handles multiple obs. */
 static ParamHandle *construct_param_handle_multi(const Scene *scene,
-                                                 Object **objects,
-                                                 const uint objects_len,
+                                                 Ob **obs,
+                                                 const uint obs_len,
                                                  const UnwrapOptions *options)
 {
-  BMFace *efa;
-  BMIter iter;
+  MeshFace *efa;
+  MeshIter iter;
   int i;
 
-  ParamHandle *handle = new blender::geometry::ParamHandle();
+  ParamHandle *handle = new dune::geometry::ParamHandle();
 
   if (options->correct_aspect) {
-    Object *ob = objects[0];
-    blender::geometry::uv_parametrizer_aspect_ratio(handle, ED_uvedit_get_aspect_y(ob));
+    Ob *ob = obs[0];
+    dune::geometry::uv_parametrizer_aspect_ratio(handle, ED_uvedit_get_aspect_y(ob));
   }
 
   /* we need the vert indices */
