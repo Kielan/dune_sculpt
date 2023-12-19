@@ -1136,42 +1136,42 @@ static void uvedit_pack_islands_multi(const Scene *scene,
       mesg = mesh_override[ob_index];
     }
     else {
-      MEditMesh *em = BKE_editmesh_from_object(obedit);
-      bm = em->bm;
+      MeshEdit *me = dune_meshedit_from_ob(obedit);
+      mesh = me->mesh;
     }
-    BLI_assert(bm);
+    lib_assert(mesh);
 
-    const BMUVOffsets offsets = BM_uv_map_get_offsets(bm);
+    const MeshUVOffsets offsets = mesh_uv_map_get_offsets(mesh);
     if (offsets.uv == -1) {
       continue;
     }
 
-    const float aspect_y = params->correct_aspect ? ED_uvedit_get_aspect_y(obedit) : 1.0f;
+    const float aspect_y = params->correct_aspect ? ed_uvedit_get_aspect_y(obedit) : 1.0f;
 
-    bool only_selected_faces = params->only_selected_faces;
-    bool only_selected_uvs = params->only_selected_uvs;
+    bool only_sel_faces = params->only_sel_faces;
+    bool only_sel_uvs = params->only_sel_uvs;
     const bool ignore_pinned = params->pin_method == ED_UVPACK_PIN_IGNORE;
-    if (ignore_pinned && params->pin_unselected) {
-      only_selected_faces = false;
-      only_selected_uvs = false;
+    if (ignore_pinned && params->pin_unsel) {
+      only_sel_faces = false;
+      only_sel_uvs = false;
     }
-    ListBase island_list = {nullptr};
-    bm_mesh_calc_uv_islands(scene,
-                            bm,
-                            &island_list,
-                            only_selected_faces,
-                            only_selected_uvs,
-                            params->use_seams,
-                            aspect_y,
-                            offsets);
+    List island_list = {nullptr};
+    mesh_calc_uv_islands(scene,
+                         mesh,
+                         &island_list,
+                         only_sel_faces,
+                         only_sel_uvs,
+                         params->use_seams,
+                         aspect_y,
+                         offsets);
 
-    /* Remove from linked list and append to blender::Vector. */
-    LISTBASE_FOREACH_MUTABLE (FaceIsland *, island, &island_list) {
-      BLI_remlink(&island_list, island);
+    /* Remove from linked list and append to dune::Vector. */
+    LIST_FOREACH_MUTABLE (FaceIsland *, island, &island_list) {
+      lib_remlink(&island_list, island);
       const bool pinned = island_has_pins(scene, island, params);
       if (ignore_pinned && pinned) {
-        MEM_freeN(island->faces);
-        MEM_freeN(island);
+        mem_free(island->faces);
+        mem_free(island);
         continue;
       }
       island_vector.append(island);
@@ -1184,29 +1184,29 @@ static void uvedit_pack_islands_multi(const Scene *scene,
   }
 
   /* Coordinates of bounding box containing all selected UVs. */
-  float selection_min_co[2], selection_max_co[2];
-  INIT_MINMAX2(selection_min_co, selection_max_co);
+  float sel_min_co[2], sel_max_co[2];
+  INIT_MINMAX2(sel_min_co, sel_max_co);
 
   for (int index = 0; index < island_vector.size(); index++) {
     FaceIsland *island = island_vector[index];
 
     for (int i = 0; i < island->faces_len; i++) {
-      BMFace *f = island->faces[i];
-      BM_face_uv_minmax(f, selection_min_co, selection_max_co, island->offsets.uv);
+      MeshFace *f = island->faces[i];
+      mesh_face_uv_minmax(f, sel_min_co, sel_max_co, island->offsets.uv);
     }
   }
 
-  /* Center of bounding box containing all selected UVs. */
-  float selection_center[2];
-  mid_v2_v2v2(selection_center, selection_min_co, selection_max_co);
+  /* Center of bounding box containing all sel UVs. */
+  float sel_center[2];
+  mid_v2_v2v2(sel_center, sel_min_co, sel_max_co);
 
-  if (original_selection) {
+  if (original_sel) {
     /* Protect against degenerate source AABB. */
-    if ((selection_max_co[0] - selection_min_co[0]) * (selection_max_co[1] - selection_min_co[1]) >
+    if ((sel_max_co[0] - sel_min_co[0]) * (sel_max_co[1] - sel_min_co[1]) >
         1e-40f)
     {
-      copy_v2_v2(params->udim_base_offset, selection_min_co);
-      params->target_extent = selection_max_co[1] - selection_min_co[1];
+      copy_v2_v2(params->udim_base_offset, sel_min_co);
+      params->target_extent = selection_max_co[1] - sel_min_co[1];
       params->target_aspect_y = (selection_max_co[0] - selection_min_co[0]) /
                                 (selection_max_co[1] - selection_min_co[1]);
     }
