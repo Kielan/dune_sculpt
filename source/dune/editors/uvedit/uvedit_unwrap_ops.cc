@@ -904,85 +904,85 @@ static int minimize_stretch_modal(bContext *C, wmOperator *op, const wmEvent *ev
 {
   MinStretch *ms = static_cast<MinStretch *>(op->customdata);
 
-  switch (event->type) {
-    case EVT_ESCKEY:
+  switch (ev->type) {
+    case EV_ESCKEY:
     case RIGHTMOUSE:
       minimize_stretch_exit(C, op, true);
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     case EVT_RETKEY:
     case EVT_PADENTER:
     case LEFTMOUSE:
       minimize_stretch_exit(C, op, false);
-      return OPERATOR_FINISHED;
-    case EVT_PADPLUSKEY:
+      return OP_FINISHED;
+    case EV_PADPLUSKEY:
     case WHEELUPMOUSE:
-      if (event->val == KM_PRESS) {
+      if (ev->val == KM_PRESS) {
         if (ms->blend < 0.95f) {
           ms->blend += 0.1f;
           ms->lasttime = 0.0f;
-          RNA_float_set(op->ptr, "blend", ms->blend);
-          minimize_stretch_iteration(C, op, true);
+          api_float_set(op->ptr, "blend", ms->blend);
+          minimize_stretch_iter(C, op, true);
         }
       }
       break;
-    case EVT_PADMINUS:
+    case EV_PADMINUS:
     case WHEELDOWNMOUSE:
-      if (event->val == KM_PRESS) {
+      if (ev->val == KM_PRESS) {
         if (ms->blend > 0.05f) {
           ms->blend -= 0.1f;
           ms->lasttime = 0.0f;
-          RNA_float_set(op->ptr, "blend", ms->blend);
-          minimize_stretch_iteration(C, op, true);
+          api_float_set(op->ptr, "blend", ms->blend);
+          minimize_stretch_iter(C, op, true);
         }
       }
       break;
     case TIMER:
-      if (ms->timer == event->customdata) {
+      if (ms->timer == ev->customdata) {
         double start = PIL_check_seconds_timer();
 
         do {
-          minimize_stretch_iteration(C, op, true);
+          minimize_stretch_iter(C, op, true);
         } while (PIL_check_seconds_timer() - start < 0.01);
       }
       break;
   }
 
-  if (ms->iterations && ms->i >= ms->iterations) {
+  if (ms->iters && ms->i >= ms->iters) {
     minimize_stretch_exit(C, op, false);
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void minimize_stretch_cancel(bContext *C, wmOperator *op)
+static void minimize_stretch_cancel(Cxt *C, WinOp *op)
 {
   minimize_stretch_exit(C, op, true);
 }
 
-void UV_OT_minimize_stretch(wmOperatorType *ot)
+void UV_OT_minimize_stretch(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Minimize Stretch";
   ot->idname = "UV_OT_minimize_stretch";
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_GRAB_CURSOR_XY | OPTYPE_BLOCKING;
   ot->description = "Reduce UV stretching by relaxing angles";
 
-  /* api callbacks */
-  ot->exec = minimize_stretch_exec;
+  /* api cns */
+  ot->ex = minimize_stretch_ex;
   ot->invoke = minimize_stretch_invoke;
   ot->modal = minimize_stretch_modal;
   ot->cancel = minimize_stretch_cancel;
-  ot->poll = ED_operator_uvedit;
+  ot->poll = ed_op_uvedit;
 
-  /* properties */
-  RNA_def_boolean(ot->srna,
+  /* props */
+  api_def_bool(ot->sapi,
                   "fill_holes",
                   true,
                   "Fill Holes",
                   "Virtually fill holes in mesh before unwrapping, to better avoid overlaps and "
                   "preserve symmetry");
-  RNA_def_float_factor(ot->srna,
+  api_def_float_factor(ot->sapi,
                        "blend",
                        0.0f,
                        0.0f,
@@ -991,18 +991,16 @@ void UV_OT_minimize_stretch(wmOperatorType *ot)
                        "Blend factor between stretch minimized and original",
                        0.0f,
                        1.0f);
-  RNA_def_int(ot->srna,
-              "iterations",
+  api_def_int(ot->sapi,
+              "iters",
               0,
               0,
               INT_MAX,
-              "Iterations",
-              "Number of iterations to run, 0 is unlimited when run interactively",
+              "Iters",
+              "Number of iters to run, 0 is unlimited when run interactively",
               0,
               100);
 }
-
-/** \} */
 
 static void island_uv_transform(FaceIsland *island,
                                 const float matrix[2][2],    /* Scale and rotation. */
@@ -1011,47 +1009,42 @@ static void island_uv_transform(FaceIsland *island,
 {
   /* Use a pre-transform to compute `A * (x+b)`
    *
-   * \note Ordinarily, we'd use a post_transform like `A * x + b`
+   * Ordinarily, we'd use a post_transform like `A * x + b`
    * In general, post-transforms are easier to work with when using homogenous co-ordinates.
    *
    * When UV mapping into the unit square, post-transforms can lose precision on small islands.
    * Instead we're using a pre-transform to maintain precision.
    *
-   * To convert post-transform to pre-transform, use `A * x + b == A * (x + c), c = A^-1 * b`
-   */
+   * To convert post-transform to pre-transform, use `A * x + b == A * (x + c), c = A^-1 * b` */
 
   const int cd_loop_uv_offset = island->offsets.uv;
   const int faces_len = island->faces_len;
   for (int i = 0; i < faces_len; i++) {
-    BMFace *f = island->faces[i];
-    BMLoop *l;
-    BMIter iter;
-    BM_ITER_ELEM (l, &iter, f, BM_LOOPS_OF_FACE) {
-      float *luv = BM_ELEM_CD_GET_FLOAT_P(l, cd_loop_uv_offset);
-      blender::geometry::mul_v2_m2_add_v2v2(luv, matrix, luv, pre_translate);
+    MeshFace *f = island->faces[i];
+    MeshLoop *l;
+    MeshIter iter;
+    MESH_ITER_ELEM (l, &iter, f, MESH_LOOPS_OF_FACE) {
+      float *luv = MESH_ELEM_CD_GET_FLOAT_P(l, cd_loop_uv_offset);
+      dune::geometry::mul_v2_m2_add_v2v2(luv, matrix, luv, pre_translate);
     }
   }
 }
 
-/**
- * Calculates distance to nearest UDIM image tile in UV space and its UDIM tile number.
- */
-static float uv_nearest_image_tile_distance(const Image *image,
+/* Calcs distance to nearest UDIM image tile in UV space and its UDIM tile number. */
+static float uv_nearest_img_tile_distance(const Img *img,
                                             const float coords[2],
                                             float nearest_tile_co[2])
 {
-  BKE_image_find_nearest_tile_with_offset(image, coords, nearest_tile_co);
+  dune_img_find_nearest_tile_with_offset(img, coords, nearest_tile_co);
 
-  /* Add 0.5 to get tile center coordinates. */
+  /* Add 0.5 to get tile center coords. */
   float nearest_tile_center_co[2] = {nearest_tile_co[0], nearest_tile_co[1]};
   add_v2_fl(nearest_tile_center_co, 0.5f);
 
   return len_squared_v2v2(coords, nearest_tile_center_co);
 }
 
-/**
- * Calculates distance to nearest UDIM grid tile in UV space and its UDIM tile number.
- */
+/* Calcs distance to nearest UDIM grid tile in UV space and its UDIM tile number. */
 static float uv_nearest_grid_tile_distance(const int udim_grid[2],
                                            const float coords[2],
                                            float nearest_tile_co[2])
@@ -1078,7 +1071,7 @@ static float uv_nearest_grid_tile_distance(const int udim_grid[2],
     nearest_tile_co[1] = coords_floor[1];
   }
 
-  /* Add 0.5 to get tile center coordinates. */
+  /* Add 0.5 to get tile center coords. */
   float nearest_tile_center_co[2] = {nearest_tile_co[0], nearest_tile_co[1]};
   add_v2_fl(nearest_tile_center_co, 0.5f);
 
@@ -1087,23 +1080,23 @@ static float uv_nearest_grid_tile_distance(const int udim_grid[2],
 
 static bool island_has_pins(const Scene *scene,
                             FaceIsland *island,
-                            const blender::geometry::UVPackIsland_Params *params)
+                            const dune::geometry::UVPackIslandParams *params)
 {
-  const bool pin_unselected = params->pin_unselected;
-  const bool only_selected_faces = params->only_selected_faces;
-  BMLoop *l;
-  BMIter iter;
+  const bool pin_unsel = params->pin_unsel;
+  const bool only_sel_faces = params->only_sel_faces;
+  MeshLoop *l;
+  MeshIter iter;
   const int pin_offset = island->offsets.pin;
   for (int i = 0; i < island->faces_len; i++) {
-    BMFace *efa = island->faces[i];
-    if (pin_unselected && only_selected_faces && !BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+    MeshFace *efa = island->faces[i];
+    if (pin_unsel && only_sel_faces && !mesh_elem_flag_test(efa, MESH_ELEM_SEL)) {
       return true;
     }
-    BM_ITER_ELEM (l, &iter, island->faces[i], BM_LOOPS_OF_FACE) {
-      if (BM_ELEM_CD_GET_BOOL(l, pin_offset)) {
+    MESH_ITER_ELEM (l, &iter, island->faces[i], MESH_LOOPS_OF_FACE) {
+      if (MESH_ELEM_CD_GET_BOOL(l, pin_offset)) {
         return true;
       }
-      if (pin_unselected && !uvedit_uv_select_test(scene, l, island->offsets)) {
+      if (pin_unsel && !uvedit_uv_sel_test(scene, l, island->offsets)) {
         return true;
       }
     }
@@ -1111,41 +1104,39 @@ static bool island_has_pins(const Scene *scene,
   return false;
 }
 
-/**
- * Pack UV islands from multiple objects.
+/* Pack UV islands from multiple obs.
  *
- * \param scene: Scene containing the objects to be packed.
- * \param objects: Array of Objects to pack.
- * \param objects_len: Length of `objects` array.
- * \param bmesh_override: BMesh array aligned with `objects`.
- * Optional, when non-null this overrides object's BMesh.
- * This is needed to perform UV packing on objects that aren't in edit-mode.
- * \param udim_source_closest: UDIM source SpaceImage.
- * \param original_selection: Pack to original selection.
- * \param notify_wm: Notify the WM of any changes. (UI thread only.)
- * \param params: Parameters and options to pass to the packing engine.
- */
+ * param scene: Scene containing the obs to be packed.
+ * param obs: Array of Obs to pack.
+ * param obs_len: Length of `objects` array.
+ * param mesh_override: Mesh array aligned with `obs`.
+ * Optional, when non-null this overrides ob's Mesh.
+ * This is needed to perform UV packing on obs that aren't in edit-mode.
+ * param udim_src_closest: UDIM source SpaceImg.
+ * param original_sel: Pack to original sel.
+ * param notify_win: Notify the WM of any changes. (UI thread only.)
+ * param params: Params and options to pass to the packing engine. */
 static void uvedit_pack_islands_multi(const Scene *scene,
-                                      Object **objects,
-                                      const int objects_len,
-                                      BMesh **bmesh_override,
-                                      const SpaceImage *udim_source_closest,
-                                      const bool original_selection,
-                                      const bool notify_wm,
-                                      blender::geometry::UVPackIsland_Params *params)
+                                      Ob **obs,
+                                      const int obs_len,
+                                      Mesh **mesh_override,
+                                      const SpaceImg *udim_src_closest,
+                                      const bool original_sel,
+                                      const bool notify_win,
+                                      dune::geometry::UVPackIslandParams *params)
 {
-  blender::Vector<FaceIsland *> island_vector;
-  blender::Vector<bool> pinned_vector;
+  dune::Vector<FaceIsland *> island_vector;
+  dune::Vector<bool> pinned_vector;
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    BMesh *bm = nullptr;
-    if (bmesh_override) {
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    Mesh *mesh = nullptr;
+    if (mesh_override) {
       /* Note: obedit is still required for aspect ratio and ID_RECALC_GEOMETRY. */
-      bm = bmesh_override[ob_index];
+      mesg = mesh_override[ob_index];
     }
     else {
-      BMEditMesh *em = BKE_editmesh_from_object(obedit);
+      MEditMesh *em = BKE_editmesh_from_object(obedit);
       bm = em->bm;
     }
     BLI_assert(bm);
