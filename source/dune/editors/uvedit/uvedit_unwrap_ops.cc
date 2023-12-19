@@ -73,10 +73,8 @@
 using dune::geometry::ParamHandle;
 using dune::geometry::ParamKey;
 
-/* -------------------------------------------------------------------- */
 /* Util Fns */
-
-static void mod_unwrap_state(Object *obedit, const Scene *scene, bool *r_use_subsurf)
+static void mod_unwrap_state(Ob *obedit, const Scene *scene, bool *r_use_subsurf)
 {
   ModData *md;
   bool subsurf = (scene->toolsettings->uvcalc_flag & UVCALC_USESUBSURF) != 0;
@@ -172,11 +170,11 @@ bool dune::geometry::UVPackIsland_Params::isCancelled() const
 
 /* Parametrizer Conversion */
 struct UnwrapOptions {
-  /* Connectivity based on UV coordinates instead of seams. */
+  /* Connectivity based on UV coords instead of seams. */
   bool topology_from_uvs;
-  /* Also use seams as well as UV coordinates (only valid when `topology_from_uvs` is enabled). */
+  /* Also use seams as well as UV coords (only valid when `topology_from_uvs` is enabled). */
   bool topology_from_uvs_use_seams;
-  /* Only affect selected faces. */
+  /* Only affect sel faces. */
   bool only_sel_faces;
   /* Only affect sel UVs.
    * Disable this for ops that don't run in the img-win.
@@ -472,87 +470,87 @@ static ParamHandle *construct_param_handle_multi(const Scene *scene,
 
   if (options->correct_aspect) {
     Ob *ob = obs[0];
-    dune::geometry::uv_parametrizer_aspect_ratio(handle, ED_uvedit_get_aspect_y(ob));
+    dune::geometry::uv_parametrizer_aspect_ratio(handle, ed_uvedit_get_aspect_y(ob));
   }
 
   /* we need the vert indices */
-  EDBM_mesh_elem_index_ensure_multi(objects, objects_len, BM_VERT);
+  EDBM_mesh_elem_index_ensure_multi(obs, obs_len, MESH_VERT);
 
   int offset = 0;
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
-    BMesh *bm = em->bm;
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    MeshEdit *me = dune_meshedit_from_ob(obedit);
+    Mesh *mesh = me->mesh;
 
-    const BMUVOffsets offsets = BM_uv_map_get_offsets(em->bm);
+    const MeshUVOffsets offsets = mesh_uv_map_get_offsets(me->mesh);
 
     if (offsets.uv == -1) {
       continue;
     }
 
-    BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (efa, &iter, mesh, MESH_FACES_OF_MESH, i) {
       if (uvedit_is_face_affected(scene, efa, options, offsets)) {
         uvedit_prepare_pinned_indices(handle, scene, efa, options, offsets);
       }
     }
 
-    BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (efa, &iter, mesh, MESH_FACES_OF_MESH, i) {
       if (uvedit_is_face_affected(scene, efa, options, offsets)) {
         construct_param_handle_face_add(handle, scene, efa, i + offset, options, offsets);
       }
     }
 
-    construct_param_edge_set_seams(handle, bm, options);
+    construct_param_edge_set_seams(handle, mesh, options);
 
-    offset += bm->totface;
+    offset += mesh->totface;
   }
 
-  blender::geometry::uv_parametrizer_construct_end(
+  dune::geometry::uv_parametrizer_construct_end(
       handle, options->fill_holes, options->topology_from_uvs, nullptr);
 
   return handle;
 }
 
 static void texface_from_original_index(const Scene *scene,
-                                        const BMUVOffsets offsets,
-                                        BMFace *efa,
+                                        const MeshUVOffsets offsets,
+                                        MeshFace *efa,
                                         int index,
                                         float **r_uv,
                                         bool *r_pin,
-                                        bool *r_select)
+                                        bool *r_sel)
 {
-  BMLoop *l;
-  BMIter liter;
+  MeshLoop *l;
+  MeshIter liter;
 
   *r_uv = nullptr;
   *r_pin = false;
-  *r_select = true;
+  *r_sel = true;
 
   if (index == ORIGINDEX_NONE) {
     return;
   }
 
-  BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-    if (BM_elem_index_get(l->v) == index) {
-      float *luv = BM_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
+  MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+    if (mesh_elem_index_get(l->v) == index) {
+      float *luv = MESH_ELEM_CD_GET_FLOAT_P(l, offsets.uv);
       *r_uv = luv;
-      *r_pin = BM_ELEM_CD_GET_BOOL(l, offsets.pin);
-      *r_select = uvedit_uv_select_test(scene, l, offsets);
+      *r_pin = MESH_ELEM_CD_GET_BOOL(l, offsets.pin);
+      *r_sel = uvedit_uv_sel_test(scene, l, offsets);
       break;
     }
   }
 }
 
-static Mesh *subdivide_edit_mesh(const Object *object,
-                                 const BMEditMesh *em,
-                                 const SubsurfModifierData *smd)
+static Mesh *subdivide_edit_mesh(const Ob *ob,
+                                 const MeshEdit *me,
+                                 const SubsurfModData *smd)
 {
-  Mesh *me_from_em = BKE_mesh_from_bmesh_for_eval_nomain(
-      em->bm, nullptr, static_cast<const Mesh *>(object->data));
-  BKE_mesh_ensure_default_orig_index_customdata(me_from_em);
+  Mesh *me_from_em = dune_mesh_from_mesh_for_eval_nomain(
+      em->mesh, nullptr, static_cast<const Mesh *>(ob->data));
+  dune_mesh_ensure_default_orig_index_customdata(me_from_em);
 
-  SubdivSettings settings = BKE_subsurf_modifier_settings_init(smd, false);
+  SubdivSettings settings = dune_subsurf_mod_settings_init(smd, false);
   if (settings.level == 1) {
     return me_from_em;
   }
@@ -561,46 +559,44 @@ static Mesh *subdivide_edit_mesh(const Object *object,
   mesh_settings.resolution = (1 << smd->levels) + 1;
   mesh_settings.use_optimal_display = (smd->flags & eSubsurfModifierFlag_ControlEdges);
 
-  Subdiv *subdiv = BKE_subdiv_new_from_mesh(&settings, me_from_em);
-  Mesh *result = BKE_subdiv_to_mesh(subdiv, &mesh_settings, me_from_em);
-  BKE_id_free(nullptr, me_from_em);
-  BKE_subdiv_free(subdiv);
+  Subdiv *subdiv = dune_subdiv_new_from_mesh(&settings, me_from_em);
+  Mesh *result = dune_subdiv_to_mesh(subdiv, &mesh_settings, me_from_em);
+  dune_id_free(nullptr, me_from_em);
+  dune_subdiv_free(subdiv);
   return result;
 }
 
-/**
- * Unwrap handle initialization for subsurf aware-unwrapper.
- * The many modifications required to make the original function(see above)
- * work justified the existence of a new function.
- */
+/* Unwrap handle init for subsurf aware-unwrapper.
+ * The many modifications required to make the original fn(see above)
+ * work justified the existence of a new fn. */
 static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
-                                                     Object *ob,
-                                                     BMEditMesh *em,
-                                                     const UnwrapOptions *options,
+                                                     Ob *ob,
+                                                     MeshEdit *em,
+                                                     const UnwrapOpts *options,
                                                      int *r_count_failed = nullptr)
 {
-  /* pointers to modifier data for unwrap control */
-  SubsurfModifierData *smd_real;
-  /* Modifier initialization data, will control what type of subdivision will happen. */
-  SubsurfModifierData smd = {{nullptr}};
+  /* ptrs to mod data for unwrap ctrl */
+  SubsurfModData *smd_real;
+  /* Mod init data, will ctrl what type of subdivision will happen. */
+  SubsurfModData smd = {{nullptr}};
 
   /* Holds a map to edit-faces for every subdivision-surface face.
-   * These will be used to get hidden/ selected flags etc. */
-  BMFace **faceMap;
+   * These will be used to get hidden/sel flags etc. */
+  MeshFace **faceMap;
   /* Similar to the above, we need a way to map edges to their original ones. */
-  BMEdge **edgeMap;
+  MeshEdge **edgeMap;
 
-  const BMUVOffsets offsets = BM_uv_map_get_offsets(em->bm);
+  const MeshUVOffsets offsets = mesh_uv_map_get_offsets(me->mesh);
 
-  ParamHandle *handle = new blender::geometry::ParamHandle();
+  ParamHandle *handle = new dune::geometry::ParamHandle();
 
   if (options->correct_aspect) {
-    blender::geometry::uv_parametrizer_aspect_ratio(handle, ED_uvedit_get_aspect_y(ob));
+    dune::geometry::uv_parametrizer_aspect_ratio(handle, ed_uvedit_get_aspect_y(ob));
   }
 
   /* number of subdivisions to perform */
-  ModifierData *md = static_cast<ModifierData *>(ob->modifiers.first);
-  smd_real = (SubsurfModifierData *)md;
+  ModData *md = static_cast<ModData *>(ob->mods.first);
+  smd_real = (SubsurfModData *)md;
 
   smd.levels = smd_real->levels;
   smd.subdivType = smd_real->subdivType;
@@ -609,10 +605,10 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
 
   Mesh *subdiv_mesh = subdivide_edit_mesh(ob, em, &smd);
 
-  const blender::Span<blender::float3> subsurf_positions = subdiv_mesh->vert_positions();
-  const blender::Span<blender::int2> subsurf_edges = subdiv_mesh->edges();
-  const blender::OffsetIndices subsurf_facess = subdiv_mesh->faces();
-  const blender::Span<int> subsurf_corner_verts = subdiv_mesh->corner_verts();
+  const dune::Span<dune::float3> subsurf_positions = subdiv_mesh->vert_positions();
+  const dune::Span<dune::int2> subsurf_edges = subdiv_mesh->edges();
+  const dune::OffsetIndices subsurf_facess = subdiv_mesh->faces();
+  const dune::Span<int> subsurf_corner_verts = subdiv_mesh->corner_verts();
 
   const int *origVertIndices = static_cast<const int *>(
       CustomData_get_layer(&subdiv_mesh->vert_data, CD_ORIGINDEX));
@@ -621,25 +617,25 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
   const int *origPolyIndices = static_cast<const int *>(
       CustomData_get_layer(&subdiv_mesh->face_data, CD_ORIGINDEX));
 
-  faceMap = static_cast<BMFace **>(
-      MEM_mallocN(subdiv_mesh->faces_num * sizeof(BMFace *), "unwrap_edit_face_map"));
+  faceMap = static_cast<MeshFace **>(
+      mem_malloc(subdiv_mesh->faces_num * sizeof(MeshFace *), "unwrap_edit_face_map"));
 
-  BM_mesh_elem_index_ensure(em->bm, BM_VERT);
-  BM_mesh_elem_table_ensure(em->bm, BM_EDGE | BM_FACE);
+  mesh_elem_index_ensure(me->mesh, MESH_VERT);
+  mesh_elem_table_ensure(me->mesh, MESH_EDGE | MESH_FACE);
 
   /* map subsurfed faces to original editFaces */
   for (int i = 0; i < subdiv_mesh->faces_num; i++) {
-    faceMap[i] = BM_face_at_index(em->bm, origPolyIndices[i]);
+    faceMap[i] = mesh_face_at_index(me->mesh, origPolyIndices[i]);
   }
 
-  edgeMap = static_cast<BMEdge **>(
-      MEM_mallocN(subdiv_mesh->totedge * sizeof(BMEdge *), "unwrap_edit_edge_map"));
+  edgeMap = static_cast<MeshEdge **>(
+      mem_malloc(subdiv_mesh->totedge * sizeof(MeshEdge *), "unwrap_edit_edge_map"));
 
   /* map subsurfed edges to original editEdges */
   for (int i = 0; i < subdiv_mesh->totedge; i++) {
     /* not all edges correspond to an old edge */
     edgeMap[i] = (origEdgeIndices[i] != ORIGINDEX_NONE) ?
-                     BM_edge_at_index(em->bm, origEdgeIndices[i]) :
+                     mesh_edge_at_index(me->mesh, origEdgeIndices[i]) :
                      nullptr;
   }
 
@@ -651,8 +647,8 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
     float *uv[4];
     BMFace *origFace = faceMap[i];
 
-    if (scene->toolsettings->uv_flag & UV_SYNC_SELECTION) {
-      if (BM_elem_flag_test(origFace, BM_ELEM_HIDDEN)) {
+    if (scene->toolsettings->uv_flag & UV_SYNC_SEL) {
+      if (BM_elem_flag_test(origFace, MESH_ELEM_HIDDEN)) {
         continue;
       }
     }
