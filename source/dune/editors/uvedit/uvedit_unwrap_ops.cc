@@ -639,31 +639,31 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
                      nullptr;
   }
 
-  /* Prepare and feed faces to the solver. */
+  /* Prep and feed faces to the solver. */
   for (const int i : subsurf_facess.index_range()) {
     ParamKey key, vkeys[4];
     bool pin[4], select[4];
     const float *co[4];
     float *uv[4];
-    BMFace *origFace = faceMap[i];
+    MeshFace *origFace = faceMap[i];
 
     if (scene->toolsettings->uv_flag & UV_SYNC_SEL) {
-      if (BM_elem_flag_test(origFace, MESH_ELEM_HIDDEN)) {
+      if (mesh_elem_flag_test(origFace, MESH_ELEM_HIDDEN)) {
         continue;
       }
     }
     else {
-      if (BM_elem_flag_test(origFace, BM_ELEM_HIDDEN) ||
-          (options->only_selected_faces && !BM_elem_flag_test(origFace, BM_ELEM_SELECT)))
+      if (mesh_elem_flag_test(origFace, MESH_ELEM_HIDDEN) ||
+          (options->only_sel_faces && !mesh_elem_flag_test(origFace, MESH_ELEM_SEL)))
       {
         continue;
       }
     }
 
-    const blender::Span<int> poly_corner_verts = subsurf_corner_verts.slice(subsurf_facess[i]);
+    const dune::Span<int> poly_corner_verts = subsurf_corner_verts.slice(subsurf_facess[i]);
 
     /* We will not check for v4 here. Sub-surface faces always have 4 vertices. */
-    BLI_assert(poly_corner_verts.size() == 4);
+    lib_assert(poly_corner_verts.size() == 4);
     key = (ParamKey)i;
     vkeys[0] = (ParamKey)poly_corner_verts[0];
     vkeys[1] = (ParamKey)poly_corner_verts[1];
@@ -684,105 +684,100 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
                                 origVertIndices[poly_corner_verts[0]],
                                 &uv[0],
                                 &pin[0],
-                                &select[0]);
+                                &sel[0]);
     texface_from_original_index(scene,
                                 offsets,
                                 origFace,
                                 origVertIndices[poly_corner_verts[1]],
                                 &uv[1],
                                 &pin[1],
-                                &select[1]);
+                                &sel[1]);
     texface_from_original_index(scene,
                                 offsets,
                                 origFace,
                                 origVertIndices[poly_corner_verts[2]],
                                 &uv[2],
                                 &pin[2],
-                                &select[2]);
+                                &sel[2]);
     texface_from_original_index(scene,
                                 offsets,
                                 origFace,
                                 origVertIndices[poly_corner_verts[3]],
                                 &uv[3],
                                 &pin[3],
-                                &select[3]);
+                                &sel[3]);
 
-    blender::geometry::uv_parametrizer_face_add(handle, key, 4, vkeys, co, uv, pin, select);
+    dune::geometry::uv_parametrizer_face_add(handle, key, 4, vkeys, co, uv, pin, select);
   }
 
   /* These are calculated from original mesh too. */
   for (const int64_t i : subsurf_edges.index_range()) {
-    if ((edgeMap[i] != nullptr) && BM_elem_flag_test(edgeMap[i], BM_ELEM_SEAM)) {
-      const blender::int2 &edge = subsurf_edges[i];
+    if ((edgeMap[i] != nullptr) && mesh_elem_flag_test(edgeMap[i], MESH_ELEM_SEAM)) {
+      const dune::int2 &edge = subsurf_edges[i];
       ParamKey vkeys[2];
       vkeys[0] = (ParamKey)edge[0];
       vkeys[1] = (ParamKey)edge[1];
-      blender::geometry::uv_parametrizer_edge_set_seam(handle, vkeys);
+      dune::geometry::uv_parametrizer_edge_set_seam(handle, vkeys);
     }
   }
 
-  blender::geometry::uv_parametrizer_construct_end(
+  dune::geometry::uv_parametrizer_construct_end(
       handle, options->fill_holes, options->topology_from_uvs, r_count_failed);
 
   /* cleanup */
-  MEM_freeN(faceMap);
-  MEM_freeN(edgeMap);
-  BKE_id_free(nullptr, subdiv_mesh);
+  mem_free(faceMap);
+  mem_free(edgeMap);
+  dune_id_free(nullptr, subdiv_mesh);
 
   return handle;
 }
-
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Minimize Stretch Operator
- * \{ */
+/* Minimize Stretch Op */
 
 struct MinStretch {
   const Scene *scene;
-  Object **objects_edit;
-  uint objects_len;
+  Ob **obs_edit;
+  uint obs_len;
   ParamHandle *handle;
   float blend;
   double lasttime;
-  int i, iterations;
-  wmTimer *timer;
+  int i, iters;
+  WinTimer *timer;
 };
 
-static bool minimize_stretch_init(bContext *C, wmOperator *op)
+static bool minimize_stretch_init(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
   UnwrapOptions options{};
   options.topology_from_uvs = true;
-  options.fill_holes = RNA_boolean_get(op->ptr, "fill_holes");
-  options.only_selected_faces = true;
-  options.only_selected_uvs = true;
+  options.fill_holes = api_bool_get(op->ptr, "fill_holes");
+  options.only_sel_faces = true;
+  options.only_sel_uvs = true;
   options.correct_aspect = true;
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data_with_uvs(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data_with_uvs(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
 
-  if (!uvedit_have_selection_multi(scene, objects, objects_len, &options)) {
-    MEM_freeN(objects);
+  if (!uvedit_have_sel_multi(scene, obs, ob_len, &options)) {
+    mem_free(obs);
     return false;
   }
 
-  MinStretch *ms = MEM_cnew<MinStretch>(__func__);
+  MinStretch *ms = mem_cnew<MinStretch>(__func__);
   ms->scene = scene;
-  ms->objects_edit = objects;
-  ms->objects_len = objects_len;
-  ms->blend = RNA_float_get(op->ptr, "blend");
-  ms->iterations = RNA_int_get(op->ptr, "iterations");
+  ms->obs_edit = obs;
+  ms->obs_len = obs_len;
+  ms->blend = api_float_get(op->ptr, "blend");
+  ms->iters = api_int_get(op->ptr, "iterations");
   ms->i = 0;
-  ms->handle = construct_param_handle_multi(scene, objects, objects_len, &options);
+  ms->handle = construct_param_handle_multi(scene, obs, obs_len, &options);
   ms->lasttime = PIL_check_seconds_timer();
 
-  blender::geometry::uv_parametrizer_stretch_begin(ms->handle);
+  dune::geometry::uv_parametrizer_stretch_begin(ms->handle);
   if (ms->blend != 0.0f) {
-    blender::geometry::uv_parametrizer_stretch_blend(ms->handle, ms->blend);
+    dune::geometry::uv_parametrizer_stretch_blend(ms->handle, ms->blend);
   }
 
   op->customdata = ms;
@@ -790,77 +785,77 @@ static bool minimize_stretch_init(bContext *C, wmOperator *op)
   return true;
 }
 
-static void minimize_stretch_iteration(bContext *C, wmOperator *op, bool interactive)
+static void minimize_stretch_iter(Cxt *C, WinOp *op, bool interactive)
 {
   MinStretch *ms = static_cast<MinStretch *>(op->customdata);
-  ScrArea *area = CTX_wm_area(C);
-  const Scene *scene = CTX_data_scene(C);
+  ScrArea *area = cxt_win_area(C);
+  const Scene *scene = cxt_data_scene(C);
   ToolSettings *ts = scene->toolsettings;
-  const bool synced_selection = (ts->uv_flag & UV_SYNC_SELECTION) != 0;
+  const bool synced_sel = (ts->uv_flag & UV_SYNC_SEL) != 0;
 
-  blender::geometry::uv_parametrizer_stretch_blend(ms->handle, ms->blend);
-  blender::geometry::uv_parametrizer_stretch_iter(ms->handle);
+  dune::geometry::uv_parametrizer_stretch_blend(ms->handle, ms->blend);
+  dune::geometry::uv_parametrizer_stretch_iter(ms->handle);
 
   ms->i++;
-  RNA_int_set(op->ptr, "iterations", ms->i);
+  api_int_set(op->ptr, "iters", ms->i);
 
   if (interactive && (PIL_check_seconds_timer() - ms->lasttime > 0.5)) {
-    char str[UI_MAX_DRAW_STR];
+    char str[UI_MAX_DRW_STR];
 
-    blender::geometry::uv_parametrizer_flush(ms->handle);
+    dune::geometry::uv_parametrizer_flush(ms->handle);
 
     if (area) {
       SNPRINTF(str, TIP_("Minimize Stretch. Blend %.2f"), ms->blend);
-      ED_area_status_text(area, str);
-      ED_workspace_status_text(C, TIP_("Press + and -, or scroll wheel to set blending"));
+      ed_area_status_text(area, str);
+      ed_workspace_status_txt(C, TIP_("Press + and -, or scroll wheel to set blending"));
     }
 
     ms->lasttime = PIL_check_seconds_timer();
 
-    for (uint ob_index = 0; ob_index < ms->objects_len; ob_index++) {
-      Object *obedit = ms->objects_edit[ob_index];
-      BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    for (uint ob_index = 0; ob_index < ms->obs_len; ob_index++) {
+      Ob *obedit = ms->obs_edit[ob_index];
+      MeshEdit *em = dune_meshedit_from_ob(obedit);
 
-      if (synced_selection && (em->bm->totfacesel == 0)) {
+      if (synced_sel && (me->mesh->totfacesel == 0)) {
         continue;
       }
 
-      DEG_id_tag_update(static_cast<ID *>(obedit->data), ID_RECALC_GEOMETRY);
-      WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+      graph_id_tag_update(static_cast<Id *>(obedit->data), ID_RECALC_GEOMETRY);
+      win_ev_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
     }
   }
 }
 
-static void minimize_stretch_exit(bContext *C, wmOperator *op, bool cancel)
+static void minimize_stretch_exit(Cxt *C, WinOp *op, bool cancel)
 {
   MinStretch *ms = static_cast<MinStretch *>(op->customdata);
-  ScrArea *area = CTX_wm_area(C);
-  const Scene *scene = CTX_data_scene(C);
+  ScrArea *area = cxt_win_area(C);
+  const Scene *scene = cxt_data_scene(C);
   ToolSettings *ts = scene->toolsettings;
-  const bool synced_selection = (ts->uv_flag & UV_SYNC_SELECTION) != 0;
+  const bool synced_sel = (ts->uv_flag & UV_SYNC_SELECTION) != 0;
 
-  ED_area_status_text(area, nullptr);
-  ED_workspace_status_text(C, nullptr);
+  ed_area_status_txt(area, nullptr);
+  ed_workspace_status_txt(C, nullptr);
 
   if (ms->timer) {
-    WM_event_timer_remove(CTX_wm_manager(C), CTX_wm_window(C), ms->timer);
+    win_ev_timer_remove(cxt_win_manager(C), cxt_win(C), ms->timer);
   }
 
   if (cancel) {
-    blender::geometry::uv_parametrizer_flush_restore(ms->handle);
+    dune::geometry::uv_parametrizer_flush_restore(ms->handle);
   }
   else {
-    blender::geometry::uv_parametrizer_flush(ms->handle);
+    dune::geometry::uv_parametrizer_flush(ms->handle);
   }
 
-  blender::geometry::uv_parametrizer_stretch_end(ms->handle);
+  dune::geometry::uv_parametrizer_stretch_end(ms->handle);
   delete (ms->handle);
 
   for (uint ob_index = 0; ob_index < ms->objects_len; ob_index++) {
-    Object *obedit = ms->objects_edit[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    Ob *obedit = ms->obs_edit[ob_index];
+    MeshEdit *me = dune_editmesh_from_object(obedit);
 
-    if (synced_selection && (em->bm->totfacesel == 0)) {
+    if (synced_sel && (em->bm->totfacesel == 0)) {
       continue;
     }
 
