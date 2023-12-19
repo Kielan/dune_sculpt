@@ -366,7 +366,7 @@ static void construct_param_handle_face_add(ParamHandle *handle,
     co[i] = l->v->co;
     uv[i] = luv;
     pin[i] = MESH_ELEM_CD_GET_BOOL(l, offsets.pin);
-    select[i] = uvedit_uv_sel_test(scene, l, offsets);
+    sel[i] = uvedit_uv_sel_test(scene, l, offsets);
     if (options->pin_unsel && !sel[i]) {
       pin[i] = true;
     }
@@ -676,7 +676,7 @@ static ParamHandle *construct_param_handle_subsurfed(const Scene *scene,
     co[3] = subsurf_positions[poly_corner_verts[3]];
 
     /* This is where all the magic is done.
-     * If the vertex exists in the, we pass the original uv pointer to the solver, thus
+     * If the vert exists in the, we pass the original uv pointer to the solver, thus
      * flushing the solution to the edit mesh. */
     texface_from_original_index(scene,
                                 offsets,
@@ -851,53 +851,53 @@ static void minimize_stretch_exit(Cxt *C, WinOp *op, bool cancel)
   dune::geometry::uv_parametrizer_stretch_end(ms->handle);
   delete (ms->handle);
 
-  for (uint ob_index = 0; ob_index < ms->objects_len; ob_index++) {
+  for (uint ob_index = 0; ob_index < ms->obs_len; ob_index++) {
     Ob *obedit = ms->obs_edit[ob_index];
-    MeshEdit *me = dune_editmesh_from_object(obedit);
+    MeshEdit *me = dune_meshedit_from_ob(obedit);
 
-    if (synced_sel && (em->bm->totfacesel == 0)) {
+    if (synced_sel && (em->mesh->totfacesel == 0)) {
       continue;
     }
 
-    DEG_id_tag_update(static_cast<ID *>(obedit->data), ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+    graph_id_tag_update(static_cast<ID *>(obedit->data), ID_RECALC_GEOMETRY);
+    win_ev_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
   }
 
-  MEM_freeN(ms->objects_edit);
-  MEM_freeN(ms);
+  mem_free(ms->obs_edit);
+  mem_free(ms);
   op->customdata = nullptr;
 }
 
-static int minimize_stretch_exec(bContext *C, wmOperator *op)
+static int minimize_stretch_ex(Cxt *C, Wi WinOp *op)
 {
-  int i, iterations;
+  int i, iters;
 
   if (!minimize_stretch_init(C, op)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  iterations = RNA_int_get(op->ptr, "iterations");
-  for (i = 0; i < iterations; i++) {
-    minimize_stretch_iteration(C, op, false);
+  iters = api_int_get(op->ptr, "iters");
+  for (i = 0; i < iters; i++) {
+    minimize_stretch_iter(C, op, false);
   }
   minimize_stretch_exit(C, op, false);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int minimize_stretch_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int minimize_stretch_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
   if (!minimize_stretch_init(C, op)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  minimize_stretch_iteration(C, op, true);
+  minimize_stretch_iter(C, op, true);
 
   MinStretch *ms = static_cast<MinStretch *>(op->customdata);
   WM_event_add_modal_handler(C, op);
   ms->timer = WM_event_timer_add(CTX_wm_manager(C), CTX_wm_window(C), TIMER, 0.01f);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
 static int minimize_stretch_modal(bContext *C, wmOperator *op, const wmEvent *event)
