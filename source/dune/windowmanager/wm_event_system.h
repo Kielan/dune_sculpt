@@ -121,38 +121,37 @@ typedef struct WinEvHandlerDropbox {
 
 /* win_ev_system.c */
 void win_ev_free_all(Win *win);
-void win_ev_free(WinEvrc CD d *event);
-void win_ev_free_handler(wmEventHandler *handler);
+void win_ev_free(WinEvrc CD d *ev);
+void win_ev_free_handler(WinEvHandler *handler);
 
-/* Goes over entire hierarchy: events -> window -> screen -> area -> region.
+/* Goes over entire hierarchy: evs -> win -> screen -> area -> rgn.
  *
- * Called in main loop.
- */
-void wm_event_do_handlers(Cxt *C);
+ * Called in main loop. */
+void win_ev_do_handlers(Cxt *C);
 
-/* Windows store own event queues #wmWindow.event_queue (no Cxt here). */
-void wm_event_add_ghostevent(wmWindowManager *wm, wmWindow *win, int type, void *customdata);
+/* Windows store own ev queues Win.ev_queue (no Cxt here). */
+void win_ev_add_ghostevent(Win *win, WinMngr *wm, int type, void *customdata);
 #ifdef WITH_XR_OPENXR
-void wm_event_add_xrevent(wmWindow *win, struct wmXrActionData *actiondata, short val);
+void win_ev_add_xrevent(Win *win, struct wmXrActionData *actiondata, short val);
 #endif
 
-void wm_event_do_depsgraph(Cxt *C, bool is_after_open_file);
-/* Was part of wm_event_do_notifiers,
+void win_ev_do_graph(Cxt *C, bool is_after_open_file);
+/* Was part of win_ev_do_notifiers,
  * split out so it can be called once before entering the WM_main loop.
  * This ensures operators don't run before the UI and graph are initialized. */
-void wm_event_do_refresh_wm_and_graph(Cxt *C);
+void win_ev_do_refresh_wm_and_graph(Cxt *C);
 /* Called in main-loop. */
-void wm_event_do_notifiers(Cxt *C);
+void win_ev_do_notifiers(Cxt *C);
 
-void wm_event_handler_ui_cancel_ex(Cxt *C,
-                                   wmWindow *win,
-                                   ARegion *region,
-                                   bool reactivate_btn);
+void win_ev_handler_ui_cancel_ex(Cxt *C,
+                                 Win *win,
+                                 ARgn *rgn,
+                                 bool reactivate_btn);
 
-/* wm_event_query.c */
+/* win_ev_query.c */
 /* Applies the global tablet pressure correction curve. */
-float wm_pressure_curve(float raw_pressure);
-void wm_tablet_data_from_ghost(const struct GHOST_TabletData *tablet_data, wmTabletData *wmtab);
+float win_pressure_curve(float raw_pressure);
+void win_tablet_data_from_ghost(const struct GHOST_TabletData *tablet_data, WinTabletData *wmtab);
 
 /* wm_dropbox.c */
 
