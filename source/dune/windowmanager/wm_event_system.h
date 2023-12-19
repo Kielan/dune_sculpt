@@ -1,15 +1,15 @@
 #pragma once
 
-/* return value of handler-op call */
-#define WM_HANDLER_CONTINUE 0
-#define WM_HANDLER_BREAK 1
-#define WM_HANDLER_HANDLED 2
-#define WM_HANDLER_MODAL 4 /* MODAL|BREAK means unhandled */
+/* return val of handler-op call */
+#define WIN_HANDLER_CONTINUE 0
+#define WIN_HANDLER_BREAK 1
+#define WIN_HANDLER_HANDLED 2
+#define WIN_HANDLER_MODAL 4 /* MODAL|BREAK means unhandled */
 
-struct ARegion;
+struct ARgn;
 struct GHOST_TabletData;
 struct ScrArea;
-enum wmOpCallCxt;
+enum WinOpCallCxt;
 
 #ifdef WITH_XR_OPENXR
 struct wmXrActionData;
@@ -19,110 +19,110 @@ struct wmXrActionData;
 extern "C" {
 #endif
 
-/* wmKeyMap is in types_windowmanager.h, it's saveable */
+/* WinKeyMap is in types_winmngr.h, it's saveable */
 /* Custom types for handlers, for signaling, freeing */
-enum eWM_EventHandlerType {
-  WM_HANDLER_TYPE_GIZMO = 1,
-  WM_HANDLER_TYPE_UI,
-  WM_HANDLER_TYPE_OP,
-  WM_HANDLER_TYPE_DROPBOX,
-  WM_HANDLER_TYPE_KEYMAP,
+enum eWinEvHandlerType {
+  WIN_HANDLER_TYPE_GIZMO = 1,
+  WIN_HANDLER_TYPE_UI,
+  WIN_HANDLER_TYPE_OP,
+  WIN_HANDLER_TYPE_DROPBOX,
+  WIN_HANDLER_TYPE_KEYMAP,
 };
 
-typedef bool (*EventHandlerPoll)(const ARegion *region, const wmEvent *event);
+typedef bool (*EvHandlerPoll)(const ARgn *rgn, const WinEv *ev);
 
-typedef struct wmEventHandler {
-  struct wmEventHandler *next, *prev;
+typedef struct WinEvHandler {
+  struct WinEvHandler *next, *prev;
 
-  enum eWM_EventHandlerType type;
-  char flag; /* WM_HANDLER_BLOCKING, ... */
+  enum eWinEvHandlerType type;
+  char flag; /* WIN_HANDLER_BLOCKING, ... */
 
-  EventHandlerPoll poll;
-} wmEventHandler;
+  EvHandlerPoll poll;
+} WinEvHandler;
 
 /* Run after the keymap item runs. */
-struct wmEventHandler_KeymapPost {
-  void (*post_fn)(wmKeyMap *keymap, wmKeyMapItem *kmi, void *user_data);
+struct WinEvHandlerKeymapPost {
+  void (*post_fn)(WinKeyMap *keymap, WinKeyMapItem *kmi, void *user_data);
   void *user_data;
 };
 
-/* Support for a getter function that looks up the keymap each access. */
-struct wmEventHandler_KeymapDynamic {
-  wmEventHandler_KeymapDynamicFn *keymap_fn;
+/* Support for a getter fn that looks up the keymap each access. */
+struct WinEvHandlerKeymapDynamic {
+  WinEvHandlerKeymapDynamicFn *keymap_fn;
   void *user_data;
 };
 
-/* WM_HANDLER_TYPE_KEYMAP */
-typedef struct wmEventHandler_Keymap {
-  wmEventHandler head;
+/* WIN_HANDLER_TYPE_KEYMAP */
+typedef struct WinEvHandlerKeymap {
+  WinEvHandler head;
 
   /* Ptr to builtin/custom keymaps (never NULL). */
-  wmKeyMap *keymap;
+  WinKeyMap *keymap;
 
-  struct wmEventHandler_KeymapPost post;
-  struct wmEventHandler_KeymapDynamic dynamic;
+  struct WinEvHandlerKeymapPost post;
+  struct WinEvHandlerKeymapDynamic dynamic;
 
   struct ToolRef *keymap_tool;
-} wmEventHandler_Keymap;
+} WinEvHandlerKeymap;
 
-/* WM_HANDLER_TYPE_GIZMO */
-typedef struct wmEventHandler_Gizmo {
-  wmEventHandler head;
+/* WIN_HANDLER_TYPE_GIZMO */
+typedef struct WinEvHandlerGizmo {
+  WinEvHandler head;
 
   /* Gizmo handler (never NULL). */
-  struct wmGizmoMap *gizmo_map;
-} wmEventHandler_Gizmo;
+  struct WinGizmoMap *gizmo_map;
+} WinEvHandlerGizmo;
 
 /* WM_HANDLER_TYPE_UI */
-typedef struct wmEventHandler_UI {
-  wmEventHandler head;
+typedef struct WinEvHandlerUI {
+  WinEvHandler head;
 
-  wmUIHandlerFunc handle_fn;       /* callback receiving events */
-  wmUIHandlerRemoveFunc remove_fn; /* callback when handler is removed */
+  WinUIHandlerFn handle_fn;       /* callback receiving events */
+  WinUIHandlerRemoveFn remove_fn; /* callback when handler is removed */
   void *user_data;                 /* user data pointer */
 
   /* Store cxt for this handler for derived/modal handlers. */
   struct {
     struct ScrArea *area;
-    struct ARegion *region;
-    struct ARegion *menu;
-  } context;
-} wmEventHandler_UI;
+    struct ARgn *rgn;
+    struct ARgn *menu;
+  } cxt;
+} WinEvHandlerUI;
 
-/* WM_HANDLER_TYPE_OP */
-typedef struct wmEventHandler_Op {
-  wmEventHandler head;
+/* WIN_HANDLER_TYPE_OP */
+typedef struct WinEvHandlerOp {
+  WinEvHandler head;
 
   /* Op can be NULL. */
-  wmOp *op;
+  WinOp *op;
 
-  /* Hack, special case for file-select. */
-  bool is_fileselect;
+  /* Hack, special case for file-sel. */
+  bool is_filesel;
 
   /* Store cxt for this handler for derived/modal handlers. */
   struct {
-    /* To override the window, and hence the screen. Set for few cases only, usually window/screen
+    /* To override the win, and hence the screen. Set for few cases only, usually window/screen
      * can be taken from current context. */
-    struct wmWindow *win;
+    struct Win *win;
 
     struct ScrArea *area;
-    struct ARegion *region;
-    short region_type;
+    struct ARgn *rgn;
+    short rgn_type;
   } cxt;
-} wmEventHandler_Op;
+} WinEvHandler_Op;
 
-/* WM_HANDLER_TYPE_DROPBOX */
-typedef struct wmEventHandler_Dropbox {
-  wmEventHandler head;
+/* WIN_HANDLER_TYPE_DROPBOX */
+typedef struct WinEvHandlerDropbox {
+  WinEvHandler head;
 
   /* Never NULL. */
   List *dropboxes;
-} wmEventHandler_Dropbox;
+} WinEvHandlerDropbox;
 
-/* wm_event_system.c */
-void wm_event_free_all(wmWindow *win);
-void wm_event_free(wmEvent *event);
-void wm_event_free_handler(wmEventHandler *handler);
+/* win_ev_system.c */
+void win_ev_free_all(Win *win);
+void win_ev_free(WinEvrc CD d *event);
+void win_ev_free_handler(wmEventHandler *handler);
 
 /* Goes over entire hierarchy: events -> window -> screen -> area -> region.
  *
