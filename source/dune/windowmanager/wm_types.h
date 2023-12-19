@@ -1,14 +1,13 @@
-/* Overview of WM structs
- * ======================
+/* Overview of Win structs
  *
- * - wmWindowManager.windows -> #wmWindow <br>
- *   Window manager stores a list of windows.
+ * - WndwMngr.windows -> Win <br>
+ *   Win stores a list of windows.
  *
- *   - wmWindow.screen -> #bScreen <br>
- *     Window has an active screen.
+ *   - Win.screen -> Screen <br>
+ *     Win has an active screen.
  *
- *     - Screen.areabase -> #ScrArea <br>
- *       Link to #ScrArea.
+ *     - Screen.areabase -> ScrArea <br>
+ *       Link to ScrArea.
  *
  *       - ScrArea.spacedata <br>
  *         Stores multiple spaces via space links.
@@ -16,24 +15,24 @@
  *         - SpaceLink <br>
  *           Base struct for space data for all different space types.
  *
- *       - ScrArea.regionbase -> ARegion <br>
- *         Stores multiple regions.
+ *       - ScrArea.rgnbase -> ARegion <br>
+ *         Stores multiple rgns.
  *
- *     - Screen.regionbase -> #ARegion <br>
- *       Global screen level regions, e.g. popups, popovers, menus.
+ *     - Screen.rgnbase -> ARgn <br>
+ *       Global screen level rgns, e.g. popups, popovers, menus.
  *
- *   - wmWindow.global_areas -> ScrAreaMap <br>
+ *   - Win.global_areas -> ScrAreaMap <br>
  *     Global screen via 'areabase', e.g. top-bar & status-bar.
  *
  *
- * Window Layout
+ * Win Layout
  *
- * wmWindow -> Screen
+ * Win -> Screen
  * +----------------------------------------------------------+
  * |+-----------------------------------------+-------------+ |
  * ||ScrArea (links to 3D view)               |ScrArea      | |
  * ||+-------++----------+-------------------+|(links to    | |
- * |||ARegion||          |ARegion (quad view)|| properties) | |
+ * |||ARgn||          |ARegion (quad view)|| properties) | |
  * |||(tools)||          |                   ||             | |
  * |||       ||          |                   ||             | |
  * |||       ||          |                   ||             | |
@@ -72,19 +71,18 @@
  * code{.c}
  * if (area->spacetype == SPACE_VIEW3D) {
  *     View3D *v3d = area->spacedata.first;
- *     ...
- * } */
+ *     ... */
 
 #pragma once
 
 struct Id;
 struct ImBuf;
 struct Cxt;
-struct wmDrag;
-struct wmDropBox;
-struct wmEvent;
-struct wmOp;
-struct wmWindowManager;
+struct WinDrag;
+struct WinDropBox;
+struct WinEv;
+struct WinOp;
+struct WinMngr;
 
 #include "lib_compiler_attrs.h"
 #include "lib_utildefines.h"
@@ -94,55 +92,54 @@ struct wmWindowManager;
 #include "types_xr_types.h"
 #include "api_types.h"
 
-/* exported types for WM */
-#include "gizmo/wm_gizmo_types.h"
-#include "wm_cursors.h"
-#include "wm_event_types.h"
+/* exported types for Win */
+#include "gizmo/win_gizmo_types.h"
+#include "win_cursors.h"
+#include "win_ev_types.h"
 
 /* Include external gizmo API's */
-#include "gizmo/wm_gizmo_api.h"
+#include "gizmo/win_gizmo_api.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void (*wmGenericUserDataFreeFn)(void *data);
+typedef void (*WinGenericUserDataFreeFn)(void *data);
 
-typedef struct wmGenericUserData {
+typedef struct WinGenericUserData {
   void *data;
-  /* When NULL, use #MEM_freeN. */
-  wmGenericUserDataFreeFn free_fn;
+  /* When NULL, use MEM_freeN. */
+  WinGenericUserDataFreeFn free_fn;
   bool use_free;
-} wmGenericUserData;
+} WinGenericUserData;
 
-typedef void (*wmGenericCbFn)(struct Cxt *C, void *user_data);
+typedef void (*WinGenericCbFn)(struct Cxt *C, void *user_data);
 
-typedef struct wmGenericCb {
-  wmGenericCbFn ex;
+typedef struct WinGenericCb {
+  WinGenericCbFn ex;
   void *user_data;
-  wmGenericUserDataFreeFn free_user_data;
-} wmGenericCb;
+  WinGenericUserDataFreeFn free_user_data;
+} WinGenericCb;
 
-/* wmOpType */
-
-/* wmOpType.flag */
+/* WinOpType */
+/* WinOpType.flag */
 enum {
-  /* Register operators in stack after finishing (needed for redo). */
+  /* Register ops in stack after finishing (needed for redo). */
   OPTYPE_REGISTER = (1 << 0),
-  /** Do an undo push after the operator runs. */
+  /* Do an undo push after the runs. */
   OPTYPE_UNDO = (1 << 1),
-  /** Let Blender grab all input from the WM (X11). */
+  /* Let Dune grab all input from the WM (X11). */
   OPTYPE_BLOCKING = (1 << 2),
   OPTYPE_MACRO = (1 << 3),
 
-  /** Grabs the cursor and optionally enables continuous cursor wrapping. */
+  /* Grabs the cursor and optionally enables continuous cursor wrapping. */
   OPTYPE_GRAB_CURSOR_XY = (1 << 4),
-  /** Only warp on the X axis. */
+  /* Only warp on the X axis. */
   OPTYPE_GRAB_CURSOR_X = (1 << 5),
-  /** Only warp on the Y axis. */
+  /* Only warp on the Y axis. */
   OPTYPE_GRAB_CURSOR_Y = (1 << 6),
 
-  /** Show preset menu. */
+  /* Show preset menu. */
   OPTYPE_PRESET = (1 << 7),
 
   /* Some ops are mainly for internal use and don't make sense
@@ -150,7 +147,7 @@ enum {
    * Currently only used for the search toolbox.l */
   OPTYPE_INTERNAL = (1 << 8),
 
-  /** Allow operator to run when interface is locked. */
+  /* Allow op to run when interface is locked. */
   OPTYPE_LOCK_BYPASS = (1 << 9),
   /* Special type of undo which doesn't store itself multiple times. */
   OPTYPE_UNDO_GROUPED = (1 << 10),
@@ -165,49 +162,49 @@ enum {
   OPTYPE_DEPENDS_ON_CURSOR = (1 << 11),
 };
 
-/** For wm_cursor_grab_enable wrap axis. */
+/* For wm_cursor_grab_enable wrap axis. */
 enum {
-  WM_CURSOR_WRAP_NONE = 0,
-  WM_CURSOR_WRAP_X,
-  WM_CURSOR_WRAP_Y,
-  WM_CURSOR_WRAP_XY,
+  WIN_CURSOR_WRAP_NONE = 0,
+  WIN_CURSOR_WRAP_X,
+  WIN_CURSOR_WRAP_Y,
+  WIN_CURSOR_WRAP_XY,
 };
 
-/* Context to call op in for wm_op_name_call.
+/* Cxt to call op in for win_op_name_call.
  * api_ui.c contains EnumPropItem's of these, keep in sync. */
-typedef enum wmOpCallCxt {
+typedef enum WinOpCallCxt {
   /* if there's invoke, call it, otherwise ex */
-  WM_OP_INVOKE_DEFAULT,
-  WM_OP_INVOKE_REGION_WIN,
-  WM_OP_INVOKE_REGION_CHANNELS,
-  WM_OP_INVOKE_REGION_PREVIEW,
-  WM_OP_INVOKE_AREA,
-  WM_OP_INVOKE_SCREEN,
+  WIN_OP_INVOKE_DEFAULT,
+  WIN_OP_INVOKE_RGN_WIN,
+  WIN_OP_INVOKE_RGN_CHANNELS,
+  WIN_OP_INVOKE_RGN_PREVIEW,
+  WIN_OP_INVOKE_AREA,
+  WIN_OP_INVOKE_SCREEN,
   /* only call exec */
-  WM_OP_EX_DEFAULT,
-  WM_OP_EX_REGION_WIN,
-  WM_OP_EX_REGION_CHANNELS,
-  WM_OP_EX_REGION_PREVIEW,
-  WM_OP_EX_AREA,
-  WM_OP_EX_SCREEN,
-} wmOpCallCxt;
+  WIN_OP_EX_DEFAULT,
+  WIN_OP_EX_RGN_WIN,
+  WIN_OP_EX_RGN_CHANNELS,
+  WIN_OP_EX_RGN_PREVIEW,
+  WIN_OP_EX_AREA,
+  Win_OP_EX_SCREEN,
+} WinOpCallCxt;
 
-#define WM_OP_CXT_HAS_AREA(type) \
-  (CHECK_TYPE_INLINE(type, wmOperatorCallContext), \
-   !ELEM(type, WM_OP_INVOKE_SCREEN, WM_OP_EXEC_SCREEN))
-#define WM_OP_CXT_HAS_REGION(type) \
-  (WM_OP_CXT_HAS_AREA(type) && !ELEM(type, WM_OP_INVOKE_AREA, WM_OP_EXEC_AREA))
+#define WIN_OP_CXT_HAS_AREA(type) \
+  (CHECK_TYPE_INLINE(type, WinOpCallCxt), \
+   !ELEM(type, WIN_OP_INVOKE_SCREEN, WIN_OP_EX_SCREEN))
+#define WIN_OP_CXT_HAS_RGN(type) \
+  (WIN_OP_CXT_HAS_AREA(type) && !ELEM(type, WIN_OP_INVOKE_AREA, WIN_OP_EX_AREA))
 
-/* prop tags for RNA_OperatorProperties */
+/* prop tags for ApiOpProps */
 typedef enum eOpPropTags {
   OP_PROP_TAG_ADVANCED = (1 << 0),
-} eOperatorPropTags;
-#define OP_PROP_TAG_ADVANCED ((eOperatorPropTags)OP_PROP_TAG_ADVANCED)
+} eOpPropTags;
+#define OP_PROP_TAG_ADVANCED ((eOpPropTags)OP_PROP_TAG_ADVANCED)
 
-/* wmKeyMapIte */
-/* Mod keys, not actually used for wmKeyMapItem (never stored in Types), used for:
- * - wmEvent.modifier without the `KM_*_ANY` flags.
- * - wm_keymap_add_item & wm_modalkeymap_add_item */
+/* WinKeyMapIte */
+/* Mod keys, not actually used for WinKeyMapItem (never stored in Types), used for:
+ * - WinEv.mod wo the `KM_*_ANY` flags.
+ * - win_keymap_add_item & wim_modalkeymap_add_item */
 enum {
   KM_SHIFT = (1 << 0),
   KM_CTRL = (1 << 1),
@@ -215,24 +212,24 @@ enum {
   /** Use for Windows-Key on MS-Windows, Command-key on macOS and Super on Linux. */
   KM_OSKEY = (1 << 3),
 
-  /* Used for key-map item creation function arguments. */
+  /* Used for key-map item creation fn args. */
   KM_SHIFT_ANY = (1 << 4),
   KM_CTRL_ANY = (1 << 5),
   KM_ALT_ANY = (1 << 6),
   KM_OSKEY_ANY = (1 << 7),
 };
 
-/* `KM_MOD_*` flags for wmKeyMapItem and `wmEvent.alt/shift/oskey/ctrl`. */
-/* Note that #KM_ANY and KM_NOTHING are used with these defines too. */
+/* `KM_MOD_*` flags for WinKeyMapItem and `WinEv.alt/shift/oskey/ctrl`. */
+/* Note that KM_ANY and KM_NOTHING are used with these defines too. */
 #define KM_MOD_HELD 1
 
-/* wmKeyMapItem.type
- * NOTE: most types are defined in `wm_event_types.h` */
+/* WinKeyMapItem.type
+ * Most types are defined in `win_ev_types.h` */
 enum {
-  KM_TEXTINPUT = -2,
+  KM_TXTINPUT = -2,
 };
 
-/* wmKeyMapItem.val */
+/* WinKeyMapItem.val */
 enum {
   KM_ANY = -1,
   KM_NOTHING = 0,
@@ -240,12 +237,12 @@ enum {
   KM_RELEASE = 2,
   KM_CLICK = 3,
   KM_DBL_CLICK = 4,
-  /* note The cursor location at the point dragging starts is set to #wmEvent.prev_press_xy
-   * some operators such as box selection should use this location instead of #wmEvent.xy. */
+  /* The cursor location at the point dragging starts is set to WinEv.prev_press_xy
+   * some ops such as box sel should use this location instead of WinEv.xy. */
   KM_CLICK_DRAG = 5,
 };
 
-/* wmKeyMapItem.directio
+/* WinKeyMapItem.direction
  * Direction set for KM_CLICK_DRAG key-map items. KM_ANY (-1) to ignore direction */
 enum {
   KM_DIRECTION_N = 1,
@@ -258,22 +255,17 @@ enum {
   KM_DIRECTION_NW = 8,
 };
 
-/* UI Handler ***************** */
-#define WM_UI_HANDLER_CONTINUE 0
-#define WM_UI_HANDLER_BREAK 1
+/* UI Handler */
+#define WIN_UI_HANDLER_CONTINUE 0
+#define WIN_UI_HANDLER_BREAK 1
 
-/* Notifiers ****************** */
-
-typedef struct wmNotifier {
-  struct  wmNotifier *next, *prev;
-
-  const struct wmWindow *window;
-
+/* Notifiers */
+typedef struct WinNotifier {
+  struct  WinNotifier *next, *prev;
+  const struct Win *win;
   unsigned int category, data, subtype, action;
-
-  void *reference;
-
-} wmNotifier;
+  void *ref;
+} WinNotifier;
 
 /* 4 levels
  *
@@ -285,20 +277,20 @@ typedef struct wmNotifier {
 /* category */
 #define NOTE_CATEGORY 0xFF000000
 #define NC_WM (1 << 24)
-#define NC_WINDOW (2 << 24)
+#define NC_WIN (2 << 24)
 #define NC_SCREEN (3 << 24)
 #define NC_SCENE (4 << 24)
-#define NC_OBJECT (5 << 24)
+#define NC_OB (5 << 24)
 #define NC_MATERIAL (6 << 24)
 #define NC_TEXTURE (7 << 24)
 #define NC_LAMP (8 << 24)
 #define NC_GROUP (9 << 24)
-#define NC_IMAGE (10 << 24)
+#define NC_IMG (10 << 24)
 #define NC_BRUSH (11 << 24)
 #define NC_TEXT (12 << 24)
 #define NC_WORLD (13 << 24)
-#define NC_ANIMATION (14 << 24)
-/* When passing a space as reference data with this (e.g. `WM_event_add_notifier(..., space)`),
+#define NC_ANIM (14 << 24)
+/* When passing a space as ref data w this (e.g. `win_ev_add_notifier(..., space)`),
  * the notifier will only be sent to this space. That avoids unnecessary updates for unrelated
  * spaces. */
 #define NC_SPACE (15 << 24)
@@ -308,7 +300,7 @@ typedef struct wmNotifier {
 #define NC_PAINTCURVE (19 << 24)
 #define NC_MOVIECLIP (20 << 24)
 #define NC_MASK (21 << 24)
-#define NC_GPENCIL (22 << 24)
+#define NC_PEN (22 << 24)
 #define NC_LINESTYLE (23 << 24)
 #define NC_CAMERA (24 << 24)
 #define NC_LIGHTPROBE (25 << 24)
@@ -318,7 +310,7 @@ typedef struct wmNotifier {
 /* data type, 256 entries is enough, it can overlap */
 #define NOTE_DATA 0x00FF0000
 
-/* NC_WM windowmanager */
+/* NC_WIN winmngr */
 #define ND_FILEREAD (1 << 16)
 #define ND_FILESAVE (2 << 16)
 #define ND_DATACHANGED (3 << 16)
@@ -332,7 +324,7 @@ typedef struct wmNotifier {
 #define ND_LAYOUTBROWSE (1 << 16)
 #define ND_LAYOUTDELETE (2 << 16)
 #define ND_ANIMPLAY (4 << 16)
-#define ND_GPENCIL (5 << 16)
+#define ND_PEN (5 << 16)
 #define ND_LAYOUTSET (6 << 16)
 #define ND_SKETCH (7 << 16)
 #define ND_WORKSPACE_SET (8 << 16)
@@ -344,12 +336,12 @@ typedef struct wmNotifier {
 #define ND_FRAME (3 << 16)
 #define ND_RENDER_OPTIONS (4 << 16)
 #define ND_NODES (5 << 16)
-#define ND_SEQUENCER (6 << 16)
-/* NOTE: If an object was added, removed, merged/joined, ..., it is not enough to notify with
+#define ND_SEQ (6 << 16)
+/* NOTE: If an ob was added, removed, merged/joined, ..., it is not enough to notify with
  * this. This affects the layer so also send a layer change notifier (e.g. ND_LAYER_CONTENT)! */
 #define ND_OB_ACTIVE (7 << 16)
 /* See comment on ND_OB_ACTIVE. */
-#define ND_OB_SELECT (8 << 16)
+#define ND_OB_SEL (8 << 16)
 #define ND_OB_VISIBLE (9 << 16)
 #define ND_OB_RENDER (10 << 16)
 #define ND_MODE (11 << 16)
@@ -363,44 +355,44 @@ typedef struct wmNotifier {
 #define ND_WORLD (92 << 16)
 #define ND_LAYER_CONTENT (101 << 16)
 
-/* NC_OBJECT Object */
+/* NC_OB Ob */
 #define ND_TRANSFORM (18 << 16)
 #define ND_OB_SHADING (19 << 16)
 #define ND_POSE (20 << 16)
 #define ND_BONE_ACTIVE (21 << 16)
-#define ND_BONE_SELECT (22 << 16)
-#define ND_DRAW (23 << 16)
-#define ND_MODIFIER (24 << 16)
+#define ND_BONE_SEL (22 << 16)
+#define ND_DRW (23 << 16)
+#define ND_MOD (24 << 16)
 #define ND_KEYS (25 << 16)
 #define ND_CONSTRAINT (26 << 16)
 #define ND_PARTICLE (27 << 16)
 #define ND_POINTCACHE (28 << 16)
 #define ND_PARENT (29 << 16)
 #define ND_LOD (30 << 16)
-#define ND_DRAW_RENDER_VIEWPORT \
-  (31 << 16) /* for camera & sequencer viewport update, also /w NC_SCENE */
+#define ND_DRW_RENDER_VIEWPORT \
+  (31 << 16) /* for camera & seq viewport update, also /w NC_SCENE */
 #define ND_SHADERFX (32 << 16)
 /* For updating motion paths in 3dview. */
-#define ND_DRAW_ANIMVIZ (33 << 16)
+#define ND_DRW_ANIMVIZ (33 << 16)
 
 /* NC_MATERIAL Material */
 #define ND_SHADING (30 << 16)
-#define ND_SHADING_DRAW (31 << 16)
+#define ND_SHADING_DRW (31 << 16)
 #define ND_SHADING_LINKS (32 << 16)
 #define ND_SHADING_PREVIEW (33 << 16)
 
 /* NC_LAMP Light */
 #define ND_LIGHTING (40 << 16)
-#define ND_LIGHTING_DRAW (41 << 16)
+#define ND_LIGHTING_DRW (41 << 16)
 
 /* NC_WORLD World */
-#define ND_WORLD_DRAW (45 << 16)
+#define ND_WORLD_DRW (45 << 16)
 
-/* NC_TEXT Text */
+/* NC_TXT Text */
 #define ND_CURSOR (50 << 16)
 #define ND_DISPLAY (51 << 16)
 
-/* NC_ANIMATION Animato */
+/* NC_ANIM Animator */
 #define ND_KEYFRAME (70 << 16)
 #define ND_KEYFRAME_PROP (71 << 16)
 #define ND_ANIMCHAN (72 << 16)
@@ -410,11 +402,11 @@ typedef struct wmNotifier {
 #define ND_NLA_ORDER (76 << 16)
 
 /* NC_PEN */
-#define ND_GPENCIL_EDITMODE (85 << 16)
+#define ND_PEN_EDITMODE (85 << 16)
 
 /* NC_GEOM Geometry */
 /* Mesh, Curve, MetaBall, Armature, etc. */
-#define ND_SELECT (90 << 16)
+#define ND_SEL (90 << 16)
 #define ND_DATA (91 << 16)
 #define ND_VERTEX_GROUP (92 << 16)
 
@@ -424,7 +416,7 @@ typedef struct wmNotifier {
 #define ND_SPACE_CONSOLE (1 << 16)     /* general redraw */
 #define ND_SPACE_INFO_REPORT (2 << 16) /* update for reports, could specify type */
 #define ND_SPACE_INFO (3 << 16)
-#define ND_SPACE_IMAGE (4 << 16)
+#define ND_SPACE_IMG (4 << 16)
 #define ND_SPACE_FILE_PARAMS (5 << 16)
 #define ND_SPACE_FILE_LIST (6 << 16)
 #define ND_SPACE_ASSET_PARAMS (7 << 16)
@@ -437,7 +429,7 @@ typedef struct wmNotifier {
 #define ND_SPACE_GRAPH (14 << 16)
 #define ND_SPACE_DOPESHEET (15 << 16)
 #define ND_SPACE_NLA (16 << 16)
-#define ND_SPACE_SEQUENCER (17 << 16)
+#define ND_SPACE_SEQ (17 << 16)
 #define ND_SPACE_NODE_VIEW (18 << 16)
 /* Sent to a new editor type after it's replaced an old one. */
 #define ND_SPACE_CHANGED (19 << 16)
@@ -460,12 +452,12 @@ typedef struct wmNotifier {
 #define NOTE_SUBTYPE 0x0000FF00
 
 /* subtype scene mode */
-#define NS_MODE_OBJECT (1 << 8)
+#define NS_MODE_OB (1 << 8)
 
 #define NS_EDITMODE_MESH (2 << 8)
 #define NS_EDITMODE_CURVE (3 << 8)
 #define NS_EDITMODE_SURFACE (4 << 8)
-#define NS_EDITMODE_TEXT (5 << 8)
+#define NS_EDITMODE_TXT (5 << 8)
 #define NS_EDITMODE_MBALL (6 << 8)
 #define NS_EDITMODE_LATTICE (7 << 8)
 #define NS_EDITMODE_ARMATURE (8 << 8)
@@ -482,52 +474,51 @@ typedef struct wmNotifier {
 
 /* action classification */
 #define NOTE_ACTION (0x000000FF)
-#define NA_EDITED 1
-#define NA_EVALUATED 2
-#define NA_ADDED 3
-#define NA_REMOVED 4
+#define NA_ED 1
+#define NA_EVAL 2
+#define NA_ADD 3
+#define NA_REMOVE 4
 #define NA_RENAME 5
-#define NA_SELECTED 6
-#define NA_ACTIVATED 7
-#define NA_PAINTING 8
-#define NA_JOB_FINISHED 9
+#define NA_SEL 6
+#define NA_ACTIVATE 7
+#define NA_PAINT 8
+#define NA_JOB_FINISH 9
 
 /* Gesture Manager data */
+/* WinGesture->type */
+#define WIN_GESTURE_LINES 1
+#define WIN_GESTURE_RECT 2
+#define WIN_GESTURE_CROSS_RECT 3
+#define WIN_GESTURE_LASSO 4
+#define WIN_GESTURE_CIRCLE 5
+#define WIN_GESTURE_STRAIGHTLINE 6
 
-/* wmGesture->type */
-#define WM_GESTURE_LINES 1
-#define WM_GESTURE_RECT 2
-#define WM_GESTURE_CROSS_RECT 3
-#define WM_GESTURE_LASSO 4
-#define WM_GESTURE_CIRCLE 5
-#define WM_GESTURE_STRAIGHTLINE 6
-
-/* wmGesture is registered to wmWindow.gesture, handled by operator cbs. */
-typedef struct wmGesture {
-  struct wmGesture *next, *prev;
-  /* wmEvent.type */
-  int event_type;
-  /* wmEvent.mod */
-  uint8_t event_mod;
-  /* wmEvent.keymodifier */
-  short event_keymod;
+/* WinGesture is registered to Win.gesture, handled by op cbs. */
+typedef struct WinGesture {
+  struct WinGesture *next, *prev;
+  /* WinEv.type */
+  int ev_type;
+  /* WinEv.mod */
+  uint8_t ev_mod;
+  /* WinEv.keymod */
+  short ev_keymod;
   /* Gesture type define. */
   int type;
-  /** bounds of region to draw gesture within. */
+  /* bounds of rgn to drw gesture within. */
   rcti winrct;
-  /** optional, amount of points stored. */
+  /* optional, amount of points stored. */
   int points;
-  /** optional, maximum amount of points stored. */
+  /* optional, max amount of points stored. */
   int points_alloc;
   int modal_state;
-  /** optional, draw the active side of the straightline gesture. */
-  bool draw_active_side;
+  /* optional, drw the active side of the straightline gesture. */
+  bool drw_active_side;
 
-  /* For modal operators which may be running idle, waiting for an event to activate the gesture.
+  /* For modal ops which may be running idle, waiting for an ev to activate the gesture.
    * Typically this is set when the user is click-dragging the gesture
    * (box and circle select for eg).  */
   uint is_active : 1;
-  /* Previous value of is-active (use to detect first run & edge cases). */
+  /* Prev val of is-active (use to detect first run & edge cases). */
   uint is_active_prev : 1;
   /* Use for gestures that support both immediate or delayed activation. */
   uint wait_for_input : 1;
@@ -541,38 +532,36 @@ typedef struct wmGesture {
   uint use_flip : 1;
 
   /* customdata
-   * - for border is a #rcti.
+   * - for border is a rcti.
    * - for circle is recti, (xmin, ymin) is center, xmax radius.
    * - for lasso is short array.
    * - for straight line is a recti: (xmin,ymin) is start, (xmax, ymax) is end. */
   void *customdata;
 
-  /** Free pointer to use for operator allocs (if set, its freed on exit). */
-  wmGenericUserData user_data;
-} wmGesture;
+  /* Free ptrr to use for op allocs (if set, its freed on exit). */
+  WinGenericUserData user_data;
+} WinGesture;
 
-/* ************** wmEvent ************************ */
-
-typedef enum eWM_EventFlag {
-  /* True if the operating system inverted the delta x/y values and resulting
-   * `prev_xy` values, for natural scroll direction.
+/* WinEv */
+typedef enum eWinEvFlag {
+  /* True if the operating system inverted the delta x/y vals and resulting
+   * `prev_xy` vals, for natural scroll direction.
    * For absolute scroll direction, the delta must be negated again  */
-  WM_EVENT_SCROLL_INVERT = (1 << 0),
+  WIN_EV_SCROLL_INVERT = (1 << 0),
   /* Generated by auto-repeat, note that this must only ever be set for keyboard events
-   * where `ISKEYBOARD(event->type) == true`.
+   * where `ISKEYBOARD(ev->type) == true`.
    *
-   * See #KMI_REPEAT_IGNORE for details on how key-map handling uses this. */
-  WM_EVENT_IS_REPEAT = (1 << 1),
+   * See KMI_REPEAT_IGNORE for details on how key-map handling uses this. */
+  WIN_EV_IS_REPEAT = (1 << 1),
   /* Mouse-move events may have this flag set to force creating a click-drag event
    * even when the threshold has not been met. */
-  WM_EVENT_FORCE_DRAG_THRESHOLD = (1 << 2),
-} eWM_EventFlag;
+  WIN_EV_FORCE_DRAG_THRESHOLD = (1 << 2),
+} eWinEvFlag;
 
-typedef struct wmTabletData {
-  /* 0=EVT_TABLET_NONE, 1=EVT_TABLET_STYLUS, 2=EVT_TABLET_ERASER. */
+typedef struct WinTabletData {
+  /* 0=EV_TABLET_NONE, 1=EV_TABLET_STYLUS, 2=EV_TABLET_ERASER. */
   int active;
-  /*
-  * range 0.0 (not touching) to 1.0 (full pressure). */
+  /* range 0.0 (not touching) to 1.0 (full pressure). */
   float pressure;
   /* range 0.0 (upright) to 1.0 (tilted fully against the tablet surface). */
   float x_tilt;
@@ -580,116 +569,110 @@ typedef struct wmTabletData {
   float y_tilt;
   /* Interpret mouse motion as absolute as typical for tablets. */
   char is_motion_absolute;
-} wmTabletData;
+} WinTabletData;
 
-/* Each event should have full modifier state.
- * event comes from event manager and from keymap.
+/* Each ev should have full mod state.
+ * event comes from ev manager and from keymap.
  *
- * Previous State (`prev_*`)
- * =========================
+ * Prev State (`prev_*`)
+ * Evs hold information about the prev ev.
  *
- * Events hold information about the previous event.
+ * - Prev vals are only set for evs types that generate KM_PRESS.
+ *   See: ISKEYBOARD_OR_BTN.
  *
- * - Previous values are only set for events types that generate #KM_PRESS.
- *   See: ISKEYBOARD_OR_BUTTON.
- *
- * - Previous x/y are exceptions: #wmEvent.prev
- *   these are set on mouse motion, see #MOUSEMOVE & track-pad events.
+ * - Prev x/y are exceptions: WinEv.prev
+ *   these are set on mouse motion, see MOUSEMOVE & track-pad events.
  *
  * - Modal key-map handling sets `prev_val` & `prev_type` to `val` & `type`,
  *   this allows modal keys-maps to check the original values (needed in some cases).
  *
- *
  * Press State (`prev_press_*`)
  *
- * Events hold information about the state when the last KM_PRESS event was added.
- * This is used for generating KM_CLICK, KM_DBL_CLICK & KM_CLICK_DRAG events.
- * See wm_handlers_do for the implementation.
+ * Evs hold info about the state when the last KM_PRESS ev was added.
+ * This is used for generating KM_CLICK, KM_DBL_CLICK & KM_CLICK_DRAG evs.
+ * See win_handlers_do for the implementation.
  *
- * - Previous values are only set when a #KM_PRESS event is detected.
+ * - Prev vals are only set when a KM_PRESS ev is detected.
  *   See: ISKEYBOARD_OR_BTN.
  *
- * - The reason to differentiate between "press" and the previous event state is
- *   the previous event may be set by key-release events. In the case of a single key click
- *   this isn't a problem however releasing other keys such as modifiers prevents click/click-drag
- *   events from being detected, see: T89989.
+ * - The reason to differentiate between "press" and the prev ev state is
+ *   the prev ev may be set by key-release evs. In the case of a single key click
+ *   this isn't a problem however releasing other keys such as mods prevents click/click-drag
+ *   evs from being detected, see: T89989.
  *
- * - Mouse-wheel events are excluded even though they generate #KM_PRESS
- *   as clicking and dragging don't make sense for mouse wheel events. */
-typedef struct wmEvent {
-  struct wmEvent *next, *prev;
+ * - Mouse-wheel evs are excluded even though they generate KM_PRESS
+ *   as clicking and dragging don't make sense for mouse wheel evs. */
+typedef struct WinEv {
+  struct WinEv *next, *prev;
 
-  /* Event code itself (short, is also in key-map). */
+  /* Ev code itself (short, is also in key-map). */
   short type;
-  /* Press, release, scroll-value. */
+  /* Press, release, scroll-val. */
   short val;
-  /* Mouse pointer position, screen coord. */
+  /* Mouse ptrr position, screen coord. */
   int xy[2];
-  /* Region relative mouse position (name convention before Blender 2.5). */
+  /* Rgn relative mouse position (name convention before Blender 2.5). */
   int mval[2];
   /* From, ghost if utf8 is enabled for the platform,
    * llib_str_utf8_size() must _always_ be valid, check
    * when assigning s we don't need to check on every access after. */
   char utf8_buf[6];
-  /** From ghost, fallback if utf8 isn't set. */
+  /* From ghost, fallback if utf8 isn't set. */
   char ascii;
 
-  /* Modifier states: KM_SHIFT, KM_CTRL, KM_ALT & KM_OSKEY. */
+  /* Mod states: KM_SHIFT, KM_CTRL, KM_ALT & KM_OSKEY. */
   uint8_t mod;
 
-  /* The direction (for #KM_CLICK_DRAG events only). */
+  /* The direction (for KM_CLICK_DRAG evs only). */
   int8_t direction;
 
-  /* Raw-key mod (allow using any key as a modifier).
-   * Compatible with values in `type`. */
+  /* Raw-key mod (allow using any key as a mod).
+   * Compatible with vals in `type`. */
   short keymod;
 
-  /* Tablet info, available for mouse move and button events. */
-  wmTabletData tablet;
+  /* Tablet info, available for mouse move and button evs. */
+  WinTabletData tablet;
 
-  eWM_EventFlag flag;
+  eWinEvFlag flag;
 
   /* Custom data. */
-
-  /* Custom data type, stylus, 6-DOF, see `wm_event_types.h`. */
+  /* Custom data type, stylus, 6-DOF, see `win_ev_types.h`. */
   short custom;
   short customdata_free;
   /* Ascii, unicode, mouse-coords, angles, vectors, NDOF data, drag-drop info. */
   void *customdata;
 
-  /* Previous State. */
-
-  /* The previous value of `type`. */
+  /* Prev State. */
+  /* The prev val of `type`. */
   short prev_type;
-  /* The previous value of `val`. */
+  /* The prev val of `val`. */
   short prev_val;
-  /* The previous value of #wmEvent.xy,
-   * Unlike other previous state variables, this is set on any mouse motion.
-   * Use `prev_press_*` for the value at time of pressing. */
+  /* The prev val of WinEv.xy,
+   * Unlike other prev state vars, this is set on any mouse motion.
+   * Use `prev_press_*` for the val at time of pressing. */
   int prev_xy[2];
 
-  /* Previous Press State (when `val == KM_PRESS`). */
-
+  /* Prev Press State (when `val == KM_PRESS`). */
   /* The `type` at the point of the press action. */
   short prev_press_type;
   /* The location when the key is pressed.
-   * used to enforce drag threshold & calculate the `direction` */
+   * used to enforce drag threshold & calc the `direction` */
   int prev_press_xy[2];
   /* The `mod` at the point of the press action. */
   uint8_t prev_press_mod;
   /* The `keymod` at the point of the press action. */
   short prev_press_keymod;
-  /* The time when the key is pressed, see #PIL_check_seconds_timer.
+  /* The time when the key is pressed, see PIL_check_seconds_timer.
    * Used to detect double-click events.  */
   double prev_press_time;
-} wmEvent;
+} WinEv;
 
 /* Values below are ignored when detecting if the user intentionally moved the cursor.
- * Keep this very small since it's used for selection cycling for eg,
- * where we want intended adjustments to pass this threshold and select new items.
+ * Keep this very small since it's used for sel cycling for eg,
+ * where we want intended adjustments to pass this threshold and sel new items.
  *
- * Always check for <= this value since it may be zero. */
-#define WM_EVENT_CURSOR_MOTION_THRESHOLD ((float)U.move_threshold * U.dpi_fac)
+ * Always check for <= this val since it may be zero. */
+#define WIN_EV_CURSOR_MOTION_THRESHOLD ((float)U.move_threshold * U.dpi_fac)
 
 /* Motion progress, for modal handlers. */
 typedef enum {
@@ -698,13 +681,13 @@ typedef enum {
   P_IN_PROGRESS, /* <-- only these are sent for NDOF motion. */
   P_FINISHING,   /* <-- */
   P_FINISHED,
-} wmProgress;
+} WinProgress;
 
 #ifdef WITH_INPUT_NDOF
-typedef struct wmNDOFMotionData {
+typedef struct WinNDOFMotionData {
   /* awfully similar to GHOST_TEventNDOFMotionData... */
   /* Each component normally ranges from -1 to +1, but can exceed that.
-   * These use blender standard view coordinates,
+   * These use dune standard view coords,
    * with positive rotations being CCW about the axis. */
   /* Translation. */
   float tvec[3];
@@ -715,15 +698,15 @@ typedef struct wmNDOFMotionData {
   /* Time since previous NDOF Motion event. */
   float dt;
   /* Is this the first event, the last, or one of many in between? */
-  wmProgress progress;
-} wmNDOFMotionData;
+  WinProgress progress;
+} WinNDOFMotionData;
 #endif /* WITH_INPUT_NDOF */
 
 #ifdef WITH_XR_OPENXR
 /* Similar to GHOST_XrPose. */
-typedef struct wmXrPose {
+typedef struct WinXrPose {
   float position[3];
-  /* Blender convention (w, x, y, z) */
+  /* Dune convention (w, x, y, z) */
   float orientation_quat[4];
 } wmXrPose;
 
@@ -1114,18 +1097,18 @@ typedef struct wmTooltipState {
   /* The tooltip region. */
   struct ARegion *region;
   /* Create the tooltip region (assign to 'region'). */
-  struct ARegion *(*init)(struct Cxt *C,
-                          struct ARegion *region,
+  struct ARgn *(*init)(struct Cxt *C,
+                          struct ARgn *rgn,
                           int *pass,
                           double *pass_delay,
-                          bool *r_exit_on_event);
+                          bool *r_exit_on_ev);
   /* Exit on any event, not needed for btns since their highlight state is used. */
-  bool exit_on_event;
+  bool exit_on_ev;
   /* Cursor location at the point of tooltip creation. */
-  int event_xy[2];
+  int ev_xy[2];
   /* Pass, use when we want multiple tips, count down to zero. */
   int pass;
-} wmTooltipState;
+} WinTooltipState;
 
 /* migrated stuff, clean later? */
 typedef struct RecentFile {
@@ -1135,14 +1118,14 @@ typedef struct RecentFile {
 
 /* Logging */
 struct CLG_LogRef;
-/* wm_init_exit.c */
-extern struct CLG_LogRef *WM_LOG_OPERATORS;
-extern struct CLG_LogRef *WM_LOG_HANDLERS;
-extern struct CLG_LogRef *WM_LOG_EVENTS;
-extern struct CLG_LogRef *WM_LOG_KEYMAPS;
-extern struct CLG_LogRef *WM_LOG_TOOLS;
-extern struct CLG_LogRef *WM_LOG_MSGBUS_PUB;
-extern struct CLG_LogRef *WM_LOG_MSGBUS_SUB;
+/* win_init_exit.c */
+extern struct CLG_LogRef *WIN_LOG_OPS;
+extern struct CLG_LogRef *WIN_LOG_HANDLERS;
+extern struct CLG_LogRef *WIN_LOG_EVS;
+extern struct CLG_LogRef *WIN_LOG_KEYMAPS;
+extern struct CLG_LogRef *WIN_LOG_TOOLS;
+extern struct CLG_LogRef *WIN_LOG_MSGBUS_PUB;
+extern struct CLG_LogRef *WIN_LOG_MSGBUS_SUB;
 
 #ifdef __cplusplus
 }
