@@ -1,15 +1,12 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- *
- * A multi-function has an arbitrary amount of parameters. Every parameter belongs to one of three
+/* A multi-fn has an arbitrary amount of pars. Every param belongs to one of three
  * interface types:
- * - Input: An input parameter is readonly inside the function. The values have to be provided by
+ * - Input: An input param is readonly inside the fn. The vals have to be provided by
  *     the caller.
- * - Output: An output parameter has to be initialized by the function. However, the caller
- *     provides the memory where the data has to be constructed.
- * - Mutable: A mutable parameter can be considered to be an input and output. The caller has to
+ * - Output: An output param has to be initialized by the fn. However, the caller
+ *     provides the mem where the data has to be constructed.
+ * - Mutable: A mutable param can be considered to be an input and output. The caller has to
  *     initialize the data, but the function is allowed to modify it.
  *
  * Furthermore, every parameter has a MFDataType that describes what kind of data is being passed
