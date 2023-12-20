@@ -1,6 +1,6 @@
 /* Overview of Win structs
  *
- * - WndwMngr.windows -> Win <br>
+ * - WndwMngr.wins -> Win <br>
  *   Win stores a list of windows.
  *
  *   - Win.screen -> Screen <br>
@@ -287,7 +287,7 @@ typedef struct WinNotifier {
 #define NC_GROUP (9 << 24)
 #define NC_IMG (10 << 24)
 #define NC_BRUSH (11 << 24)
-#define NC_TEXT (12 << 24)
+#define NC_TXT (12 << 24)
 #define NC_WORLD (13 << 24)
 #define NC_ANIM (14 << 24)
 /* When passing a space as ref data w this (e.g. `win_ev_add_notifier(..., space)`),
@@ -667,7 +667,7 @@ typedef struct WinEv {
   double prev_press_time;
 } WinEv;
 
-/* Values below are ignored when detecting if the user intentionally moved the cursor.
+/* Vals below are ignored when detecting if the user intentionally moved the cursor.
  * Keep this very small since it's used for sel cycling for eg,
  * where we want intended adjustments to pass this threshold and sel new items.
  *
@@ -708,9 +708,9 @@ typedef struct WinXrPose {
   float position[3];
   /* Dune convention (w, x, y, z) */
   float orientation_quat[4];
-} wmXrPose;
+} WinXrPose;
 
-typedef struct wmXrActionState {
+typedef struct WinXrActionState {
   union {
     bool state_bool;
     float state_float;
