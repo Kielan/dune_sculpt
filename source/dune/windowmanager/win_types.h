@@ -153,16 +153,14 @@ enum {
   OPTYPE_UNDO_GROUPED = (1 << 10),
 
   /* Depends on the cursor location, when activated from a menu wait for mouse press.
-   *
-   * In practice these operators often end up being accessed:
+   * In practice these ops often end up being accessed:
    * - Directly from key bindings.
    * - As tools in the toolbar.
-   *
    * Even so, accessing from the menu should behave usefully. */
   OPTYPE_DEPENDS_ON_CURSOR = (1 << 11),
 };
 
-/* For wm_cursor_grab_enable wrap axis. */
+/* For win_cursor_grab_enable wrap axis. */
 enum {
   WIN_CURSOR_WRAP_NONE = 0,
   WIN_CURSOR_WRAP_X,
@@ -423,7 +421,7 @@ typedef struct WinNotifier {
 #define ND_SPACE_NODE (8 << 16)
 #define ND_SPACE_OUTLINER (9 << 16)
 #define ND_SPACE_VIEW3D (10 << 16)
-#define ND_SPACE_PROPERTIES (11 << 16)
+#define ND_SPACE_PROPS (11 << 16)
 #define ND_SPACE_TEXT (12 << 16)
 #define ND_SPACE_TIME (13 << 16)
 #define ND_SPACE_GRAPH (14 << 16)
@@ -922,31 +920,30 @@ typedef void (*WinPaintCursorDrw)(struct Cxt *C, int, int, void *customdata);
 /** The user is dragging multiple assets. This is only supported in few specific cases, proper
  * multi-item support for dragging isn't supported well yet. Therefore this is kept separate from
  * WM_DRAG_ASSET. */
-#define WM_DRAG_ASSET_LIST 2
-#define WM_DRAG_RNA 3
-#define WM_DRAG_PATH 4
-#define WM_DRAG_NAME 5
-#define WM_DRAG_VAL 6
-#define WM_DRAG_COLOR 7
-#define WM_DRAG_DATASTACK 8
-#define WM_DRAG_ASSET_CATALOG 9
+#define WIN_DRAG_ASSET_LIST 2
+#define WIN_DRAG_API 3
+#define WIN_DRAG_PATH 4
+#define WIN_DRAG_NAME 5
+#define WIN_DRAG_VAL 6
+#define WIN_DRAG_COLOR 7
+#define WIN_DRAG_DATASTACK 8
+#define WIN_DRAG_ASSET_CATALOG 9
 
-typedef enum eWM_DragFlags {
+typedef enum eWinDragFlags {
   WIN_DRAG_NOP = 0,
   WIN_DRAG_FREE_DATA = 1,
-} eWM_DragFlags;
-ENUM_OPS(eWM_DragFlags, WM_DRAG_FREE_DATA)
+} eWinDragFlags;
+ENUM_OPS(eWinDragFlags, WIN_DRAG_FREE_DATA)
 
 /* NOTE: structs need not exported? */
-
-typedef struct wmDragId {
-  struct wmDragId *next, *prev;
+typedef struct WinDragId {
+  struct WinDragId *next, *prev;
   struct Id *id;
   struct Id *from_parent;
-} wmDragId;
+} WinDragId;
 
-typedef struct wmDragAsset {
-  /* NOTE: Can't store the #AssetHandle here, since the #FileDirEntry it wraps may be freed while
+typedef struct WinDragAsset {
+  /* Can't store the AssetHandle here, since the FileDirEntry it wraps may be freed while
    * dragging. So store necessary data here directly. */
 
   char name[64]; /* MAX_NAME */
@@ -956,16 +953,16 @@ typedef struct wmDragAsset {
   struct AssetMetaData *metadata;
   int import_type; /* eFileAssetImportType */
 
-  /* FIXME: This is temporary evil solution to get scene/view-layer/etc in the copy callback of the
-   * wmDropBox.
+  /* FIXME: This is tmp evil solution to get scene/view-layer/etc in the copy callback of the
+   * WinDropBox.
    * TODO: Handle link/append in op called at the end of the drop process, and NOT in its
    * copy cb */
   struct Cxt *evil_C;
-} wmDragAsset;
+} WinDragAsset;
 
-typedef struct wmDragAssetCatalog {
+typedef struct WinDragAssetCatalog {
   bUUID drag_catalog_id;
-} wmDragAssetCatalog;
+} WinDragAssetCatalog;
 
 /* For some specific cases we support dragging multiple assets (#WM_DRAG_ASSET_LIST). There is no
  * proper support for dragging multiple items in the `wmDrag`/`wmDrop` API yet, so this is really
@@ -973,34 +970,34 @@ typedef struct wmDragAssetCatalog {
  *
  * This struct basically contains a tagged union to either store a local ID pointer, or information
  * about an externally stored assets */
-typedef struct wmDragAssetListItem {
-  struct wmDragAssetListItem *next, *prev;
+typedef struct WinDragAssetListItem {
+  struct WinDragAssetListItem *next, *prev;
 
   union {
     struct Id *local_id;
-    wmDragAsset *external_info;
+    WinDragAsset *external_info;
   } asset_data;
 
   bool is_external;
-} wmDragAssetListItem;
+} WinDragAssetListItem;
 
-typedef char *(*WMDropboxTooltipFn)(struct Cxt *,
-                                    struct wmDrag *,
+typedef char *(*WinDropboxTooltipFn)(struct Cxt *,
+                                    struct WinDrag *,
                                     const int xy[2],
-                                    struct wmDropBox *drop);
+                                    struct WinDropBox *drop);
 
-typedef struct wmDragActiveDropState {
+typedef struct WinDragActiveDropState {
   /* Informs which dropbox is activated with the drag item.
    * When this value changes, the draw_activate and #draw_deactivate dropbox callbacks are
    * triggered. */
-  struct wmDropBox *active_dropbox;
+  struct WinDropBox *active_dropbox;
 
   /* If `active_dropbox` is set, the area it successfully polled in. To restore the context of it
    * as needed. */
   struct ScrArea *area_from;
   /* If `active_dropbox` is set, the region it successfully polled in. To restore the context of
    * it as needed. */
-  struct ARegion *region_from;
+  struct ARgn *rgn_from;
 
   /* If `active_dropbox` is set, additional cxt provided by the active (i.e. hovered) button.
    * Activated before cxt sensitive ops (polling, drawing, dropping). */
@@ -1011,34 +1008,34 @@ typedef struct wmDragActiveDropState {
    * cxt_wm_op_poll_msg_set(). */
   const char *disabled_info;
   bool free_disabled_info;
-} wmDragActiveDropState;
+} WinDragActiveDropState;
 
-typedef struct wmDrag {
-  struct wmDrag *next, *prev;
+typedef struct WinDrag {
+  struct WinDrag *next, *prev;
 
   int icon;
-  /** See 'WM_DRAG_' defines above. */
+  /* See 'WIN_DRAG_' defines above. */
   int type;
   void *poin;
   char path[1024]; /* FILE_MAX */
-  double value;
+  double val;
 
   /* If no icon but imbuf should be drawn around cursor. */
   struct ImBuf *imb;
   float imbuf_scale;
 
-  wmDragActiveDropState drop_state;
+  WinDragActiveDropState drop_state;
 
-  eWM_DragFlags flags;
+  eWinDragFlags flags;
 
-  /* List of wmDragIds, all are guaranteed to have the same ID type. */
+  /* List of WinDragIds, all are guaranteed to have the same ID type. */
   List ids;
-  /* List of `wmDragAssetListItem`s. */
+  /* List of `WinDragAssetListItem`s. */
   List asset_items;
-} wmDrag;
+} WinDrag;
 
 /* Dropboxes are like keymaps, part of the screen/area/region definition.
- * Allocation and free is on startup and exit.
+ * Alloc and free is on startup and exit.
  *
  * The op is polled and invoked with the current context (WM_OP_INVOKE_DEFAULT), there is no
  * way to override that (by design, since dropboxes should act on the exact mouse position). So the
@@ -1047,14 +1044,14 @@ typedef struct wmDropBox {
   struct wmDropBox *next, *prev;
 
   /* Test if the dropbox is active. */
-  bool (*poll)(struct Cxt *C, struct wmDrag *drag, const wmEvent *event);
+  bool (*poll)(struct Cxt *C, struct WinDrag *drag, const wmEvent *event);
 
-  /* Before ex, this copies drag info to #wmDrop properties. */
-  void (*copy)(struct wmDrag *drag, struct wmDropBox *drop);
+  /* Before ex, this copies drag info to WinDrop props. */
+  void (*copy)(struct WinDrag *drag, struct WinDropBox *drop);
 
-  /* If the op is canceled (returns `OPERATOR_CANCELLED`), this can be used for cleanup of
+  /* If the op is canceled (returns `OP_CANCELLED`), this can be used for cleanup of
    * `copy()` resources. */
-  void (*cancel)(struct Main *main, struct wmDrag *drag, struct wmDropBox *drop);
+  void (*cancel)(struct Main *main, struct WinDrag *drag, struct WinDropBox *drop);
 
   /**
    * Override the default drawing function.
