@@ -1,10 +1,8 @@
 #pragma once
 
-/**
- * A MFDataType describes what type of data a multi-function gets as input, outputs or mutates.
+/* A MFDataType describes what type of data a multi-fn gets as input, outputs or mutates.
  * Currently, only individual elements or vectors of elements are supported. Adding more data types
- * is possible when necessary.
- */
+ * is possible when necessary. */
 
 #include "lib_cpp_type.hh"
 
@@ -71,7 +69,7 @@ class MFDataType {
 
   const CPPType &vector_base_type() const
   {
-    BLI_assert(this->is_vector());
+    lib_assert(this->is_vector());
     return *type_;
   }
 
