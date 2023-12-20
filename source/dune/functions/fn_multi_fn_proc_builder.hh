@@ -4,14 +4,12 @@
 
 namespace dune::fn {
 
-/**
- * Utility class to build a MFProc.
- */
+/* Util class to build a MFProc. */
 class MFProcBuilder {
  private:
-  /** Procedure that is being build. */
+  /* Procedure that is being build. */
   MFProc *proc_ = nullptr;
-  /** Cursors where the next instruction should be inserted. */
+  /* Cursors where the next instruction should be inserted. */
   Vector<MFInstructionCursor> cursors_;
 
  public:
@@ -56,7 +54,7 @@ class MFProcBuilder {
   void add_param(MFParamType::InterfaceType interface_type, MFVariable &variable);
   MFVariable &add_param(MFParamType param_type, std::string name = "");
 
-  MFVariable &add_input_parameter(MFDataType data_type, std::string name = "");
+  MFVariable &add_input_param(MFDataType data_type, std::string name = "");
   template<typename T> MFVariable &add_single_input_param(std::string name = "");
   template<typename T> MFVariable &add_single_mutable_param(std::string name = "");
 
@@ -76,10 +74,7 @@ struct MFProcBuilder::Loop {
   MFDummyInstruction *end = nullptr;
 };
 
-/* --------------------------------------------------------------------
- * MFProcBuilder inline methods.
- */
-
+/* MFProcBuilder inline methods. */
 inline MFProcBuilder::MFProcBuilder(Branch &branch)
     : MFProcBuilder(*branch.branch_true.proc_)
 {
