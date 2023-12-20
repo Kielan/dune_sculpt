@@ -19,7 +19,7 @@ struct WinMsgSubVal;
 struct WinOpType;
 
 /* win_toolsys.c */
-#define WIN_TOOLSYSTEM_SPACE_MASK \
+#define WIN_TOOLSYS_SPACE_MASK \
   ((1 << SPACE_IMG) | (1 << SPACE_NODE) | (1 << SPACE_VIEW3D) | (1 << SPACE_SEQ))
 /* Values that define a category of active tool. */
 typedef struct ToolKey {
@@ -44,74 +44,74 @@ struct ToolRefRuntime *win_toolsys_runtime_from_cxt(struct Cxt *C);
 struct ToolRefRuntime *win_toolsys_runtime_find(struct WorkSpace *workspace,
                                                 const ToolKey *tkey);
 
-void WM_toolsys_unlink(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
-void WM_toolsystem_refresh(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
-void WM_toolsystem_reinit(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
+void win_toolsys_unlink(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
+void win_toolsys_refresh(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
+void win_toolsys_reinit(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
 
 /* Op on all active tools. */
-void WM_toolsystem_unlink_all(struct bContext *C, struct WorkSpace *workspace);
-void WM_toolsystem_refresh_all(struct bContext *C, struct WorkSpace *workspace);
-void WM_toolsystem_reinit_all(struct bContext *C, struct wmWindow *win);
+void win_toolsys_unlink_all(struct Cxt *C, struct WorkSpace *workspace);
+void win_toolsys_refresh_all(struct Cxt *C, struct WorkSpace *workspace);
+void win_toolsys_reinit_all(struct Cxt *C, struct Win *win);
 
-void WM_toolsystem_ref_set_from_runtime(struct bContext *C,
+void win_toolsys_ref_set_from_runtime(struct Cxt *C,
                                         struct WorkSpace *workspace,
-                                        struct bToolRef *tref,
-                                        const struct bToolRef_Runtime *tref_rt,
+                                        struct ToolRef *tref,
+                                        const struct ToolRefRuntime *tref_rt,
                                         const char *idname);
 
 /* Sync the internal active state of a tool back into the tool system,
  * this is needed for active brushes where the real active state is not stored in the tool system.
  *
- * see toolsystem_ref_link */
-void wm_toolsystem_ref_sync_from_context(struct Main *bmain,
-                                         struct WorkSpace *workspace,
-                                         struct bToolRef *tref);
+ * see toolsys_ref_link */
+void win_toolsys_ref_sync_from_cxt(struct Main *main,
+                                   struct WorkSpace *workspace,
+                                   struct ToolRef *tref);
 
-void WM_toolsystem_init(struct bContext *C);
+void win_toolsys_init(struct bContext *C);
 
-int WM_toolsystem_mode_from_spacetype(struct ViewLayer *view_layer,
+int win_toolsys_mode_from_spacetype(struct ViewLayer *view_layer,
                                       struct ScrArea *area,
                                       int space_type);
-bool WM_toolsystem_key_from_context(struct ViewLayer *view_layer,
+bool win_toolsys_key_from_cxt(struct ViewLayer *view_layer,
                                     struct ScrArea *area,
                                     ToolKey *tkey);
 
-void WM_toolsystem_update_from_context_view3d(struct Cxt *C);
-void WM_toolsystem_update_from_context(struct Cxt *C,
-                                       struct WorkSpace *workspace,
-                                       struct ViewLayer *view_layer,
-                                       struct ScrArea *area);
+void win_toolsys_update_from_cxt_view3d(struct Cxt *C);
+void win_toolsysupdate_from_cxt(struct Cxt *C,
+                                struct WorkSpace *workspace,
+                                struct ViewLayer *view_layer,
+                                struct ScrArea *area);
 
 /* For paint modes to support non-brush tools. */
-bool WM_toolsystem_active_tool_is_brush(const struct Cxt *C);
+bool win_toolsys_active_tool_is_brush(const struct Cxt *C);
 
-/* Follow wmMsgNotifyFn spec. */
-void WM_toolsystem_do_msg_notify_tag_refresh(struct Cxt *C,
-                                             struct wmMsgSubscribeKey *msg_key,
-                                             struct wmMsgSubscribeValue *msg_val);
+/* Follow WinMsgNotifyFn spec. */
+void win_toolsys_do_msg_notify_tag_refresh(struct Cxt *C,
+                                           struct WinMsgSubKey *msg_key,
+                                           struct WinMsgSubVal *msg_val);
 
-struct IdProp *wm_toolsystem_ref_props_get_idprops(struct ToolRef *tref);
-struct IdProp *wm_toolsystem_ref_props_ensure_idprops(struct ToolRef *tref);
-void wm_toolsystem_ref_props_ensure_ex(struct ToolRef *tref,
+struct IdProp *wm_toolsys_ref_props_get_idprops(struct ToolRef *tref);
+struct IdProp *wm_toolsys_ref_props_ensure_idprops(struct ToolRef *tref);
+void wm_toolsys_ref_props_ensure_ex(struct ToolRef *tref,
                                        const char *idname,
                                        struct ApiStruct *type,
                                        struct ApiPtr *r_ptr);
 
-#define wm_toolsystem_ref_props_ensure_from_op(tref, ot, r_ptr) \
-  wm_toolsystem_ref_props_ensure_ex(tref, (ot)->idname, (ot)->srna, r_ptr)
-#define wm_toolsystem_ref_props_ensure_from_gizmo_group(tref, gzgroup, r_ptr) \
-  wm_toolsystem_ref_props_ensure_ex(tref, (gzgroup)->idname, (gzgroup)->srna, r_ptr)
+#define wm_toolsys_ref_props_ensure_from_op(tref, ot, r_ptr) \
+  wm_toolsys_ref_props_ensure_ex(tref, (ot)->idname, (ot)->srna, r_ptr)
+#define wm_toolsys_ref_props_ensure_from_gizmo_group(tref, gzgroup, r_ptr) \
+  wm_toolsys_ref_props_ensure_ex(tref, (gzgroup)->idname, (gzgroup)->sapi, r_ptr)
 
-bool wm_toolsystem_ref_props_get_ex(struct ToolRef *tref,
-                                         const char *idname,
-                                         struct ApiStruct *type,
-                                         struct ApiPtr *r_ptr);
+bool wm_toolsys_ref_props_get_ex(struct ToolRef *tref,
+                                  const char *idname,
+                                  struct ApiStruct *type,
+                                  struct ApiPtr *r_ptr);
 #define wm_toolsystem_ref_props_get_from_op(tref, ot, r_ptr) \
-  wm_toolsystem_ref_props_get_ex(tref, (ot)->idname, (ot)->srna, r_ptr)
+  wm_toolsystem_ref_props_get_ex(tref, (ot)->idname, (ot)->sapi, r_ptr)
 #define wm_toolsystem_ref_props_get_from_gizmo_group(tref, gzgroup, r_ptr) \
-  wm_toolsystem_ref_props_get_ex(tref, (gzgroup)->idname, (gzgroup)->srna, r_ptr)
+  wm_toolsystem_ref_props_get_ex(tref, (gzgroup)->idname, (gzgroup)->sapi, r_ptr)
 
-void wm_toolsystem_ref_properties_init_for_keymap(struct bToolRef *tref,
+void wm_toolsystem_ref_props_init_for_keymap(struct bToolRef *tref,
                                                   struct PointerRNA *dst_ptr,
                                                   struct PointerRNA *src_ptr,
                                                   struct wmOperatorType *ot);
