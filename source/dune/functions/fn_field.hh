@@ -1,72 +1,64 @@
 #pragma once
 
-/** \file
- * \ingroup fn
+/* fn
  *
- * A #Field represents a function that outputs a value based on an arbitrary number of inputs. The
- * inputs for a specific field evaluation are provided by a #FieldContext.
+ * A Field represents a fn that outputs a val based on an arbitrary number of inputs. The
+ * inputs for a specific field eval are provided by a FieldCxt.
  *
- * A typical example is a field that computes a displacement vector for every vertex on a mesh
+ * A typical example is a field that computes a displacement vector for every ver on a mesh
  * based on its position.
  *
- * Fields can be build, composed and evaluated at run-time. They are stored in a directed tree
- * graph data structure, whereby each node is a #FieldNode and edges are dependencies. A #FieldNode
- * has an arbitrary number of inputs and at least one output and a #Field references a specific
- * output of a #FieldNode. The inputs of a #FieldNode are other fields.
+ * Fields can be build, composed and eval at run-time. They are stored in a directed tree
+ * graph data structure, whereby each node is a FieldNode and edges are dependencies. A FieldNode
+ * has an arbitrary number of inputs and at least one output and a Field refs a specific
+ * output of a FieldNode. The inputs of a FieldNode are other fields.
  *
  * There are two different types of field nodes:
- *  - #FieldInput: Has no input and exactly one output. It represents an input to the entire field
- *    when it is evaluated. During evaluation, the value of this input is based on a #FieldContext.
- *  - #FieldOperation: Has an arbitrary number of field inputs and at least one output. Its main
+ *  - FieldInput: Has no input and exactly one output. It represents an input to the entire field
+ *    when it is eval. During eval, the val of this input is based on a FieldCxt.
+ *  - FieldOp: Has an arbitrary number of field inputs and at least one output. Its main
  *    use is to compose multiple existing fields into new fields.
  *
- * When fields are evaluated, they are converted into a multi-function procedure which allows
+ * When fields are eval, they are converted into a multi-function procedure which allows
  * efficient computation. In the future, we might support different field evaluation mechanisms for
  * e.g. the following scenarios:
- *  - Latency of a single evaluation is more important than throughput.
+ *  - Latency of a single eval is more important than throughput.
  *  - Evaluation should happen on other hardware like GPUs.
  *
  * Whenever possible, multiple fields should be evaluated together to avoid duplicate work when
- * they share common sub-fields and a common context.
- */
+ * they share common sub-fields and a common context. */
 
-#include "BLI_function_ref.hh"
-#include "BLI_generic_virtual_array.hh"
-#include "BLI_string_ref.hh"
-#include "BLI_vector.hh"
-#include "BLI_vector_set.hh"
+#include "lib_fn_ref.hh"
+#include "lib_generic_virtual_array.hh"
+#include "lib_string_ref.hh"
+#include "lib_vector.hh"
+#include "lib_vector_set.hh"
 
-#include "FN_multi_function_builder.hh"
+#include "fn_multi_builder.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
 class FieldInput;
 struct FieldInputs;
 
-/**
- * Have a fixed set of base node types, because all code that works with field nodes has to
- * understand those.
- */
+/* Have a fixed set of base node types, because all code that works with field nodes has to
+ * understand those. */
 enum class FieldNodeType {
   Input,
-  Operation,
+  Op,
   Constant,
 };
 
-/**
- * A node in a field-tree. It has at least one output that can be referenced by fields.
- */
+/* A node in a field-tree. It has at least one output that can be refd by fields. */
 class FieldNode {
  private:
   FieldNodeType node_type_;
 
  protected:
-  /**
-   * Keeps track of the inputs that this node depends on. This avoids recomputing it every time the
-   * data is required. It is a shared pointer, because very often multiple nodes depend on the same
+  /* Keeps track of the inputs that this node depends on. This avoids recomputing it every time the
+   * data is required. It is a shared ptr, bc very often multiple nodes depend on the same
    * inputs.
-   * Might contain null.
-   */
+   * Might contain null. */
   std::shared_ptr<const FieldInputs> field_inputs_;
 
  public:
@@ -84,9 +76,7 @@ class FieldNode {
   virtual bool is_equal_to(const FieldNode &other) const;
 };
 
-/**
- * Common base class for fields to avoid declaring the same methods for #GField and #GFieldRef.
- */
+/* Common base class for fields to avoid declaring the same methods for GField and GFieldRef */
 template<typename NodePtr> class GFieldBase {
  protected:
   NodePtr node_ = nullptr;
@@ -133,9 +123,7 @@ template<typename NodePtr> class GFieldBase {
   }
 };
 
-/**
- * A field whose output type is only known at run-time.
- */
+/* A field whose output type is only known at run-time. */
 class GField : public GFieldBase<std::shared_ptr<FieldNode>> {
  public:
   GField() = default;
@@ -146,10 +134,8 @@ class GField : public GFieldBase<std::shared_ptr<FieldNode>> {
   }
 };
 
-/**
- * Same as #GField but is cheaper to copy/move around, because it does not contain a
- * #std::shared_ptr.
- */
+/* Same as GField but is cheaper to copy/move around, because it does not contain a
+ * std::shared_ptr. */
 class GFieldRef : public GFieldBase<const FieldNode *> {
  public:
   GFieldRef() = default;
@@ -171,9 +157,7 @@ struct TypedFieldBase {
 };
 }  // namespace detail
 
-/**
- * A typed version of #GField. It has the same memory layout as #GField.
- */
+/* A typed version of #GField. It has the same memory layout as GField. */
 template<typename T> class Field : public GField, detail::TypedFieldBase {
  public:
   using base_type = T;
@@ -182,7 +166,7 @@ template<typename T> class Field : public GField, detail::TypedFieldBase {
 
   Field(GField field) : GField(std::move(field))
   {
-    BLI_assert(this->cpp_type().template is<T>());
+    lib_assert(this->cpp_type().template is<T>());
   }
 
   Field(std::shared_ptr<FieldNode> node, const int node_output_index = 0)
@@ -191,41 +175,35 @@ template<typename T> class Field : public GField, detail::TypedFieldBase {
   }
 };
 
-/** True when T is any Field<...> type. */
+/* True when T is any Field<...> type. */
 template<typename T>
 static constexpr bool is_field_v = std::is_base_of_v<detail::TypedFieldBase, T> &&
                                    !std::is_same_v<detail::TypedFieldBase, T>;
 
-/**
- * A #FieldNode that allows composing existing fields into new fields.
- */
-class FieldOperation : public FieldNode {
-  /**
-   * The multi-function used by this node. It is optionally owned.
-   * Multi-functions with mutable or vector parameters are not supported currently.
-   */
-  std::shared_ptr<const MultiFunction> owned_function_;
-  const MultiFunction *function_;
+/* A FieldNode that allows composing existing fields into new fields. */
+class FieldOp : public FieldNode {
+  /* The multi-fn used by this node. It is optionally owned.
+   * Multi-fns with mutable or vector params are not supported currently. */
+  std::shared_ptr<const MultiFn> owned_fn_;
+  const MultiFn *fn_;
 
-  /** Inputs to the operation. */
-  blender::Vector<GField> inputs_;
+  /* Inputs to the op. */
+  dune::Vector<GField> inputs_;
 
  public:
-  FieldOperation(std::shared_ptr<const MultiFunction> function, Vector<GField> inputs = {});
-  FieldOperation(const MultiFunction &function, Vector<GField> inputs = {});
-  ~FieldOperation();
+  FieldOp(std::shared_ptr<const MultiFn> fn, Vector<GField> inputs = {});
+  FieldOp(const MultiFn &fn, Vector<GField> inputs = {});
+  ~FieldOp();
 
   Span<GField> inputs() const;
-  const MultiFunction &multi_function() const;
+  const MultiFn &multi_fn() const;
 
   const CPPType &output_cpp_type(int output_index) const override;
 };
 
-class FieldContext;
+class FieldCxt;
 
-/**
- * A #FieldNode that represents an input to the entire field-tree.
- */
+/* A FieldNode that represents an input to the entire field-tree. */
 class FieldInput : public FieldNode {
  public:
   /* The order is also used for sorting in socket inspection. */
@@ -245,16 +223,14 @@ class FieldInput : public FieldNode {
   FieldInput(const CPPType &type, std::string debug_name = "");
   ~FieldInput();
 
-  /**
-   * Get the value of this specific input based on the given context. The returned virtual array,
-   * should live at least as long as the passed in #scope. May return null.
-   */
-  virtual GVArray get_varray_for_context(const FieldContext &context,
+  /* Get the val of this specific input based on the given context. The returned virtual array,
+   * should live at least as long as the passed in #scope. May return null. */
+  virtual GVArray get_varray_for_context(const FieldCxt &context,
                                          IndexMask mask,
                                          ResourceScope &scope) const = 0;
 
   virtual std::string socket_inspection_name() const;
-  blender::StringRef debug_name() const;
+  dune::StringRef debug_name() const;
   const CPPType &cpp_type() const;
   Category category() const;
 
@@ -272,28 +248,22 @@ class FieldConstant : public FieldNode {
 
   const CPPType &output_cpp_type(int output_index) const override;
   const CPPType &type() const;
-  GPointer value() const;
+  GPtr value() const;
 };
 
-/**
- * Keeps track of the inputs of a field.
- */
+/* Keeps track of the inputs of a field. */
 struct FieldInputs {
   /** All #FieldInput nodes that a field (possibly indirectly) depends on. */
   VectorSet<const FieldInput *> nodes;
-  /**
-   * Same as above but the inputs are deduplicated. For example, when there are two separate index
-   * input nodes, only one will show up in this list.
-   */
+  /* Same as above but the inputs are deduplicated. For example, when there are two separate index
+   * input nodes, only one will show up in this list. */
   VectorSet<std::reference_wrapper<const FieldInput>> deduplicated_nodes;
 };
 
-/**
- * Provides inputs for a specific field evaluation.
- */
-class FieldContext {
+/* Provides inputs for a specific field eval */
+class FieldCxt {
  public:
-  virtual ~FieldContext() = default;
+  virtual ~FieldCxt() = default;
 
   virtual GVArray get_varray_for_input(const FieldInput &field_input,
                                        IndexMask mask,
@@ -301,7 +271,7 @@ class FieldContext {
 };
 
 /**
- * Utility class that makes it easier to evaluate fields.
+ * Util class that makes it easier to evaluate fields.
  */
 class FieldEvaluator : NonMovable, NonCopyable {
  private:
