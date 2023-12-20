@@ -1,11 +1,11 @@
-/** Manage initializing resources and correctly shutting down. */
+/* Manage init resources and correctly shutting down. */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* only called once, for startup */
-void wm_init(DContext *C, int argc, const char **argv)
+void win_init(Cxt *C, int argc, const char **argv)
 {
 
   if (!G.background) {
