@@ -1,6 +1,5 @@
 #pragma once
-
-/* types-savable wmStructs here */
+/* types-savable WinStructs here */
 #include "lib_compiler_attrs.h"
 
 #ifdef __cplusplus
@@ -14,40 +13,40 @@ struct ScrArea;
 struct ApiStruct;
 struct WorkSpace;
 struct Cxt;
-struct ToolRef_Runtime;
-struct wmMsgSubscribeKey;
-struct wmMsgSubscribeValue;
-struct wmOpType;
+struct ToolRefRuntime;
+struct WinMsgSubKey;
+struct WinMsgSubVal;
+struct WinOpType;
 
-/* wm_toolsystem.c */
-#define WM_TOOLSYSTEM_SPACE_MASK \
-  ((1 << SPACE_IMAGE) | (1 << SPACE_NODE) | (1 << SPACE_VIEW3D) | (1 << SPACE_SEQ))
+/* win_toolsys.c */
+#define WIN_TOOLSYSTEM_SPACE_MASK \
+  ((1 << SPACE_IMG) | (1 << SPACE_NODE) | (1 << SPACE_VIEW3D) | (1 << SPACE_SEQ))
 /* Values that define a category of active tool. */
 typedef struct ToolKey {
   int space_type;
   int mode;
 } ToolKey;
 
-struct ToolRef *WM_toolsystem_ref_from_context(struct bContext *C);
-struct ToolRef *WM_toolsystem_ref_find(struct WorkSpace *workspace, const bToolKey *tkey);
-bool WM_toolsystem_ref_ensure(struct WorkSpace *workspace,
-                              const bToolKey *tkey,
-                              struct bToolRef **r_tref);
+struct ToolRef *win_toolsys_ref_from_cxt(struct Cxt *C);
+struct ToolRef *win_toolsys_ref_find(struct WorkSpace *workspace, const ToolKey *tkey);
+bool win_toolsys_ref_ensure(struct WorkSpace *workspace,
+                            const ToolKey *tkey,
+                            struct ToolRef **r_tref);
 
-struct ToolRef *WM_toolsystem_ref_set_by_id_ex(struct bContext *C,
+struct ToolRef *win_toolsys_ref_set_by_id_ex(struct bContext *C,
                                                 struct WorkSpace *workspace,
                                                 const bToolKey *tkey,
                                                 const char *name,
                                                 bool cycle);
-struct ToolRef *WM_toolsystem_ref_set_by_id(struct bContext *C, const char *name);
+struct ToolRef *win_toolsys_ref_set_by_id(struct bContext *C, const char *name);
 
-struct ToolRef_Runtime *WM_toolsystem_runtime_from_context(struct bContext *C);
-struct ToolRef_Runtime *WM_toolsystem_runtime_find(struct WorkSpace *workspace,
-                                                    const bToolKey *tkey);
+struct ToolRefRuntime *win_toolsys_runtime_from_cxt(struct Cxt *C);
+struct ToolRefRuntime *win_toolsys_runtime_find(struct WorkSpace *workspace,
+                                                const ToolKey *tkey);
 
-void WM_toolsystem_unlink(struct bContext *C, struct WorkSpace *workspace, const bToolKey *tkey);
-void WM_toolsystem_refresh(struct bContext *C, struct WorkSpace *workspace, const bToolKey *tkey);
-void WM_toolsystem_reinit(struct bContext *C, struct WorkSpace *workspace, const bToolKey *tkey);
+void WM_toolsys_unlink(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
+void WM_toolsystem_refresh(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
+void WM_toolsystem_reinit(struct Cxt *C, struct WorkSpace *workspace, const ToolKey *tkey);
 
 /* Op on all active tools. */
 void WM_toolsystem_unlink_all(struct bContext *C, struct WorkSpace *workspace);
