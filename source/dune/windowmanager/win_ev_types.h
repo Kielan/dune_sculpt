@@ -1,6 +1,5 @@
 /* These define have its origin at sgi, where all device defines were written down in device.h.
  * Dune copied the conventions quite some, and expanded it with internal new defines (ton) */
-
 #pragma once
 
 #ifdef __cplusplus
@@ -95,24 +94,24 @@ enum {
   EV_CKEY = 0x0063, /* 'c' (99). */
   EV_DKEY = 0x0064, /* 'd' (100). */
   EV_EKEY = 0x0065, /* 'e' (101). */
-  EVT_FKEY = 0x0066, /* 'f' (102). */
-  EVT_GKEY = 0x0067, /* 'g' (103). */
-  EVT_HKEY = 0x0068, /* 'h' (104). */
+  EV_FKEY = 0x0066, /* 'f' (102). */
+  EV_GKEY = 0x0067, /* 'g' (103). */
+  EV_HKEY = 0x0068, /* 'h' (104). */
   EV_IKEY = 0x0069, /* 'i' (105). */
   EV_JKEY = 0x006a, /* 'j' (106). */
   EV_KKEY = 0x006b, /* 'k' (107). */
   EV_LKEY = 0x006c, /* 'l' (108). */
   EV_MKEY = 0x006d, /* 'm' (109). */
   EV_NKEY = 0x006e, /* 'n' (110). */
-  EVT_OKEY = 0x006f, /* 'o' (111). */
+  EV_OKEY = 0x006f, /* 'o' (111). */
   EV_PKEY = 0x0070, /* 'p' (112). */
-  EVT_QKEY = 0x0071, /* 'q' (113). */
-  EVT_RKEY = 0x0072, /* 'r' (114). */
+  EV_QKEY = 0x0071, /* 'q' (113). */
+  EV_RKEY = 0x0072, /* 'r' (114). */
   EV_SKEY = 0x0073, /* 's' (115). */
   EV_TKEY = 0x0074, /* 't' (116). */
   EV_UKEY = 0x0075, /* 'u' (117). */
-  EVT_VKEY = 0x0076, /* 'v' (118). */
-  EVT_WKEY = 0x0077, /* 'w' (119). */
+  EV_VKEY = 0x0076, /* 'v' (118). */
+  EV_WKEY = 0x0077, /* 'w' (119). */
   EVT_XKEY = 0x0078, /* 'x' (120). */
   EV_YKEY = 0x0079, /* 'y' (121). */
   EV_ZKEY = 0x007a, /* 'z' (122). */
