@@ -12,7 +12,7 @@ struct ScrArea;
 enum WinOpCallCxt;
 
 #ifdef WITH_XR_OPENXR
-struct wmXrActionData;
+struct WinXrActionData;
 #endif
 
 #ifdef __cplusplus
@@ -73,7 +73,7 @@ typedef struct WinEvHandlerGizmo {
   struct WinGizmoMap *gizmo_map;
 } WinEvHandlerGizmo;
 
-/* WM_HANDLER_TYPE_UI */
+/* WIN_HANDLER_TYPE_UI */
 typedef struct WinEvHandlerUI {
   WinEvHandler head;
 
@@ -109,7 +109,7 @@ typedef struct WinEvHandlerOp {
     struct ARgn *rgn;
     short rgn_type;
   } cxt;
-} WinEvHandler_Op;
+} WinEvHandlerOp;
 
 /* WIN_HANDLER_TYPE_DROPBOX */
 typedef struct WinEvHandlerDropbox {
@@ -119,7 +119,7 @@ typedef struct WinEvHandlerDropbox {
   List *dropboxes;
 } WinEvHandlerDropbox;
 
-/* win_ev_system.c */
+/* win_ev_sys.c */
 void win_ev_free_all(Win *win);
 void win_ev_free(WinEvrc CD d *ev);
 void win_ev_free_handler(WinEvHandler *handler);
@@ -138,7 +138,7 @@ void win_ev_do_graph(Cxt *C, bool is_after_open_file);
 /* Was part of win_ev_do_notifiers,
  * split out so it can be called once before entering the WM_main loop.
  * This ensures operators don't run before the UI and graph are initialized. */
-void win_ev_do_refresh_wm_and_graph(Cxt *C);
+void win_ev_do_refresh_win_and_graph(Cxt *C);
 /* Called in main-loop. */
 void win_ev_do_notifiers(Cxt *C);
 
