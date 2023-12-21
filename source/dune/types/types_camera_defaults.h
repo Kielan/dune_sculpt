@@ -2,7 +2,6 @@
 
 /* Struct members on own line. */
 /* clang-format off */
-
 /* Camera Struct */
 #define _TYPES_DEFAULT_CameraDOFSettings \
   { \
