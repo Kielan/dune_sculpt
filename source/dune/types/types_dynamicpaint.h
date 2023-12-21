@@ -62,10 +62,10 @@ enum {
 
 /* init_color_type */
 enum {
-  MOD_DPAINT_INITIAL_NONE = 0,
-  MOD_DPAINT_INITIAL_COLOR = 1,
-  MOD_DPAINT_INITIAL_TEXTURE = 2,
-  MOD_DPAINT_INITIAL_VERTEXCOLOR = 3,
+  MOD_DPAINT_INIT_NONE = 0,
+  MOD_DPAINT_INIT_COLOR = 1,
+  MOD_DPAINT_INIT_TEXTURE = 2,
+  MOD_DPAINT_INIT_VERTEXCOLOR = 3,
 };
 
 /* Is stored in ModData.runtime. */
@@ -94,7 +94,7 @@ typedef struct DynamicPaintSurface {
   /* surface */
   char name[64];
   short format, type;
-  short disp_type, image_fileformat;
+  short disp_type, img_fileformat;
   /* Ui selection box. */
   short effect_ui;
   short init_color_type;
@@ -103,7 +103,7 @@ typedef struct DynamicPaintSurface {
   int image_resolution, substeps;
   int start_frame, end_frame;
 
-  /* initial color */
+  /* init color */
   float init_color[4];
   struct Tex *init_texture;
   /* MAX_CUSTOMDATA_LAYER_NAME. */
@@ -126,7 +126,7 @@ typedef struct DynamicPaintSurface {
   /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvlayer_name[64];
   /* 1024 = FILE_MAX. */
-  char image_output_path[1024];
+  char img_output_path[1024];
   /* MAX_CUSTOMDATA_LAYER_NAME. */
   char output_name[64];
   /* MAX_CUSTOMDATA_LAYER_NAME */ /* some surfaces have 2 outputs. */
@@ -226,7 +226,7 @@ typedef struct DynamicPaintBrushSettings {
    * copying to be self-sufficient (extra external code needs to ensure the ptr remains valid
    * when the mod data is copied from one object to another). See e.g.
    * `dune_object_copy_particlesystems` or `dune_object_copy_mod`. */
-  struct ParticleSystem *psys;
+  struct ParticleSys *psys;
 
   int flags;
   int collision;
