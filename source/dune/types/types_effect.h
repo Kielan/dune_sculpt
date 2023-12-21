@@ -4,15 +4,14 @@
 extern "C" {
 #endif
 
-/* Don't forget, new effects also in `writefile.c` for DNA! */
-
+/* Don't forget, new effects also in `writefile.c` for Types! */
 #define PAF_MAXMULT 4
 
 /* paf->flag (keep bit 0 free for compatibility). */
 #define PAF_BSPLINE 2
 #define PAF_STATIC 4
 #define PAF_FACE 8
-#define PAF_ANIMATED 16
+#define PAF_ANIM 16
 /* show particles before they're emitted. */
 #define PAF_UNBORN 32
 /* Emit only from faces. */
@@ -35,7 +34,7 @@ extern "C" {
 #define EFF_WAVE 2
 
 /* eff->flag */
-#define EFF_SELECT 1
+#define EFF_SEL 1
 
 /* paf->stype */
 #define PAF_NORMAL 0
