@@ -1,4 +1,4 @@
-#include "draw_render.h"
+#include "drw_render.h"
 
 #include "dune_global.h"
 #include "dune_pen.h"
@@ -16,7 +16,7 @@ static void pen_depth_plane(Ob *ob, float r_plane[4])
 {
   /* Put that into private data. */
   float viewinv[4][4];
-  draw_view_viewmat_get(NULL, viewinv, true);
+  drw_view_viewmat_get(NULL, viewinv, true);
   float *camera_z_axis = viewinv[2];
   float *camera_pos = viewinv[3];
 
@@ -87,7 +87,7 @@ void overlay_outline_init(OverlayData *vedata)
                                     });
     }
     else {
-      gpu_framebuffer_ensure_config(&fbl->outlines_resolve_fb,
+      gpu_framebuf_ensure_config(&fbl->outlines_resolve_fb,
                                     {
                                         GPU_ATTACHMENT_NONE,
                                         GPU_ATTACHMENT_TEXTURE(dtxl->color_overlay),
@@ -111,7 +111,7 @@ void overlay_outline_cache_init(OverlayData *vedata)
     DrwState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
     DRW_PASS_CREATE(psl->outlines_prepass_ps, state | pd->clipping_state);
 
-    GPUShader *sh_geom = ovelay_shader_outline_prepass(pd->xray_enabled_and_not_wire);
+    GPUShader *sh_geom = overlay_shader_outline_prepass(pd->xray_enabled_and_not_wire);
 
     pd->outlines_grp = grp = drw_shgroup_create(sh_geom, psl->outlines_prepass_ps);
     draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
@@ -154,37 +154,37 @@ void overlay_outline_cache_init(OverlayData *vedata)
 }
 
 typedef struct iterData {
-  Object *ob;
-  DrawShadingGroup *stroke_grp;
-  DrawShadingGroup *fill_grp;
+  Ob *ob;
+  DrwShadingGroup *stroke_grp;
+  DrwShadingGroup *fill_grp;
   int cfra;
   float plane[4];
 } iterData;
 
-static void dpen_layer_cache_populate(DPenLayer *dpl,
-                                      DPenFrame *UNUSED(dpf),
-                                      DPenStroke *UNUSED(dps),
-                                      void *thunk)
+static void pen_layer_cache_populate(PenLayer *dpl,
+                                     PenFrame *UNUSED(dpf),
+                                     PenStroke *UNUSED(dps),
+                                     void *thunk)
 {
   iterData *iter = (iterData *)thunk;
-  DPenData *dpd = (DPenData *)iter->ob->data;
+  PenData *pd = (PenData *)iter->ob->data;
 
-  const bool is_screenspace = (dpd->flag & DP_DATA_STROKE_KEEPTHICKNESS) != 0;
-  const bool is_stroke_order_3d = (dpd->draw_mode == DP_DRAWMODE_3D);
+  const bool is_screenspace = (pd->flag & PEN_DATA_STROKE_KEEPTHICKNESS) != 0;
+  const bool is_stroke_order_3d = (pd->drw_mode == PEN_DRWMODE_3D);
 
-  float object_scale = mat4_to_scale(iter->ob->obmat);
+  float ob_scale = mat4_to_scale(iter->ob->obmat);
   /* Negate thickness sign to tag that strokes are in screen space.
    * Convert to world units (by default, 1 meter = 2000 pixels). */
-  float thickness_scale = (is_screenspace) ? -1.0f : (dpd->pixfactor / 2000.0f);
+  float thickness_scale = (is_screenspace) ? -1.0f : (pd->pixfactor / 2000.0f);
 
-  DrawShadingGroup *grp = iter->stroke_grp = draw_shgroup_create_sub(iter->stroke_grp);
-  draw_shgroup_uniform_bool_copy(grp, "strokeOrder3d", is_stroke_order_3d);
-  draw_shgroup_uniform_vec2_copy(grp, "sizeViewportInv", draw_viewport_invert_size_get());
-  draw_shgroup_uniform_vec2_copy(grp, "sizeViewport", draw_viewport_size_get());
-  draw_shgroup_uniform_float_copy(grp, "thicknessScale", object_scale);
-  draw_shgroup_uniform_float_copy(grp, "thicknessOffset", (float)dpl->line_change);
-  draw_shgroup_uniform_float_copy(grp, "thicknessWorldScale", thickness_scale);
-  draw_shgroup_uniform_vec4_copy(grp, "dPenDepthPlane", iter->plane);
+  DrwShadingGroup *grp = iter->stroke_grp = drw_shgroup_create_sub(iter->stroke_grp);
+  drw_shgroup_uniform_bool_copy(grp, "strokeOrder3d", is_stroke_order_3d);
+  drw_shgroup_uniform_vec2_copy(grp, "sizeViewportInv", drw_viewport_invert_size_get());
+  drw_shgroup_uniform_vec2_copy(grp, "sizeViewport", drw_viewport_size_get());
+  drw_shgroup_uniform_float_copy(grp, "thicknessScale", ob_scale);
+  drw_shgroup_uniform_float_copy(grp, "thicknessOffset", (float)pl->line_change);
+  drw_shgroup_uniform_float_copy(grp, "thicknessWorldScale", thickness_scale);
+  drw_shgroup_uniform_vec4_copy(grp, "PenDepthPlane", iter->plane);
 }
 
 static void pen_stroke_cache_populate(PenLayer *UNUSED(dpl),
@@ -198,23 +198,23 @@ static void pen_stroke_cache_populate(PenLayer *UNUSED(dpl),
 
   bool hide_material = (p_style->flag & PEN_MATERIAL_HIDE) != 0;
   bool show_stroke = (p_style->flag & PEN_MATERIAL_STROKE_SHOW) != 0;
-  // TODO: What about simplify Fill?
-  bool show_fill = (ps->tot_triangles > 0) && (p_style->flag & DP_MATERIAL_FILL_SHOW) != 0;
+  // TODO: Simplify Fill?
+  bool show_fill = (ps->tot_triangles > 0) && (p_style->flag & PEN_MATERIAL_FILL_SHOW) != 0;
 
   if (hide_material) {
     return;
   }
 
   if (show_fill) {
-    struct GPUBatch *geom = drw_cache_dpen_fills_get(iter->ob, iter->cfra);
+    struct GPUBatch *geom = drw_cache_pen_fills_get(iter->ob, iter->cfra);
     int vfirst = ps->runtime.fill_start * 3;
     int vcount = ps->tot_triangles * 3;
     drw_shgroup_call_range(iter->fill_grp, iter->ob, geom, vfirst, vcount);
   }
 
   if (show_stroke) {
-    struct GPUBatch *geom = drw_cache_dpen_strokes_get(iter->ob, iter->cfra);
-    /* Start one vert before to have gl_InstanceID > 0 (see shader). */
+    struct GPUBatch *geom = drw_cache_pen_strokes_get(iter->ob, iter->cfra);
+    /* Start one vert before to have gl_InstanceId > 0 (see shader). */
     int vfirst = dps->runtime.stroke_start - 1;
     /* Include "potential" cyclic vertex and start adj vertex (see shader). */
     int vcount = dps->totpoints + 1 + 1;
@@ -257,7 +257,7 @@ static void overlay_outline_volume(OverlayPrivateData *pd, Ob *ob)
     return;
   }
 
-  DRWShadingGroup *shgroup = pd->outlines_grp;
+  DrwShadingGroup *shgroup = pd->outlines_grp;
   drw_shgroup_call(shgroup, geom, ob);
 }
 
@@ -272,7 +272,7 @@ void overlay_outline_cache_populate(OverlayData *vedata,
   DrwShadingGroup *shgroup = NULL;
   const bool drw_outline = ob->dt > OB_BOUNDBOX;
 
-  /* Early exit: outlines of bounding boxes are not drawn. */
+  /* Early exit: outlines of bounding boxes are not drwn. */
   if (!drw_outline) {
     return;
   }
@@ -295,14 +295,14 @@ void overlay_outline_cache_populate(OverlayData *vedata,
 
   if (dup && !init_dup) {
     geom = dup->outline_geom;
-    shgroup = du->outline_shgrp;
+    shgroup = dup->outline_shgrp;
   }
   else {
     /* This fixes only the biggest case which is a plane in ortho view. */
     int flat_axis = 0;
     bool is_flat_ob_viewed_from_side = ((drw_cxt->rv3d->persp == RV3D_ORTHO) &&
-                                            drw_ob_is_flat(ob, &flat_axis) &&
-                                            drw_ob_axis_orthogonal_to_view(ob, flat_axis));
+                                         drw_ob_is_flat(ob, &flat_axis) &&
+                                         drw_ob_axis_orthogonal_to_view(ob, flat_axis));
 
     if (pd->xray_enabled_and_not_wire || is_flat_ob_viewed_from_side) {
       geom = drw_cache_ob_edge_detection_get(ob, NULL);
