@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 /* Geometry Elements */
-
 /* Mesh Verts.
  * Typically accessed from Mesh.mvert */
 typedef struct MVert {
@@ -35,8 +34,8 @@ typedef struct MEdge {
 
 /* MEdge.flag */
 enum {
-  /*  SELECT = (1 << 0), */
-  ME_EDGEDRAW = (1 << 1),
+  /*  SEL = (1 << 0), */
+  ME_EDGEDRW = (1 << 1),
   ME_SEAM = (1 << 2),
   /*  ME_HIDE = (1 << 4), */
   ME_EDGERENDER = (1 << 5),
@@ -47,7 +46,6 @@ enum {
 
 /* Mesh Faces
  * This only stores the polygon size & flags, the vertex & edge indices are stored in the MLoop.
- *
  * Typically accessed from Mesh.mpoly */
 typedef struct MPoly {
   /* Offset into loop array and number of loops in the face. */
@@ -69,15 +67,13 @@ enum {
  * "Loop" is an internal name for the corner of a polygon (MPoly).
  * Typically accessed from Mesh.mloop. */
 typedef struct MLoop {
-  /* Vertex index into an MVert array. */
+  /* Vert index into an MVert array. */
   unsigned int v;
   /* Edge index into an MEdge array. */
   unsigned int e;
 } MLoop;
 
-/* -------------------------------------------------------------------- */
 /* Ordered Selection Storage */
-
 /* Optionally store the order of selected elements.
  * This won't always be set since only some selection operations have an order.
  *
