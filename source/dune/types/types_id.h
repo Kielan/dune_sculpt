@@ -1,4 +1,4 @@
-/** brief id and lib types, which are fundamental for api. **/
+/* brief id and lib types, which are fundamental for api. **/
 #pragma once
 
 #include "types_id_enums.h"
