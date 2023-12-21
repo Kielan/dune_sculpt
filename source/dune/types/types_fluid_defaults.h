@@ -160,7 +160,7 @@
     .axis_slice_method = AXIS_SLICE_FULL, \
     .slice_axis = 0, \
     .show_gridlines = false, \
-    .draw_velocity = false, \
+    .drw_velocity = false, \
     .vector_draw_type = VECTOR_DRAW_NEEDLE, \
     .vector_field = FLUID_DOMAIN_VECTOR_FIELD_VELOCITY, \
     .vector_scale_with_magnitude = true, \
@@ -209,7 +209,7 @@
     .vgroup_density = 0, \
     .type = FLUID_FLOW_TYPE_SMOKE, \
     .behavior = FLUID_FLOW_BEHAVIOR_GEOMETRY, \
-    .source = FLUID_FLOW_SOURCE_MESH, \
+    .src = FLUID_FLOW_SRC_MESH, \
     .texture_type = 0, \
     .flags = FLUID_FLOW_ABSOLUTE | FLUID_FLOW_USE_PART_SIZE | FLUID_FLOW_USE_INFLOW, \
   }
