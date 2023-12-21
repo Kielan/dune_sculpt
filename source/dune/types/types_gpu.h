@@ -5,9 +5,9 @@ extern "C" {
 #endif
 
 /* Keep for 'Camera' versioning. */
-/*Props for DOF effect. */
+/* Props for DOF effect. */
 typedef struct GPUDOFSettings {
-  /**m Focal distance for depth of field. */
+  /* Focal distance for depth of field. */
   float focus_distance;
   float fstop;
   float focal_length;
