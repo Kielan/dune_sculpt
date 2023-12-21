@@ -76,16 +76,16 @@ typedef enum FLUID_DisplayInterpolationMethod {
 
 /* FluidDomainSettings.vector_draw_type */
 enum {
-  VECTOR_DRAW_NEEDLE = 0,
-  VECTOR_DRAW_STREAMLINE = 1,
-  VECTOR_DRAW_MAC = 2,
+  VECTOR_DRW_NEEDLE = 0,
+  VECTOR_DRW_STREAMLINE = 1,
+  VECTOR_DRW_MAC = 2,
 };
 
 /* FluidDomainSettings.vector_draw_mac_components */
 enum {
-  VECTOR_DRAW_MAC_X = (1 << 0),
-  VECTOR_DRAW_MAC_Y = (1 << 1),
-  VECTOR_DRAW_MAC_Z = (1 << 2),
+  VECTOR_DRW_MAC_X = (1 << 0),
+  VECTOR_DRW_MAC_Y = (1 << 1),
+  VECTOR_DRW_MAC_Z = (1 << 2),
 };
 
 /* FluidDomainSettings.vector_field
@@ -300,7 +300,7 @@ enum {
 #define FLUID_NAME_FUELIN "fuel_inflow"               /* == OpenVDB grid attribute name. */
 #define FLUID_NAME_REACTIN "react_inflow"             /* == OpenVDB grid attribute name. */
 
-/* Liquid object names. */
+/* Liquid ob names. */
 #define FLUID_NAME_PHIPARTS "phi_particles" /* == OpenVDB grid attribute name. */
 #define FLUID_NAME_PHI "phi"                /* == OpenVDB grid attribute name. */
 #define FLUID_NAME_PHITMP "phi_previous"    /* == OpenVDB grid attribute name. */
@@ -341,7 +341,7 @@ enum {
 #define FLUID_NAME_FUEL_NOISE "fuel_noise"
 #define FLUID_NAME_REACT_NOISE "react_noise"
 
-/* Mesh object names. */
+/* Mesh ob names. */
 #define FLUID_NAME_PHIPARTS_MESH "phiParts_mesh"
 #define FLUID_NAME_PHI_MESH "phi_mesh"
 #define FLUID_NAME_PP_MESH "pp_mesh"
@@ -379,7 +379,7 @@ enum {
 /* == OpenVDB grid attribute name. */
 #define FLUID_NAME_KINETICENERGY_PARTICLES "kinetic_energy_secondary"
 
-/* Guiding object names. */
+/* Guiding ob names. */
 #define FLUID_NAME_VELT "velT"
 #define FLUID_NAME_WEIGHTGUIDE "weightGuide"
 #define FLUID_NAME_NUMGUIDES "numGuides"
@@ -465,10 +465,10 @@ typedef struct FluidDomainSettings {
   struct GPUTexture *tex_velocity_z;
   struct GPUTexture *tex_flags;
   struct GPUTexture *tex_range_field;
-  struct Object *guide_parent;
+  struct Ob *guide_parent;
   struct EffectorWeights *effector_weights;
 
-  /* Domain object data. */
+  /* Domain ob data. */
   float p0[3];          /* Start point of BB in local space
                          * (includes sub-cell shift for adaptive domain). */
   float p1[3];          /* End point of BB in local space. */
@@ -478,7 +478,7 @@ typedef struct FluidDomainSettings {
   float prev_loc[3];
   int shift[3];         /* Current domain shift in simulation cells. */
   float shift_f[3];     /* Exact domain shift. */
-  float obj_shift_f[3]; /* How much object has shifted since previous smoke frame (used to "lock"
+  float ob_shift_f[3]; /* How much object has shifted since previous smoke frame (used to "lock"
                          * domain while drawing). */
   float imat[4][4];     /* Domain object imat. */
   float obmat[4][4];    /* Domain obmat. */
@@ -494,7 +494,7 @@ typedef struct FluidDomainSettings {
   int boundary_width;     /* Usually this is just 1. */
   float gravity_final[3]; /* Scene or domain gravity multiplied with gravity weight. */
 
-  /* -- User-accessible fields (from here on). -- */
+  /* User-accessible fields (from here on). -- */
 
   /* Adaptive domain options. */
   int adapt_margin;
@@ -547,7 +547,7 @@ typedef struct FluidDomainSettings {
   char _pad4[6];
 
   /* Viscosity options. */
-  float viscosity_value;
+  float viscosity_val;
   char _pad5[4];
 
   /* Diffusion options. */
@@ -638,10 +638,10 @@ typedef struct FluidDomainSettings {
   char slice_axis;
   char show_gridlines;
   char draw_velocity;
-  char vector_draw_type;
+  char vector_drw_type;
   char vector_field; /* Simulation field used for vector display. */
   char vector_scale_with_magnitude;
-  char vector_draw_mac_components;
+  char vector_drw_mac_components;
   char use_coba;
   char coba_field; /* Simulation field used for the color mapping. */
   char interp_method;
@@ -655,8 +655,7 @@ typedef struct FluidDomainSettings {
   char openvdb_data_depth;
   char _pad11[7]; /* Unused. */
 
-  /* -- Deprecated / unused options (below). -- */
-
+  /* Deprecated / unused options (below). -- */
   /* View options. */
   int viewsettings;
   char _pad12[4]; /* Unused. */
@@ -690,8 +689,8 @@ enum {
 
 /* Flow source types. */
 enum {
-  FLUID_FLOW_SOURCE_PARTICLES = 0,
-  FLUID_FLOW_SOURCE_MESH = 1,
+  FLUID_FLOW_SRC_PARTICLES = 0,
+  FLUID_FLOW_SRC_MESH = 1,
 };
 
 /* Flow texture types. */
@@ -720,16 +719,16 @@ enum {
 
 typedef struct FluidFlowSettings {
 
-  /* -- Runtime-only fields (from here on). -- */
+  /* Runtime-only fields (from here on). -- */
 
   /* For fast API access. */
   struct FluidModData *fmd;
   struct Mesh *mesh;
-  struct ParticleSystem *psys;
+  struct ParticleSys *psys;
   struct Tex *noise_texture;
 
-  /* Initial velocity. */
-  /* Previous vertex positions in domain space. */
+  /* Init velocity. */
+  /* Prev vert positions in domain space. */
   float *verts_old;
   int numverts;
   float vel_multi; /* Multiplier for inherited velocity. */
@@ -738,7 +737,7 @@ typedef struct FluidFlowSettings {
   float vel_coord[3];
   char _pad1[4];
 
-  /* -- User-accessible fields (from here on). -- */
+  /* User-accessible fields (from here on). -- */
 
   /* Emission. */
   float density;
@@ -748,7 +747,7 @@ typedef struct FluidFlowSettings {
   float temperature;
   /* Density emitted within mesh volume. */
   float volume_density;
-  /* Maximum emission distance from mesh surface. */
+  /* Max emission distance from mesh surface. */
   float surface_distance;
   float particle_size;
   int subframes;
@@ -793,19 +792,17 @@ enum {
   FLUID_EFFECTOR_NEEDS_UPDATE = (1 << 3),
 };
 
-/* Collision objects (filled with smoke). */
+/* Collision obs (filled with smoke). */
 typedef struct FluidEffectorSettings {
 
-  /* -- Runtime-only fields (from here on). -- */
-
+  /* Runtime-only fields (from here on). */
   /* For fast API access. */
   struct FluidModData *fmd;
   struct Mesh *mesh;
   float *verts_old;
   int numverts;
 
-  /* -- User-accessible fields (from here on). -- */
-
+  /* User-accessible fields (from here on). */
   float surface_distance; /* Thickness of mesh surface, used in obstacle sdf. */
   int flags;
   int subframes;
@@ -813,7 +810,7 @@ typedef struct FluidEffectorSettings {
   char _pad1[6];
 
   /* Guiding options. */
-  float vel_multi; /* Multiplier for object velocity. */
+  float vel_multi; /* Multiplier for ob velocity. */
   short guide_mode;
   char _pad2[2];
 } FluidEffectorSettings;
