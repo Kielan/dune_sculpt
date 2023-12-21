@@ -1,3 +1,3 @@
 #pragma once
 
-extern DrawEngineType draw_engine_basic_type;
+extern DrwEngineType drw_engine_basic_type;
