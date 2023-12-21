@@ -1,9 +1,9 @@
 #pragma once
 
-#include "types_listBase.h"
-#include "types_node_types.h"
-#include "types_scene_types.h"
-#include "render_bake.h"
+#include "types_list.h"
+#include "types_node.h"
+#include "types_scene.h"
+#include "rndr_bake.h"
 #include "api_types.h"
 
 #include "lib_threads.h"
@@ -11,14 +11,14 @@
 struct BakePixel;
 struct Graph;
 struct Main;
-struct Object;
-struct Render;
-struct RenderData;
-struct RenderEngine;
-struct RenderEngineType;
-struct RenderLayer;
-struct RenderPass;
-struct RenderResult;
+struct Ob;
+struct Rndr;
+struct RndrData;
+struct RndrEngine;
+struct RndrEngineType;
+struct RndrLayer;
+struct RndrPass;
+struct RndrResult;
 struct ReportList;
 struct Scene;
 struct ViewLayer;
@@ -30,103 +30,101 @@ extern "C" {
 #endif
 
 /* External Engine */
-
-/* RenderEngineType.flag */
-#define RENDER_INTERNAL 1
-/* #define RENDER_FLAG_DEPRECATED   2 */
-#define RENDER_USE_PREVIEW 4
-#define RENDER_USE_POSTPROCESS 8
-#define RENDER_USE_EEVEE_VIEWPORT 16
+/* RndrEngineType.flag */
+#define RNDR_INTERNAL 1
+/* #define RNDR_FLAG_DEPRECATED   2 */
+#define RNDR_USE_PREVIEW 4
+#define RNDR_USE_POSTPROCESS 8
+#define RNDR_USE_EEVEE_VIEWPORT 16
 /* #define RENDER_USE_SAVE_BUFFERS_DEPRECATED 32 */
-#define RENDER_USE_SHADING_NODES_CUSTOM 64
-#define RENDER_USE_SPHERICAL_STEREO 128
-#define RENDER_USE_STEREO_VIEWPORT 256
-#define RENDER_USE_GPU_CONTEXT 512
-#define RENDER_USE_CUSTOM_FREESTYLE 1024
-#define RENDER_USE_NO_IMAGE_SAVE 2048
-#define RENDER_USE_ALEMBIC_PROCEDURAL 4096
+#define RNDR_USE_SHADING_NODES_CUSTOM 64
+#define RNDR_USE_SPHERICAL_STEREO 128
+#define RNDR_USE_STEREO_VIEWPORT 256
+#define RNDR_USE_GPU_CXT 512
+#define RNDR_USE_CUSTOM_FREESTYLE 1024
+#define RNDR_USE_NO_IMG_SAVE 2048
+#define RNDR_USE_ALEMBIC_PROCEDURAL 4096
 
 /* RenderEngine.flag */
-#define RENDER_ENGINE_ANIMATION 1
-#define RENDER_ENGINE_PREVIEW 2
-#define RENDER_ENGINE_DO_DRAW 4
-#define RENDER_ENGINE_DO_UPDATE 8
-#define RENDER_ENGINE_RENDERING 16
-#define RENDER_ENGINE_HIGHLIGHT_TILES 32
-#define RENDER_ENGINE_CAN_DRAW 64
+#define RNDR_ENGINE_ANIM 1
+#define RNDR_ENGINE_PREVIEW 2
+#define RNDR_ENGINE_DO_DRW 4
+#define RNDR_ENGINE_DO_UPDATE 8
+#define RNDR_ENGINE_RENDERING 16
+#define RNDR_ENGINE_HIGHLIGHT_TILES 32
+#define RNDR_ENGINE_CAN_DRAW 64
 
-extern ListBase R_engines;
+extern List R_engines;
 
-typedef struct RenderEngineType {
-  struct RenderEngineType *next, *prev;
+typedef struct RndrEngineType {
+  struct RndrEngineType *next, *prev;
 
   /* type info */
   char idname[64]; /* best keep the same size as DUNE_ST_MAXNAME. */
   char name[64];
   int flag;
 
-  void (*update)(struct RenderEngine *engine, struct Main *main, struct Graph *graph);
+  void (*update)(struct RndrEngine *engine, struct Main *main, struct Graph *graph);
 
-  void (*render)(struct RenderEngine *engine, struct Graph *graph);
+  void (*render)(struct RndrEngine *engine, struct Graph *graph);
 
-  /* Offline rendering is finished - no more view layers will be rendered.
-   *
-   * All the pending data is to be communicated from the engine back to Blender. In a possibly
-   * most memory-efficient manner (engine might free its database before making Blender to allocate
+  /* Offline rndring is finished - no more view layers will be rendered.
+   * All the pending data is to be communicated from the engine back to Dune. In a possibly
+   * most mem-efficient manner (engine might free its database before making Dune to allocate
    * full-frame render result). */
   void (*render_frame_finish)(struct RenderEngine *engine);
 
-  void (*draw)(struct RenderEngine *engine,
-               const struct Ctx *ctx,
+  void (*drw)(struct RndrEngine *engine,
+               const struct Cxt *cxt,
                struct Graph *graph);
 
-  void (*bake)(struct RenderEngine *engine,
+  void (*bake)(struct RndrEngine *engine,
                struct Graph *graph,
-               struct Object *object,
+               struct Ob *ob,
                int pass_type,
                int pass_filter,
                int width,
                int height);
 
-  void (*view_update)(struct RenderEngine *engine,
-                      const struct Ctx *ctx,
+  void (*view_update)(struct RndrEngine *engine,
+                      const struct Cxt *cxt,
                       struct Graph *graph);
-  void (*view_draw)(struct RenderEngine *engine,
-                    const struct Ctx *ctx,
+  void (*view_draw)(struct RndrEngine *engine,
+                    const struct Cxt *cxt,
                     struct Graph *graph);
 
-  void (*update_script_node)(struct RenderEngine *engine,
+  void (*update_script_node)(struct RndrEngine *engine,
                              truct NodeTree *ntree,
                              struct Node *node);
-  void (*update_render_passes)(struct RenderEngine *engine,
-                               struct Scene *scene,
-                               struct ViewLayer *view_layer);
+  void (*update_rndr_passes)(struct RndrEngine *engine,
+                             struct Scene *scene,
+                             struct ViewLayer *view_layer);
 
-  struct DrawEngineType *draw_engine;
+  struct DrwEngineType *drw_engine;
 
   /* Api integration */
   ExtensionApi api_ext;
-} RenderEngineType;
+} RndrEngineType;
 
-typedef void (*update_render_passes_cb_t)(void *userdata,
-                                          struct Scene *scene,
-                                          struct ViewLayer *view_layer,
-                                          const char *name,
-                                          int channels,
-                                          const char *chanid,
-                                          eNodeSocketDatatype type);
+typedef void (*update_rndr_passes_cb_t)(void *userdata,
+                                        struct Scene *scene,
+                                        struct ViewLayer *view_layer,
+                                        const char *name,
+                                        int channels,
+                                        const char *chanid,
+                                        eNodeSocketDatatype type);
 
-typedef struct RenderEngine {
-  RenderEngineType *type;
+typedef struct RndrEngine {
+  RndrEngineType *type;
   void *py_instance;
 
   int flag;
-  struct Object *camera_override;
+  struct Ob *camera_override;
   unsigned int layer_override;
 
-  struct Render *re;
-  ListBase fullresult;
-  char text[512]; /* IMA_MAX_RENDER_TEXT */
+  struct Rndr *re;
+  List fullresult;
+  char txt[512]; /* IMA_MAX_RENDER_TEXT */
 
   int resolution_x, resolution_y;
 
@@ -136,14 +134,14 @@ typedef struct RenderEngine {
     const struct BakePixel *pixels;
     float *result;
     int width, height, depth;
-    int object_id;
+    int ob_id;
   } bake;
 
-  /* Depsgraph */
+  /* Graph */
   struct Graph *graph;
   bool has_pen;
 
-  /* callback for render pass query */
+  /* cb for render pass query */
   ThreadMutex update_render_passes_mutex;
   update_render_passes_cb_t update_render_passes_cb;
   void *update_render_passes_data;
@@ -152,31 +150,29 @@ typedef struct RenderEngine {
   rcti last_disprect;
   float last_viewmat[4][4];
   int last_winx, last_winy;
-} RenderEngine;
+} RndrEngine;
 
-RenderEngine *render_engine_create(RenderEngineType *type);
-void render_engine_free(RenderEngine *engine);
+RndrEngine *rndr_engine_create(RndrEngineType *type);
+void rndr_engine_free(RndrEngine *engine);
 
-/**
- * Loads in image into a result, size must match
- * x/y offsets are only used on a partial copy when dimensions don't match.
- */
+/* Loads in img into a result, size must match
+ * x/y offsets are only used on a partial copy when dimensions don't match. */
 void render_layer_load_from_file(
     struct RenderLayer *layer, struct ReportList *reports, const char *filename, int x, int y);
-void renderm_result_load_from_file(struct RenderResult *result,
+void renderm_result_load_from_file(struct RndrResult *result,
                                    struct ReportList *reports,
                                    const char *filename);
 
-struct RenderResult *render_engine_begin_result(
-    RenderEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname);
-void render_engine_update_result(RenderEngine *engine, struct RenderResult *result);
-void render_engine_add_pass(RenderEngine *engine,
+struct RndrResult *rndr_engine_begin_result(
+    RndrEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname);
+void rndr_engine_update_result(RndrEngine *engine, struct RenderResult *result);
+void rndr_engine_add_pass(RndrEngine *engine,
                             const char *name,
                             int channels,
                             const char *chan_id,
                             const char *layername);
-void render_engine_end_result(RenderEngine *engine,
-                              struct RenderResult *result,
+void rndr_engine_end_result(RndrEngine *engine,
+                              struct RndrResult *result,
                               bool cancel,
                               bool highlight,
                               bool merge_results);
