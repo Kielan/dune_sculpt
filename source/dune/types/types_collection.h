@@ -1,4 +1,4 @@
-/* Object groups, one object can be in many groups at once. */
+/* Ob groups, one ob can be in many groups at once. */
 #pragma once
 
 #include "types_id.h"
@@ -10,19 +10,19 @@ extern "C" {
 #endif
 
 struct Collection;
-struct Object;
+struct Ob;
 
-typedef struct CollectionObject {
-  struct CollectionObject *next, *prev;
-  struct Object *ob;
-} CollectionObject;
+typedef struct CollectionOb {
+  struct CollectionOb *next, *prev;
+  struct Ob *ob;
+} CollectionOb;
 
 typedef struct CollectionChild {
   struct CollectionChild *next, *prev;
   struct Collection *collection;
 } CollectionChild;
 
-enum eCollectionLineArt_Usage {
+enum eCollectionLineArtUsage {
   COLLECTION_LRT_INCLUDE = 0,
   COLLECTION_LRT_OCCLUSION_ONLY = (1 << 0),
   COLLECTION_LRT_EXCLUDE = (1 << 1),
@@ -30,15 +30,15 @@ enum eCollectionLineArt_Usage {
   COLLECTION_LRT_NO_INTERSECTION = (1 << 3),
 };
 
-enum eCollectionLineArt_Flags {
+enum eCollectionLineArtFlags {
   COLLECTION_LRT_USE_INTERSECTION_MASK = (1 << 0),
 };
 
 typedef struct Collection {
   Id id;
 
-  /* CollectionObject. */
-  List gobject;
+  /* CollectionOb. */
+  List ob;
   /* CollectionChild. */
   List children;
 
