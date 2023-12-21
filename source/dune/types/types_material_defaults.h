@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* Material Struct */
-
 #define _TYPES_DEFAULT_Material \
   { \
     .r = 0.8, \
