@@ -74,12 +74,11 @@ typedef struct MLoop {
 } MLoop;
 
 /* Ordered Sel Storage */
-/* Optionally store the order of selected elements.
+/* Optionally store the order of sel elements.
  * This won't always be set since only some selection operations have an order.
- *
- * Typically accessed from Mesh.mselect */
+ * Typically accessed from Mesh.msel */
 typedef struct MSelect {
-  /* Index in the vertex, edge or polygon array. */
+  /* Index in the vert, edge or polygon array. */
   int index;
   /* ME_VSEL, ME_ESEL, ME_FSEL. */
   int type;
@@ -134,7 +133,7 @@ enum {
  * };
  *
  * MLoopTri's are alloc in an array, where each polygon's #MLoopTri's are stored contiguously,
- * the number of triangles for each polygon is guaranteed to be (#MPoly.totloop - 2),
+ * the num of triangles for each polygon is guaranteed to be (#MPoly.totloop - 2),
  * even for degenerate geometry. See #ME_POLY_TRI_TOT macro.
  *
  * It's also possible to perform a reverse lookup (find all #MLoopTri's for any given #MPoly).
