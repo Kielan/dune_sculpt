@@ -21,7 +21,7 @@ typedef enum eBoidRuleType {
   /* follow a boid or assigned object */
   eBoidRuleType_FollowLeader = 6,
   /* Maintain speed, flight level or wander. */
-  eBoidRuleType_AverageSpeed = 7,
+  eBoidRuleType_AvgSpeed = 7,
   /* go to closest enemy and attack when in range */
   eBoidRuleType_Fight = 8,
 #if 0
@@ -50,7 +50,7 @@ typedef struct BoidRule {
 #define BRULE_GOAL_AVOID_SIGNAL (1 << 2)
 typedef struct BoidRuleGoalAvoid {
   BoidRule rule;
-  struct Object *ob;
+  struct Ob *ob;
   int options;
   float fear_factor;
 
@@ -67,7 +67,7 @@ typedef struct BoidRuleAvoidCollision {
 #define BRULE_LEADER_IN_LINE (1 << 0)
 typedef struct BoidRuleFollowLeader {
   BoidRule rule;
-  struct Object *ob;
+  struct Ob *ob;
   float loc[3], oloc[3];
   float cfra, distance;
   int options, queue_size;
@@ -132,9 +132,9 @@ typedef enum eBoidRulesetType {
 #define BOIDSTATE_CURRENT 1
 typedef struct BoidState {
   struct BoidState *next, *prev;
-  ListBase rules;
-  ListBase conditions;
-  ListBase actions;
+  List rules;
+  List conditions;
+  List actions;
   char name[32];
   int id, flag;
 
