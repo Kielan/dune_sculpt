@@ -25,13 +25,13 @@ typedef struct MetaElem {
   float x, y, z;
   /* Rotation of MetaElem (MUST be kept normalized). */
   float quat[4];
-  /* Dimension parameters, used for some types like cubes. */
+  /* Dimension params, used for some types like cubes. */
   float expx;
   float expy;
   float expz;
   /* Radius of the meta element. */
   float rad;
-  /* Temp field, used only while processing. */
+  /* Tmp field, used only while processing. */
   float rad2;
   /* Stiffness, how much of the element to fill. */
   float s;
@@ -50,7 +50,7 @@ typedef struct MetaBall {
   List disp;
   /* Not saved in files, note we use pointer for editmode check. */
   List *editelems;
-  /* Old animation system, deprecated for 2.5. */
+  /* Old anim sys, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
 
   /* material of the mother ball will define the material used of all others */
@@ -63,7 +63,7 @@ typedef struct MetaBall {
   char texflag;
   char _pad[2];
 
-  /* ID data is older than edit-mode data (TODO: move to edit-mode struct).
+  /* Id data is older than edit-mode data (TODO: move to edit-mode struct).
    * Set Main.is_memfile_undo_flush_needed when enabling. */
   char needs_flush_to_id;
 
@@ -87,7 +87,7 @@ typedef struct MetaBall {
   void *batch_cache;
 } MetaBall;
 
-/* **************** METABALL ********************* */
+/* METABALL */
 
 /* texflag */
 #define MB_AUTOSPACE 1
