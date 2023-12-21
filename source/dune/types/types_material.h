@@ -13,12 +13,11 @@ extern "C" {
 #endif
 
 struct AnimData;
-struct Image;
+struct Img;
 struct Ipo;
 struct NodeTree;
 
 /* WATCH IT: change type? also make changes in ipo.h */
-
 typedef struct TexPaintSlot {
   /* Image to be painted on. */
   struct Image *ima;
@@ -31,10 +30,10 @@ typedef struct TexPaintSlot {
 } TexPaintSlot;
 
 typedef struct MaterialPenStyle {
-  /* Texture image for strokes. */
-  struct Image *sima;
-  /* Texture image for filling. */
-  struct Image *ima;
+  /* Texture img for strokes. */
+  struct Img *simg;
+  /* Texture img for filling. */
+  struct Img *img;
   /* Color for paint and strokes (alpha included). */
   float stroke_rgba[4];
   /* Color that should be used for drawing "fills" for strokes (alpha included). */
@@ -45,7 +44,7 @@ typedef struct MaterialPenStyle {
   short flag;
   /* Custom index for passes. */
   short index;
-  /* Style for drawing strokes (used to select shader type). */
+  /* Style for drwing strokes (used to select shader type). */
   short stroke_style;
   /* Style for filling areas (used to select shader type). */
   short fill_style;
@@ -56,7 +55,7 @@ typedef struct MaterialPenStyle {
   /* Radius for radial gradients. */
   float gradient_radius TYPES_DEPRECATED;
   char _pad2[4];
-  /* Uv coordinates scale. */
+  /* Uv coords scale. */
   float gradient_scale[2] TYPES_DEPRECATED;
   /* Factor to shift filling in 2d space. */
   float gradient_shift[2] TYPES_DEPRECATED;
@@ -70,7 +69,7 @@ typedef struct MaterialPenStyle {
   float texture_opacity TYPES_DEPRECATED;
   /* Pixel size for uv along the stroke. */
   float texture_pixsize;
-  /* Drawing mode (line or dots). */
+  /* Drwing mode (line or dots). */
   int mode;
 
   /* Type of gradient. */
@@ -116,11 +115,11 @@ typedef enum eMaterialPenStyle_Flag {
   PEN_MATERIAL_IS_FILL_HOLDOUT = (1 << 14),
 } eMaterialPenStyle_Flag;
 
-typedef enum eMaterialGPencilStyle_Mode {
+typedef enum eMaterialPenStyleMode {
   PEN_MATERIAL_MODE_LINE = 0,
   PEN_MATERIAL_MODE_DOT = 1,
   PEN_MATERIAL_MODE_SQUARE = 2,
-} eMaterialPenStyle_Mode;
+} eMaterialPenStyleMode;
 
 typedef struct MaterialLineArt {
   /* eMaterialLineArtFlags */
@@ -173,9 +172,9 @@ typedef struct Material {
   short index;
 
   struct NodeTree *nodetree;
-  /* Old animation system, deprecated for 2.5. */
+  /* Old animation sys, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   /* Freestyle line settings. */
   float line_col[4];
@@ -197,7 +196,7 @@ typedef struct Material {
   char _pad3[1];
 
   /* Cached slots for texture painting, must be refreshed in
-   * refresh_texpaint_image_cache before using. */
+   * refresh_texpaint_img_cache before using. */
   struct TexPaintSlot *texpaintslot;
 
   /* Runtime cache for GLSL materials. */
@@ -208,10 +207,8 @@ typedef struct Material {
   struct MaterialLineArt lineart;
 } Material;
 
-/* **************** MATERIAL ********************* */
-
-/* maximum number of materials per material array.
- * (on object, mesh, light, etc.). limited by
+/* Max num of materials per material array.
+ * (on ob, mesh, light, etc.). limited by
  * short mat_nr in verts, faces.
  * -1 because for active material we store the index + 1 */
 #define MAXMAT (32767 - 1)
@@ -219,10 +216,10 @@ typedef struct Material {
 /* flag */
 /* for render */
 /* #define MA_IS_USED      (1 << 0) */ /* UNUSED */
-                                       /* for dopesheet */
+                                      /* for dopesheet */
 #define MA_DS_EXPAND (1 << 1)
-/* for dopesheet (texture stack expander)
- * NOTE: this must have the same value as other texture stacks,
+/* For dopesheet (texture stack expander)
+ * This must have the same value as other texture stacks,
  * otherwise anim-editors will not read correctly */
 #define MA_DS_SHOW_TEXS (1 << 2)
 
@@ -252,7 +249,7 @@ typedef struct Material {
 /* #define TEXCO_NORM      (1 << 2) */ /* deprecated */
 #define TEXCO_GLOB (1 << 3)
 #define TEXCO_UV (1 << 4)
-#define TEXCO_OBJECT (1 << 5)
+#define TEXCO_OB (1 << 5)
 /* #define TEXCO_LAVECTOR  (1 << 6) */ /* deprecated */
 /* #define TEXCO_VIEW      (1 << 7) */ /* deprecated */
 /* #define TEXCO_STICKY   (1 << 8) */  /* deprecated */
@@ -262,7 +259,7 @@ typedef struct Material {
 /* #define TEXCO_TANGENT   (1 << 12) */ /* deprecated */
 /* still stored in vertex->accum, 1 D */
 #define TEXCO_STRAND (1 << 13)
-/** strand is used for normal materials, particle for halo materials */
+/* strand is used for normal materials, particle for halo materials */
 #define TEXCO_PARTICLE (1 << 13)
 /* #define TEXCO_STRESS    (1 << 14) */ /* deprecated */
 /* #define TEXCO_SPEED     (1 << 15) */ /* deprecated */
@@ -336,10 +333,10 @@ enum {
   PEN_MATERIAL_GRADIENT_RADIAL = 1,
 };
 
-/* Pen Follow Drawing Modes */
+/* Pen Follow Drwing Modes */
 enum {
   PEN_MATERIAL_FOLLOW_PATH = 0,
-  PEN_MATERIAL_FOLLOW_OBJ = 1,
+  PEN_MATERIAL_FOLLOW_OB = 1,
   PEN_MATERIAL_FOLLOW_FIXED = 2,
 };
 
