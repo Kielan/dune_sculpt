@@ -76,7 +76,7 @@ typedef struct MovieClip {
   /* Data for SfM tracking. */
   struct MovieTracking tracking;
   /* Cxt of tracking job used to synchronize data
-   * like frame-number in SpaceClip clip user. */
+   * like frame-num in SpaceClip clip user. */
   void *tracking_cxt;
 
   /* Proxy to clip data. */
@@ -86,13 +86,13 @@ typedef struct MovieClip {
   /* Length of movie. */
   int len;
 
-  /* Scene frame number footage starts playing at affects all data
-   * which is associated with a clip such as motion tracking,
+  /* Scene frame num footage starts playing at affects all data
+   * which is assoc w a clip such as motion tracking,
    * camera Reconstruction and so.  */
   int start_frame;
-  /* Offset which is adding to a file number when reading frame from a file.
+  /* Offset which is adding to a file num when reading frame from a file.
    * affects only a way how scene frame is mapping to a file name and not
-   * touches other data associated with a clip. */
+   * touches other data assoc w a clip. */
   int frame_offset;
 
   /* color management */
@@ -122,7 +122,7 @@ typedef struct MovieClipScopes {
   short track_disabled;
   /* Active track is locked, no transformation should be allowed. */
   short track_locked;
-  /* Frame number scopes are created for (measured in scene frames). */
+  /* Frame num scopes are created for (measured in scene frames). */
   int scene_framenr;
   /* Track scopes are created for. */
   struct MovieTrackingTrack *track;
@@ -144,7 +144,7 @@ enum {
   MCLIP_PROXY_UNDISTORTED_SIZE_100 = (1 << 7),
 };
 
-/* MovieClip.source */
+/* MovieClip.src */
 enum {
   MCLIP_SRC_SEQ = 1,
   MCLIP_SRC_MOVIE = 2,
@@ -171,9 +171,9 @@ enum {
 
 /* MovieClip.render_flag */
 enum {
-  MCLIP_PROXY_RENDER_UNDISTORT = 1,
+  MCLIP_PROXY_RNDR_UNDISTORT = 1,
   /* Use original, if proxy is not found. */
-  MCLIP_PROXY_RENDER_USE_FALLBACK_RNDR = 2,
+  MCLIP_PROXY_RNDR_USE_FALLBACK_RNDR = 2,
 };
 
 #ifdef __cplusplus
