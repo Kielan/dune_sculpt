@@ -38,11 +38,11 @@ typedef struct Collection {
   Id id;
 
   /* CollectionOb. */
-  List ob;
+  List gob;
   /* CollectionChild. */
   List children;
 
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   unsigned int layer TYPES_DEPRECATED;
   float instance_offset[3];
@@ -58,14 +58,14 @@ typedef struct Collection {
 
   int16_t color_tag;
 
-  /* Runtime. Cache of objects in this collection and all its
-   * children. This is created on demand when e.g. some physics
-   * simulation needs it, we don't want to have it for every
-   * collections due to memory usage reasons. */
-  List object_cache;
+  /* Runtime. Cache of obs in this collection and all its
+   * children. This is created on demand when e.g. some phys
+   * sim needs it, we don't want to have it for every
+   * collections due to mem usage reasons. */
+  List ob_cache;
 
   /* Need this for line art sub-collection selections. */
-  List object_cache_instanced;
+  List ob_cache_instanced;
 
   /* Runtime. List of collections that are a parent of this
    * datablock. */
@@ -79,18 +79,18 @@ typedef struct Collection {
 /* Collection->flag */
 enum {
   COLLECTION_HIDE_VIEWPORT = (1 << 0),             /* Disable in viewports. */
-  COLLECTION_HIDE_SELECT = (1 << 1),               /* Not selectable in viewport. */
+  COLLECTION_HIDE_SEL = (1 << 1),               /* Not sel in viewport. */
   /* COLLECTION_DISABLED_DEPRECATED = (1 << 2), */ /* Not used anymore */
   COLLECTION_HIDE_RENDER = (1 << 3),               /* Disable in renders. */
-  COLLECTION_HAS_OBJECT_CACHE = (1 << 4),          /* Runtime: object_cache is populated. */
+  COLLECTION_HAS_OB_CACHE = (1 << 4),          /* Runtime: ob_cache is populated. */
   COLLECTION_IS_MASTER = (1 << 5), /* Is master collection embedded in the scene. */
-  COLLECTION_HAS_OBJECT_CACHE_INSTANCED = (1 << 6), /* for object_cache_instanced. */
+  COLLECTION_HAS_OB_CACHE_INSTANCED = (1 << 6), /* for ob_cache_instanced. */
 };
 
 /* Collection->tag */
 enum {
   /* That code (dune_main_collections_parent_relations_rebuild and the like)
-   * is called from very low-level places, like e.g ID remapping...
+   * is called from very low-level places, like e.g Id remapping...
    * Using a generic tag like LIB_TAG_DOIT for this is just impossible, we need our very own. */
   COLLECTION_TAG_RELATION_REBUILD = (1 << 0),
 };
