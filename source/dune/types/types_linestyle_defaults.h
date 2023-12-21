@@ -3,12 +3,10 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* FreestyleLineStyle Struct */
-
 #define _TYPES_DEFAULT_FreestyleLineStyle \
   { \
-    .panel = LS_PANEL_STROKES, \
+    .panel = LS_PNL_STROKES, \
     .r = 0, \
     .g = 0, \
     .b = 0, \
