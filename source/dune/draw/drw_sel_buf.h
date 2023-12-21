@@ -3,21 +3,21 @@
 
 #include "lib_sys_types.h" /* for bool and uint */
 
-struct ARegion;
+struct ARgn;
 struct Base;
 struct Graph;
-struct Object;
+struct Ob;
 struct View3D;
 struct rcti;
 
-typedef struct SelectIdObjectData {
-  DrawData dd;
+typedef struct SelIdObData {
+  DrwData dd;
 
-  uint drawn_index;
-  bool is_drawn;
-} SelectIdObjectData;
+  uint drwn_index;
+  bool is_drwn;
+} SelIdObData;
 
-struct ObjectOffsets {
+struct ObOffsets {
   /* For convenience only. */
   union {
     uint offset;
@@ -34,9 +34,9 @@ struct ObjectOffsets {
   uint vert;
 };
 
-typedef struct SelectIdCtx {
-  /* All context objects */
-  struct Object **objects;
+typedef struct SelIdCxt {
+  /* All context obs */
+  struct Ob **objects;
 
   /* Array with only drawn objects. When a new object is found within the rect,
    * it is added to the end of the list.
