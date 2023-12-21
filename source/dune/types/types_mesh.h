@@ -27,11 +27,11 @@ struct SubdivCCG;
 
 #
 #
-typedef struct EditMeshData {
+typedef struct MeshEditData {
   /* when set, vertexNos, polyNos are lazy initialized */
   const float (*vertexCos)[3];
 
-  /* lazy initialize (when vertexCos is set) */
+  /* lazy init (when vertexCos is set) */
   float const (*vertexNos)[3];
   float const (*polyNos)[3];
   /* also lazy init but don't depend on vertexCos */
@@ -51,24 +51,24 @@ struct MLoopTri_Store {
 
 /* Runtime data, not saved in files. */
 typedef struct Mesh_Runtime {
-  /* Evald mesh for objects which do not have effective mods.
-   * This mesh is used as a result of mod stack evaluation.
-   * Since modifier stack evaluation is threaded on object level we need some synchronization. */
+  /* Eval mesh for obs which do not have effective mods.
+   * This mesh is used as a result of mod stack eval.
+   * Since mod stack eval is threaded on ob level we need some synchronization. */
   struct Mesh *mesh_eval;
   void *eval_mutex;
 
-  /* A separate mutex is needed for normal calculation, because sometimes
-   * the normals are needed while #eval_mutex is already locked. */
+  /* A separate mutex is needed for normal calc, bc sometimes
+   * the normals are needed while eval_mutex is alrdy locked. */
   void *normals_mutex;
 
   /* Needed to ensure some thread-safety during render data pre-processing. */
   void *render_mutex;
 
-  /* Lazily initialized SoA data from the edit_mesh field in Mesh. */
-  struct EditMeshData *edit_data;
+  /* Lazily init SoA data from the mesh_edit field in Mesh. */
+  struct MeshEditData *edit_data;
 
-  /* Data used to efficiently draw the mesh in the viewport, especially useful when
-   * the same mesh is used in many objects or instances. See `draw_cache_impl_mesh.c`. */
+  /* Data used to efficiently drw the mesh in the viewport, especially useful when
+   * the same mesh is used in many obs or instances. See `drw_cache_impl_mesh.c`. */
   void *batch_cache;
 
   /* Cache for derived triangulation of the mesh. */
@@ -80,7 +80,7 @@ typedef struct Mesh_Runtime {
   /* Cache of non-manifold boundary data for Shrinkwrap Target Project. */
   struct ShrinkwrapBoundaryData *shrinkwrap_data;
 
-  /* Needed in case we need to lazily initialize the mesh. */
+  /* Needed in case we need to lazily init the mesh. */
   CustomData_MeshMasks cd_mask_extra;
 
   struct SubdivCCG *subdiv_ccg;
@@ -119,7 +119,7 @@ typedef struct Mesh_Runtime {
 
 typedef struct Mesh {
   Id id;
-  /* Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
 
   /* Old animation system, deprecated for 2.5. */
@@ -127,14 +127,14 @@ typedef struct Mesh {
   struct Key *key;
 
   /* An array of materials, with length totcol. These can be overridden by material slots
-   * on Object. Indices in MPoly.mat_nr control which material is used for every face. */
+   * on Ob. Indices in MPoly.mat_nr ctrl which material is used for every face. */
   struct Material **mat;
 
-  /* Array of vertices. Edges and faces are defined by indices into this array.
+  /* Array of verts. Edges and faces are defined by indices into this array.
    * This ptr is for convenient access to the CD_MVERT layer in vdata. */
   struct MVert *mvert;
   /* Array of edges, containing vertex indices. For simple triangle or quad meshes, edges could be
-   * calculated from the #MPoly and #MLoop arrays, however, edges need to be stored explicitly to
+   * calculated from the MPoly and MLoop arrays, however, edges need to be stored explicitly to
    * edge domain attributes and to support loose edges that aren't connected to faces.
    * This ptr is for convenient access to the CD_MEDGE layer in edata */
   struct MEdge *medge;
@@ -146,11 +146,11 @@ typedef struct Mesh {
    * This ptr is for convenient access to the CD_MLOOP layer in ldata. */
   struct MLoop *mloop;
 
-  /* The number of vertices (MVert) in the mesh, and the size of vdata. */
+  /* The num of verts (MVert) in the mesh, and the size of vdata. */
   int totvert;
-  /* The number of edges (MEdge) in the mesh, and the size of edata. */
+  /* The num of edges (MEdge) in the mesh, and the size of edata. */
   int totedge;
-  /* The number of polygons/faces (MPoly) in the mesh, and the size of pdata. */
+  /* The num of polygons/faces (MPoly) in the mesh, and the size of pdata. */
   int totpoly;
   /* The number of face corners (MLoop) in the mesh, and the size of ldata. */
   int totloop;
@@ -159,51 +159,51 @@ typedef struct Mesh {
 
   /* "Vertex group" vertices. */
   struct MDeformVert *dvert;
-  /* List of vertex group (DeformGroup) names and flags only. Actual weights are stored in dvert.
+  /* List of vert group (DeformGroup) names and flags only. Actual weights are stored in dvert.
    * This ptr is for convenient access to the CD_MDEFORMVERT layer in vdata. */
-  List vertex_group_names;
-  /* The active index in the #vertex_group_names list. */
-  int vertex_group_active_index;
+  List vert_group_names;
+  /* The active index in the vert_group_names list. */
+  int vert_group_active_index;
 
   /* The index of the active attribute in the UI. The attribute list is a combination of the
-   * generic type attributes from vertex, edge, face, and corner custom data */
+   * generic type attributes from vert, edge, face, and corner custom data */
   int attributes_active_index;
 
   /* 2D vector data used for UVs. "UV" data can also be stored as generic attributes in #ldata.
    * This ptr is for convenient access to the CD_MLOOPUV layer in ldata. */
   struct MLoopUV *mloopuv;
-  /* The active vertex corner color layer, if it exists. Also called "Vertex Color" in Dune's
+  /* The active vert corner color layer, if it exists. Also called "Vertex Color" in Dune's
    * UI, even though it is stored per face corner.
    * This ptr is for convenient access to the CD_MLOOPCOL layer in ldata. */
   struct MLoopCol *mloopcol;
 
   /* Runtime storage of the edit mode mesh. If it exists, it generally has the most up-to-date
-   * information about the mesh.
-   * When the object is available, the preferred access method is dune_editmesh_from_object. */
-  struct BMEditMesh *edit_mesh;
+   * inf about the mesh.
+   * When the ob is available, the preferred access method is dune_editmesh_from_object. */
+  struct MeshEdit *edit_mesh;
 
   /* This array represents the selection order when the user manually picks elements in edit-mode,
    * some tools take advantage of this information. All elements in this array are expected to be
-   * selected, see dune_mesh_mselect_validate which ensures this. For procedurally created meshes,
+   * sel, see dune_mesh_mselect_validate which ensures this. For procedurally created meshes,
    * this is generally empty (selections are stored as boolean attributes in the corresponding
    * custom data). */
-  struct MSelect *mselect;
+  struct MSel *msel;
 
-  /* The length of the #mselect array. */
-  int totselect;
+  /* The length of the msel array. */
+  int totsel;
 
-  /* In most cases the last selected element (see mselect) represents the active element.
+  /* In most cases the last sel element (see msel) represents the active element.
    * For faces we make an exception and store the active face separately so it can be active
-   * even when no faces are selected. This is done to prevent flickering in the material properties
+   * even when no faces are sel. This is done to prevent flickering in the material properties
    * and UV Editor which base the content they display on the current material which is controlled
    * by the active face.
    *
    * This is mainly stored for use in edit-mode. */
   int act_face;
 
-  /* An optional mesh owned elsewhere (by #Main) that can be used to override
-   * the texture space #loc and #size.
-   * Vertex indices should be aligned for this to work usefully. */
+  /* An optional mesh owned elsewhere (by Main) that can be used to override
+   * the texture space loc and size.
+   * Vert indices should be aligned for this to work usefully. */
   struct Mesh *texcomesh;
 
   /* Texture space location and size, used for procedural coordinates when rendering. */
@@ -256,7 +256,7 @@ typedef struct Mesh {
   struct MFace *mface;
   /* Deprecated storage of old faces (only triangles or quads). */
   CustomData fdata;
-  /* Deprecated size of #fdata. */
+  /* Deprecated size of fdata. */
   int totface;
 
   /* Per-mesh settings for voxel remesh. */
@@ -278,7 +278,7 @@ typedef struct Mesh {
 /* deprecated by MTFace, only here for file reading */
 #ifdef TYPES_DEPRECATED_ALLOW
 typedef struct TFace {
-  /* The faces image for the active UVLayer. */
+  /* The faces img for the active UVLayer. */
   void *tpage;
   float uv[4][2];
   unsigned int col[4];
