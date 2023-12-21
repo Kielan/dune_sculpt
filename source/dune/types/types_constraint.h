@@ -10,7 +10,7 @@ extern "C" {
 
 struct Action;
 struct Ipo;
-struct Text;
+struct Txt;
 
 /* channels reside in Ob or Action (ListBase) constraintChannels */
 /* Deprecated. old AnimSys. */
@@ -32,16 +32,16 @@ typedef struct Constraint {
   /* Flag - General Settings. */
   short flag;
 
-  /* Space that owner should be evaluated in. */
+  /* Space that owner should be eval in. */
   char ownspace;
-  /* Space that target should be evaluated in (only used if 1 target). */
+  /* Space that target should be eval in (only used if 1 target). */
   char tarspace;
 
-  /* An "expand" bit for each of the constraint's (sub)panels (uiPanelDataExpansion). */
+  /* An "expand" bit for each of the constraint's (sub)pnls (uiPanelDataExpansion). */
   short ui_expand_flag;
 
   /* Ob to use as target for Custom Space of owner. */
-  struct Object *space_object;
+  struct Ob *space_ob;
   /* Subtarget for Custom Space of owner - pchan or vgroup name, MAX_ID_NAME-2. */
   char space_subtarget[64];
 
@@ -65,8 +65,7 @@ typedef struct Constraint {
   float rot_error;
 } Constraint;
 
-/* Multiple-target constraints --------------------- */
-
+/* Multiple-target constraints */
 /* This struct defines a constraint target.
  * It is used during constraint solving regardless of how many targets the
  * constraint has. */
@@ -370,7 +369,7 @@ typedef struct StretchToConstraint {
 /* Rigid Body constraint */
 typedef struct RigidBodyJointConstraint {
   struct Ob *tar;
-  struct Object *child;
+  struct Ob *child;
   int type;
   float pivX;
   float pivY;
@@ -955,7 +954,7 @@ typedef enum eKinematicFlags {
   /* targetless */
   CONSTRAINT_IK_AUTO = (1 << 2),
   /* autoik */
-  CONSTRAINT_IK_TEMP = (1 << 3),
+  CONSTRAINT_IK_TMP = (1 << 3),
   CONSTRAINT_IK_STRETCH = (1 << 4),
   CONSTRAINT_IK_POS = (1 << 5),
   CONSTRAINT_IK_SETANGLE = (1 << 6),
@@ -1118,42 +1117,42 @@ typedef enum ePivotConstraintAxis {
 } ePivotConstraintAxis;
 
 /* settings for Pivot Constraint in general */
-typedef enum ePivotConstraint_Flag {
+typedef enum ePivotConstraintFlag {
   /* offset is to be interpreted as being a fixed-point in space */
   PIVOTCON_FLAG_OFFSET_ABS = (1 << 0),
   /* rotation-based activation uses negative rotation to drive result */
   PIVOTCON_FLAG_ROTACT_NEG = (1 << 1),
-} ePivotConstraint_Flag;
+} ePivotConstraintFlag;
 
-typedef enum eFollowTrack_Flags {
+typedef enum eFollowTrackFlags {
   FOLLOWTRACK_ACTIVECLIP = (1 << 0),
   FOLLOWTRACK_USE_3D_POSITION = (1 << 1),
   FOLLOWTRACK_USE_UNDISTORTION = (1 << 2),
-} eFollowTrack_Flags;
+} eFollowTrackFlags;
 
-typedef enum eFollowTrack_FrameMethod {
+typedef enum eFollowTrackFrameMethod {
   FOLLOWTRACK_FRAME_STRETCH = 0,
   FOLLOWTRACK_FRAME_FIT = 1,
   FOLLOWTRACK_FRAME_CROP = 2,
-} eFollowTrack_FrameMethod;
+} eFollowTrackFrameMethod;
 
 /* CameraSolver Constraint -> flag */
-typedef enum eCameraSolver_Flags {
+typedef enum eCameraSolverFlags {
   CAMERASOLVER_ACTIVECLIP = (1 << 0),
-} eCameraSolver_Flags;
+} eCameraSolverFlags;
 
-/* ObjectSolver Constraint -> flag */
-typedef enum eObjectSolver_Flags {
+/* ObSolver Constraint -> flag */
+typedef enum eObSolverFlags {
   OBJECTSOLVER_ACTIVECLIP = (1 << 0),
-  /* Temporary flag used by the Set Inverse operator. */
-  OBJECTSOLVER_SET_INVERSE = (1 << 1),
-} eObjectSolver_Flags;
+  /* Tmp flag used by the Set Inverse operator. */
+  OBSOLVER_SET_INVERSE = (1 << 1),
+} eObSolverFlags;
 
-/* ObjectSolver Constraint -> flag */
-typedef enum eStretchTo_Flags {
+/* ObSolver Constraint -> flag */
+typedef enum eStretchToFlags {
   STRETCHTOCON_USE_BULGE_MIN = (1 << 0),
   STRETCHTOCON_USE_BULGE_MAX = (1 << 1),
-} eStretchTo_Flags;
+} eStretchToFlags;
 
 #ifdef __cplusplus
 }
