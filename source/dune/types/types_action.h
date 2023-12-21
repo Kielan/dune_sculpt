@@ -1,12 +1,12 @@
-/* Define actions data-block for the animation system.
- * A collection of animation curves and drivers to be assigned to data-blocks
- * or sequenced in the non-linear-editor (NLA). */
+/* Define actions data-block for the anim sys.
+ * A collection of anim curves and drivers to be assigned to data-blocks
+ * or seq'd in the non-linear-editor (NLA). */
 
 #pragma once
 
 #include "types_id.h"
 #include "types_list.h"
-#include "types_session_uuid.h"
+#include "types_sess_uuid.h"
 #include "types_userdef.h" /* ThemeWireColor */
 #include "types_vec.h"
 #include "types_view2d.h"
@@ -17,61 +17,58 @@ extern "C" {
 
 struct Collection;
 struct GHash;
-struct Object;
+struct Ob;
 struct SpaceLink;
 
-/* ************************************************ */
 /* Visualization */
 
-/* Motion Paths ------------------------------------ */
-/* (used for Pose Channels and Objects) */
+/* Motion Paths -*/
+/* (used for Pose Channels and Obs) */
 
 /* Data point for motion path (mpv) */
 typedef struct MotionPathVert {
-  /** Coordinates of point in 3D-space. */
+  /* Coords of point in 3D-space. */
   float co[3];
-  /** Quick settings. */
+  /* Quick settings. */
   int flag;
 } MotionPathVert;
 
 /* MotionPathVert->flag */
-typedef enum eMotionPathVert_Flag {
-  /* vert is selected */
+typedef enum eMotionPathVertFlag {
+  /* vert is sel */
   MOTIONPATH_VERT_SEL = (1 << 0),
   MOTIONPATH_VERT_KEY = (1 << 1),
-} eMotionPathVert_Flag;
-
-/* ........ */
+} eMotionPathVertFlag;
 
 /* Motion Path data cache (mpath)
  * - for elements providing transforms (i.e. Objects or PoseChannels) */
 typedef struct MotionPath {
-  /** Path samples. */
+  /* Path samples. */
   MotionPathVert *points;
-  /** The number of cached verts. */
+  /* The num of cached verts. */
   int length;
 
-  /** For drawing paths, the start frame number. */
+  /* For drwing paths, the start frame num. */
   int start_frame;
-  /** For drawing paths, the end frame number. */
+  /* For drwing paths, the end frame num. */
   int end_frame;
 
-  /** Optional custom color. */
+  /* Optional custom color. */
   float color[3];
-  /** Line thickness. */
+  /* Line thickness. */
   int line_thickness;
-  /** Baking settings - eMotionPath_Flag. */
+  /* Baking settings - eMotionPath_Flag. */
   int flag;
 
-  /* Used for drawing. */
+  /* Used for drwing. */
   struct GPUVertBuf *points_vbo;
   struct GPUBatch *batch_line;
   struct GPUBatch *batch_points;
   void *_pad;
 } MotionPath;
 
-/* bMotionPath->flag */
-typedef enum eMotionPath_Flag {
+/* MotionPath->flag */
+typedef enum eMotionPathFlag {
   /* (for bones) path represents the head of the bone */
   MOTIONPATH_FLAG_BHEAD = (1 << 0),
   /* motion path is being edited */
@@ -80,51 +77,51 @@ typedef enum eMotionPath_Flag {
   MOTIONPATH_FLAG_CUSTOM = (1 << 2),
   /* Draw lines or only points */
   MOTIONPATH_FLAG_LINES = (1 << 3),
-} eMotionPath_Flag;
+} eMotionPathFlag;
 
-/* Visualization General --------------------------- */
+/* Visualization General */
 /* for Objects or Poses (but NOT PoseChannels) */
 
-/* Animation Visualization Settings (avs) */
+/* Anim Visualization Settings (avs) */
 typedef struct AnimVizSettings {
-  /* General Settings ------------------------ */
-  /** #eAnimViz_RecalcFlags. */
+  /* General Settings */
+  /* eAnimVizRecalcFlags. */
   short recalc;
 
-  /* Motion Path Settings ------------------- */
-  /** #eMotionPath_Types. */
+  /* Motion Path Settings */
+  /* eMotionPathTypes. */
   short path_type;
-  /** Number of frames between points indicated on the paths. */
+  /* Num of frames between points indicated on the paths. */
   short path_step;
 
-  /** #eMotionPaths_ViewFlag. */
+  /* eMotionPathsViewFlag. */
   short path_viewflag;
-  /** #eMotionPaths_BakeFlag. */
+  /* eMotionPathsBakeFlag. */
   short path_bakeflag;
   char _pad[6];
 
-  /** Start and end frames of path-calculation range. */
+  /* Start and end frames of path-calc range. */
   int path_sf, path_ef;
-  /** Number of frames before/after current frame to show. */
+  /* Num of frames before/after current frame to show. */
   int path_bc, path_ac;
 } AnimVizSettings;
 
-/* bAnimVizSettings->recalc */
-typedef enum eAnimViz_RecalcFlags {
-  /* Motion-paths need recalculating. */
+/* AnimVizSettings->recalc */
+typedef enum eAnimVizRecalcFlags {
+  /* Motion-paths need recalc. */
   ANIMVIZ_RECALC_PATHS = (1 << 0),
-} eAnimViz_RecalcFlags;
+} eAnimVizRecalcFlags;
 
-/* bAnimVizSettings->path_type */
-typedef enum eMotionPaths_Types {
+/* AnimVizSettings->path_type */
+typedef enum eMotionPathsTypes {
   /* show the paths along their entire ranges */
   MOTIONPATH_TYPE_RANGE = 0,
   /* only show the parts of the paths around the current frame */
   MOTIONPATH_TYPE_ACFRA = 1,
-} eMotionPath_Types;
+} eMotionPathTypes;
 
 /* AnimVizSettings->path_viewflag */
-typedef enum eMotionPaths_ViewFlag {
+typedef enum eMotionPathsViewFlag {
   /* show frames on path */
   MOTIONPATH_VIEW_FNUMS = (1 << 0),
   /* show keyframes on path */
@@ -133,15 +130,15 @@ typedef enum eMotionPaths_ViewFlag {
   MOTIONPATH_VIEW_KFNOS = (1 << 2),
   /* find keyframes in whole action (instead of just in matching group name) */
   MOTIONPATH_VIEW_KFACT = (1 << 3),
-  /* draw lines on path */
+  /* drw lines on path */
   /* MOTIONPATH_VIEW_LINES = (1 << 4), */ /* UNUSED */
-} eMotionPath_ViewFlag;
+} eMotionPathViewFlag;
 
 /* AnimVizSettings->path_bakeflag */
-typedef enum eMotionPaths_BakeFlag {
-  /** motion paths directly associated with this block of settings needs updating */
+typedef enum eMotionPathsBakeFlag {
+  /* motion paths directly assoc with this block of settings needs updating */
   /* MOTIONPATH_BAKE_NEEDS_RECALC = (1 << 0), */ /* UNUSED */
-  /** for bones - calculate head-points for curves instead of tips */
+  /* for bones - calc head-points for curves instead of tips */
   MOTIONPATH_BAKE_HEADS = (1 << 1),
   /** motion paths exist for AnimVizSettings instance - set when calc for first time,
    * and unset when clearing */
@@ -151,19 +148,19 @@ typedef enum eMotionPaths_BakeFlag {
 /* runtime */
 #
 #
-typedef struct PoseChannelDrawData {
+typedef struct PoseChannelDrwData {
   float solid_color[4];
   float wire_color[4];
 
   int bbone_matrix_len;
   /* keep last */
   float bbone_matrix[0][4][4];
-} PoseChannelDrawData;
+} PoseChannelDrwData;
 
 struct DualQuat;
 struct Mat4;
 
-typedef struct PoseChannel_Runtime {
+typedef struct PoseChannelRuntime {
   SessionUUID session_uuid;
 
   /* Cached dual quaternion for deformation. */
@@ -179,60 +176,55 @@ typedef struct PoseChannel_Runtime {
   /* Delta from rest to pose in matrix and DualQuat form. */
   struct Mat4 *bbone_deform_mats;
   struct DualQuat *bbone_dual_quats;
-} PoseChannel_Runtime;
+} PoseChannelRuntime;
 
-/* ************************************************ */
 /* Poses */
 
-/* PoseChannel ------------------------------------ */
-
-/* PoseChannel
- *
- * A PoseChannel stores the results of Actions and transform information
- * with respect to the rest-position of #Armature bones. */
+/* A PoseChannel stores the results of Actions and transform info
+ * w respect to the rest-position of Armature bones. */
 typedef struct PoseChannel {
   struct PoseChannel *next, *prev;
 
-  /** User-Defined Props on this PoseChannel. */
+  /* User-Defined Props on this PoseChannel. */
   IdProp *prop;
 
-  /** Constraints that act on this PoseChannel. */
+  /* Constraints that act on this PoseChannel. */
   List constraints;
-  /** Need to match bone name length: MAXBONENAME. */
+  /* Need to match bone name length: MAXBONENAME. */
   char name[64];
 
-  /** Dynamic, for detecting transform changes. */
+  /* Dynamic, for detecting transform changes. */
   short flag;
-  /** Settings for IK bones. */
+  /* Settings for IK bones. */
   short ikflag;
-  /** Protect channels from being transformed. */
+  /* Protect channels from being transformed. */
   short protectflag;
-  /** Index of action-group this bone belongs to (0 = default/no group). */
+  /* Index of action-group this bone belongs to (0 = default/no group). */
   short agrp_index;
-  /** For quick detecting which constraints affect this channel. */
+  /* For quick detecting which constraints affect this channel. */
   char constflag;
-  /** Copy of bone flag, so you can work with library armatures, not for runtime use. */
-  char selectflag;
-  char drawflag;
+  /* Copy of bone flag, so you can work with library armatures, not for runtime use. */
+  char selflag;
+  char drwflag;
   char bboneflag TYPES_DEPRECATED;
   char _pad0[4];
 
-  /** Set on read file or rebuild pose. */
+  /* Set on read file or rebuild pose. */
   struct Bone *bone;
-  /** Set on read file or rebuild pose. */
+  /* Set on read file or rebuild pose. */
   struct PoseChannel *parent;
-  /** Set on read file or rebuild pose, the 'ik' child, for b-bones. */
+  /* Set on read file or rebuild pose, the 'ik' child, for b-bones. */
   struct PoseChannel *child;
 
-  /** "IK trees" - only while evaluating pose. */
+  /* "IK trees" - only while evaluating pose. */
   struct List iktree;
-  /** Spline-IK "trees" - only while eval pose. */
+  /* Spline-IK "trees" - only while eval pose. */
   struct List siktree;
 
-  /** Motion path cache for this bone. */
+  /* Motion path cache for this bone. */
   MotionPath *mpath;
-  /** Draws custom object instead of default bone shape. */
-  struct Object *custom;
+  /* Drws custom ob instead of default bone shape. */
+  struct Ob *custom;
   /* Odd feature, display with another bones transform.
    * needed in rare cases for advanced rigs,
    * since the alternative is highly complicated - campbell */
@@ -242,49 +234,49 @@ typedef struct PoseChannel {
   float custom_translation[3];
   float custom_rotation_euler[3];
 
-  /** Transforms - written in by actions or transform. */
+  /* Transforms - written in by actions or transform. */
   float loc[3];
   float size[3];
 
   /* Rotations - written in by actions or transform
    * (but only one representation gets used at any time) */
-  /** Euler rotation. */
+  /* Euler rotation. */
   float eul[3];
-  /** Quaternion rotation. */
+  /* Quaternion rotation. */
   float quat[4];
-  /** Axis-angle rotation. */
+  /* Axis-angle rotation. */
   float rotAxis[3], rotAngle;
-  /** #eRotationModes - rotation representation to use. */
+  /* eRotationModes - rotation representation to use. */
   short rotmode;
   char _pad[2];
 
   /* Matrix result of location/rotation/scale components & constraints.
-   * This is the dynamic component of `pose_mat` (without #Bone.arm_mat). */
+   * This is the dynamic component of `pose_mat` (wo Bone.arm_mat). */
   float chan_mat[4][4];
   /* Constraints accumulate here. in the end, `pose_mat = bone->arm_mat * chan_mat`
-   * this matrix is object space. */
+   * this matrix is ob space. */
   float pose_mat[4][4];
-  /** For display, pose_mat with bone length applied. */
+  /* For display, pose_mat with bone length applied. */
   float disp_mat[4][4];
-  /** For display, pose_mat with bone length applied and translated to tail. */
+  /* For display, pose_mat with bone length applied and translated to tail. */
   float disp_tail_mat[4][4];
   /* Inverse result of constraints.
    * doesn't include effect of rest-position, parent, and local transform. */
   float constinv[4][4];
 
-  /** Actually pose_mat[3]. */
+  /* Actually pose_mat[3]. */
   float pose_head[3];
-  /** Also used for drawing help lines. */
+  /* Also used for drawing help lines. */
   float pose_tail[3];
 
-  /** DOF constraint, note! - these are stored in degrees, not radians. */
+  /* DOF constraint, note! - these are stored in degrees, not radians. */
   float limitmin[3], limitmax[3];
-  /** DOF stiffness. */
+  /* DOF stiffness. */
   float stiffness[3];
   float ikstretch;
-  /** Weight of joint rotation constraint. */
+  /* Weight of joint rotation constraint. */
   float ikrotweight;
-  /** Weight of joint stretch constraint. */
+  /* Weight of joint stretch constraint. */
   float iklinweight;
 
   /* Curved bones settings - these are for animating,
@@ -297,20 +289,20 @@ typedef struct PoseChannel {
   float scale_out_x TYPES_DEPRECATED, scale_out_z TYPES_DEPRECATED;
   float scale_in[3], scale_out[3];
 
-  /** B-Bone custom handles; set on read file or rebuild pose based on pchan->bone data. */
+  /* B-Bone custom handles; set on read file or rebuild pose based on pchan->bone data. */
   struct PoseChannel *bbone_prev;
   struct PoseChannel *bbone_next;
 
-  /** Use for outliner. */
-  void *temp;
-  /** Runtime data for color and bbone segment matrix. */
-  PoseChannelDrawData *draw_data;
+  /* Use for outliner. */
+  void *tmp;
+  /* Runtime data for color and bbone segment matrix. */
+  PoseChannelDrwData *drw_data;
 
-  /** Points to an original pose channel. */
+  /* Points to an original pose channel. */
   struct PoseChannel *orig_pchan;
 
-  /** Runtime data (keep last). */
-  struct PoseChannel_Runtime runtime;
+  /* Runtime data (keep last). */
+  struct PoseChannelRuntime runtime;
 } PoseChannel;
 
 /* PoseChannel (transform) flags */
@@ -342,23 +334,23 @@ typedef enum ePchan_Flag {
 #endif
   /* spline IK solving */
   POSE_IKSPLINE = (1 << 15),
-} ePchan_Flag;
+} ePchanFlag;
 
 /* PoseChannel constflag (constraint detection) */
-typedef enum ePchan_ConstFlag {
+typedef enum ePchanConstFlag {
   PCHAN_HAS_IK = (1 << 0),
   PCHAN_HAS_CONST = (1 << 1),
-  /* only used for drawing Posemode, not stored in channel */
+  /* only used for drwing Posemode, not stored in channel */
   /* PCHAN_HAS_ACTION = (1 << 2), */ /* UNUSED */
   PCHAN_HAS_TARGET = (1 << 3),
-  /* only for drawing Posemode too */
+  /* only for drwing Posemode too */
   /* PCHAN_HAS_STRIDE = (1 << 4), */ /* UNUSED */
   /* spline IK */
   PCHAN_HAS_SPLINEIK = (1 << 5),
 } ePchan_ConstFlag;
 
 /* PoseChannel->ikflag */
-typedef enum ePchan_IkFlag {
+typedef enum ePchanIkFlag {
   BONE_IK_NO_XDOF = (1 << 0),
   BONE_IK_NO_YDOF = (1 << 1),
   BONE_IK_NO_ZDOF = (1 << 2),
@@ -370,17 +362,17 @@ typedef enum ePchan_IkFlag {
   BONE_IK_ROTCTL = (1 << 6),
   BONE_IK_LINCTL = (1 << 7),
 
-  BONE_IK_NO_XDOF_TEMP = (1 << 10),
-  BONE_IK_NO_YDOF_TEMP = (1 << 11),
-  BONE_IK_NO_ZDOF_TEMP = (1 << 12),
-} ePchan_IkFlag;
+  BONE_IK_NO_XDOF_TMP = (1 << 10),
+  BONE_IK_NO_YDOF_TMP = (1 << 11),
+  BONE_IK_NO_ZDOF_TMP = (1 << 12),
+} ePchanIkFlag;
 
-/* PoseChannel->drawflag */
-typedef enum ePchan_DrawFlag {
-  PCHAN_DRAW_NO_CUSTOM_BONE_SIZE = (1 << 0),
-} ePchan_DrawFlag;
+/* PoseChannel->drwflag */
+typedef enum ePchanDrwFlag {
+  PCHAN_DRW_NO_CUSTOM_BONE_SIZE = (1 << 0),
+} ePchanDrwFlag;
 
-/* NOTE: It doesn't take custom_scale_xyz into account. */
+/* It doesn't take custom_scale_xyz into account. */
 #define PCHAN_CUSTOM_BONE_LENGTH(pchan) \
   (((pchan)->drawflag & PCHAN_DRAW_NO_CUSTOM_BONE_SIZE) ? 1.0f : (pchan)->bone->length)
 
@@ -393,7 +385,7 @@ typedef enum ePchan_BBoneFlag {
   PCHAN_BBONE_CUSTOM_START_REL = (1 << 2),
   /* Evaluate end handle as being "relative" */
   PCHAN_BBONE_CUSTOM_END_REL = (1 << 3),
-} ePchan_BBoneFlag;
+} ePchanBBoneFlag;
 #endif
 
 /* PoseChannel->rotmode and Object->rotmode */
@@ -401,7 +393,7 @@ typedef enum eRotationModes {
   /* quaternion rotations (default, and for older Dune versions) */
   ROT_MODE_QUAT = 0,
   /* euler rotations - keep in sync with enum in lib_math.h */
-  /** Dune 'default' (classic) - must be as 1 to sync with lib_math_rotation.h defines */
+  /* Dune 'default' (classic) - must be as 1 to sync with lib_math_rotation.h defines */
   ROT_MODE_EUL = 1,
   ROT_MODE_XYZ = 1,
   ROT_MODE_XZY = 2,
@@ -409,7 +401,7 @@ typedef enum eRotationModes {
   ROT_MODE_YZX = 4,
   ROT_MODE_ZXY = 5,
   ROT_MODE_ZYX = 6,
-  /* NOTE: space is reserved here for 18 other possible
+  /* Space is reserved here for 18 other possible
    * euler rotation orders not implemente */
   /* axis angle rotations */
   ROT_MODE_AXISANGLE = -1,
@@ -418,44 +410,44 @@ typedef enum eRotationModes {
   ROT_MODE_MAX = ROT_MODE_ZYX,
 } eRotationModes;
 
-/* Pose ------------------------------------ */
+/* Pose */
 
-/* Pose-Object
+/* Pose-Ob
  * It is only found under ob->pose. It is not lib data, even
  * though there is a define for it (hack for the outliner). */
 typedef struct Pose {
-  /** List of pose channels, PoseBones in API. */
+  /* List of pose channels, PoseBones in API. */
   List chanlist;
-  /** Use a hash-table for quicker string lookups. */
+  /* Use a hash-table for quicker string lookups. */
   struct GHash *chanhash;
 
-  /* Flat array of pose channels. It references pointers from
+  /* Flat array of pose channels. It refs ptrs from
    * chanbase. Used for quick pose channel lookup from an index. */
   PoseChannel **chan_array;
 
   short flag;
   char _pad[2];
 
-  /** Local action time of this pose. */
+  /* Local action time of this pose. */
   float ctime;
-  /** Applied to object. */
+  /* Applied to ob. */
   float stride_offset[3];
-  /** Result of match and cycles, applied in dune_pose_where_is(). */
+  /* Result of match and cycles, applied in dune_pose_where_is(). */
   float cyclic_offset[3];
 
-  /** List of ActionGroups. */
+  /* List of ActionGroups. */
   List agroups;
 
-  /** Index of active group (starts from 1). */
+  /* Index of active group (starts from 1). */
   int active_group;
-  /** Ik solver to use, see ePose_IKSolverType. */
+  /* Ik solver to use, see ePose_IKSolverType. */
   int iksolver;
-  /** Temporary IK data, depends on the IK solver. Not saved in file. */
+  /* Tmp IK data, depends on the IK solver. Not saved in file. */
   void *ikdata;
-  /** IK solver params, structure depends on iksolver. */
+  /* IK solver params, struture depends on iksolver. */
   void *ikparam;
 
-  /** Settings for visualization of bone animation. */
+  /* Settings for visualization of bone anim. */
   AnimVizSettings avs;
 } Pose;
 
@@ -469,7 +461,7 @@ typedef enum ePose_Flags {
   POSE_DO_UNLOCK = (1 << 2),
   /* pose has constraints which depend on time (used when graph updates for a new frame) */
   POSE_CONSTRAINTS_TIMEDEPEND = (1 << 3),
-  /* recalculate bone paths */
+  /* recalc bone paths */
   /* POSE_RECALCPATHS = (1 << 4), */ /* UNUSED */
   /* set by dune_pose_rebuild to give a chance to the IK solver to rebuild IK tree */
   POSE_WAS_REBUILT = (1 << 5),
@@ -482,15 +474,15 @@ typedef enum ePose_Flags {
   POSE_MIRROR_EDIT = (1 << 9),
   /* Use relative mirroring in mirror mode */
   POSE_MIRROR_RELATIVE = (1 << 10),
-} ePose_Flags;
+} ePoseFlags;
 
-/* IK Solvers ------------------------------------ */
+/* IK Solvers */
 
 /* Pose->iksolver and Pose->ikparam->iksolver */
-typedef enum ePose_IKSolverType {
+typedef enum ePoseIKSolverType {
   IKSOLVER_STANDARD = 0,
   IKSOLVER_ITASC = 1,
-} ePose_IKSolverType;
+} ePoseIKSolverType;
 
 /* header for all Pose->ikparam structures */
 typedef struct bIKParam {
@@ -508,70 +500,66 @@ typedef struct Itasc {
   short solver;
   short flag;
   float feedback;
-  /** Max velocity to SDLS solver. */
+  /* Max velocity to SDLS solver. */
   float maxvel;
-  /** Maximum damping for DLS solver. */
+  /* Max damping for DLS solver. */
   float dampmax;
-  /** Threshold of singular value from which the damping start progressively. */
+  /* Threshold of singular value from which the damping start progressively. */
   float dampeps;
 } Itasc;
 
 /* Itasc->flag */
-typedef enum eItasc_Flags {
+typedef enum eItascFlags {
   ITASC_AUTO_STEP = (1 << 0),
   ITASC_INITIAL_REITERATION = (1 << 1),
   ITASC_REITERATION = (1 << 2),
   ITASC_SIMULATION = (1 << 3),
-} eItasc_Flags;
+} eItascFlags;
 
-/* bItasc->solver */
-typedef enum eItasc_Solver {
-  ITASC_SOLVER_SDLS = 0, /* selective damped least square, suitable for CopyPose constraint */
+/* Itasc->solver */
+typedef enum eItascSolver {
+  ITASC_SOLVER_SDLS = 0, /* selecctive damped least square, suitable for CopyPose constraint */
   ITASC_SOLVER_DLS = 1,  /* damped least square with numerical filtering of damping */
-} eItasc_Solver;
+} eItascSolver;
 
-/* ************************************************ */
 /* Action */
-
-/* Groups -------------------------------------- */
+/* Groups */
 
 /* Action-Channel Group (agrp)
  *
  * These are stored as a list per-Action, and are only used to
  * group that Action's channels in an Animation Editor.
  *
- * Even though all FCurves live in a big list per Action, each group they are in also
+ * Though all FCurves live in a big list per Action, each group they are in also
  * holds references to the achans within that list which belong to it. Care must be taken to
  * ensure that action-groups never end up being the sole 'owner' of a channel.
  *
  * This is also exploited for bone-groups. Bone-Groups are stored per Pose, and are used
  * primarily to color bones in the 3d-view. There are other benefits too, but those are mostly
  * related to Action-Groups.
- *
- * Note that these two uses each have their own RNA 'ActionGroup' and 'BoneGroup'.
- */
+ * That these two uses each have their own RNA 'ActionGroup' and 'BoneGroup'. */
 typedef struct ActionGroup {
   struct ActionGroup *next, *prev;
 
-  /* NOTE: this must not be touched by standard list fns
+  /* This must not be touched by standard list fns
    * which would clear links to other channels.  */
   List channels;
 
-  /** Settings for this action-group. */
+  /* Settings for this action-group. */
   int flag;
   /* Index of custom color set to use when used for bones
    * (0=default - used for all old files, -1=custom set) */
   int customCol;
-  /** Name of the group. */
+  /* Name of the group. */
   char name[64];
 
-  /** Color set to use when customCol == -1. */
+  /* Color set to use when customCol == -1. */
   ThemeWireColor cs;
 } bActionGroup;
 
 /* Action Group flags */
 typedef enum eActionGroup_Flag {
-  /* group is selected */
+  /* group is sel */
   AGRP_SELECTED = (1 << 0),
   /* group is 'active' / last selected one */
   AGRP_ACTIVE = (1 << 1),
@@ -586,14 +574,14 @@ typedef enum eActionGroup_Flag {
   /* for UI (Graph Editor), sub-channels are shown */
   AGRP_EXPANDED_G = (1 << 6),
 
-  /* sub channel modifiers off */
+  /* sub channel mods off */
   AGRP_MODS_OFF = (1 << 7),
 
-  AGRP_TEMP = (1 << 30),
+  AGRP_TMMP = (1 << 30),
   AGRP_MOVED = (1u << 31),
-} eActionGroup_Flag;
+} eActionGroupFlag;
 
-/* Actions -------------------------------------- */
+/* Actions */
 
 /* Action - reusable F-Curve 'bag'  (act)
  *
@@ -605,99 +593,97 @@ typedef enum eActionGroup_Flag {
  * It serves as a 'unit' of reusable animation information (i.e. keyframes/motion data),
  * that affects a group of related settings (as defined by the user) */
 typedef struct Action {
-  /** ID-serialization for relinking. */
+  /* Id-serialization for relinking. */
   Id id;
 
-  /** n-curves (FCurve). */
+  /* n-curves (FCurve). */
   List curves;
-  /** Legacy data - Action Channels (ActionChannel) in pre-2.5 animation system. */
+  /* Legacy data - Action Channels (ActionChannel) in pre-2.5 animation system. */
   List chanlist TYPES_DEPRECATED;
-  /** Groups of fn-curves (ActionGroup). */
+  /* Groups of fn-curves (ActionGroup). */
   List groups;
-  /** Markers local to the Action (used to provide Pose-Libs). */
+  /* Markers local to the Action (used to provide Pose-Libs). */
   List markers;
 
-  /** Settings for this action. */
+  /* Settings for this action. */
   int flag;
-  /** Index of the active marker. */
+  /* Index of the active marker. */
   int active_marker;
 
-  /* Type of ID-blocks that action can be assigned to
+  /* Type of Id-blocks that action can be assigned to
    * (if 0, will be set to whatever ID first evaluates it). */
   int idroot;
   char _pad[4];
 
-  /** Start and end of the manually set intended playback frame range. Used by UI and
+  /* Start and end of the manually set intended playback frame range. Used by UI and
    *  some editing tools, but doesn't directly affect animation evaluation in any way. */
   float frame_start, frame_end;
 
-  PreviewImage *preview;
+  PreviewIng *preview;
 } Action;
 
 /* Flags for the action */
-typedef enum eAction_Flags {
+typedef enum eActionFlags {
   /* flags for displaying in UI */
   ACT_COLLAPSED = (1 << 0),
   ACT_SELECTED = (1 << 1),
 
-  /* flags for evaluation/editing */
+  /* flags for eval/editing */
   ACT_MUTED = (1 << 9),
   /* ACT_PROTECTED = (1 << 10), */ /* UNUSED */
   /* ACT_DISABLED = (1 << 11), */  /* UNUSED */
-  /** The action has a manually set intended playback frame range. */
+  /* The action has a manually set intended playback frame range. */
   ACT_FRAME_RANGE = (1 << 12),
   /** The action is intended to be a cycle (requires ACT_FRAME_RANGE). */
   ACT_CYCLIC = (1 << 13),
-} eAction_Flags;
+} eActionFlags;
 
-/* ************************************************ */
 /* Action/Dopesheet Editor */
-
 /* Storage for Dopesheet/Dune-Pen Editor data */
-typedef struct bDopeSheet {
-  /** Currently ID_SCE (for Dopesheet), and ID_SC (for Pen). */
-  Id *source;
-  /** Cache for channels (only initialized when pinned). */ /* XXX not used! */
+typedef struct DopeSheet {
+  /* Currently ID_SCE (for Dopesheet), and ID_SC (for Pen). */
+  Id *src;
+  /* Cache for channels (only initialized when pinned). */ /* XXX not used! */
   List chanlist;
 
-  /** Object group for option to only include objects that belong to this Collection. */
+  /* Ob group for option to only include objects that belong to this Collection. */
   struct Collection *filter_grp;
-  /** String to search for in displayed names of F-Curves, or NlaTracks/Pen Layers/etc. */
+  /* String to search for in displayed names of F-Curves, or NlaTracks/Pen Layers/etc. */
   char searchstr[64];
 
-  /** Flags to use for filtering data #eAnimFilter_Flags. */
+  /* Flags to use for filtering data #eAnimFilter_Flags. */
   int filterflag;
-  /** #eDopeSheet_FilterFlag2 */
+  /* eDopeSheetFilterFlag2 */
   int filterflag2;
-  /** Standard flags. */
+  /* Standard flags. */
   int flag;
 
-  /** `index + 1` of channel to rename - only gets set by renaming operator. */
+  /* `index + 1` of channel to rename - only gets set by renaming operator. */
   int renameIndex;
 } DopeSheet;
 
 /* DopeSheet filter-flag */
-typedef enum eDopeSheet_FilterFlag {
+typedef enum eDopeSheetFilterFlag {
   /* general filtering */
-  /** only include channels relating to selected data */
+  /* only include channels relating to selected data */
   ADS_FILTER_ONLYSEL = (1 << 0),
 
-  /* temporary filters */
+  /* tmp filters */
   /** for 'Drivers' editor - only include Driver data from AnimData */
   ADS_FILTER_ONLYDRIVERS = (1 << 1),
-  /** for 'NLA' editor - only include NLA data from AnimData */
+  /* for 'NLA' editor - only include NLA data from AnimData */
   ADS_FILTER_ONLYNLA = (1 << 2),
-  /** for Graph Editor - used to indicate whether to include a filtering flag or not */
+  /* for Graph Editor - used to indicate whether to include a filtering flag or not */
   ADS_FILTER_SELEDIT = (1 << 3),
 
   /* general filtering */
-  /** for 'DopeSheet' Editors - include 'summary' line */
+  /* for 'DopeSheet' Editors - include 'summary' line */
   ADS_FILTER_SUMMARY = (1 << 4),
 
   /* datatype-based filtering */
   ADS_FILTER_NOSHAPEKEYS = (1 << 6),
   ADS_FILTER_NOMESH = (1 << 7),
-  /** for animdata on object level, if we only want to concentrate on materials/etc. */
+  /* for animdata on ob level, if we only want to concentrate on materials/etc. */
   ADS_FILTER_NOOBJ = (1 << 8),
   ADS_FILTER_NOLAT = (1 << 9),
   ADS_FILTER_NOCAM = (1 << 10),
@@ -722,65 +708,65 @@ typedef enum eDopeSheet_FilterFlag {
   ADS_FILTER_NLA_NOACT = (1 << 25),
 
   /* general filtering 3 */
-  /** include 'hidden' channels too (i.e. those from hidden Objects/Bones) */
+  /* include 'hidden' channels too (i.e. those from hidden Objects/Bones) */
   ADS_FILTER_INCL_HIDDEN = (1 << 26),
-  /** show only F-Curves which are disabled/have errors - for debugging drivers */
+  /* show only F-Curves which are disabled/have errors - for debugging drivers */
   ADS_FILTER_ONLY_ERRORS = (1 << 28),
 
 #if 0
-  /** combination filters (some only used at runtime) */
+  /* combination filters (some only used at runtime) */
   ADS_FILTER_NOOBDATA = (ADS_FILTER_NOCAM | ADS_FILTER_NOMAT | ADS_FILTER_NOLAM |
                          ADS_FILTER_NOCUR | ADS_FILTER_NOPART | ADS_FILTER_NOARM |
-                         ADS_FILTER_NOSPK | ADS_FILTER_NOMODIFIERS),
+                         ADS_FILTER_NOSPK | ADS_FILTER_NOMODS),
 #endif
 } eDopeSheet_FilterFlag;
 
-/* DopeSheet filter-flags - Overflow (filterflag2) */
-typedef enum eDopeSheet_FilterFlag2 {
+/* DopeSheet filter-flags Overflow (filterflag2) */
+typedef enum eDopeSheetFilterFlag2 {
   ADS_FILTER_NOCACHEFILES = (1 << 1),
   ADS_FILTER_NOMOVIECLIPS = (1 << 2),
   ADS_FILTER_NOHAIR = (1 << 3),
   ADS_FILTER_NOPOINTCLOUD = (1 << 4),
   ADS_FILTER_NOVOLUME = (1 << 5),
-} eDopeSheet_FilterFlag2;
+} eDopeSheetFilterFlag2;
 
 /* DopeSheet general flags */
-typedef enum eDopeSheet_Flag {
-  /** when summary is shown, it is collapsed, so all other channels get hidden */
+typedef enum eDopeSheetFlag {
+  /* when summary is shown, it is collapsed, so all other channels get hidden */
   ADS_FLAG_SUMMARY_COLLAPSED = (1 << 0),
-  /** show filters for datablocks */
+  /* show filters for datablocks */
   ADS_FLAG_SHOW_DBFILTERS = (1 << 1),
 
-  /** use fuzzy/partial string matches when ADS_FILTER_BY_FCU_NAME is enabled
+  /* use fuzzy/partial string matches when ADS_FILTER_BY_FCU_NAME is enabled
    * (WARNING: expensive operation) */
   ADS_FLAG_FUZZY_NAMES = (1 << 2),
-  /** do not sort datablocks (mostly objects) by name (NOTE: potentially expensive operation) */
+  /* do not sort datablocks (mostly objects) by name (NOTE: potentially expensive operation) */
   ADS_FLAG_NO_DB_SORT = (1 << 3),
-  /** Invert the search filter */
+  /* Invert the search filter */
   ADS_FLAG_INVERT_FILTER = (1 << 4),
-} eDopeSheet_Flag;
+} eDopeSheetFlag;
 
-typedef struct SpaceAction_Runtime {
+typedef struct SpaceActionRuntime {
   char flag;
   char _pad0[7];
-} SpaceAction_Runtime;
+} SpaceActionRuntime;
 
 /* Action Editor Space. This is defined here instead of in DNA_space_types.h */
 typedef struct SpaceAction {
   struct SpaceLink *next, *prev;
-  /** Storage of regions for inactive spaces. */
-  List regionlist;
+  /* Storage of rgns for inactive spaces. */
+  List rgnlist;
   char spacetype;
   char link_flag;
   char _pad0[6];
   /* End 'SpaceLink' header. */
 
-  /** Copied to region. */
+  /* Copied to rgn. */
   View2D v2d TYPES_DEPRECATED;
 
-  /** The currently active action. */
+  /* The currently active action. */
   Action *action;
-  /** The currently active context (when not showing action). */
+  /* The currently active cxt (when not showing action). */
   DopeSheet ads;
 
   /** For Time-Slide transform mode drawing - current frame? */
