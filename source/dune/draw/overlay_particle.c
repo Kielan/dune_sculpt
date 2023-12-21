@@ -39,33 +39,30 @@ void overlay_edit_particle_cache_init(OverlayData *vedata)
 
 void overlay_edit_particle_cache_populate(OverlayData *vedata, Ob *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   const DrwCxtState *drw_cxt = DRW_context_state_get();
-  Scene *scene_orig = (Scene *)DEG_get_original_id(&draw_ctx->scene->id);
+  Scene *scene_orig = (Scene *)DEG_get_original_id(&drw_cxt->scene->id);
 
-  /* Usually the edit structure is created by Particle Edit Mode Toggle
-   * operator, but sometimes it's invoked after tagging hair as outdated
+  /* Usually the edit struct is created by Particle Edit Mode Toggle
+   * op, but sometimes it's invoked after tagging hair as outdated
    * (for example, when toggling edit mode). That makes it impossible to
-   * create edit structure for until after next dependency graph evaluation.
+   * create edit struct for until after next dep graph eval.
    *
-   * Ideally, the edit structure will be created here already via some
-   * dependency graph callback or so, but currently trying to make it nicer
-   * only causes bad level calls and breaks design from the past.
-   */
-  Object *ob_orig = DEG_get_original_object(ob);
-  PTCacheEdit *edit = PE_create_current(draw_ctx->depsgraph, scene_orig, ob_orig);
+   * Ideally, the edit struct will be created here already via some
+   * dep graph cb or so, but currently trying to make it nicer
+   * only causes bad level calls and breaks design from the past. */
+  Ob *ob_orig = graph_get_original_ob(ob);
+  PTCacheEdit *edit = pe_create_current(drw_cxt->graph, scene_orig, ob_orig);
   if (edit == NULL) {
     /* Happens when trying to edit particles in EMITTER mode without
-     * having them cached.
-     */
+     * having them cached. */
     return;
   }
-  /* NOTE: We need to pass evaluated particle system, which we need
-   * to find first.
-   */
-  ParticleSystem *psys = ob->particlesystem.first;
-  LISTBASE_FOREACH (ParticleSystem *, psys_orig, &ob_orig->particlesystem) {
-    if (PE_get_current_from_psys(psys_orig) == edit) {
+  /* Need to pass eval particle sys, which we need
+   * to find first.  */
+  ParticleSys *psys = ob->particlesys.first;
+  LIST_FOREACH (ParticleSys *, psys_orig, &ob_orig->particlesys) {
+    if (pe_get_current_from_psys(psys_orig) == edit) {
       break;
     }
     psys = psys->next;
@@ -77,22 +74,22 @@ void overlay_edit_particle_cache_populate(OverlayData *vedata, Ob *ob)
 
   struct GPUBatch *geom;
   {
-    geom = DRW_cache_particles_get_edit_strands(ob, psys, edit, pd->edit_particle.use_weight);
-    DRW_shgroup_call(pd->edit_particle_strand_grp, geom, NULL);
+    geom = drw_cache_particles_get_edit_strands(ob, psys, edit, pd->edit_particle.use_weight);
+    drw_shgroup_call(pd->edit_particle_strand_grp, geom, NULL);
   }
 
-  if (pd->edit_particle.select_mode == SCE_SELECT_POINT) {
-    geom = DRW_cache_particles_get_edit_inner_points(ob, psys, edit);
-    DRW_shgroup_call(pd->edit_particle_point_grp, geom, NULL);
+  if (pd->edit_particle.sel_mode == SCE_SEL_POINT) {
+    geom = drw_cache_particles_get_edit_inner_points(ob, psys, edit);
+    drw_shgroup_call(pd->edit_particle_point_grp, geom, NULL);
   }
 
-  if (ELEM(pd->edit_particle.select_mode, SCE_SELECT_POINT, SCE_SELECT_END)) {
-    geom = DRW_cache_particles_get_edit_tip_points(ob, psys, edit);
-    DRW_shgroup_call(pd->edit_particle_point_grp, geom, NULL);
+  if (ELEM(pd->edit_particle.sel_mode, SCE_SEL_POINT, SCE_SEL_END)) {
+    geom = drw_cache_particles_get_edit_tip_points(ob, psys, edit);
+    drw_shgroup_call(pd->edit_particle_point_grp, geom, NULL);
   }
 }
 
-void OVERLAY_edit_particle_draw(OVERLAY_Data *vedata)
+void overlay_edit_particle_draw(OverlayData *vedata)
 {
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_FramebufferList *fbl = vedata->fbl;
