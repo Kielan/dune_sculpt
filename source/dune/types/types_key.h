@@ -1,9 +1,8 @@
 #pragma once
 
-/* This file defines structures for Shape-Keys (not animation keyframes),
- * attached to Mesh, Curve and Lattice Data. Even though Key's are ID blocks they
- * aren't intended to be shared between multiple data blocks as with other ID types. */
-
+/* This file defines structs for Shape-Keys (not anim keyframes),
+ * attached to Mesh, Curve and Lattice Data. Even though Key's are Id blocks they
+ * aren't intended to be shared between multiple data blocks as with other Id types. */
 #include "types_id.h"
 #include "types_defs.h"
 #include "types_list.h"
@@ -18,9 +17,9 @@ struct Ipo;
 typedef struct KeyBlock {
   struct KeyBlock *next, *prev;
 
-  /* point in time   (Key->type == KEY_NORMAL) only,
+  /* point in time (Key->type == KEY_NORMAL) only,
    * for historic reasons this is relative to (Key->ctime / 100),
-   * so this value increments by 0.1f per frame. */
+   * so this val increments by 0.1f per frame. */
   float pos;
   /* influence (typically [0 - 1] but can be more), `(Key->type == KEY_RELATIVE)` only. */
   float curval;
@@ -33,16 +32,16 @@ typedef struct KeyBlock {
   short relative;
   short flag;
 
-  /* total number if items in the keyblock (compare with mesh/curve verts to check we match) */
+  /* total num if items in the keyblock (compare with mesh/curve verts to check we match) */
   int totelem;
   /* for meshes only, match the unique number with the customdata layer */
   int uid;
 
-  /* array of shape key values, size is `(Key->elemsize * KeyBlock->totelem)` */
+  /* array of shape key vals, size is `(Key->elemsize * KeyBlock->totelem)` */
   void *data;
   /* MAX_NAME (unique name, user assigned) */
   char name[64];
-  /* MAX_VGROUP_NAME (optional vertex group), array gets allocated into 'weights' when set */
+  /* MAX_VGROUP_NAME (optional vert group), array gets alloc into 'weights' when set */
   char vgroup[64];
 
   /* ranges, for API and UI only to clamp 'curval' */
@@ -53,7 +52,7 @@ typedef struct KeyBlock {
 
 typedef struct Key {
   Id id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utils to use it). */
   struct AnimData *adt;
 
   /* commonly called 'Basis', `(Key->type == KEY_RELATIVE)` only.
@@ -62,16 +61,16 @@ typedef struct Key {
   KeyBlock *refkey;
 
   /* This is not a regular string, although it is \0 terminated
-   * this is an array of (element_array_size, element_type) pairs
-   * (each one char) used for calculating shape key-blocks. */
+   * this is an arr of (element_array_size, element_type) pairs
+   * (each one char) used for calc shape key-blocks. */
   char elemstr[32];
-  /** Size of each element in #KeyBlock.data, use for allocation and stride. */
+  /* Size of each element in KeyBlock.data, use for allocation and stride. */
   int elemsize;
   char _pad[4];
 
   /* list of KeyBlock's */
   List block;
-  /* old animation system, deprecated for 2.5 */
+  /* old anim sys, deprecated for 2.5 */
   struct Ipo *ipo TYPES_DEPRECATED;
 
   Id *from;
@@ -92,11 +91,10 @@ typedef struct Key {
   int uidgen;
 } Key;
 
-/* **************** KEY ********************* */
-
+/* KEY */
 /* Key->type: KeyBlocks are interpreted as... */
 enum {
-  /* Sequential positions over time (using KeyBlock->pos and Key->ctime) */
+  /* Seq positions over time (using KeyBlock->pos and Key->ctime) */
   KEY_NORMAL = 0,
 
   /* States to blend between (default) */
