@@ -1,6 +1,5 @@
 /* Mask data-blocks are collections of 2D curves to be used
- * for image masking in the compositor and sequencer. */
-
+ * for img masking in the compositor and sequencer. */
 #pragma once
 
 #include "types_id.h"
@@ -62,14 +61,14 @@ typedef struct MaskSplinePointUW {
 } MaskSplinePointUW;
 
 typedef struct MaskSplinePoint {
-  /* Actual point coordinates and its handles. */
+  /* Actual point coords and its handles. */
   BezTriple bezt;
   char _pad[4];
-  /* Number of uv feather values. */
+  /* Num of uv feather vals. */
   int tot_uw;
-  /* Feather UV values. */
+  /* Feather UV vals. */
   MaskSplinePointUW *uw;
-  /* Parenting information of particular spline point. */
+  /* Parenting info of particular spline point. */
   MaskParent parent;
 } MaskSplinePoint;
 
@@ -87,7 +86,7 @@ typedef struct MaskSpline {
   int tot_point;
   /* Points which defines spline itself. */
   MaskSplinePoint *points;
-  /* Parenting information of the whole spline. */
+  /* Parenting info of the whole spline. */
   MaskParent parent;
 
   /* Deformed copy of 'points' BezTriple data - not saved. */
@@ -98,30 +97,30 @@ typedef struct MaskSpline {
 typedef struct MaskLayerShape {
   struct MaskLayerShape *next, *prev;
 
-  /* U coordinate along spline segment and weight of this point. */
+  /* U coord along spline segment and weight of this point. */
   float *data;
-  /* To ensure no buffer overrun's: alloc size is `(tot_vert * MASK_OBJECT_SHAPE_ELEM_SIZE)`. */
+  /* To ensure no buf overrun's: alloc size is `(tot_vert * MASK_OB_SHAPE_ELEM_SIZE)`. */
   int tot_vert;
   /* Different flags of this point. */
   int frame;
-  /* Animation flag. */
+  /* Anim flag. */
   char flag;
   char _pad[7];
 } MaskLayerShape;
 
 /* cast to this for convenience, not saved */
-#define MASK_OBJECT_SHAPE_ELEM_SIZE 8 /* 3x 2D points + weight + radius == 8 */
+#define MASK_OB_SHAPE_ELEM_SIZE 8 /* 3x 2D points + weight + radius == 8 */
 
 #
 #
 typedef struct MaskLayerShapeElem {
-  float value[MASK_OBJECT_SHAPE_ELEM_SIZE];
+  float val[MASK_OB_SHAPE_ELEM_SIZE];
 } MaskLayerShapeElem;
 
 typedef struct MaskLayer {
   struct MaskLayer *next, *prev;
 
-  /** Name of the mask layer (64 = MAD_ID_NAME - 2). */
+  /* Name of the mask layer (64 = MAD_ID_NAME - 2). */
   char name[64];
 
   /* List of splines which defines this mask layer. */
@@ -140,9 +139,9 @@ typedef struct MaskLayer {
   char falloff;
   char _pad[7];
 
-  /* For animation. */
+  /* For anim. */
   char flag;
-  /* Matching 'Object' flag of the same name - eventually use in the outliner. */
+  /* Matching 'Ob' flag of the same name - eventually use in the outliner. */
   char visibility_flag;
 } MaskLayer;
 
@@ -156,7 +155,7 @@ enum {
 };
 
 /* MaskSpline->flag */
-/* reserve (1 << 0) for SELECT */
+/* reserve (1 << 0) for SEL */
 enum {
   MASK_SPLINE_CYCLIC = (1 << 1),
   MASK_SPLINE_NOFILL = (1 << 2),
@@ -177,15 +176,15 @@ enum {
 
 /* MaskLayer->visibility_flag */
 #define MASK_HIDE_VIEW (1 << 0)
-#define MASK_HIDE_SELECT (1 << 1)
+#define MASK_HIDE_SEL (1 << 1)
 #define MASK_HIDE_RENDER (1 << 2)
 
-/* SpaceClip->mask_draw_flag */
-#define MASK_DRAWFLAG_SMOOTH (1 << 0)
-#define MASK_DRAWFLAG_OVERLAY (1 << 1)
+/* SpaceClip->mask_drw_flag */
+#define MASK_DRWFLAG_SMOOTH (1 << 0)
+#define MASK_DRWFLAG_OVERLAY (1 << 1)
 
-/* copy of eSpaceImage_UVDT */
-/* SpaceClip->mask_draw_type */
+/* copy of eSpaceImg_UVDT */
+/* SpaceClip->mask_drw_type */
 enum {
   MASK_DT_OUTLINE = 0,
   MASK_DT_DASH = 1,
@@ -220,7 +219,7 @@ enum {
 /* masklay->flag */
 enum {
   MASK_LAYERFLAG_LOCKED = (1 << 4),
-  MASK_LAYERFLAG_SELECT = (1 << 5),
+  MASK_LAYERFLAG_SEL = (1 << 5),
 
   /* no holes */
   MASK_LAYERFLAG_FILL_DISCRETE = (1 << 6),
@@ -229,7 +228,7 @@ enum {
 
 /* masklay_shape->flag */
 enum {
-  MASK_SHAPE_SELECT = (1 << 0),
+  MASK_SHAPE_SEL = (1 << 0),
 };
 
 /* mask->flag */
