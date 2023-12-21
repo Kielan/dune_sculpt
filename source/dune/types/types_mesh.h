@@ -287,14 +287,14 @@ typedef struct TFace {
 } TFace;
 #endif
 
-/* **************** MESH ********************* */
+/* MESH */
 
 /* Mesh_Runtime.wrapper_type */
 typedef enum eMeshWrapperType {
   /* Use mesh data (Mesh.mvert, Mesh.medge, Mesh.mloop, Mesh.mpoly). */
   ME_WRAPPER_TYPE_MDATA = 0,
   /* Use edit-mesh data (Mesh.edit_mesh, Mesh_Runtime.edit_data). */
-  ME_WRAPPER_TYPE_BMESH = 1,
+  ME_WRAPPER_TYPE_MESH = 1,
   /* Use subdivision mesh data (Mesh_Runtime.mesh_eval). */
   ME_WRAPPER_TYPE_SUBD = 2,
 } eMeshWrapperType;
@@ -302,12 +302,12 @@ typedef enum eMeshWrapperType {
 /* Mesh.texflag */
 enum {
   ME_AUTOSPACE = 1,
-  ME_AUTOSPACE_EVALUATED = 2,
+  ME_AUTOSPACE_EVAL = 2,
 };
 
 /* Mesh.editflag */
 enum {
-  ME_EDIT_MIRROR_VERTEX_GROUPS = 1 << 0,
+  ME_EDIT_MIRROR_VERT_GROUPS = 1 << 0,
   ME_EDIT_MIRROR_Y = 1 << 1, /* unused so far */
   ME_EDIT_MIRROR_Z = 1 << 2, /* unused so far */
 
@@ -316,7 +316,7 @@ enum {
   ME_EDIT_PAINT_VERT_SEL = 1 << 5,
 };
 
-/* Helper macro to see if vertex group X mirror is on. */
+/* Helper macro to see if vert group X mirror is on. */
 #define ME_USING_MIRROR_X_VERTEX_GROUPS(_me) \
   (((_me)->editflag & ME_EDIT_MIRROR_VERTEX_GROUPS) && ((_me)->symmetry & ME_SYMMETRY_X))
 
@@ -337,7 +337,7 @@ enum {
   ME_AUTOSMOOTH = 1 << 5,
   ME_FLAG_UNUSED_6 = 1 << 6, /* cleared */
   ME_FLAG_UNUSED_7 = 1 << 7, /* cleared */
-  ME_REMESH_REPROJECT_VERTEX_COLORS = 1 << 8,
+  ME_REMESH_REPROJECT_VERT_COLORS = 1 << 8,
   ME_DS_EXPAND = 1 << 9,
   ME_SCULPT_DYNAMIC_TOPOLOGY = 1 << 10,
   ME_FLAG_UNUSED_8 = 1 << 11, /* cleared */
