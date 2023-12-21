@@ -15,17 +15,17 @@ struct RenderResult;
 struct Scene;
 struct anim;
 
-/* ImageUser is in Texture, in Nodes, Background Image, Image Window, .... */
-/* should be used in conjunction with an ID * to Image. */
-typedef struct ImageUser {
+/* ImgUser is in Texture, in Nodes, Background Img, Img Win, .... */
+/* should be used in conjunction with an Id * to Img. */
+typedef struct ImgUser {
   /* To retrieve render result. */
   struct Scene *scene;
 
-  /* Movies, sequences: current to display. */
+  /* Movies, seqs: current to display. */
   int framenr;
   /* Total amount of frames to use. */
   int frames;
-  /* Offset within movie, start frame in global time. */
+  /* Offset w/in movie, start frame in global time. */
   int offset, sfra;
   /* Cyclic flag. */
   char cycl;
@@ -39,27 +39,27 @@ typedef struct ImageUser {
   /* List indices, for menu browsing or retrieve buffer. */
   short multi_index, view, layer;
   short flag;
-} ImageUser;
+} ImgUser;
 
-typedef struct ImageAnim {
-  struct ImageAnim *next, *prev;
+typedef struct ImgAnim {
+  struct ImgAnim *next, *prev;
   struct anim *anim;
-} ImageAnim;
+} ImgAnim;
 
-typedef struct ImageView {
-  struct ImageView *next, *prev;
+typedef struct ImgView {
+  struct ImgView *next, *prev;
   /* MAX_NAME. */
   char name[64];
   /* 1024 = FILE_MAX. */
   char filepath[1024];
-} ImageView;
+} ImgView;
 
-typedef struct ImagePackedFile {
-  struct ImagePackedFile *next, *prev;
+typedef struct ImgPackedFile {
+  struct ImgPackedFile *next, *prev;
   struct PackedFile *packedfile;
   /* 1024 = FILE_MAX. */
   char filepath[1024];
-} ImagePackedFile;
+} ImgPackedFile;
 
 typedef struct RenderSlot {
   struct RenderSlot *next, *prev;
@@ -68,39 +68,39 @@ typedef struct RenderSlot {
   struct RenderResult *render;
 } RenderSlot;
 
-typedef struct ImageTile_RuntimeTextureSlot {
+typedef struct ImgTileRuntimeTextureSlot {
   int tilearray_layer;
   int _pad;
   int tilearray_offset[2];
   int tilearray_size[2];
-} ImageTile_RuntimeTextureSlot;
+} ImgTileRuntimeTextureSlot;
 
-typedef struct ImageTile_Runtime {
-  /* Data per `eImageTextureResolution`.
-   * Should match `IMA_TEXTURE_RESOLUTION_LEN` */
-  ImageTile_RuntimeTextureSlot slots[2];
-} ImageTile_Runtime;
+typedef struct ImgTileRuntime {
+  /* Data per `eImgTextureResolution`.
+   * Should match `IMG_TEXTURE_RESOLUTION_LEN` */
+  ImgTileRuntimeTextureSlot slots[2];
+} ImgTileRuntime;
 
-typedef struct ImageTile {
-  struct ImageTile *next, *prev;
+typedef struct ImgTile {
+  struct ImgTile *next, *prev;
 
-  struct ImageTile_Runtime runtime;
+  struct ImgTileRuntime runtime;
 
   char _pad[4];
   int tile_number;
   char label[64];
-} ImageTile;
+} ImgTile;
 
 /* iuser->flag */
-#define IMA_ANIM_ALWAYS (1 << 0)
+#define IMG_ANIM_ALWAYS (1 << 0)
 /* #define IMA_UNUSED_1         (1 << 1) */
 /* #define IMA_UNUSED_2         (1 << 2) */
-#define IMA_NEED_FRAME_RECALC (1 << 3)
-#define IMA_SHOW_STEREO (1 << 4)
+#define IMG_NEED_FRAME_RECALC (1 << 3)
+#define IMG_SHOW_STEREO (1 << 4)
 /* Do not limit the resolution by the limit texture size option in the user preferences.
  * Images in the image editor or used as a backdrop are always shown using the maximum
  * possible resolution. */
-#define IMA_SHOW_MAX_RESOLUTION (1 << 5)
+#define IMG_SHOW_MAX_RESOLUTION (1 << 5)
 
 /* Used to get the correct gpu texture from an Image datablock. */
 typedef enum eGPUTextureTarget {
@@ -111,19 +111,19 @@ typedef enum eGPUTextureTarget {
 } eGPUTextureTarget;
 
 /* Resolution variations that can be cached for an image. */
-typedef enum eImageTextureResolution {
-  IMA_TEXTURE_RESOLUTION_FULL = 0,
-  IMA_TEXTURE_RESOLUTION_LIMITED,
+typedef enum eImgTextureResolution {
+  IMG_TEXTURE_RESOLUTION_FULL = 0,
+  IMG_TEXTURE_RESOLUTION_LIMITED,
 
   /* Not an option, but holds the number of options defined for this struct. */
-  IMA_TEXTURE_RESOLUTION_LEN
-} eImageTextureResolution;
+  IMG_TEXTURE_RESOLUTION_LEN
+} eImgTextureResolution;
 
-/* Defined in dune_image.h. */
+/* Defined in dune_img.h. */
 struct PartialUpdateRegister;
 struct PartialUpdateUser;
 
-typedef struct Image_Runtime {
+typedef struct ImgRuntime {
   /* Mutex used to guarantee thread-safe access to the cached ImBuf of the corresponding image ID. */
   void *cache_mutex;
 
@@ -132,9 +132,9 @@ typedef struct Image_Runtime {
   /* Partial update user for GPUTextures stored inside the Image. */
   struct PartialUpdateUser *partial_update_user;
 
-} Image_Runtime;
+} ImgRuntime;
 
-typedef struct Image {
+typedef struct Img {
   Id id;
 
   /* File path, 1024 = FILE_MAX. */
@@ -153,7 +153,7 @@ typedef struct Image {
   short render_slot, last_render_slot;
 
   int flag;
-  short source, type;
+  short src, type;
   int lastframe;
 
   /* GPU texture flag. */
@@ -167,17 +167,17 @@ typedef struct Image {
   /* Deprecated. */
   struct PackedFile *packedfile TYPES_DEPRECATED;
   struct List packedfiles;
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   int lastused;
 
-  /* for generated images */
+  /* for generated imgs */
   int gen_x, gen_y;
   char gen_type, gen_flag;
   short gen_depth;
   float gen_color[4];
 
-  /* display aspect - for UV editing images resized for faster openGL display */
+  /* display aspect - for UV editing imgs resized for faster openGL display */
   float aspx, aspy;
 
   /* color management */
@@ -191,96 +191,95 @@ typedef struct Image {
   char eye;
   char views_format;
 
-  /* ImageTile list for UDIMs. */
+  /* ImgTile list for UDIMs. */
   int active_tile_index;
   List tiles;
 
-  /* ImageView. */
+  /* ImgView. */
   List views;
   struct Stereo3dFormat *stereo3d_format;
 
-  Image_Runtime runtime;
-} Image;
+  ImgRuntime runtime;
+} Img;
 
-/* **************** IMAGE ********************* */
-
-/* Image.flag */
+/* IMG */
+/* Img.flag */
 enum {
-  IMA_HIGH_BITDEPTH = (1 << 0),
-  IMA_FLAG_UNUSED_1 = (1 << 1), /* cleared */
+  IMG_HIGH_BITDEPTH = (1 << 0),
+  IMG_FLAG_UNUSED_1 = (1 << 1), /* cleared */
 #ifdef TYPES_DEPRECATED_ALLOW
-  IMA_DO_PREMUL = (1 << 2),
+  IMG_DO_PREMUL = (1 << 2),
 #endif
-  IMA_FLAG_UNUSED_4 = (1 << 4), /* cleared */
-  IMA_NOCOLLECT = (1 << 5),
-  IMA_FLAG_UNUSED_6 = (1 << 6), /* cleared */
-  IMA_OLD_PREMUL = (1 << 7),
-  IMA_FLAG_UNUSED_8 = (1 << 8), /* cleared */
-  IMA_USED_FOR_RENDER = (1 << 9),
-  /* For image user, but these flags are mixed. */
-  IMA_USER_FRAME_IN_RANGE = (1 << 10),
-  IMA_VIEW_AS_RENDER = (1 << 11),
-  IMA_FLAG_UNUSED_12 = (1 << 12), /* cleared */
-  IMA_DEINTERLACE = (1 << 13),
-  IMA_USE_VIEWS = (1 << 14),
-  IMA_FLAG_UNUSED_15 = (1 << 15), /* cleared */
-  IMA_FLAG_UNUSED_16 = (1 << 16), /* cleared */
+  IMG_FLAG_UNUSED_4 = (1 << 4), /* cleared */
+  IMG_NOCOLLECT = (1 << 5),
+  IMG_FLAG_UNUSED_6 = (1 << 6), /* cleared */
+  IMG_OLD_PREMUL = (1 << 7),
+  IMG_FLAG_UNUSED_8 = (1 << 8), /* cleared */
+  IMG_USED_FOR_RENDER = (1 << 9),
+  /* For img user, but these flags are mixed. */
+  IMG_USER_FRAME_IN_RANGE = (1 << 10),
+  IMG_VIEW_AS_RENDER = (1 << 11),
+  IMG_FLAG_UNUSED_12 = (1 << 12), /* cleared */
+  IMG_DEINTERLACE = (1 << 13),
+  IMG_USE_VIEWS = (1 << 14),
+  IMG_FLAG_UNUSED_15 = (1 << 15), /* cleared */
+  IMG_FLAG_UNUSED_16 = (1 << 16), /* cleared */
 };
 
-/* Image.gpuflag */
+/* Img.gpuflag */
 enum {
   /* All mipmap levels in OpenGL texture set? */
-  IMA_GPU_MIPMAP_COMPLETE = (1 << 0),
+  IMG_GPU_MIPMAP_COMPLETE = (1 << 0),
   /* Reuse the max resolution textures as they fit in the limited scale. */
-  IMA_GPU_REUSE_MAX_RESOLUTION = (1 << 1),
-  /* Has any limited scale textures been allocated.
-   * Adds additional checks to reuse max resolution images when they fit inside limited scale. */
-  IMA_GPU_HAS_LIMITED_SCALE_TEXTURES = (1 << 2),
+  IMG_GPU_REUSE_MAX_RESOLUTION = (1 << 1),
+  /* Has any limited scale textures been alloc.
+   * Adds additional checks to reuse max resolution imgs when they fit inside limited scale. */
+  IMG_GPU_HAS_LIMITED_SCALE_TEXTURES = (1 << 2),
 };
 
-/* Image.source, where the image comes from */
-typedef enum eImageSource {
-  /* IMA_SRC_CHECK = 0, */ /* UNUSED */
-  IMA_SRC_FILE = 1,
-  IMA_SRC_SEQUENCE = 2,
+/* Img.src, where the img comes from */
+typedef enum eImgSrc {
+  /* IMG_SRC_CHECK = 0, */ /* UNUSED */
+  IMG_SRC_FILE = 1,
+  IMG_SRC_SEQ = 2,
   IMA_SRC_MOVIE = 3,
   IMA_SRC_GENERATED = 4,
   IMA_SRC_VIEWER = 5,
   IMA_SRC_TILED = 6,
-} eImageSource;
+} eImgSrc;
 
-/* Image.type, how to handle or generate the image */
-typedef enum eImageType {
-  IMA_TYPE_IMAGE = 0,
-  IMA_TYPE_MULTILAYER = 1,
+/* Img.type, how to handle or generate the image */
+typedef enum eImgType {
+  IMG_TYPE_IMG = 0,
+  IMG_TYPE_MULTILAYER = 1,
   /* generated */
-  IMA_TYPE_UV_TEST = 2,
+  IMG_TYPE_UV_TEST = 2,
   /* viewers */
-  IMA_TYPE_R_RESULT = 4,
-  IMA_TYPE_COMPOSITE = 5,
-} eImageType;
+  IMG_TYPE_R_RESULT = 4,
+  IMG_TYPE_COMPOSITE = 5,
+} eImgType;
 
-/* Image.gen_type */
+/* Img.gen_type */
 enum {
-  IMA_GENTYPE_BLANK = 0,
-  IMA_GENTYPE_GRID = 1,
-  IMA_GENTYPE_GRID_COLOR = 2,
+  IMG_GENTYPE_BLANK = 0,
+  IMG_GENTYPE_GRID = 1,
+  IMG_GENTYPE_GRID_COLOR = 2,
 };
 
 /* render */
-#define IMA_MAX_RENDER_TEXT (1 << 9)
+#define IMG_MAX_RENDER_TXT (1 << 9)
 
-/* Image.gen_flag */
+/* Img.gen_flag */
 enum {
-  IMA_GEN_FLOAT = 1,
+  IMG_GEN_FLOAT = 1,
 };
 
-/* Image.alpha_mode */
+/* Img.alpha_mode */
 enum {
-  IMA_ALPHA_STRAIGHT = 0,
-  IMA_ALPHA_PREMUL = 1,
-  IMA_ALPHA_CHANNEL_PACKED = 2,
-  IMA_ALPHA_IGNORE = 3,
+  IMG_ALPHA_STRAIGHT = 0,
+  IMG_ALPHA_PREMUL = 1,
+  IMG_ALPHA_CHANNEL_PACKED = 2,
+  IMG_ALPHA_IGNORE = 3,
 };
 
 #ifdef __cplusplus
