@@ -1,6 +1,6 @@
-#include "DRW_render.h"
+#include "drw_render.h"
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 
 #include "basic_private.h"
 
@@ -12,7 +12,6 @@ extern char datatoc_common_view_lib_glsl[];
 extern char datatoc_common_pointcloud_lib_glsl[];
 
 /* Shaders */
-
 typedef struct BASIC_Shaders {
   /* Depth Pre Pass */
   struct GPUShader *depth;
@@ -27,7 +26,7 @@ static struct {
 
 static GPUShader *BASIC_shader_create_depth_sh(const GPUShaderConfigData *sh_cfg)
 {
-  return GPU_shader_create_from_arrays({
+  return gpu_shader_create_from_arrays({
       .vert = (const char *[]){sh_cfg->lib,
                                datatoc_common_view_lib_glsl,
                                datatoc_depth_vert_glsl,
@@ -39,7 +38,7 @@ static GPUShader *BASIC_shader_create_depth_sh(const GPUShaderConfigData *sh_cfg
 
 static GPUShader *BASIC_shader_create_pointcloud_depth_sh(const GPUShaderConfigData *sh_cfg)
 {
-  return GPU_shader_create_from_arrays({
+  return gpu_shader_create_from_arrays({
       .vert = (const char *[]){sh_cfg->lib,
                                datatoc_common_view_lib_glsl,
                                datatoc_common_pointcloud_lib_glsl,
@@ -56,7 +55,7 @@ static GPUShader *BASIC_shader_create_pointcloud_depth_sh(const GPUShaderConfigD
 
 static GPUShader *BASIC_shader_create_depth_conservative_sh(const GPUShaderConfigData *sh_cfg)
 {
-  return GPU_shader_create_from_arrays({
+  return gpy_shader_create_from_arrays({
       .vert = (const char *[]){sh_cfg->lib,
                                datatoc_common_view_lib_glsl,
                                datatoc_depth_vert_glsl,
@@ -73,7 +72,7 @@ static GPUShader *BASIC_shader_create_depth_conservative_sh(const GPUShaderConfi
 static GPUShader *BASIC_shader_create_pointcloud_depth_conservative_sh(
     const GPUShaderConfigData *sh_cfg)
 {
-  return GPU_shader_create_from_arrays({
+  return gpu_shader_create_from_arrays({
       .vert = (const char *[]){sh_cfg->lib,
                                datatoc_common_view_lib_glsl,
                                datatoc_common_pointcloud_lib_glsl,
@@ -96,7 +95,7 @@ static GPUShader *BASIC_shader_create_pointcloud_depth_conservative_sh(
 GPUShader *BASIC_shaders_depth_sh_get(eGPUShaderConfig config)
 {
   BASIC_Shaders *sh_data = &e_data.sh_data[config];
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[config];
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[config];
   if (sh_data->depth == NULL) {
     sh_data->depth = BASIC_shader_create_depth_sh(sh_cfg);
   }
@@ -126,7 +125,7 @@ GPUShader *BASIC_shaders_depth_conservative_sh_get(eGPUShaderConfig config)
 GPUShader *BASIC_shaders_pointcloud_depth_conservative_sh_get(eGPUShaderConfig config)
 {
   BASIC_Shaders *sh_data = &e_data.sh_data[config];
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[config];
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[config];
   if (sh_data->pointcloud_depth_conservative == NULL) {
     sh_data->pointcloud_depth_conservative = BASIC_shader_create_pointcloud_depth_conservative_sh(
         sh_cfg);
