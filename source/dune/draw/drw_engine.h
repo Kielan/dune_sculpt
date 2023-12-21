@@ -90,23 +90,23 @@ void drw_render_loop_2d_ex(struct Graph *graph,
                                 const struct Context *evil_C);
 /* ob mode sel-loop, see: ed_view3d_drw_sel_loop (legacy drawing). **/
 void drw_sel_loop(struct Graph *graph,
-                      struct ARgn *rgn,
-                      struct View3D *v3d,
-                      bool use_obedit_skip,
-                      bool drw_surface,
-                      bool use_nearest,
-                      bool do_material_sub_sel,
-                      const struct rcti *rect,
-                      DrwSelPassFn sel_pass_fn,
-                      void *sel_pass_user_data,
-                      DrwObFilterFn ob_filter_fn,
-                      void *ob_filter_user_data);
-/** object mode select-loop, see: ed_view3d_draw_depth_loop (legacy drawing). **/
-void draw_depth_loop(struct Graph *graph,
+                  struct ARgn *rgn,
+                  struct View3D *v3d,
+                  bool use_obedit_skip,
+                  bool drw_surface,
+                  bool use_nearest,
+                  bool do_material_sub_sel,
+                  const struct rcti *rect,
+                  DrwSelPassFn sel_pass_fn,
+                  void *sel_pass_user_data,
+                  DrwObFilterFn ob_filter_fn,
+                  void *ob_filter_user_data);
+/* ob mode sel-loop, see: ed_view3d_drw_depth_loop (legacy drawing). **/
+void drw_depth_loop(struct Graph *graph,
                      struct ARgn *rgn,
                      struct View3D *v3d,
                      struct GPUViewport *viewport);
-/** Converted from ed_view3d_drw_depth_dpen (legacy drawing). **/
+/* Converted from ed_view3d_drw_depth_dpen (legacy drawing). **/
 void drw_depth_loop_dpen(struct Graph *graph,
                           struct ARgn *rgn,
                           struct View3D *v3d,
@@ -146,7 +146,7 @@ void drw_opengl_cxt_disable(void);
 void *drw_xr_opengl_cxt_get(void);
 void *drw_xr_gpu_cxt_get(void);
 void drw_xr_drwing_begin(void);
-void draw_xr_drwing_end(void);
+void drw_xr_drwing_end(void);
 #endif
 
 /* For garbage collection */
