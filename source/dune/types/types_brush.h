@@ -10,13 +10,13 @@ extern "C" {
 #endif
 
 struct CurveMapping;
-struct Image;
+struct Img;
 struct MTex;
 struct Material;
 
 typedef struct BrushClone {
   /* Image for clone tool. */
-  struct Image *image;
+  struct Img *img;
   /* Offset of clone image from canvas. */
   float offset[2];
   /* Transparency for drawing of clone image. */
@@ -26,25 +26,25 @@ typedef struct BrushClone {
 
 typedef struct BrushPenSettings {
   /* Amount of smoothing to apply to newly created strokes. */
-  float draw_smoothfac;
+  float drw_smoothfac;
   /* Fill zoom factor */
   float fill_factor;
   /* Amount of alpha strength to apply to newly created strokes. */
-  float draw_strength;
+  float drw_strength;
   /* Amount of jitter to apply to newly created strokes. */
-  float draw_jitter;
+  float drw_jitter;
   /* Angle when the brush has full thickness. */
-  float draw_angle;
+  float drw_angle;
   /* Factor to apply when angle change (only 90 degrees). */
-  float draw_angle_factor;
+  float drw_angle_factor;
   /* Factor of randomness for pressure. */
-  float draw_random_press;
+  float drw_random_press;
   /* Factor of strength for strength. */
-  float draw_random_strength;
+  float drw_random_strength;
   /* Number of times to apply smooth factor to new strokes. */
-  short draw_smoothlvl;
+  short drw_smoothlvl;
   /* Number of times to subdivide new strokes. */
-  short draw_subdivide;
+  short drw_subdivide;
   /* Layers used for fill. */
   short fill_layer_mode;
   short fill_direction;
@@ -62,19 +62,19 @@ typedef struct BrushPenSettings {
   /* Number of simplify steps. */
   int fill_simplylvl;
   /* Type of control lines drawing mode. */
-  int fill_draw_mode;
+  int fill_drw_mode;
   /* Icon id. */
   int icon_id;
 
-  /** Maximum distance before generate new point for very fast mouse movements. */
+  /* Max distance before generate new point for very fast mouse movements. */
   int input_samples;
-  /** Random factor for UV rotation. */
+  /* Random factor for UV rotation. */
   float uv_random;
-  /** Moved to 'Brush.pen_tool'. */
+  /* Moved to 'Brush.pen_tool'. */
   int brush_type TYPES_DEPRECATED;
-  /** Soft, hard or stroke. */
+  /* Soft, hard or stroke. */
   int eraser_mode;
-  /** Smooth while drawing factor. */
+  /* Smooth while drwing factor. */
   float active_smooth;
   /* Factor to apply to strength for soft eraser. */
   float era_strength_f;
@@ -107,8 +107,8 @@ typedef struct BrushPenSettings {
   float random_hue;
   /* Randomness for Saturation. */
   float random_saturation;
-  /* Randomness for Value. */
-  float random_value;
+  /* Randomness for Val. */
+  float random_val;
 
   /* Factor to extend stroke extremes using fill tool. */
   float fill_extend_fac;
@@ -147,7 +147,7 @@ typedef struct Brush {
   struct Brush *toggle_brush;
 
   struct ImBuf *icon_imbuf;
-  PreviewImage *preview;
+  PreviewImg *preview;
   /* Color gradient. */
   struct ColorBand *gradient;
   struct PaintCurve *paint_curve;
@@ -161,7 +161,7 @@ typedef struct Brush {
 
   /* Blend mode. */
   short blend;
-  /* eObjectMode: to see if the brush is compatible, use for display only. */
+  /* eObMode: to see if the brush is compatible, use for display only. */
   short ob_mode;
   /* Brush weight. */
   float weight;
@@ -185,7 +185,7 @@ typedef struct Brush {
   int smooth_stroke_radius;
   /* Higher values limit fast changes in the stroke direction. */
   float smooth_stroke_factor;
-  /* Paint operations / second (airbrush). */
+  /* Paint ops / second (airbrush). */
   float rate;
 
   /* Color. */
@@ -204,7 +204,7 @@ typedef struct Brush {
   int paint_flags;
 
   /* Tip Shape */
-  /* Factor that controls the shape of the brush tip by rounding the corners of a square. */
+  /* Factor that ctrls the shape of the brush tip by rounding the corners of a square. */
   /* 0.0 value produces a square, 1.0 produces a circle. */
   float tip_roundness;
   float tip_scale_x;
@@ -216,16 +216,16 @@ typedef struct Brush {
   float dash_ratio;
   int dash_samples;
 
-  /* The direction of movement for sculpt vertices. */
+  /* The direction of mcmnt for sculpt vertices. */
   int sculpt_plane;
 
   /* Offset for plane brushes (clay, flatten, fill, scrape). */
   float plane_offset;
 
   int gradient_spacing;
-  /* Source for stroke color gradient application. */
+  /* Src for stroke color gradient application. */
   char gradient_stroke_mode;
-  /* Source for fill tool color gradient application. */
+  /* Src for fill tool color gradient application. */
   char gradient_fill_mode;
 
   char _pad0[5];
@@ -278,7 +278,7 @@ typedef struct Brush {
 
   int curve_preset;
 
-  /* Maximum distance to search fake neighbors from a vertex. */
+  /* Max distance to search fake neighbors from a vertex. */
   float disconnected_distance_max;
 
   int deform_target;
@@ -364,7 +364,7 @@ typedef struct Brush {
 /* Struct to hold palette colors for sorting. */
 typedef struct tPaletteColorHSV {
   float rgb[3];
-  float value;
+  float val;
   float h;
   float s;
   float v;
