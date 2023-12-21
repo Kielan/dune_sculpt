@@ -55,7 +55,7 @@ typedef struct Base {
   struct Base *next, *prev;
 
   /* Flags which are based on the collections flags evaluation, does not
-   * include flags from object's restrictions. */
+   * include flags from ob's restrictions. */
   short flag_from_collection;
 
   /* Final flags, including both accumulated collection flags and object's
@@ -65,21 +65,21 @@ typedef struct Base {
   unsigned short local_view_bits;
   short sx, sy;
   char _pad1[6];
-  struct Object *object;
+  struct Ob *ob;
   unsigned int lay TYPES_DEPRECATED;
   int flag_legacy;
   unsigned short local_collections_bits;
   short _pad2[3];
 
-  /* Pointer to an original base. Is initialized for evaluated view layer.
-   * NOTE: Only allowed to be accessed from within active dependency graph. */
+  /* Ptr to an original base. Is init for eval view layer.
+   * Only allowed to be accessed from within active graph. */
   struct Base *base_orig;
   void *_pad;
 } Base;
 
 typedef struct ViewLayerEngineData {
   struct ViewLayerEngineData *next, *prev;
-  struct DrawEngineType *engine_type;
+  struct DrwEngineType *engine_type;
   void *storage;
   void (*free)(void *storage);
 } ViewLayerEngineData;
@@ -122,15 +122,15 @@ typedef struct ViewLayer {
   char name[64];
   short flag;
   char _pad[6];
-  /* ObjectBase. */
-  List object_bases;
+  /* ObBase. */
+  List ob_bases;
   /* Default allocated now. */
   struct SceneStats *stats;
   struct Base *basact;
 
   /* A view layer has one top level layer collection, because a scene has only one top level
    * collection. The layer_collections list always contains a single element. ListBase is
-   * convenient when applying functions to all layer collections recursively. */
+   * convenient when applying fns to all layer collections recursively. */
   List layer_collections;
   LayerCollection *active_collection;
 
@@ -159,20 +159,20 @@ typedef struct ViewLayer {
   /* Runtime data */
   /* ViewLayerEngineData. */
   List drawdata;
-  struct Base **object_bases_array;
-  struct GHash *object_bases_hash;
+  struct Base **ob_bases_array;
+  struct GHash *ob_bases_hash;
 } ViewLayer;
 
 /* Base->flag */
 enum {
   /* User controlled flags. */
-  BASE_SELECTED = (1 << 0), /* Object is selected. */
+  BASE_SEL = (1 << 0), /* Object is selected. */
   BASE_HIDDEN = (1 << 8),   /* Object is hidden for editing. */
 
-  /* Runtime evaluated flags. */
-  BASE_VISIBLE_DEPSGRAPH = (1 << 1), /* Object is enabled and visible for the depsgraph. */
+  /* Runtime eval flags. */
+  BASE_VISIBLE_GRAPH = (1 << 1), /* Object is enabled and visible for the depsgraph. */
   BASE_SELECTABLE = (1 << 2),        /* Object can be selected. */
-  BASE_FROM_DUPLI = (1 << 3),        /* Object comes from duplicator. */
+  BASE_FROM_DUP = (1 << 3),        /* Object comes from duplicator. */
   BASE_VISIBLE_VIEWLAYER = (1 << 4), /* Object is enabled and visible for the viewlayer. */
   BASE_FROM_SET = (1 << 5),          /* Object comes from set. */
   BASE_ENABLED_VIEWPORT = (1 << 6),  /* Object is enabled in viewport. */
@@ -198,8 +198,8 @@ enum {
 /* Layer Collection->runtime_flag
  * Keep it synced with base->flag based on g_base_collection_flags. */
 enum {
-  LAYER_COLLECTION_HAS_OBJECTS = (1 << 0),
-  /* LAYER_COLLECTION_VISIBLE_DEPSGRAPH = (1 << 1), */ /* UNUSED */
+  LAYER_COLLECTION_HAS_OBS = (1 << 0),
+  /* LAYER_COLLECTION_VISIBLE_GRAPH = (1 << 1), */ /* UNUSED */
   LAYER_COLLECTION_HIDE_VIEWPORT = (1 << 2),
   LAYER_COLLECTION_VISIBLE_VIEW_LAYER = (1 << 4),
 };
@@ -211,8 +211,7 @@ enum {
   VIEW_LAYER_FREESTYLE = (1 << 2),
 };
 
-/****************************** Deprecated ******************************/
-
+/* Deprecated */
 /* Compatibility with collections saved in early 2.8 versions,
  * used in file reading and versioning code. */
 #define USE_COLLECTION_COMPAT_28
@@ -222,12 +221,12 @@ typedef struct SceneCollection {
   /* MAX_NAME. */
   char name[64];
   /* For UI. */
-  int active_object_index;
+  int active_ob_index;
   short flag;
   char type;
   char _pad;
-  /* (Object *)LinkData->data. */
-  List objects;
+  /* (Ob *)LinkData->data. */
+  List obs;
   /* Nested collections. */
   List scene_collections;
 } SceneCollection;
