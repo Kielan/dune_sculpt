@@ -13,11 +13,11 @@ struct ImBuf;
 struct MovieClipProxy;
 struct MovieTrackingMarker;
 struct MovieTrackingTrack;
-struct anim;
+struct Anim;
 struct PenData;
 
 typedef struct MovieClipUser {
-  /* Current frame number. */
+  /* Current frame num. */
   int framenr;
   /* Proxy render size. */
   short render_size, render_flag;
@@ -50,13 +50,13 @@ typedef struct MovieClip_Runtime {
 
 typedef struct MovieClip {
   Id id;
-  /* Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
 
-  /**l File path, 1024 = FILE_MAX. */
+  /* File path, 1024 = FILE_MAX. */
   char filepath[1024];
 
-  /* Sequence or movie. */
+  /* Seq or movie. */
   int source;
   /* Last accessed frame number. */
   int lastframe;
@@ -66,7 +66,7 @@ typedef struct MovieClip {
   /* Display aspect. */
   float aspx, aspy;
 
-  /* Movie source data. */
+  /* Movie src data. */
   struct anim *anim;
   /* Cache for different stuff, not in file. */
   struct MovieClipCache *cache;
@@ -146,7 +146,7 @@ enum {
 
 /* MovieClip.source */
 enum {
-  MCLIP_SRC_SEQUENCE = 1,
+  MCLIP_SRC_SEQ = 1,
   MCLIP_SRC_MOVIE = 2,
 };
 
@@ -162,18 +162,18 @@ enum {
 
 /*nMovieClip.render_size */
 enum {
-  MCLIP_PROXY_RENDER_SIZE_FULL = 0,
-  MCLIP_PROXY_RENDER_SIZE_25 = 1,
-  MCLIP_PROXY_RENDER_SIZE_50 = 2,
-  MCLIP_PROXY_RENDER_SIZE_75 = 3,
-  MCLIP_PROXY_RENDER_SIZE_100 = 4,
+  MCLIP_PROXY_RNDR_SIZE_FULL = 0,
+  MCLIP_PROXY_RNDR_SIZE_25 = 1,
+  MCLIP_PROXY_RNDR_SIZE_50 = 2,
+  MCLIP_PROXY_RNDR_SIZE_75 = 3,
+  MCLIP_PROXY_RNDR_SIZE_100 = 4,
 };
 
 /* MovieClip.render_flag */
 enum {
   MCLIP_PROXY_RENDER_UNDISTORT = 1,
   /* Use original, if proxy is not found. */
-  MCLIP_PROXY_RENDER_USE_FALLBACK_RENDER = 2,
+  MCLIP_PROXY_RENDER_USE_FALLBACK_RNDR = 2,
 };
 
 #ifdef __cplusplus
