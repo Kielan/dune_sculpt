@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* Asset Struct */
-
 #define _TYPES_DEFAULT_AssetMetaData \
   { \
     0 \
