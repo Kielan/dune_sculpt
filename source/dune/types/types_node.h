@@ -1,9 +1,9 @@
 #pragma once
 
-#include "DNA_ID.h"
-#include "DNA_listBase.h"
-#include "DNA_scene_types.h" /* for #ImageFormatData */
-#include "DNA_vec_types.h"   /* for #rctf */
+#include "types_id.h"
+#include "types_list.h"
+#include "types_scene.h" /* for #ImageFormatData */
+#include "types_vec.h"   /* for #rctf */
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,11 +11,11 @@ extern "C" {
 
 struct AnimData;
 struct Collection;
-struct ID;
-struct Image;
-struct ListBase;
+struct Id;
+struct Img;
+struct List;
 struct Material;
-struct PreviewImage;
+struct PreviewImg;
 struct Tex;
 struct bGPdata;
 struct bNodeInstanceHash;
