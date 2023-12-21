@@ -4,20 +4,20 @@
 #include "types_list.h"
 
 /* Notice that we need to have this file although no struct defines.
- * Edge flags and usage flags are used by with scene/object/pen mod bits, and those values
+ * Edge flags and usage flags are used by with scene/ob/pen mod bits, and those values
  * needs to stay consistent throughout. */
 
-/* These flags are used for 1 time calculation, not stroke selection afterwards. */
+/* These flags are used for 1 time calc, not stroke sel afterwards. */
 typedef enum eLineartMainFlags {
   LRT_INTERSECTION_AS_CONTOUR = (1 << 0),
   LRT_EVERYTHING_AS_CONTOUR = (1 << 1),
-  LRT_ALLOW_DUPLI_OBJECTS = (1 << 2),
+  LRT_ALLOW_DUP_OBS = (1 << 2),
   LRT_ALLOW_OVERLAPPING_EDGES = (1 << 3),
   LRT_ALLOW_CLIPPING_BOUNDARIES = (1 << 4),
   LRT_REMOVE_DOUBLES = (1 << 5),
   LRT_LOOSE_AS_CONTOUR = (1 << 6),
-  LRT_GPENCIL_INVERT_SOURCE_VGROUP = (1 << 7),
-  LRT_GPENCIL_MATCH_OUTPUT_VGROUP = (1 << 8),
+  LRT_PEN_INVERT_SOURCE_VGROUP = (1 << 7),
+  LRT_PEN_MATCH_OUTPUT_VGROUP = (1 << 8),
   LRT_FILTER_FACE_MARK = (1 << 9),
   LRT_FILTER_FACE_MARK_INVERT = (1 << 10),
   LRT_FILTER_FACE_MARK_BOUNDARIES = (1 << 11),
