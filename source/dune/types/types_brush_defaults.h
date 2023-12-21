@@ -5,9 +5,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* Brush Struct */
-
 #define _TYPES_DEFAULT_Brush \
   { \
     .blend = 0, \
@@ -61,7 +59,7 @@
     .dash_ratio = 1.0f, \
     .dash_samples = 20, \
  \
-    .texture_sample_bias = 0, /* value to added to texture samples */ \
+    .texture_sample_bias = 0, /* val to added to texture samples */ \
     .texture_overlay_alpha = 33, \
     .mask_overlay_alpha = 33, \
     .cursor_overlay_alpha = 33, \
@@ -78,9 +76,9 @@
     .stencil_pos = {256, 256}, \
     .stencil_dimension = {256, 256}, \
  \
-    /* sculpting defaults to the draw tool for new brushes */ \
-    .sculpt_tool = SCULPT_TOOL_DRAW, \
-    .pose_smooth_iterations = 4, \
+    /* sculpting defaults to the drw tool for new brushes */ \
+    .sculpt_tool = SCULPT_TOOL_DRW, \
+    .pose_smooth_iters = 4, \
     .pose_ik_segments = 1, \
     .hardness = 0.0f, \
     .automasking_boundary_edges_propagation_steps = 1, \
@@ -88,10 +86,8 @@
     /* A kernel radius of 1 has almost no effect (T63233). */ \
     .blur_kernel_radius = 2, \
  \
-    .mtex = _DNA_DEFAULT_MTex, \
-    .mask_mtex = _DNA_DEFAULT_MTex, \
+    .mtex = _TYPES_DEFAULT_MTex, \
+    .mask_mtex = _TYPES_DEFAULT_MTex, \
   }
-
-/** \} */
 
 /* clang-format on */
