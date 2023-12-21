@@ -1,7 +1,7 @@
 
-#include "draw_render.h"
+#include "drw_render.h"
 
-#include "dune_image.h"
+#include "dune_img.h"
 
 #include "types_mesh.h"
 
@@ -10,7 +10,7 @@
 #include "overlay_private.h"
 
 /* Check if the given object is rendered (partially) transparent */
-static bool paint_object_is_rendered_transparent(View3D *v3d, Object *ob)
+static bool paint_ob_is_rendered_transparent(View3D *v3d, Object *ob)
 {
   if (v3d->shading.type == OB_WIRE) {
     return true;
@@ -27,7 +27,7 @@ static bool paint_object_is_rendered_transparent(View3D *v3d, Object *ob)
         v3d->shading.color_type == V3D_SHADING_MATERIAL_COLOR) {
       Mesh *me = ob->data;
       for (int i = 0; i < me->totcol; i++) {
-        Material *mat = BKE_object_material_get_eval(ob, i + 1);
+        Material *mat = dune_ob_material_get_eval(ob, i + 1);
         if (mat && mat->a < 1.0f) {
           return true;
         }
@@ -35,7 +35,7 @@ static bool paint_object_is_rendered_transparent(View3D *v3d, Object *ob)
     }
   }
 
-  /* Check object display types. */
+  /* Check ob display types. */
   if (ob && ELEM(ob->dt, OB_WIRE, OB_BOUNDBOX)) {
     return true;
   }
@@ -47,47 +47,47 @@ void overlay_paint_init(OverlayData *vedata)
 {
   OverlayStorageList *stl = vedata->stl;
   OverlayPrivateData *pd = stl->pd;
-  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const DrwCtxState *draw_ctx = drw_cxt_state_get();
 
-  pd->painting.in_front = pd->use_in_front && draw_ctx->obact &&
-                          (draw_ctx->obact->dtx & OB_DRAW_IN_FRONT);
-  pd->painting.alpha_blending = paint_object_is_rendered_transparent(draw_ctx->v3d,
-                                                                     draw_ctx->obact);
+  pd->painting.in_front = pd->use_in_front && drw_cxt->obact &&
+                          (drw_ctx->obact->dtx & OB_DRW_IN_FRONT);
+  pd->painting.alpha_blending = paint_ob_is_rendered_transparent(drw_cxt->v3d,
+                                                                 drw_cxt->obact);
 }
 
 void overlay_paint_cache_init(OverlayData *vedata)
 {
-  const DrawCtxState *draw_ctx = draw_ctx_state_get();
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  const DrawCxtState *drw_cxt = drw_cxt_state_get();
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
-  DRWState state;
+  DrwShadingGroup *grp;
+  DrwState state;
 
-  const bool is_edit_mode = (pd->ctx_mode == CTX_MODE_EDIT_MESH);
-  const bool draw_contours = !is_edit_mode &&
+  const bool is_edit_mode = (pd->cxt_mode == CXT_MODE_MESH_EDIT);
+  const bool drw_contours = !is_edit_mode &&
                              (pd->overlay.wpaint_flag & V3D_OVERLAY_WPAINT_CONTOURS) != 0;
   float opacity = 0.0f;
   pd->paint_depth_grp = NULL;
   psl->paint_depth_ps = NULL;
 
-  switch (pd->ctx_mode) {
-    case CTX_MODE_POSE:
-    case CTX_MODE_EDIT_MESH:
-    case CTX_MODE_PAINT_WEIGHT: {
+  switch (pd->cxt_mode) {
+    case CXT_MODE_POSE:
+    case CXT_MODE_MESH_EDIT:
+    case CXT_MODE_PAINT_WEIGHT: {
       opacity = is_edit_mode ? 1.0 : pd->overlay.weight_paint_mode_opacity;
       if (opacity > 0.0f) {
-        state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL | DRAW_STATE_BLEND_ALPHA;
-        DRAW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
+        state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+        DRW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
 
-        const bool do_shading = draw_ctx->v3d->shading.type != OB_WIRE;
+        const bool do_shading = drw_ctx->v3d->shading.type != OB_WIRE;
 
         sh = overlay_shader_paint_weight(do_shading);
-        pd->paint_surf_grp = grp = draw_shgroup_create(sh, psl->paint_color_ps);
-        draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-        draw_shgroup_uniform_bool_copy(grp, "drawContours", draw_contours);
-        draw_shgroup_uniform_float_copy(grp, "opacity", opacity);
-        draw_shgroup_uniform_texture(grp, "colorramp", G_draw.weight_ramp);
+        pd->paint_surf_grp = grp = drw_shgroup_create(sh, psl->paint_color_ps);
+        drw_shgroup_uniform_block(grp, "globalsBlock", G_drw.block_ubo);
+        drw_shgroup_uniform_bool_copy(grp, "drwContours", drw_contours);
+        drw_shgroup_uniform_float_copy(grp, "opacity", opacity);
+        drw_shgroup_uniform_texture(grp, "colorramp", G_drw.weight_ramp);
 
         /* Arbitrary light to give a hint of the geometry behind the weights. */
         if (do_shading) {
@@ -100,8 +100,8 @@ void overlay_paint_cache_init(OverlayData *vedata)
         if (pd->painting.alpha_blending) {
           state = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
           DRW_PASS_CREATE(psl->paint_depth_ps, state | pd->clipping_state);
-          sh = OVERLAY_shader_depth_only();
-          pd->paint_depth_grp = DRW_shgroup_create(sh, psl->paint_depth_ps);
+          sh = overlay_shader_depth_only();
+          pd->paint_depth_grp = drw_shgroup_create(sh, psl->paint_depth_ps);
         }
       }
       break;
