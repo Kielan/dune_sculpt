@@ -17,31 +17,31 @@ struct List;
 struct Material;
 struct PreviewImg;
 struct Tex;
-struct bGPdata;
-struct bNodeInstanceHash;
-struct bNodeLink;
-struct bNodePreview;
-struct bNodeTreeExec;
-struct bNodeType;
+struct PenData;
+struct NodeInstanceHash;
+struct NodeLink;
+struct NodePreview;
+struct NodeTreeEx;
+struct NodeType;
 struct uiBlock;
 
 #define NODE_MAXSTR 64
 
-typedef struct bNodeStack {
+typedef struct NodeStack {
   float vec[4];
   float min, max;
   void *data;
-  /** When input has link, tagged before executing. */
+  /* When input has link, tagged before executing. */
   short hasinput;
-  /** When output is linked, tagged before executing. */
+  /* When output is linked, tagged before executing. */
   short hasoutput;
-  /** Type of data pointer. */
+  /* Type of data ptr. */
   short datatype;
-  /** Type of socket stack comes from, to remap linking different sockets. */
+  /* Type of socket stack comes from, to remap linking different sockets. */
   short sockettype;
-  /** Data is a copy of external data (no freeing). */
+  /* Data is a copy of external data (no freeing). */
   short is_copy;
-  /** Data is used by external nodes (no freeing). */
+  /* Data is used by external nodes (no freeing). */
   short external;
   char _pad[4];
 } bNodeStack;
@@ -58,133 +58,125 @@ typedef struct bNodeStack {
 #define NS_CR_FIT 4
 #define NS_CR_STRETCH 5
 
-/** Workaround to forward-declare C++ type in C header. */
+/* Workaround to forward-declare C++ type in C header. */
 #ifdef __cplusplus
-namespace blender::nodes {
+namespace dune::nodes {
 class NodeDeclaration;
 class SocketDeclaration;
-}  // namespace blender::nodes
-using NodeDeclarationHandle = blender::nodes::NodeDeclaration;
-using SocketDeclarationHandle = blender::nodes::SocketDeclaration;
+}  // namespace dune::nodes
+using NodeDeclarationHandle = dune::nodes::NodeDeclaration;
+using SocketDeclarationHandle = dune::nodes::SocketDeclaration;
 #else
 typedef struct NodeDeclarationHandle NodeDeclarationHandle;
 typedef struct SocketDeclarationHandle SocketDeclarationHandle;
 #endif
 
-typedef struct bNodeSocket {
-  struct bNodeSocket *next, *prev;
+typedef struct NodeSocket {
+  struct NodeSocket *next, *prev;
 
-  /** User-defined properties. */
-  IDProperty *prop;
+  /* User-defined props. */
+  IdProp *prop;
 
-  /** Unique identifier for mapping. */
-  char identifier[64];
+  /* Unique id for mapping. */
+  char id[64];
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
-  /** Only used for the Image and OutputFile nodes, should be removed at some point. */
+  /* Only used for the Img and OutputFile nodes, should be removed at some point. */
   void *storage;
 
-  /**
-   * The socket's data type. #eNodeSocketDatatype.
-   */
+  /* The socket's data type. eNodeSocketDatatype. */
   short type;
-  /** #eNodeSocketFlag */
+  /* eNodeSocketFlag */
   short flag;
-  /**
-   * Maximum number of links that can connect to the socket. Read via #nodeSocketLinkLimit, because
-   * the limit might be defined on the socket type, in which case this value does not have any
-   * effect. It is necessary to store this in the socket because it is exposed as an RNA property
-   * for custom nodes.
-   */
+  /* Max num of links that can connect to the socket. Read via nodeSocketLinkLimit, bc
+   * the limit might be defined on the socket type, in which case this val does not have any
+   * effect. It is necessary to store this in the socket bc it is exposed as an api prop
+   * for custom nodes. */
   short limit;
-  /** Input/output type. */
+  /* Input/output type. */
   short in_out;
-  /** Runtime type information. */
-  struct bNodeSocketType *typeinfo;
-  /** Runtime type identifier. */
+  /* Runtime type info. */
+  struct NodeSocketType *typeinfo;
+  /* Runtime type id. */
   char idname[64];
 
-  /**
-   * The location of the sockets, in the view-space of the node editor.
-   * \note These are runtime data-- only calculated when drawing, and could be removed from DNA.
-   */
+  /* The location of the sockets, in the view-space of the node editor.
+   * These are runtime data-- only calculated when drawing, and could be removed from Types. */
   float locx, locy;
 
-  /** Default input value used for unlinked sockets. */
+  /* Default input val used for unlinked sockets. */
   void *default_value;
 
   /* execution data */
-  /** Local stack index. */
+  /* Local stack index. */
   short stack_index;
-  /* XXX deprecated, kept for forward compatibility */
-  short stack_type DNA_DEPRECATED;
+  /* deprecated, kept for forward compatibility */
+  short stack_type TYPES_DEPRECATED;
   char display_shape;
 
-  /* #AttributeDomain used when the geometry nodes modifier creates an attribute for a group
+  /* AttributeDomain used when the geometry nodes mod creates an attribute for a group
    * output. */
   char attribute_domain;
   /* Runtime-only cache of the number of input links, for multi-input sockets. */
   short total_inputs;
 
-  /** Custom dynamic defined label, MAX_NAME. */
+  /* Custom dynamic defined label, MAX_NAME. */
   char label[64];
   char description[64];
 
-  /** Cached data from execution. */
+  /* Cached data from execution. */
   void *cache;
 
   /* internal data to retrieve relations and groups
-   * DEPRECATED, now uses the generic identifier string instead
+   * DEPRECATED, now uses the generic id string instead
    */
-  /** Group socket identifiers, to find matching pairs after reading files. */
-  int own_index DNA_DEPRECATED;
-  /* XXX deprecated, only used for restoring old group node links */
-  int to_index DNA_DEPRECATED;
-  /* XXX deprecated, still forward compatible since verification
-   * restores pointer from matching own_index. */
-  struct bNodeSocket *groupsock DNA_DEPRECATED;
+  /** Group socket ids, to find matching pairs after reading files. */
+  int own_index TYPES_DEPRECATED;
+  /* deprecated, only used for restoring old group node links */
+  int to_index TYPES_DEPRECATED;
+  /* deprecated, still forward compatible since verification
+   * restores pTr from matching own_index. */
+  struct NodeSocket *groupsock TYPES_DEPRECATED;
 
-  /** A link pointer, set in #BKE_ntree_update_main. */
-  struct bNodeLink *link;
+  /* A link ptr, set in dune_ntree_update_main. */
+  struct NodeLink *link;
 
-  /* XXX deprecated, socket input values are stored in default_value now.
+  /* deprecated, socket input vals are stored in default_val now.
    * kept for forward compatibility */
-  /** Custom data for inputs, only UI writes in this. */
-  bNodeStack ns DNA_DEPRECATED;
+  /* Custom data for inputs, only UI writes in this. */
+  NodeStack ns TYPES_DEPRECATED;
 
-  /**
-   * References a socket declaration that is owned by `node->declaration`. This is only runtime
-   * data. It has to be updated when the node declaration changes.
-   */
+  /* Refs a socket declaration that is owned by `node->declaration`. This is only runtime
+   * data. It has to be updated when the node declaration changes. */
   const SocketDeclarationHandle *declaration;
 
-  /** #eNodeTreeChangedFlag. */
+  /* eNodeTreeChangedFlag. */
   uint32_t changed_flag;
   char _pad[4];
 } bNodeSocket;
 
-/** #bNodeSocket.type & #bNodeSocketType.type */
+/* NodeSocket.type & NodeSocketType.type */
 typedef enum eNodeSocketDatatype {
   SOCK_CUSTOM = -1, /* socket has no integer type */
   SOCK_FLOAT = 0,
   SOCK_VECTOR = 1,
   SOCK_RGBA = 2,
   SOCK_SHADER = 3,
-  SOCK_BOOLEAN = 4,
+  SOCK_BOOL = 4,
   __SOCK_MESH = 5, /* deprecated */
   SOCK_INT = 6,
   SOCK_STRING = 7,
-  SOCK_OBJECT = 8,
-  SOCK_IMAGE = 9,
+  SOCK_OB = 8,
+  SOCK_IMG = 9,
   SOCK_GEOMETRY = 10,
   SOCK_COLLECTION = 11,
   SOCK_TEXTURE = 12,
   SOCK_MATERIAL = 13,
 } eNodeSocketDatatype;
 
-/** Socket shape. */
+/* Socket shape. */
 typedef enum eNodeSocketDisplayShape {
   SOCK_DISPLAY_SHAPE_CIRCLE = 0,
   SOCK_DISPLAY_SHAPE_SQUARE = 1,
@@ -194,141 +186,131 @@ typedef enum eNodeSocketDisplayShape {
   SOCK_DISPLAY_SHAPE_DIAMOND_DOT = 5,
 } eNodeSocketDisplayShape;
 
-/** Socket side (input/output). */
+/* Socket side (input/output). */
 typedef enum eNodeSocketInOut {
   SOCK_IN = 1 << 0,
   SOCK_OUT = 1 << 1,
 } eNodeSocketInOut;
 
-/** #bNodeSocket.flag, first bit is selection. */
-typedef enum eNodeSocketFlag {
-  /** Hidden is user defined, to hide unused sockets. */
+/* NodeSocket.flag, first bit is selection. */
+enum eNodeSocketFlag {
+  /* Hidden is user defined, to hide unused sockets. */
   SOCK_HIDDEN = (1 << 1),
-  /** For quick check if socket is linked. */
+  /* For quick check if socket is linked. */
   SOCK_IN_USE = (1 << 2),
-  /** Unavailable is for dynamic sockets. */
+  /* Unavailable is for dynamic sockets. */
   SOCK_UNAVAIL = (1 << 3),
-  // /** DEPRECATED  dynamic socket (can be modified by user) */
+  // /* DEPRECATED  dynamic socket (can be modified by user) */
   // SOCK_DYNAMIC = (1 << 4),
-  // /** DEPRECATED  group socket should not be exposed */
+  // /* DEPRECATED  group socket should not be exposed */
   // SOCK_INTERNAL = (1 << 5),
-  /** Socket collapsed in UI. */
+  /* Socket collapsed in UI. */
   SOCK_COLLAPSED = (1 << 6),
-  /** Hide socket value, if it gets auto default. */
-  SOCK_HIDE_VALUE = (1 << 7),
-  /** Socket hidden automatically, to distinguish from manually hidden. */
+  /* Hide socket val, if it gets auto default. */
+  SOCK_HIDE_VAL = (1 << 7),
+  /* Socket hidden automatically, to distinguish from manually hidden. */
   SOCK_AUTO_HIDDEN__DEPRECATED = (1 << 8),
   SOCK_NO_INTERNAL_LINK = (1 << 9),
-  /** Draw socket in a more compact form. */
+  /* Drw socket in a more compact form. */
   SOCK_COMPACT = (1 << 10),
-  /** Make the input socket accept multiple incoming links in the UI. */
+  /* Make the input socket accept multiple incoming links in the UI. */
   SOCK_MULTI_INPUT = (1 << 11),
-  /**
-   * Don't show the socket's label in the interface, for situations where the
-   * type is obvious and the name takes up too much space.
-   */
+  /* Don't show the socket's label in the interface, for situations where the
+   * type is obvious and the name takes up too much space. */
   SOCK_HIDE_LABEL = (1 << 12),
 } eNodeSocketFlag;
 
-/** TODO: Limit data in #bNode to what we want to see saved. */
-typedef struct bNode {
-  struct bNode *next, *prev;
+/* TODO: Limit data in Node to what we want to see saved. */
+typedef struct Node {
+  struct Node *next, *prev;
 
-  /** User-defined properties. */
-  IDProperty *prop;
+  /* User-defined props. */
+  IdProp *prop;
 
-  /** Runtime type information. */
+  /* Runtime type info. */
   struct bNodeType *typeinfo;
-  /** Runtime type identifier. */
+  /* Runtime type id. */
   char idname[64];
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
   int flag;
   short type;
-  /** Both for dependency and sorting. */
+  /* Both for dependency and sorting. */
   short done, level;
 
-  /** Used as a boolean for execution. */
+  /* Used as a bool for ex. */
   uint8_t need_exec;
   char _pad2[5];
-  /** #eNodeTreeChangedFlag. */
+  /* eNodeTreeChangedFlag. */
   uint32_t changed_flag;
 
-  /** Custom user-defined color. */
+  /* Custom user-defined color. */
   float color[3];
 
-  ListBase inputs, outputs;
-  /** Parent node. */
-  struct bNode *parent;
-  /** Optional link to libdata. */
-  struct ID *id;
-  /** Custom data, must be struct, for storage in file. */
+  List inputs, outputs;
+  /* Parent node. */
+  struct Node *parent;
+  /* Optional link to libdata. */
+  struct Id *id;
+  /* Custom data, must be struct, for storage in file. */
   void *storage;
-  /** The original node in the tree (for localized tree). */
-  struct bNode *original;
-  /** List of cached internal links (input to output), for muted nodes and operators. */
-  ListBase internal_links;
+  /* The original node in the tree (for localized tree). */
+  struct Node *original;
+  /* List of cached internal links (input to output), for muted nodes and operators. */
+  List internal_links;
 
-  /** Root offset for drawing (parent space). */
+  /* Root offset for drawing (parent space). */
   float locx, locy;
-  /** Node custom width and height. */
+  /* Node custom width and height. */
   float width, height;
-  /** Node width if hidden. */
+  /* Node width if hidden. */
   float miniwidth;
-  /** Additional offset from loc. */
+  /* Additional offset from loc. */
   float offsetx, offsety;
-  /** Initial locx for insert offset animation. */
+  /* Initial locx for insert offset animation. */
   float anim_init_locx;
-  /** Offset that will be added to locx for insert offset animation. */
+  /* Offset that will be added to locx for insert offset animation. */
   float anim_ofsx;
 
-  /** Update flags. */
+  /* Update flags. */
   int update;
 
-  /** Custom user-defined label, MAX_NAME. */
+  /* Custom user-defined label, MAX_NAME. */
   char label[64];
-  /** To be abused for buttons. */
+  /* To be abused for btns. */
   short custom1, custom2;
   float custom3, custom4;
 
   char _pad1[4];
 
-  /** Entire bound-box (world-space). */
+  /* Entire bound-box (world-space). */
   rctf totr;
-  /** Optional preview area. */
+  /* Optional preview area. */
   rctf prvr;
-  /**
-   * XXX TODO
-   * Node totr size depends on the prvr size, which in turn is determined from preview size.
+  /* TODO: Node totr size depends on the prvr size, which in turn is determined from preview size.
    * In earlier versions bNodePreview was stored directly in nodes, but since now there can be
    * multiple instances using different preview images it is possible that required node size
    * varies between instances. preview_xsize, preview_ysize defines a common reserved size for
    * preview rect for now, could be replaced by more accurate node instance drawing,
-   * but that requires removing totr from DNA and replacing all uses with per-instance data.
-   */
-  /** Reserved size of the preview rect. */
+   * but that requires removing totr from types and replacing all uses with per-instance data. */
+  /* Reserved size of the preview rect. */
   short preview_xsize, preview_ysize;
-  /** Used at runtime when going through the tree. Initialize before use. */
+  /* Used at runtime when going through the tree. Init before use. */
   short tmp_flag;
-  /** Used at runtime to tag derivatives branches. EEVEE only. */
+  /* Used at runtime to tag derivatives branches. EEVEE only. */
   char branch_tag;
-  /** Used at runtime when iterating over node branches. */
+  /* Used at runtime when iterating over node branches. */
   char iter_flag;
 
-  /**
-   * XXX: eevee only, id of screen space reflection layer,
-   * needs to be a float to feed GPU_uniform.
-   */
+  /* eevee only, id of screen space reflection layer,
+   * needs to be a float to feed gpu_uniform. */
   float ssr_id;
-  /**
-   * XXX: eevee only, id of screen subsurface scatter layer,
-   * needs to be a float to feed GPU_uniform.
-   */
+  /* XXX: eevee only, id of screen subsurface scatter layer,
+   * needs to be a float to feed gpu_uniform. */
   float sss_id;
 
-  /**
-   * Describes the desired interface of the node. This is run-time data only.
+  /* Describes the desired interface of the node. This is run-time data only.
    * The actual interface of the node may deviate from the declaration temporarily.
    * It's possible to sync the actual state of the node to the desired state. Currently, this is
    * only done when a node is created or loaded.
@@ -339,17 +321,16 @@ typedef struct bNode {
    *
    * The declaration of a node can be recreated at any time when it is used. Caching it here is
    * just a bit more efficient when it is used a lot. To make sure that the cache is up-to-date,
-   * call #nodeDeclarationEnsure before using it.
+   * call nodeDeclarationEnsure before using it.
    *
    * Currently, the declaration is the same for every node of the same type. Going forward, that is
    * intended to change though. Especially when nodes become more dynamic with respect to how many
-   * sockets they have.
-   */
+   * sockets they have. */
   NodeDeclarationHandle *declaration;
-} bNode;
+} Node;
 
 /* node->flag */
-#define NODE_SELECT 1
+#define NODE_SEL 1
 #define NODE_OPTIONS 2
 #define NODE_PREVIEW 4
 #define NODE_HIDDEN 8
@@ -370,70 +351,66 @@ typedef struct bNode {
 #define NODE_TRANSFORM (1 << 13)
 /* node is active texture */
 
-/* NOTE: take care with this flag since its possible it gets
+/* Take care w this flag since its possible it gets
  * `stuck` inside/outside the active group - which makes buttons
  * window texture not update, we try to avoid it by clearing the
- * flag when toggling group editing - Campbell */
+ * flag when toggling group editing */
 #define NODE_ACTIVE_TEXTURE (1 << 14)
 /* use a custom color for the node */
 #define NODE_CUSTOM_COLOR (1 << 15)
-/* Node has been initialized
- * This flag indicates the node->typeinfo->init function has been called.
+/* Node has been init
+ * This flag indicates the node->typeinfo->init fn has been called.
  * In case of undefined type at creation time this can be delayed until
- * until the node type is registered.
- */
+ * until the node type is registered */
 #define NODE_INIT (1 << 16)
 
-/* do recalc of output, used to skip recalculation of unwanted
- * composite out nodes when editing tree
- */
+/* do recalc of output, used to skip recalc of unwanted
+ * composite out nodes when editing tree */
 #define NODE_DO_OUTPUT_RECALC (1 << 17)
 /* A preview for the data in this node can be displayed in the spreadsheet editor. */
 #define __NODE_ACTIVE_PREVIEW (1 << 18) /* deprecated */
 
 /* node->update */
 #define NODE_UPDATE_ID 1       /* associated id data block has changed */
-#define NODE_UPDATE_OPERATOR 2 /* node update triggered from update operator */
+#define NODE_UPDATE_OP 2 /* node update triggered from update operator */
 
 /* Unique hash key for identifying node instances
- * Defined as a struct because DNA does not support other typedefs.
- */
-typedef struct bNodeInstanceKey {
+ * Defined as a struct because DNA does not support other typedefs */
+typedef struct NodeInstanceKey {
   unsigned int value;
-} bNodeInstanceKey;
+} NodeInstanceKey;
 
 /* Base struct for entries in node instance hash.
- * WARNING: pointers are cast to this struct internally,
- * it must be first member in hash entry structs!
- */
+ * WARNING: ptrs are cast to this struct internally,
+ * it must be first member in hash entry structs! */
 #
 #
-typedef struct bNodeInstanceHashEntry {
-  bNodeInstanceKey key;
+typedef struct NodeInstanceHashEntry {
+  NodeInstanceKey key;
 
   /* tags for cleaning the cache */
   short tag;
-} bNodeInstanceHashEntry;
+} NodeInstanceHashEntry;
 
 #
 #
-typedef struct bNodePreview {
-  /** Must be first. */
-  bNodeInstanceHashEntry hash_entry;
+typedef struct NodePreview {
+  /* Must be first. */
+  NodeInstanceHashEntry hash_entry;
 
   unsigned char *rect;
   short xsize, ysize;
-} bNodePreview;
+} NodePreview;
 
-typedef struct bNodeLink {
-  struct bNodeLink *next, *prev;
+typedef struct NodeLink {
+  struct NodeLink *next, *prev;
 
-  bNode *fromnode, *tonode;
-  bNodeSocket *fromsock, *tosock;
+  Node *fromnode, *tonode;
+  NodeSocket *fromsock, *tosock;
 
   int flag;
   int multi_input_socket_index;
-} bNodeLink;
+} NodeLink;
 
 /* link->flag */
 #define NODE_LINKFLAG_HILITE (1 << 0) /* link has been successfully validated */
