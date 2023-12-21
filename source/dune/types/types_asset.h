@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
-#include "DNA_uuid_types.h"
+#include "types_defs.h"
+#include "types_list.h"
+#include "types_uuid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +67,7 @@ typedef struct AssetMetaData {
 } AssetMetaData;
 
 typedef enum eAssetLibType {
-  /* For the future. Display assets bundled with Blender by default. */
+  /* For the future. Display assets bundled with Dune by default. */
   // ASSET_LIB_BUNDLED = 0,
   /* Display assets from the current session (current "Main"). */
   ASSET_LIB_LOCAL = 1,
@@ -75,7 +75,7 @@ typedef enum eAssetLibType {
   // ASSET_LIB_PROJECT = 2,
 
   /* Display assets from custom asset libs, as defined in the prefs
-   * (UserAssetLib). The name will be taken from FileSelectParams.asset_lib_ref.idname
+   * (UserAssetLib). The name will be taken from FileSelParams.asset_lib_ref.idname
    * then.
    * In API, we add the index of the custom lib to this to id it by index. So keep
    * this last! */
