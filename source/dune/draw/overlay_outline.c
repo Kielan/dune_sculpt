@@ -187,98 +187,98 @@ static void dpen_layer_cache_populate(DPenLayer *dpl,
   draw_shgroup_uniform_vec4_copy(grp, "dPenDepthPlane", iter->plane);
 }
 
-static void dpen_stroke_cache_populate(DPenLayer *UNUSED(dpl),
-                                          DPenFrame *UNUSED(dpf),
-                                          DPenStroke *dps,
-                                          void *thunk)
+static void pen_stroke_cache_populate(PenLayer *UNUSED(dpl),
+                                      PenFrame *UNUSED(dpf),
+                                      PenStroke *ds,
+                                      void *thunk)
 {
   iterData *iter = (iterData *)thunk;
 
-  MaterialDPenStyle *gp_style = dune_dpen_material_settings(iter->ob, dps->mat_nr + 1);
+  MaterialPenStyle *p_style = dune_pen_material_settings(iter->ob, ps->mat_nr + 1);
 
-  bool hide_material = (dp_style->flag & DP_MATERIAL_HIDE) != 0;
-  bool show_stroke = (dp_style->flag & DP_MATERIAL_STROKE_SHOW) != 0;
+  bool hide_material = (p_style->flag & PEN_MATERIAL_HIDE) != 0;
+  bool show_stroke = (p_style->flag & PEN_MATERIAL_STROKE_SHOW) != 0;
   // TODO: What about simplify Fill?
-  bool show_fill = (dps->tot_triangles > 0) && (dp_style->flag & DP_MATERIAL_FILL_SHOW) != 0;
+  bool show_fill = (ps->tot_triangles > 0) && (p_style->flag & DP_MATERIAL_FILL_SHOW) != 0;
 
   if (hide_material) {
     return;
   }
 
   if (show_fill) {
-    struct GPUBatch *geom = draw_cache_dpen_fills_get(iter->ob, iter->cfra);
-    int vfirst = dps->runtime.fill_start * 3;
-    int vcount = dps->tot_triangles * 3;
-    draw_shgroup_call_range(iter->fill_grp, iter->ob, geom, vfirst, vcount);
+    struct GPUBatch *geom = drw_cache_dpen_fills_get(iter->ob, iter->cfra);
+    int vfirst = ps->runtime.fill_start * 3;
+    int vcount = ps->tot_triangles * 3;
+    drw_shgroup_call_range(iter->fill_grp, iter->ob, geom, vfirst, vcount);
   }
 
   if (show_stroke) {
-    struct GPUBatch *geom = draw_cache_dpen_strokes_get(iter->ob, iter->cfra);
+    struct GPUBatch *geom = drw_cache_dpen_strokes_get(iter->ob, iter->cfra);
     /* Start one vert before to have gl_InstanceID > 0 (see shader). */
     int vfirst = dps->runtime.stroke_start - 1;
     /* Include "potential" cyclic vertex and start adj vertex (see shader). */
     int vcount = dps->totpoints + 1 + 1;
-    draw_shgroup_call_instance_range(iter->stroke_grp, iter->ob, geom, vfirst, vcount);
+    drw_shgroup_call_instance_range(iter->stroke_grp, iter->ob, geom, vfirst, vcount);
   }
 }
 
-static void overlay_outline_dpen(OverlayPrivateData *pd, Object *ob)
+static void overlay_outline_pen(OverlayPrivateData *pd, Ob *ob)
 {
   /* No outlines in edit mode. */
-  DPenData *dpd = (DPenData *)ob->data;
-  if (dpd && DPEN_ANY_MODE(dpd)) {
+  PenData *pd = (PenData *)ob->data;
+  if (pd && PEN_ANY_MODE(pd)) {
     return;
   }
 
   iterData iter = {
       .ob = ob,
-      .stroke_grp = pd->outlines_dpen_grp,
-      .fill_grp = draw_shgroup_create_sub(pd->outlines_dpen_grp),
+      .stroke_grp = pd->outlines_pen_grp,
+      .fill_grp = drw_shgroup_create_sub(pd->outlines_pen_grp),
       .cfra = pd->cfra,
   };
 
-  if (dpd->draw_mode == GP_DRAWMODE_2D) {
-    dpen_depth_plane(ob, iter.plane);
+  if (dpd->drw_mode == PEN_DRWMODE_2D) {
+    pen_depth_plane(ob, iter.plane);
   }
 
-  dune_dpen_visible_stroke_advanced_iter(NULL,
+  dune_pen_visible_stroke_advanced_iter(NULL,
                                          ob,
-                                         dpen_layer_cache_populate,
-                                         dpen_stroke_cache_populate,
+                                         pen_layer_cache_populate,
+                                         pen_stroke_cache_populate,
                                          &iter,
                                          false,
                                          pd->cfra);
 }
 
-static void overlay_outline_volume(OverlayPrivateData *pd, Object *ob)
+static void overlay_outline_volume(OverlayPrivateData *pd, Ob *ob)
 {
-  struct GPUBatch *geom = draw_cache_volume_selection_surface_get(ob);
+  struct GPUBatch *geom = drw_cache_volume_sel_surface_get(ob);
   if (geom == NULL) {
     return;
   }
 
   DRWShadingGroup *shgroup = pd->outlines_grp;
-  DRW_shgroup_call(shgroup, geom, ob);
+  drw_shgroup_call(shgroup, geom, ob);
 }
 
 void overlay_outline_cache_populate(OverlayData *vedata,
-                                    Object *ob,
-                                    OverlayDupliData *dupli,
-                                    bool init_dupli)
+                                    Ob *ob,
+                                    OverlayDupData *dup,
+                                    bool init_dup)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const DrwCxtState *drw_ctx = drw_cxt_state_get();
   struct GPUBatch *geom;
-  DrawShadingGroup *shgroup = NULL;
-  const bool draw_outline = ob->dt > OB_BOUNDBOX;
+  DrwShadingGroup *shgroup = NULL;
+  const bool drw_outline = ob->dt > OB_BOUNDBOX;
 
   /* Early exit: outlines of bounding boxes are not drawn. */
-  if (!draw_outline) {
+  if (!drw_outline) {
     return;
   }
 
   if (ob->type == OB_DPEN) {
-    overlay_outline_dpen(pd, ob);
+    overlay_outline_pen(pd, ob);
     return;
   }
 
@@ -293,22 +293,22 @@ void overlay_outline_cache_populate(OverlayData *vedata,
     return;
   }
 
-  if (dupli && !init_dupli) {
-    geom = dupli->outline_geom;
-    shgroup = dupli->outline_shgrp;
+  if (dup && !init_dup) {
+    geom = dup->outline_geom;
+    shgroup = du->outline_shgrp;
   }
   else {
     /* This fixes only the biggest case which is a plane in ortho view. */
     int flat_axis = 0;
-    bool is_flat_object_viewed_from_side = ((draw_ctx->rv3d->persp == RV3D_ORTHO) &&
-                                            draw_object_is_flat(ob, &flat_axis) &&
-                                            draw_object_axis_orthogonal_to_view(ob, flat_axis));
+    bool is_flat_ob_viewed_from_side = ((drw_cxt->rv3d->persp == RV3D_ORTHO) &&
+                                            drw_ob_is_flat(ob, &flat_axis) &&
+                                            drw_ob_axis_orthogonal_to_view(ob, flat_axis));
 
-    if (pd->xray_enabled_and_not_wire || is_flat_object_viewed_from_side) {
-      geom = draw_cache_object_edge_detection_get(ob, NULL);
+    if (pd->xray_enabled_and_not_wire || is_flat_ob_viewed_from_side) {
+      geom = drw_cache_ob_edge_detection_get(ob, NULL);
     }
     else {
-      geom = draw_cache_object_surface_get(ob);
+      geom = drw_cache_ob_surface_get(ob);
     }
 
     if (geom) {
@@ -318,41 +318,41 @@ void overlay_outline_cache_populate(OverlayData *vedata,
 
   if (shgroup && geom) {
     if (ob->type == OB_POINTCLOUD) {
-      /* Draw range to avoid drawcall batching messing up the instance attribute. */
-      draw_shgroup_call_instance_range(shgroup, ob, geom, 0, 0);
+      /* Drw range to avoid drwcall batching messing up the instance attribute. */
+      drw_shgroup_call_instance_range(shgroup, ob, geom, 0, 0);
     }
     else {
-      draw_shgroup_call(shgroup, geom, ob);
+      drw_shgroup_call(shgroup, geom, ob);
     }
   }
 
-  if (init_dupli) {
-    dupli->outline_shgrp = shgroup;
-    dupli->outline_geom = geom;
+  if (init_dup) {
+    dup->outline_shgrp = shgroup;
+    dup->outline_geom = geom;
   }
 }
 
-void overlay_outline_draw(OverlayData *vedata)
+void overlay_outline_drw(OverlayData *vedata)
 {
-  OverlayFramebufferList *fbl = vedata->fbl;
+  OverlayFramebufList *fbl = vedata->fbl;
   OverlayPassList *psl = vedata->psl;
   const float clearcol[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
   bool do_outlines = psl->outlines_prepass_ps != NULL &&
-                     !draw_pass_is_empty(psl->outlines_prepass_ps);
+                     !drw_pass_is_empty(psl->outlines_prepass_ps);
 
-  if (draw_state_is_fbo() && do_outlines) {
-    draw_stats_group_start("Outlines");
+  if (drw_state_is_fbo() && do_outlines) {
+    drw_stats_group_start("Outlines");
 
     /* Render filled polygon on a separate framebuffer */
-    gpu_framebuffer_bind(fbl->outlines_prepass_fb);
-    gpu_framebuffer_clear_color_depth_stencil(fbl->outlines_prepass_fb, clearcol, 1.0f, 0x00);
-    draw_pass(psl->outlines_prepass_ps);
+    gpu_framebuf_bind(fbl->outlines_prepass_fb);
+    gpu_framebuf_clear_color_depth_stencil(fbl->outlines_prepass_fb, clearcol, 1.0f, 0x00);
+    drw_pass(psl->outlines_prepass_ps);
 
     /* Search outline pixels */
-    gpu_framebuffer_bind(fbl->outlines_resolve_fb);
-    draw_pass(psl->outlines_detect_ps);
+    gpu_framebuf_bind(fbl->outlines_resolve_fb);
+    drw_pass(psl->outlines_detect_ps);
 
-    draw_stats_group_end();
+    drw_stats_group_end();
   }
 }
