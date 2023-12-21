@@ -3,7 +3,7 @@
 #include "types_id.h"
 #include "types_defs.h"
 #include "types_gpu.h"
-#include "types_image.h"
+#include "types_img.h"
 #include "types_movieclip.h"
 
 #ifdef __cplusplus
@@ -12,9 +12,8 @@ extern "C" {
 
 struct AnimData;
 struct Ipo;
-struct Object;
+struct Ob;
 
-/* ------------------------------------------- */
 /* Stereo Settings */
 typedef struct CameraStereoSettings {
   float interocular_distance;
@@ -30,23 +29,23 @@ typedef struct CameraStereoSettings {
 } CameraStereoSettings;
 
 /* Background Picture */
-typedef struct CameraBGImage {
-  struct CameraBGImage *next, *prev;
+typedef struct CameraBGImg {
+  struct CameraBGImg *next, *prev;
 
-  struct Image *ima;
-  struct ImageUser iuser;
+  struct Img *im;
+  struct ImgUser iuser;
   struct MovieClip *clip;
   struct MovieClipUser cuser;
   float offset[2], scale, rotation;
   float alpha;
   short flag;
-  short source;
-} CameraBGImage;
+  short src;
+} CameraBGImg;
 
-/** Properties for dof effect. */
+/* Props for dof effect. */
 typedef struct CameraDOFSettings {
-  /** Focal distance for depth of field. */
-  struct Object *focus_object;
+  /* Focal distance for depth of field. */
+  struct Ob *focus_ob;
   float focus_distance;
   float aperture_fstop;
   float aperture_rotation;
@@ -56,41 +55,41 @@ typedef struct CameraDOFSettings {
   char _pad[2];
 } CameraDOFSettings;
 
-typedef struct Camera_Runtime {
-  /* For draw manager. */
+typedef struct CameraRuntime {
+  /* For drw manager. */
   float drw_corners[2][4][2];
   float drw_tria[2][2];
   float drw_depth[2];
   float drw_focusmat[4][4];
   float drw_normalmat[4][4];
-} Camera_Runtime;
+} CameraRuntime;
 
 typedef struct Camera {
   Id id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
 
-  /** CAM_PERSP, CAM_ORTHO or CAM_PANO. */
+  /* CAM_PERSP, CAM_ORTHO or CAM_PANO. */
   char type;
-  /** Draw type extra. */
+  /* Drw type extra. */
   char dtx;
   short flag;
   float passepartalpha;
   float clip_start, clip_end;
-  float lens, ortho_scale, drawsize;
+  float lens, ortho_scale, drwsize;
   float sensor_x, sensor_y;
   float shiftx, shifty;
   float dof_distance TYPES_DEPRECATED;
 
-  /** Old animation system, deprecated for 2.5. */
+  /* Old anim sys, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
 
-  struct Object *dof_ob TYPES_DEPRECATED;
+  struct Ob *dof_ob TYPES_DEPRECATED;
   struct GPUDOFSettings gpu_dof TYPES_DEPRECATED;
   struct CameraDOFSettings dof;
 
-  /* CameraBGImage reference images */
-  struct List bg_images;
+  /* CameraBGImg ref imgs */
+  struct List bg_imgs;
 
   char sensor_fit;
   char _pad[7];
@@ -98,12 +97,11 @@ typedef struct Camera {
   /* Stereo settings */
   struct CameraStereoSettings stereo;
 
-  /** Runtime data (keep last). */
-  Camera_Runtime runtime;
+  /* Runtime data (keep last). */
+  CameraRuntime runtime;
 } Camera;
 
-/* **************** CAMERA ********************* */
-
+/* CAMERA */
 /* type */
 enum {
   CAM_PERSP = 0,
@@ -137,7 +135,7 @@ enum {
 #endif
   CAM_SHOWSENSOR = (1 << 8),
   CAM_SHOW_SAFE_CENTER = (1 << 9),
-  CAM_SHOW_BG_IMAGE = (1 << 10),
+  CAM_SHOW_BG_IMG = (1 << 10),
 };
 
 /* Sensor fit */
@@ -170,8 +168,8 @@ enum {
   CAM_S3D_POLE_MERGE = (1 << 1),
 };
 
-/* CameraBGImage->flag */
-/* may want to use 1 for select ? */
+/* CameraBGImg->flag */
+/* may want to use 1 for sel ? */
 enum {
   CAM_BGIMG_FLAG_EXPANDED = (1 << 1),
   CAM_BGIMG_FLAG_CAMERACLIP = (1 << 2),
@@ -179,9 +177,9 @@ enum {
   CAM_BGIMG_FLAG_FOREGROUND = (1 << 4),
 
   /* Camera framing options */
-  /** Don't stretch to fit the camera view. */
+  /* Don't stretch to fit the camera view. */
   CAM_BGIMG_FLAG_CAMERA_ASPECT = (1 << 5),
-  /** Crop out the image. */
+  /* Crop out the img. */
   CAM_BGIMG_FLAG_CAMERA_CROP = (1 << 6),
 
   /* Axis flip options */
@@ -189,11 +187,11 @@ enum {
   CAM_BGIMG_FLAG_FLIP_Y = (1 << 8),
 };
 
-/* CameraBGImage->source */
-/* may want to use 1 for select? */
+/* CameraBGImg->src */
+/* may want to use 1 for sel? */
 enum {
-  CAM_BGIMG_SOURCE_IMAGE = 0,
-  CAM_BGIMG_SOURCE_MOVIE = 1,
+  CAM_BGIMG_SRC_IMG = 0,
+  CAM_BGIMG_SRC_MOVIE = 1,
 };
 
 /* CameraDOFSettings->flag */
