@@ -7,7 +7,7 @@
   { \
     .deformflag = ARM_DEF_VGROUP, \
     .multi = 0.0f, \
-    .object = NULL, \
+    .ob = NULL, \
     .defgrp_name = "", \
   }
 
@@ -55,10 +55,10 @@
     .object = NULL, \
     .collection = NULL, \
     .double_threshold = 1e-6f, \
-    .op = eBoolModOp_Difference, \
+    .op = eBoolModOp_Diff, \
     .solver = eBoolModSolver_Exact, \
-    .flag = eBoolModFlag_Object, \
-    .bm_flag = 0, \
+    .flag = eBoolModFlag_Ob, \
+    .mesh_flag = 0, \
   }
 
 #define _TYPES_DEFAULT_BuildModData \
@@ -166,7 +166,7 @@
 
 #define _TYPES_DEFAULT_ClothModData \
   { \
-    .clothObject = NULL, \
+    .clothOb = NULL, \
     .sim_parms = NULL, \
     .coll_parms = NULL, \
     .point_cache = NULL, \
@@ -210,7 +210,7 @@
 
 #define _TYPES_DEFAULT_CurveModData \
   { \
-    .object = NULL, \
+    .ob = NULL, \
     .name = "", \
     .defaxis = MOD_CURVE_POSX, \
     .flag = 0, \
@@ -220,7 +220,7 @@
 #if 0
 #define _TYPES_DEFAULT_DataTransferModData \
   { \
-    .ob_source = NULL, \
+    .ob_src = NULL, \
     .data_types = 0, \
     .vmap_mode = MREMAP_MODE_VERT_NEAREST, \
     .emap_mode = MREMAP_MODE_EDGE_NEAREST, \
@@ -229,8 +229,8 @@
     .map_max_distance = 1.0f, \
     .map_ray_radius = 0.0f, \
     .islands_precision = 0.0f, \
-    .layers_select_src = {DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC}, \
-    .layers_select_dst = {DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST}, \
+    .layers_sel_src = {DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC, DT_LAYERS_ALL_SRC}, \
+    .layers_sel_dst = {DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST, DT_LAYERS_NAME_DST}, \
     .mix_mod = CDT_MIX_TRANSFER, \
     .mix_factor = 1.0f, \
     .defgrp_name = "", \
@@ -329,7 +329,7 @@
 
 #define _TYPES_DEFAULT_LatticeModData \
   { \
-    .object = NULL, \
+    .ob = NULL, \
     .name = "", \
     .strength = 1.0f, \
     .flag = 0, \
@@ -367,7 +367,7 @@
 
 #define TYPES_DEFAULT_MeshDeformModData \
   { \
-    .object = 0, \
+    .ob = 0, \
     .defgrp_name = "", \
     .gridsize = 5, \
     .flag = 0, \
@@ -392,7 +392,7 @@
 #define _TYPES_DEFAULT_MeshSeqCacheModData \
   { \
     .cache_file = NULL, \
-    .object_path = "", \
+    .ob_path = "", \
     .read_flag = MOD_MESHSEQ_READ_VERT | MOD_MESHSEQ_READ_POLY | MOD_MESHSEQ_READ_UV | \
                  MOD_MESHSEQ_READ_COLOR | MOD_MESHSEQ_INTERPOLATE_VERTICES, \
     .velocity_scale = 1.0f, \
@@ -485,7 +485,7 @@
     .particle_offset = 0.0f, \
     .particle_amount = 1.0f, \
     .index_layer_name = "", \
-    .value_layer_name = "", \
+    .val_layer_name = "", \
   }
 
 #define _TYPES_DEFAULT_ParticleSystemModData \
@@ -659,9 +659,9 @@
     .offset = {0.0f, 0.0f}, \
     .scale = {1.0f, 1.0f}, \
     .rotation = 0.0f, \
-    .object_src = NULL, \
+    .ob_src = NULL, \
     .bone_src = "", \
-    .object_dst = NULL, \
+    .ob_dst = NULL, \
     .bone_dst = "", \
     .vgroup_name = "", \
     .uvlayer_name = "", \
@@ -670,13 +670,13 @@
 #define _TYPES_DEFAULT_WarpModData \
   { \
     .texture = NULL, \
-    .map_object = NULL, \
+    .map_ob = NULL, \
     .map_bone = "", \
     .uvlayer_name = "", \
     .uvlayer_tmp = 0, \
     .texmapping = 0, \
-    .object_from = NULL, \
-    .object_to = NULL, \
+    .ob_from = NULL, \
+    .ob_to = NULL, \
     .bone_from = "", \
     .bone_to = "", \
     .curfalloff = NULL, \
@@ -690,7 +690,7 @@
 #define _TYPES_DEFAULT_WaveModData \
   { \
     .texture = NULL, \
-    .map_object = NULL, \
+    .map_ob = NULL, \
     .map_bone = "", \
     .uvlayer_name = "", \
     .uvlayer_tmp = 0, \
@@ -732,7 +732,7 @@
     .mask_defgrp_name = "", \
     .mask_tex_use_channel = MOD_WVG_MASK_TEX_USE_INT, \
     .mask_texture = NULL, \
-    .mask_tex_map_obj = NULL, \
+    .mask_tex_map_ob = NULL, \
     .mask_tex_map_bone = "", \
     .mask_tex_mapping = MOD_DISP_MAP_LOCAL, \
     .mask_tex_uvlayer_name = "", \
@@ -767,7 +767,7 @@
     .mask_defgrp_name = "", \
     .mask_tex_use_channel = MOD_WVG_MASK_TEX_USE_INT, \
     .mask_texture = NULL, \
-    .mask_tex_map_obj = NULL, \
+    .mask_tex_map_ob = NULL, \
     .mask_tex_map_bone = "", \
     .mask_tex_mapping = MOD_DISP_MAP_LOCAL, \
     .mask_tex_uvlayer_name = "", \
