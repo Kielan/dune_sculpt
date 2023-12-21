@@ -373,7 +373,6 @@ typedef struct Id {
 
   /* Weak ref to an id in a given lib file, used to allow re-using already appended data
    * in some cases, instead of appending it again.
-   *
    * May be NULL. */
   struct LibWeakRef *lib_weak_ref;
 
@@ -560,7 +559,7 @@ enum {
   LIB_EMBEDDED_DATA_LIB_OVERRIDE = 1 << 12,
   /* The override data-block appears to not be needed anymore after resync with linked data, but it
    * was kept around (because e.g. detected as user-edited). */
-  LIB_LIB_OVERRIDE_RESYNC_LEFTOVER = 1 << 13,
+  LIB_OVERRIDE_RESYNC_LEFTOVER = 1 << 13,
 };
 
 /* id->tag (runtime-only).
@@ -621,23 +620,19 @@ enum {
    * RESET_NEVER
    *
    * warning This should not be cleared on existing data.
-   * If support for this is needed, see T88026 as this flag controls memory ownership
-   * of physics *shared* ptrs. */
+   * If support for this is needed, see T88026 as this flag ctrls mem ownership
+   * of phys *shared* ptrs. */
   LIB_TAG_COPIED_ON_WRITE = 1 << 12,
-  /* The data-block is not the original COW Id created by the depsgraph, but has be re-allocated
-   * during the evaluation process of another Id.
-   *
+  /* The data-block is not the original COW Id created by the graph, but has be re-alloc
+   * during the eval process of another Id.
    * RESET_NEVER
-   *
-   * Typical example is object data, when evaluating the object's modifier stack the final obdata
+   * Typical example is ob data, when eval the ob's mod stack the final obdata
    * can be different than the COW initial obdata Id.  */
   LIB_TAG_COPIED_ON_WRITE_EVAL_RESULT = 1 << 13,
 
   /* The data-block is fully outside of any Id management area, and should be considered as a
    * purely independent data.
-   *
    * RESET_NEVER
-   *
    * Only used by node-groups currently. */
   LIB_TAG_LOCALIZED = 1 << 14,
 
@@ -664,8 +659,7 @@ enum {
 
 /* Tag given Id for an update in all the dep graphs. */
 typedef enum IDRecalcFlag {
-  /************************
-   * Individual update tags, what Id gets tagged for update with. */
+  /* Individual update tags, what Id gets tagged for update with. */
 
   /* Ob transformation changed. ** */
   ID_RECALC_TRANSFORM = (1 << 0),
@@ -682,16 +676,16 @@ typedef enum IDRecalcFlag {
    * makes all obs which shares this data-block to be updated.
    *
    * Note that the evaluation depends on the object-mode.
-   * So edit-mesh data for example only reevaluate with the updated edit-mesh.
-   * When geometry in the original ID has been modified #ID_RECALC_GEOMETRY_ALL_MODES
+   * So edit-mesh data for example only reeval with the updated edit-mesh.
+   * When geometry in the original Id has been mod ID_RECALC_GEOMETRY_ALL_MODES
    * must be used instead.
    *
-   * When a collection gets tagged with this flag, all objects depending on the geometry and
-   * transforms on any of the objects in the collection are updated. */
+   * When a collection gets tagged w this flag, all obs depending on the geometry and
+   * transforms on any of the obs in the collection are updated. */
   ID_RECALC_GEOMETRY = (1 << 1),
 
-  /* ** Animation or time changed and animation is to be re-evaluated. ** */
-  ID_RECALC_ANIMATION = (1 << 2),
+  /* Anim or time changed and anim is to be re-eval. ** */
+  ID_RECALC_ANIM = (1 << 2),
 
   /* Particle sys changed. ** */
   /* Only do pathcache etc. */
@@ -704,7 +698,6 @@ typedef enum IDRecalcFlag {
   ID_RECALC_PSYS_PHYS = (1 << 6),
 
   /* Material and shading ** */
-
   /* For materials and node trees this means that topology of the shader tree
    * changed, and the shader is to be recompiled.
    * For obs it means that the draw batch cache is to be redone. */
@@ -762,33 +755,31 @@ typedef enum IDRecalcFlag {
    *
    * Current known case: linked IDs made local without requiring any copy. While their users do not
    * require any update, they have actually been 'virtually' remapped from the linked ID to the
-   * local one.
-   */
+   * local one. */
   ID_RECALC_TAG_FOR_UNDO = (1 << 24),
 
   /* The node tree has changed in a way that affects its output nodes. */
   ID_RECALC_NTREE_OUTPUT = (1 << 25),
 
-  /***************************************************************************
-   * Pseudonyms, to have more semantic meaning in the actual code without
+  /* Pseudonyms, to have more semantic meaning in the actual code wo
    * using too much low-level and implementation specific tags. */
 
-  /* Update animation data-block itself, without doing full re-evaluation of
-   * all dependent objects. */
-  ID_RECALC_ANIMATION_NO_FLUSH = ID_RECALC_COPY_ON_WRITE,
+  /* Update anim data-block itself, wo doing full re-eval of
+   * all dependent obs. */
+  ID_RECALC_ANIM_NO_FLUSH = ID_RECALC_COPY_ON_WRITE,
 
-  /* Ensure geometry of object and edit modes are both up-to-date in the evaluated data-block.
+  /* Ensure geometry of ob and edit modes are both up-to-date in the eval data-block.
    * Example usage is when mesh validation modifies the non-edit-mode data,
    * which we want to be copied over to the evaluated data-block. */
   ID_RECALC_GEOMETRY_ALL_MODES = ID_RECALC_GEOMETRY | ID_RECALC_COPY_ON_WRITE,
 
-  /***************************************************************************
+  /***************************************
    * Aggregate flags, use only for checks on runtime.
    * Do NOT use those for tagging. */
 
-  /* Identifies that SOMETHING has been changed in this ID. */
+  /* Identifies that SOMETHING has been changed in this Id. */
   ID_RECALC_ALL = ~(0),
-  /* Identifies that something in particle system did change. */
+  /* Identifies that something in particle sys did change. */
   ID_RECALC_PSYS_ALL = (ID_RECALC_PSYS_REDO | ID_RECALC_PSYS_RESET | ID_RECALC_PSYS_CHILD |
                         ID_RECALC_PSYS_PHYS),
 
@@ -839,64 +830,59 @@ typedef enum IDRecalcFlag {
    FILTER_ID_SO | FILTER_ID_TE | FILTER_ID_TXT | FILTER_ID_VF | FILTER_ID_WO | FILTER_ID_CF | \
    FILTER_ID_WS | FILTER_ID_LP | FILTER_ID_CV | FILTER_ID_PT | FILTER_ID_VO | FILTER_ID_SIM)
 
-/**
- * This enum defines the index assigned to each type of IDs in the array returned by
- * #set_listbasepointers, and by extension, controls the default order in which each ID type is
+/* This enum defines the index assigned to each type of IDs in the array returned by
+ * set_list ptrs, and by extension, controls the default order in which each ID type is
  * processed during standard 'foreach' looping over all IDs of a #Main data-base.
  *
  * About Order:
- * ------------
  *
  * This is (loosely) defined with a relationship order in mind, from lowest level (ID types using,
  * referencing almost no other ID types) to highest level (ID types potentially using many other ID
  * types).
  *
  * So e.g. it ensures that this dependency chain is respected:
- *   Material <- Mesh <- Object <- Collection <- Scene
+ *   Material <- Mesh <- Ob <- Collection <- Scene
  *
- * Default order of processing of IDs in 'foreach' macros (#FOREACH_MAIN_ID_BEGIN and the like),
- * built on top of set_listbasepointers, is actually reversed compared to the order defined here,
+ * Default order of processing of Ids in 'foreach' macros (#FOREACH_MAIN_ID_BEGIN and the like),
+ * built on top of set_listbaseptrs, is actually reversed compared to the order defined here,
  * since processing usually needs to happen on users before it happens on used IDs (when freeing
  * e.g.).
  *
  * DO NOT rely on this order as being full-proofed dependency order, there are many cases were it
- * can be violated (most obvious cases being custom properties and drivers, which can reference any
- * other ID types).
+ * can be violated (most obvious cases being custom props and drivers, which can ref any
+ * other Id types).
  *
  * However, this order can be considered as an optimization heuristic, especially when processing
  * relationships in a non-recursive pattern: in typical cases, a vast majority of those
  * relationships can be processed fine in the first pass, and only few additional passes are
  * required to address all remaining relationship cases.
- * See e.g. how dune_lib_unused_linked_data_set_tag is doing this.
- */
+ * See e.g. how dune_lib_unused_linked_data_set_tag is doing this. */
 enum {
-  /* Special case: Library, should never ever depend on any other type. */
+  /* Special case: Lib, should never ever depend on any other type. */
   INDEX_ID_LI = 0,
 
-  /* Animation types, might be used by almost all other types. */
+  /* Anim types, might be used by almost all other types. */
   INDEX_ID_IP, /* Deprecated. */
   INDEX_ID_AC,
 
-  /* Grease Pencil, special case, should be with the other obdata, but it can also be used by many
-   * other ID types, including node trees e.g.
+  /* Pen, special case, should be with the other obdata, but it can also be used by many
+   * other Id types, including node trees e.g.
    * So there is no proper place for those, for now keep close to the lower end of the processing
-   * hierarchy, but we may want to re-evaluate that at some point. */
+   * hierarchy, but we may want to re-eval that at some point. */
   INDEX_ID_GD,
 
-  /* Node trees, abstraction for procedural data, potentially used by many other ID types.
-   *
-   * NOTE: While node trees can also use many other ID types, they should not /own/ any of those,
+  /* Node trees, abstraction for procedural data, potentially used by many other Id types.
+   * While node trees can also use many other ID types, they should not /own/ any of those,
    * while they are being owned by many other ID types. This is why they are placed here. */
   INDEX_ID_NT,
 
   /* File-wrapper types, those usually 'embed' external files in Blender, with no dependencies to
-   * other ID types. */
+   * other Id types. */
   INDEX_ID_VF,
   INDEX_ID_TXT,
   INDEX_ID_SO,
 
-  /* Image/movie types, can be used by shading ID types, but also directly by Objects, Scenes, etc.
-   */
+  /* Img/movie types, can be used by shading Id types, but also directly by Obs, Scenes, etc. */
   INDEX_ID_MSK,
   INDEX_ID_IM,
   INDEX_ID_MC,
@@ -915,7 +901,7 @@ enum {
   /* Shape Keys snow-flake, can be used by several obdata types. */
   INDEX_ID_KE,
 
-  /* Object data types. */
+  /* Ob data types. */
   INDEX_ID_AR,
   INDEX_ID_ME,
   INDEX_ID_CU_LEGACY,
@@ -929,25 +915,25 @@ enum {
   INDEX_ID_SPK,
   INDEX_ID_LP,
 
-  /* Collection and object types. */
+  /* Collection and ob types. */
   INDEX_ID_OB,
   INDEX_ID_GR,
 
-  /* Preset-like, not-really-data types, can use many other ID types but should never be used by
+  /* Preset-like, not-rly-data types, can use many other Id types but should never be used by
    * any actual data type (besides Scene, due to tool settings). */
   INDEX_ID_PAL,
   INDEX_ID_PC,
   INDEX_ID_BR,
 
-  /* Scene, after preset-like ID types because of tool settings. */
+  /* Scene, after preset-like Id types because of tool settings. */
   INDEX_ID_SCE,
 
-  /* UI-related types, should never be used by any other data type. */
+  /* ui-related types, should never be used by any other data type. */
   INDEX_ID_SCR,
   INDEX_ID_WS,
   INDEX_ID_WM,
 
-  /* Special values. */
+  /* Special vals. */
   INDEX_ID_NULL,
   INDEX_ID_MAX,
 };
