@@ -1,11 +1,7 @@
 #pragma once
 
-/** \file
- * \ingroup DNA
- */
-
-#include "DNA_ID.h"
-#include "DNA_listBase.h"
+#include "types_id.h"
+#include "types_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,406 +11,398 @@ extern "C" {
 #  define MAX_MTEX 18
 #endif
 
-/* texco (also in DNA_material_types.h) */
+/* texco (also in types_material.h) */
 #define TEXCO_STROKE 16 /* actually its UV */
 
 struct AnimData;
 struct ColorBand;
 struct CurveMapping;
 struct MTex;
-struct Object;
-struct bNodeTree;
+struct Ob;
+struct NodeTree;
 
-typedef struct LineStyleModifier {
-  struct LineStyleModifier *next, *prev;
+typedef struct LineStyleMod {
+  struct LineStyleMod *next, *prev;
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
   int type;
   float influence;
   int flags;
   int blend;
-} LineStyleModifier;
+} LineStyleMod;
 
 /* LineStyleModifier::type */
-#define LS_MODIFIER_ALONG_STROKE 1
-#define LS_MODIFIER_DISTANCE_FROM_CAMERA 2
-#define LS_MODIFIER_DISTANCE_FROM_OBJECT 3
-#define LS_MODIFIER_MATERIAL 4
-#define LS_MODIFIER_SAMPLING 5
-#define LS_MODIFIER_BEZIER_CURVE 6
-#define LS_MODIFIER_SINUS_DISPLACEMENT 7
-#define LS_MODIFIER_SPATIAL_NOISE 8
-#define LS_MODIFIER_PERLIN_NOISE_1D 9
-#define LS_MODIFIER_PERLIN_NOISE_2D 10
-#define LS_MODIFIER_BACKBONE_STRETCHER 11
-#define LS_MODIFIER_TIP_REMOVER 12
-#define LS_MODIFIER_CALLIGRAPHY 13
-#define LS_MODIFIER_POLYGONIZATION 14
-#define LS_MODIFIER_GUIDING_LINES 15
-#define LS_MODIFIER_BLUEPRINT 16
-#define LS_MODIFIER_2D_OFFSET 17
-#define LS_MODIFIER_2D_TRANSFORM 18
-#define LS_MODIFIER_TANGENT 19
-#define LS_MODIFIER_NOISE 20
-#define LS_MODIFIER_CREASE_ANGLE 21
-#define LS_MODIFIER_SIMPLIFICATION 22
-#define LS_MODIFIER_CURVATURE_3D 23
-#define LS_MODIFIER_NUM 24
+#define LS_MOD_ALONG_STROKE 1
+#define LS_MOD_DISTANCE_FROM_CAMERA 2
+#define LS_MOD_DISTANCE_FROM_OBJECT 3
+#define LS_MOD_MATERIAL 4
+#define LS_MOD_SAMPLING 5
+#define LS_MOD_BEZIER_CURVE 6
+#define LS_MOD_SINUS_DISPLACEMENT 7
+#define LS_MOD_SPATIAL_NOISE 8
+#define LS_MOD_PERLIN_NOISE_1D 9
+#define LS_MOD_PERLIN_NOISE_2D 10
+#define LS_MOD_BACKBONE_STRETCHER 11
+#define LS_MOD_TIP_REMOVER 12
+#define LS_MOD_CALLIGRAPHY 13
+#define LS_MOD_POLYGONIZATION 14
+#define LS_MOD_GUIDING_LINES 15
+#define LS_MOD_BLUEPRINT 16
+#define LS_MOD_2D_OFFSET 17
+#define LS_MOD_2D_TRANSFORM 18
+#define LS_MOD_TANGENT 19
+#define LS_MOD_NOISE 20
+#define LS_MOD_CREASE_ANGLE 21
+#define LS_MOD_SIMPLIFICATION 22
+#define LS_MOD_CURVATURE_3D 23
+#define LS_MOD_NUM 24
 
-/* LineStyleModifier::flags */
-#define LS_MODIFIER_ENABLED 1
-#define LS_MODIFIER_EXPANDED 2
+/* LineStyleMod::flags */
+#define LS_MOD_ENABLED 1
+#define LS_MOD_EXPANDED 2
 
 /* flags (for color) */
-#define LS_MODIFIER_USE_RAMP 1
+#define LS_MOD_USE_RAMP 1
 
 /* flags (for alpha & thickness) */
-#define LS_MODIFIER_USE_CURVE 1
-#define LS_MODIFIER_INVERT 2
+#define LS_MOD_USE_CURVE 1
+#define LS_MOD_INVERT 2
 
 /* flags (for asymmetric thickness application) */
 #define LS_THICKNESS_ASYMMETRIC 1
 
 /* blend (for alpha & thickness) */
-#define LS_VALUE_BLEND 0
-#define LS_VALUE_ADD 1
-#define LS_VALUE_MULT 2
-#define LS_VALUE_SUB 3
-#define LS_VALUE_DIV 4
-#define LS_VALUE_DIFF 5
-#define LS_VALUE_MIN 6
-#define LS_VALUE_MAX 7
+#define LS_VAL_BLEND 0
+#define LS_VAL_ADD 1
+#define LS_VAL_MULT 2
+#define LS_VAL_SUB 3
+#define LS_VAL_DIV 4
+#define LS_VAL_DIFF 5
+#define LS_VAL_MIN 6
+#define LS_VAL_MAX 7
 
-/* Along Stroke modifiers */
-
-typedef struct LineStyleColorModifier_AlongStroke {
-  struct LineStyleModifier modifier;
+/* Along Stroke mods */
+typedef struct LineStyleColorModAlongStroke {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
-} LineStyleColorModifier_AlongStroke;
+} LineStyleColorModAlongStroke;
 
-typedef struct LineStyleAlphaModifier_AlongStroke {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModAlongStroke {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   char _pad[4];
-} LineStyleAlphaModifier_AlongStroke;
+} LineStyleAlphaModAlongStroke;
 
-typedef struct LineStyleThicknessModifier_AlongStroke {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModAlongStroke {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
-  float value_min, value_max;
+  float val_min, val_max;
   char _pad[4];
-} LineStyleThicknessModifier_AlongStroke;
+} LineStyleThicknessModAlongStroke;
 
-/* Distance from Camera modifiers */
-
-typedef struct LineStyleColorModifier_DistanceFromCamera {
-  struct LineStyleModifier modifier;
+/* Distance from Camera mods */
+typedef struct LineStyleColorModDistanceFromCamera {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
   float range_min, range_max;
-} LineStyleColorModifier_DistanceFromCamera;
+} LineStyleColorModDistanceFromCamera;
 
-typedef struct LineStyleAlphaModifier_DistanceFromCamera {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModDistanceFromCamera {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float range_min, range_max;
   char _pad[4];
-} LineStyleAlphaModifier_DistanceFromCamera;
+} LineStyleAlphaModDistanceFromCamera;
 
-typedef struct LineStyleThicknessModifier_DistanceFromCamera {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModDistanceFromCamera {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float range_min, range_max;
-  float value_min, value_max;
+  float val_min, val_max;
   char _pad[4];
-} LineStyleThicknessModifier_DistanceFromCamera;
+} LineStyleThicknessModDistanceFromCamera;
 
-/* Distance from Object modifiers */
+/* Distance from Ob mods */
+typedef struct LineStyleColorModDistanceFromOb {
+  struct LineStyleMod mod;
 
-typedef struct LineStyleColorModifier_DistanceFromObject {
-  struct LineStyleModifier modifier;
-
-  struct Object *target;
+  struct Ob *target;
   struct ColorBand *color_ramp;
   float range_min, range_max;
-} LineStyleColorModifier_DistanceFromObject;
+} LineStyleColorModDistanceFromOb;
 
-typedef struct LineStyleAlphaModifier_DistanceFromObject {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModDistanceFromOb {
+  struct LineStyleMod mod;
 
-  struct Object *target;
+  struct Ob *target;
   struct CurveMapping *curve;
   int flags;
   float range_min, range_max;
   char _pad[4];
-} LineStyleAlphaModifier_DistanceFromObject;
+} LineStyleAlphaModDistanceFromOb;
 
-typedef struct LineStyleThicknessModifier_DistanceFromObject {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModDistanceFromOb {
+  struct LineStyleMod mod;
 
-  struct Object *target;
+  struct Ob *target;
   struct CurveMapping *curve;
   int flags;
   float range_min, range_max;
-  float value_min, value_max;
+  float val_min, val_max;
   char _pad[4];
-} LineStyleThicknessModifier_DistanceFromObject;
+} LineStyleThicknessModDistanceFromOb;
 
-/* 3D curvature modifiers */
-
-typedef struct LineStyleColorModifier_Curvature_3D {
-  struct LineStyleModifier modifier;
+/* 3D curvature mods */
+typedef struct LineStyleColorModCurvature_3D {
+  struct LineStyleMod mod;
 
   float min_curvature, max_curvature;
   struct ColorBand *color_ramp;
   float range_min, range_max;
-} LineStyleColorModifier_Curvature_3D;
+} LineStyleColorModCurvature_3D;
 
-typedef struct LineStyleAlphaModifier_Curvature_3D {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModCurvature_3D {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float min_curvature, max_curvature;
   char _pad[4];
-} LineStyleAlphaModifier_Curvature_3D;
+} LineStyleAlphaModCurvature_3D;
 
-typedef struct LineStyleThicknessModifier_Curvature_3D {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModCurvature_3D {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   char _pad[4];
   float min_curvature, max_curvature;
   float min_thickness, max_thickness;
-} LineStyleThicknessModifier_Curvature_3D;
+} LineStyleThicknessModCurvature_3D;
 
-/* Noise modifiers (for color, alpha and thickness) */
-
-typedef struct LineStyleColorModifier_Noise {
-  struct LineStyleModifier modifier;
+/* Noise mods (for color, alpha and thickness) */
+typedef struct LineStyleColorModNoise {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
   float period, amplitude;
   int seed;
   char _pad[4];
-} LineStyleColorModifier_Noise;
+} LineStyleColorModNoise;
 
-typedef struct LineStyleAlphaModifier_Noise {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModNoise {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float period, amplitude;
   int seed;
-} LineStyleAlphaModifier_Noise;
+} LineStyleAlphaModNoise;
 
-typedef struct LineStyleThicknessModifier_Noise {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModNoise {
+  struct LineStyleMod mod;
 
   float period, amplitude;
   int flags;
   int seed;
-} LineStyleThicknessModifier_Noise;
+} LineStyleThicknessModNoise;
 
-/* Crease Angle modifiers */
+/* Crease Angle mods */
 
-typedef struct LineStyleColorModifier_CreaseAngle {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleColorModCreaseAngle {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
   float min_angle, max_angle;
-} LineStyleColorModifier_CreaseAngle;
+} LineStyleColorModCreaseAngle;
 
-typedef struct LineStyleAlphaModifier_CreaseAngle {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModCreaseAngle {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float min_angle, max_angle;
   char _pad[4];
-} LineStyleAlphaModifier_CreaseAngle;
+} LineStyleAlphaModCreaseAngle;
 
-typedef struct LineStyleThicknessModifier_CreaseAngle {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModCreaseAngle {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   char _pad[4];
   float min_angle, max_angle;
   float min_thickness, max_thickness;
-} LineStyleThicknessModifier_CreaseAngle;
+} LineStyleThicknessModCreaseAngle;
 
-/* Tangent modifiers */
-
-typedef struct LineStyleColorModifier_Tangent {
-  struct LineStyleModifier modifier;
+/* Tangent mods */
+typedef struct LineStyleColorModTangent {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
-} LineStyleColorModifier_Tangent;
+} LineStyleColorModTangent;
 
-typedef struct LineStyleAlphaModifier_Tangent {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModTangent {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   char _pad[4];
-} LineStyleAlphaModifier_Tangent;
+} LineStyleAlphaModTangent;
 
-typedef struct LineStyleThicknessModifier_Tangent {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModTangent {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   float min_thickness, max_thickness;
   char _pad[4];
-} LineStyleThicknessModifier_Tangent;
+} LineStyleThicknessModTangent;
 
-/* Material modifiers */
-
+/* Material mods */
 /* mat_attr */
-#define LS_MODIFIER_MATERIAL_DIFF 1
-#define LS_MODIFIER_MATERIAL_DIFF_R 2
-#define LS_MODIFIER_MATERIAL_DIFF_G 3
-#define LS_MODIFIER_MATERIAL_DIFF_B 4
-#define LS_MODIFIER_MATERIAL_SPEC 5
-#define LS_MODIFIER_MATERIAL_SPEC_R 6
-#define LS_MODIFIER_MATERIAL_SPEC_G 7
-#define LS_MODIFIER_MATERIAL_SPEC_B 8
-#define LS_MODIFIER_MATERIAL_SPEC_HARD 9
-#define LS_MODIFIER_MATERIAL_ALPHA 10
-#define LS_MODIFIER_MATERIAL_LINE 11
-#define LS_MODIFIER_MATERIAL_LINE_R 12
-#define LS_MODIFIER_MATERIAL_LINE_G 13
-#define LS_MODIFIER_MATERIAL_LINE_B 14
-#define LS_MODIFIER_MATERIAL_LINE_A 15
+#define LS_MOD_MATERIAL_DIFF 1
+#define LS_MOD_MATERIAL_DIFF_R 2
+#define LS_MOD_MATERIAL_DIFF_G 3
+#define LS_MOD_MATERIAL_DIFF_B 4
+#define LS_MOD_MATERIAL_SPEC 5
+#define LS_MOD_MATERIAL_SPEC_R 6
+#define LS_MOD_MATERIAL_SPEC_G 7
+#define LS_MOD_MATERIAL_SPEC_B 8
+#define LS_MOD_MATERIAL_SPEC_HARD 9
+#define LS_MOD_MATERIAL_ALPHA 10
+#define LS_MOD_MATERIAL_LINE 11
+#define LS_MOD_MATERIAL_LINE_R 12
+#define LS_MOD_MATERIAL_LINE_G 13
+#define LS_MOD_MATERIAL_LINE_B 14
+#define LS_MOD_MATERIAL_LINE_A 15
 
-typedef struct LineStyleColorModifier_Material {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleColorModMaterial {
+  struct LineStyleMod mod;
 
   struct ColorBand *color_ramp;
   int flags;
   int mat_attr;
-} LineStyleColorModifier_Material;
+} LineStyleColorModMaterial;
 
-typedef struct LineStyleAlphaModifier_Material {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleAlphaModMaterial {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
   int mat_attr;
-} LineStyleAlphaModifier_Material;
+} LineStyleAlphaModMaterial;
 
-typedef struct LineStyleThicknessModifier_Material {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleThicknessModMaterial {
+  struct LineStyleMod mod;
 
   struct CurveMapping *curve;
   int flags;
-  float value_min, value_max;
+  float val_min, val_max;
   int mat_attr;
-} LineStyleThicknessModifier_Material;
+} LineStyleThicknessModMaterial;
 
-/* Geometry modifiers */
-
-typedef struct LineStyleGeometryModifier_Sampling {
-  struct LineStyleModifier modifier;
+/* Geometry mods */
+typedef struct LineStyleGeometryModSampling {
+  struct LineStyleMod mod;
 
   float sampling;
   char _pad[4];
-} LineStyleGeometryModifier_Sampling;
+} LineStyleGeometryModSampling;
 
-typedef struct LineStyleGeometryModifier_BezierCurve {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModBezierCurve {
+  struct LineStyleMod mod;
 
   float error;
   char _pad[4];
-} LineStyleGeometryModifier_BezierCurve;
+} LineStyleGeometryModBezierCurve;
 
-typedef struct LineStyleGeometryModifier_SinusDisplacement {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModSinusDisplacement {
+  struct LineStyleMod mod;
 
   float wavelength, amplitude, phase;
   char _pad[4];
-} LineStyleGeometryModifier_SinusDisplacement;
+} LineStyleGeometryModSinusDisplacement;
 
-/* LineStyleGeometryModifier_SpatialNoise::flags */
-#define LS_MODIFIER_SPATIAL_NOISE_SMOOTH 1
-#define LS_MODIFIER_SPATIAL_NOISE_PURERANDOM 2
+/* LineStyleGeometryModSpatialNoise::flags */
+#define LS_MOD_SPATIAL_NOISE_SMOOTH 1
+#define LS_MOD_SPATIAL_NOISE_PURERANDOM 2
 
-typedef struct LineStyleGeometryModifier_SpatialNoise {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModSpatialNoise {
+  struct LineStyleMod mod;
 
   float amplitude, scale;
   unsigned int octaves;
   int flags;
-} LineStyleGeometryModifier_SpatialNoise;
+} LineStyleGeometryModSpatialNoise;
 
-typedef struct LineStyleGeometryModifier_PerlinNoise1D {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModPerlinNoise1D {
+  struct LineStyleMod mod;
 
   float frequency, amplitude;
-  /** In radians. */
+  /* In radians. */
   float angle;
   unsigned int octaves;
   int seed;
   char _pad1[4];
-} LineStyleGeometryModifier_PerlinNoise1D;
+} LineStyleGeometryModPerlinNoise1D;
 
-typedef struct LineStyleGeometryModifier_PerlinNoise2D {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModPerlinNoise2D {
+  struct LineStyleMod mod;
 
   float frequency, amplitude;
-  /** In radians. */
+  /* In radians. */
   float angle;
   unsigned int octaves;
   int seed;
   char _pad1[4];
-} LineStyleGeometryModifier_PerlinNoise2D;
+} LineStyleGeometryModPerlinNoise2D;
 
-typedef struct LineStyleGeometryModifier_BackboneStretcher {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModBackboneStretcher {
+  struct LineStyleMod mod;
 
   float backbone_length;
   char _pad[4];
-} LineStyleGeometryModifier_BackboneStretcher;
+} LineStyleGeometryModBackboneStretcher;
 
-typedef struct LineStyleGeometryModifier_TipRemover {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModTipRemover {
+  struct LineStyleMod mod;
 
   float tip_length;
   char _pad[4];
-} LineStyleGeometryModifier_TipRemover;
+} LineStyleGeometryModTipRemover;
 
-typedef struct LineStyleGeometryModifier_Polygonalization {
-  struct LineStyleModifier modifier;
+typedef struct LineStyleGeometryModPolygonalization {
+  struct LineStyleMod mod;
 
   float error;
   char _pad[4];
-} LineStyleGeometryMod_Polygonalization;
+} LineStyleGeometryModPolygonalization;
 
-typedef struct LineStyleGeometryMod_GuidingLines {
+typedef struct LineStyleGeometryModGuidingLines {
   struct LineStyleMod mod;
 
   float offset;
   char _pad[4];
-} LineStyleGeometryMod_GuidingLines;
+} LineStyleGeometryModGuidingLines;
 
-/* LineStyleGeometryMod_BluePrintLines::shape */
+/* LineStyleGeometryModBluePrintLines::shape */
 #define LS_MOD_BLUEPRINT_CIRCLES 1
 #define LS_MOD_BLUEPRINT_ELLIPSES 2
 #define LS_MOD_BLUEPRINT_SQUARES 4
 
-typedef struct LineStyleGeometryMod_Blueprint {
+typedef struct LineStyleGeometryModBlueprint {
   struct LineStyleMod mod;
 
   int flags;
@@ -423,16 +411,16 @@ typedef struct LineStyleGeometryMod_Blueprint {
   unsigned int random_radius;
   unsigned int random_center;
   unsigned int random_backbone;
-} LineStyleGeometryMod_Blueprint;
+} LineStyleGeometryModBlueprint;
 
-typedef struct LineStyleGeometryMod_2DOffset {
+typedef struct LineStyleGeometryMod2DOffset {
   struct LineStyleMod mod;
 
   float start, end;
   float x, y;
-} LineStyleGeometryMod_2DOffset;
+} LineStyleGeometryMod2DOffset;
 
-/* LineStyleGeometryMod_2DTransform::pivot */
+/* LineStyleGeometryMod2DTransform::pivot */
 #define LS_MOD_2D_TRANSFORM_PIVOT_CENTER 1
 #define LS_MOD_2D_TRANSFORM_PIVOT_START 2
 #define LS_MOD_2D_TRANSFORM_PIVOT_END 3
@@ -449,18 +437,17 @@ typedef struct LineStyleGeometryMod_2DTransform {
   float pivot_u;
   float pivot_x, pivot_y;
   char _pad[4];
-} LineStyleGeometryMod_2DTransform;
+} LineStyleGeometryMod2DTransform;
 
 typedef struct LineStyleGeometryMod_Simplification {
   struct LineStyleMod mod;
 
   float tolerance;
   char _pad[4];
-} LineStyleGeometryMod_Simplification;
+} LineStyleGeometryModSimplification;
 
 /* Calligraphic thickness mod */
-
-typedef struct LineStyleThicknessMod_Calligraphy {
+typedef struct LineStyleThicknessModCalligraphy {
   struct LineStyleMod mod;
 
   float min_thickness, max_thickness;
@@ -469,18 +456,18 @@ typedef struct LineStyleThicknessMod_Calligraphy {
   char _pad[4];
 } LineStyleThicknessMod_Calligraphy;
 
-/* FreestyleLineStyle::panel */
-#define LS_PANEL_STROKES 1
-#define LS_PANEL_COLOR 2
-#define LS_PANEL_ALPHA 3
-#define LS_PANEL_THICKNESS 4
-#define LS_PANEL_GEOMETRY 5
-#define LS_PANEL_TEXTURE 6
-#define LS_PANEL_MISC 7
+/* FreestyleLineStyle::pnl */
+#define LS_PNL_STROKES 1
+#define LS_PNL_COLOR 2
+#define LS_PNL_ALPHA 3
+#define LS_PNL_THICKNESS 4
+#define LS_PNL_GEOMETRY 5
+#define LS_PNL_TEXTURE 6
+#define LS_PNL_MISC 7
 
 /* FreestyleLineStyle::flag */
 #define LS_DS_EXPAND (1 << 0) /* for animation editors */
-#define LS_SAME_OBJECT (1 << 1)
+#define LS_SAME_OB (1 << 1)
 #define LS_DASHED_LINE (1 << 2)
 #define LS_MATERIAL_BOUNDARY (1 << 3)
 #define LS_MIN_2D_LENGTH (1 << 4)
@@ -548,17 +535,17 @@ typedef struct FreestyleLineStyle {
   short use_nodes;
   char _pad[6];
   unsigned short dash1, gap1, dash2, gap2, dash3, gap3;
-  /** For UI. */
-  int panel;
-  /** MAX_MTEX. */
+  /* For UI. */
+  int pnl;
+  /* MAX_MTEX. */
   struct MTex *mtex[18];
   /* nodes */
-  struct bNodeTree *nodetree;
+  struct NodeTree *nodetree;
 
-  ListBase color_modifiers;
-  ListBase alpha_modifiers;
-  ListBase thickness_modifiers;
-  ListBase geometry_modifiers;
+  List color_mods;
+  List alpha_mods;
+  List thickness_mods;
+  List geometry_mods;
 } FreestyleLineStyle;
 
 #ifdef __cplusplus
