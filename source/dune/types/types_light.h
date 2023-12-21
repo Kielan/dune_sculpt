@@ -14,11 +14,11 @@ extern "C" {
 struct AnimData;
 struct CurveMapping;
 struct Ipo;
-struct bNodeTree;
+struct NodeTree;
 
 typedef struct Light {
   Id id;
-  /* Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
 
   short type, flag;
@@ -42,7 +42,7 @@ typedef struct Light {
   float soft;      /* DEPRECATED kept for compatibility. */
   float bleedbias; /* DEPRECATED kept for compatibility. */
   float bleedexp;  /* DEPRECATED kept for compatibility. */
-  short bufsize, samp, buffers, filtertype;
+  short bufsize, samp, bufs, filtertype;
   char bufflag, buftype;
 
   short area_shape;
@@ -51,10 +51,10 @@ typedef struct Light {
 
   float sun_angle;
 
-  /* texact is for buttons */
+  /* texact is for btns */
   short texact, shadhalostep;
 
-  /* Old animation system, deprecated for 2.5. */
+  /* Old anim sys, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
   short pr_texture, use_nodes;
   char _pad6[4];
@@ -74,17 +74,17 @@ typedef struct Light {
   float spec_fac, att_dist;
 
   /* preview */
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   /* nodes */
   struct NodeTree *nodetree;
 } Light;
 
-/* **************** LIGHT ********************* */
+/* LIGHT */
 
 /* flag */
 #define LA_DS_EXPAND (1 << 0)
-/* NOTE: this must have the same value as MA_DS_SHOW_TEXS,
+/* This must have the same val as MA_DS_SHOW_TEXS,
  * otherwise anim-editors will not read correctly */
 #define LA_DS_SHOW_TEXS (1 << 2)
 
