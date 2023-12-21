@@ -26,7 +26,7 @@ enum {
 /* Mesh Edges.
  * Typically accessed from Mesh.medge */
 typedef struct MEdge {
-  /* Un-ordered vertex indices (cannot match). */
+  /* Un-ordered vert indices (cannot match). */
   unsigned int v1, v2;
   char crease, bweight;
   short flag;
@@ -110,7 +110,7 @@ enum {
  *
  * Storing loop indices (instead of vertex indices) allows us to
  * directly access UV's, vertex-colors as well as vertices.
- * The index of the source polygon is stored as well,
+ * The index of the src polygon is stored as well,
  * giving access to materials and polygon normals.
  *
  * This data is runtime only, never written to disk.
@@ -119,14 +119,14 @@ enum {
  * // access original material.
  * short mat_nr = mpoly[lt->poly].mat_nr;
  *
- * // access vertex locations.
+ * // access vert locations.
  * float *vtri_co[3] = {
  *     mvert[mloop[lt->tri[0]].v].co,
  *     mvert[mloop[lt->tri[1]].v].co,
  *     mvert[mloop[lt->tri[2]].v].co,
  * };
  *
- * // access UV coordinates (works for all loop data, vertex colors... etc).
+ * // access UV coordins (works for all loop data, vertex colors... etc).
  * float *uvtri_co[3] = {
  *     mloopuv[lt->tri[0]].uv,
  *     mloopuv[lt->tri[1]].uv,
@@ -156,9 +156,9 @@ enum {
  * It may also be useful to check whether or not two vertices of a triangle
  * form an edge in the underlying mesh.
  *
- * This can be done by checking the edge of the referenced loop (#MLoop.e),
- * the winding of the MLoopTri and the #MLoop's will always match,
- * however the order of vertices in the edge is undefined.
+ * This can be done by checking the edge of the refd loop (MLoop.e),
+ * the winding of the MLoopTri and the MLoop's will always match,
+ * however the order of verts in the edge is undefined.
  *
  * // print real edges from an MLoopTri: lt
  * int j, j_next;
@@ -186,11 +186,7 @@ typedef struct MVertTri {
   unsigned int tri[3];
 } MVertTri;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /* Custom Data (Generic) */
-
 /* Custom Data Props */
 typedef struct MFloatProp {
   float f;
@@ -208,31 +204,27 @@ typedef struct MInt8Prop {
   int8_t i;
 } MInt8Prop;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/* Custom Data (Vertex) */
-
-/* Vertex group index and weight for MDeformVert.dw */
+/* Custom Data (Vert) */
+/* Vert group index and weight for MDeformVert.dw */
 typedef struct MDeformWeight {
-  /* The index for the vertex group, must *always* be unique when in an array. */
+  /* The index for the vert group, must *always* be unique when in an array. */
   unsigned int def_nr;
   /* Weight between 0.0 and 1.0. */
   float weight;
 } MDeformWeight;
 
-/* Stores all of an element's vertex groups, and their weight values */
+/* Stores all of an element's vert groups, and their weight values */
 typedef struct MDeformVert {
-  /* Array of weight indices and values.
-   * - There must not be any duplicate #def_nr indices.
+  /* Array of weight indices and vals.
+   * - There must not be any dup def_nr indices.
    * - Groups in the array are unordered.
    * - Indices outside the usable range of groups are ignored. */
   struct MDeformWeight *dw;
-  /* The length of the #dw array.
+  /* The length of the dw array.
    * This is not necessarily the same length as the total number of vertex groups.
    * However, generally it isn't larger. */
   int totweight;
-  /** Flag is only in use as a run-time tag at the moment. */
+  /* Flag is only in use as a run-time tag at the moment. */
   int flag;
 } MDeformVert;
 
@@ -255,12 +247,8 @@ typedef enum eMVertSkinFlag {
   MVERT_SKIN_LOOSE = 2,
 } eMVertSkinFlag;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /* Custom Data (Loop) */
-
-/* UV coordinate for a polygon face & flag for selection & other options */
+/* UV coord for a polygon face & flag for selection & other options */
 typedef struct MLoopUV {
   float uv[2];
   int flag;
@@ -303,18 +291,15 @@ typedef struct GridPaintMask {
    * Where `grid_size = (1 << (level - 1)) + 1`. */
   float *data;
 
-  /* The maximum multires level associated with this grid. */
+  /* The max multires level associated with this grid. */
   unsigned int level;
 
   char _pad[4];
 } GridPaintMask;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /* Custom Data (Original Space for Poly, Face) */
 
-/* Original space within a face (similar to UV coordinates),
+/* Original space within a face (similar to UV coords),
  * however they are used to determine the original position in a face.
  *
  * Unlike UV's these are not user editable and always start out using a fixed 0-1 range.
@@ -331,11 +316,7 @@ typedef struct OrigSpaceLoop {
   float uv[2];
 } OrigSpaceLoop;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** Custom Data (FreeStyle for Edge, Face) */
-
+/* Custom Data (FreeStyle for Edge, Face) */
 typedef struct FreestyleEdge {
   char flag;
 } FreestyleEdge;
@@ -349,21 +330,17 @@ typedef struct FreestyleFace {
   char flag;
 } FreestyleFace;
 
-/** #FreestyleFace.flag */
+/* FreestyleFace.flag */
 enum {
   FREESTYLE_FACE_MARK = 1,
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** Utility Macros */
-
+/* Util Macros */
 #define ME_POLY_LOOP_PREV(mloop, mp, i) \
   (&(mloop)[(mp)->loopstart + (((i) + (mp)->totloop - 1) % (mp)->totloop)])
 #define ME_POLY_LOOP_NEXT(mloop, mp, i) (&(mloop)[(mp)->loopstart + (((i) + 1) % (mp)->totloop)])
 
-/** Number of tri's that make up this polygon once tessellated. */
+/* Num of tri's that make up this polygon once tessellated. */
 #define ME_POLY_TRI_TOT(mp) ((mp)->totloop - 2)
 
 /* Check out-of-bounds material, note that this is nearly always prevented,
@@ -374,21 +351,17 @@ enum {
    CHECK_TYPE_ANY(totmat, short, const short), \
    (LIKELY(mat_nr < totmat) ? mat_nr : 0))
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /* Deprecated Structs */
-
-/* Used in Blender pre 2.63, See MLoop, MPoly for face data stored in the dune file.
+/* Used in pre 2.63, See MLoop, MPoly for face data stored in the dune file.
  * Use for reading old files and in a handful of cases which should be removed eventually. */
 typedef struct MFace {
   unsigned int v1, v2, v3, v4;
   short mat_nr;
-  /** We keep edcode, for conversion to edges draw flags in old files. */
+  /* We keep edcode, for conversion to edges draw flags in old files. */
   char edcode, flag;
 } MFace;
 
-/** MFace.edcode */
+/* MFace.edcode */
 enum {
   ME_V1V2 = (1 << 0),
   ME_V2V3 = (1 << 1),
@@ -397,12 +370,12 @@ enum {
   ME_V4V1 = (1 << 3),
 };
 
-/** Tessellation uv face data. */
+/* Tessellation uv face data. */
 typedef struct MTFace {
   float uv[4][2];
 } MTFace;
 
-/* Tessellation vertex color data.
+/* Tessellation vert color data.
  * The red and blue are swapped for historical reasons  */
 typedef struct MCol {
   unsigned char a, r, g, b;
@@ -430,12 +403,11 @@ typedef struct MCol {
   } \
   (void)0
 
-/** Old game engine recast navigation data, while unused 2.7x files may contain this. */
+/* Old game engine recast navigation data, while unused 2.7x files may contain this. */
 typedef struct MRecast {
   int i;
 } MRecast;
 
-/** \} */
 
 #ifdef __cplusplus
 }
