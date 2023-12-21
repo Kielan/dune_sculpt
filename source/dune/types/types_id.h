@@ -468,7 +468,7 @@ typedef struct PreviewImg {
 
 #define PRV_DEFERRED_DATA(prv) \
   (CHECK_TYPE_INLINE(prv, PreviewImage *), \
-   LIB_assert((prv)->tag & PRV_TAG_DEFFERED), \
+   lib_assert((prv)->tag & PRV_TAG_DEFFERED), \
    (void *)((prv) + 1))
 
 #define ID_FAKE_USERS(id) ((((const ID *)id)->flag & LIB_FAKEUSER) ? 1 : 0)
@@ -500,9 +500,9 @@ typedef struct PreviewImg {
  * chaining overrides over several libs). User must ensure the Id is not linked itself
  * currently. */
 /* TODO: add `_EDITABLE` versions of those macros (that would check if ID is linked or not)? */
-#define ID_IS_OVERRIDE_LIBRARY_REAL(_id) \
-  (((const ID *)(_id))->override_lib != NULL && \
-   ((const ID *)(_id))->override_lib->ref != NULL)
+#define ID_IS_OVERRIDE_LIB_REAL(_id) \
+  (((const Id *)(_id))->override_lib != NULL && \
+   ((const Id *)(_id))->override_lib->ref != NULL)
 
 #define ID_IS_OVERRIDE_LIB_VIRTUAL(_id) \
   ((((const Id *)(_id))->flag & LIB_EMBEDDED_DATA_LIB_OVERRIDE) != 0)
@@ -517,14 +517,14 @@ typedef struct PreviewImg {
 #define ID_IS_OVERRIDE_LIBRARY_TEMPLATE(_id) \
   (((Id *)(_id))->override_lib != NULL && ((ID *)(_id))->override_library->reference == NULL)
 
-#define ID_IS_ASSET(_id) (((const ID *)(_id))->asset_data != NULL)
+#define ID_IS_ASSET(_id) (((const Id *)(_id))->asset_data != NULL)
 
 /* Check whether datablock type is covered by copy-on-write. */
 #define ID_TYPE_IS_COW(_id_type) \
   (!ELEM(_id_type, ID_LI, ID_IP, ID_SCR, ID_VF, ID_BR, ID_WM, ID_PAL, ID_PC, ID_WS, ID_IM))
 
 /* Check whether data-block type requires copy-on-write from ID_RECALC_PARAMETERS.
- * Keep in sync with DUNE_id_eval_properties_copy. */
+ * Keep in sync with dune_id_eval_properties_copy. */
 #define ID_TYPE_SUPPORTS_PARAMS_WITHOUT_COW(id_type) ELEM(id_type, ID_ME)
 
 #ifdef GS
@@ -532,48 +532,38 @@ typedef struct PreviewImg {
 #endif
 #define GS(a) \
   (CHECK_TYPE_ANY(a, char *, const char *, char[66], const char[66]), \
-   (ID_Type)(*((const short *)(a))))
+   (IdType)(*((const short *)(a))))
 
 #define ID_NEW_SET(_id, _idn) \
-  (((ID *)(_id))->newid = (ID *)(_idn), \
-   ((ID *)(_id))->newid->tag |= LIB_TAG_NEW, \
-   (void *)((ID *)(_id))->newid)
+  (((Id *)(_id))->newid = (Id *)(_idn), \
+   ((Id *)(_id))->newid->tag |= LIB_TAG_NEW, \
+   (void *)((Id *)(_id))->newid)
 #define ID_NEW_REMAP(a) \
   if ((a) && (a)->id.newid) { \
     (a) = (void *)(a)->id.newid; \
   } \
   ((void)0)
 
-/** id->flag (persistent). */
+/* id->flag (persistent). */
 enum {
-  /** Don't delete the data-block even if unused. */
+  /* Don't del the data-block even if unused. */
   LIB_FAKEUSER = 1 << 9,
-  /**
-   * The data-block is a sub-data of another one.
-   * Direct persistent references are not allowed.
-   */
+  /* The data-block is a sub-data of another one.
+   * Direct persistent references are not allowed */
   LIB_EMBEDDED_DATA = 1 << 10,
-  /**
-   * Data-block is from a library and linked indirectly, with LIB_TAG_INDIRECT
-   * tag set. But the current .blend file also has a weak pointer to it that
-   * we want to restore if possible, and silently drop if it's missing.
-   */
+  /* Data-block is from a lib and linked indirectly, with LIB_TAG_INDIRECT
+   * tag set. But the current .dune file also has a weak pointer to it that
+   * we want to restore if possible, and silently drop if it's missing.  */
   LIB_INDIRECT_WEAK_LINK = 1 << 11,
-  /**
-   * The data-block is a sub-data of another one, which is an override.
-   * Note that this also applies to shape-keys, even though they are not 100% embedded data.
-   */
+  /* The data-block is a sub-data of another 1, which is an override.
+   * Also applies to shape-keys, though they are not 100% embedded data. */
   LIB_EMBEDDED_DATA_LIB_OVERRIDE = 1 << 12,
-  /**
-   * The override data-block appears to not be needed anymore after resync with linked data, but it
-   * was kept around (because e.g. detected as user-edited).
-   */
+  /* The override data-block appears to not be needed anymore after resync with linked data, but it
+   * was kept around (because e.g. detected as user-edited). */
   LIB_LIB_OVERRIDE_RESYNC_LEFTOVER = 1 << 13,
 };
 
-/**
- * id->tag (runtime-only).
- *
+/* id->tag (runtime-only).
  * Those flags belong to three different categories,
  * which have different expected handling in code:
  *
@@ -582,10 +572,9 @@ enum {
  * - RESET_AFTER_USE: piece of code that wants to use such flag has to ensure they are properly
  *   'reset' after usage
  *   (though 'lifetime' of those flags is a bit fuzzy, e.g. _RECALC ones are reset on depsgraph
- *   evaluation...).
+ *   eval...).
  * - RESET_NEVER: those flags are 'status' one, and never actually need any reset
- *   (except on initialization during .blend file reading).
- */
+ *   (except on init during .blend file reading). */
 enum {
   /* RESET_NEVER Datablock is from current .blend file. */
   LIB_TAG_LOCAL = 0,
@@ -610,9 +599,9 @@ enum {
   LIB_TAG_MISSING = 1 << 6,
 
   /* RESET_NEVER tag data-block as being up-to-date regarding its reference. */
-  LIB_TAG_OVERRIDE_LIBRARY_REFOK = 1 << 9,
+  LIB_TAG_OVERRIDE_LIB_REFOK = 1 << 9,
   /* RESET_NEVER tag data-block as needing an auto-override execution, if enabled. */
-  LIB_TAG_OVERRIDE_LIBRARY_AUTOREFRESH = 1 << 17,
+  LIB_TAG_OVERRIDE_LIB_AUTOREFRESH = 1 << 17,
 
   /* tag data-block as having an extra user. */
   LIB_TAG_EXTRAUSER = 1 << 2,
@@ -628,29 +617,24 @@ enum {
   /* RESET_AFTER_USE tag existing data before linking so we know what is new. */
   LIB_TAG_PRE_EXISTING = 1 << 11,
 
-  /**
-   * The data-block is a copy-on-write/localized version.
-   *
+  /* The data-block is a copy-on-write/localized version.
    * RESET_NEVER
    *
    * warning This should not be cleared on existing data.
    * If support for this is needed, see T88026 as this flag controls memory ownership
-   * of physics *shared* pointers.
-   */
+   * of physics *shared* ptrs. */
   LIB_TAG_COPIED_ON_WRITE = 1 << 12,
-  /**
-   * The data-block is not the original COW ID created by the depsgraph, but has be re-allocated
-   * during the evaluation process of another ID.
+  /* The data-block is not the original COW Id created by the depsgraph, but has be re-allocated
+   * during the evaluation process of another Id.
    *
    * RESET_NEVER
    *
    * Typical example is object data, when evaluating the object's modifier stack the final obdata
-   * can be different than the COW initial obdata ID.
-   */
+   * can be different than the COW initial obdata Id.  */
   LIB_TAG_COPIED_ON_WRITE_EVAL_RESULT = 1 << 13,
 
   /**
-   * The data-block is fully outside of any ID management area, and should be considered as a
+   * The data-block is fully outside of any Id management area, and should be considered as a
    * purely independent data.
    *
    * RESET_NEVER
