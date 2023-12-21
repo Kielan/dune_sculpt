@@ -49,11 +49,11 @@ typedef struct LightProbe {
   int grid_resolution_z;
   char _pad1[4];
 
-  /* Object to use as a parallax origin. */
-  struct Object *parallax_ob;
-  /* Image to use on as lighting data. */
-  struct Image *image;
-  /* Object visibility group, inclusive or exclusive. */
+  /* Ob to use as a parallax origin. */
+  struct Ob *parallax_ob;
+  /* Img to use on as lighting data. */
+  struct Img *img;
+  /* Ob visibility group, inclusive or exclusive. */
   struct Collection *visibility_grp;
 
   /* Runtime display data */
@@ -92,8 +92,8 @@ enum {
   LIGHTPROBE_SHAPE_BOX = 1,
 };
 
-/* ------- Eevee LightProbes ------- */
-/* Needs to be there because written to file with the light-cache. */
+/* Eevee LightProbes */
+/* Needs to be there bc written to file with the light-cache. */
 
 /* IMPORTANT Padding in these structs is essential. It must match
  * GLSL struct definition in lightprobe_lib.glsl. */
@@ -125,7 +125,7 @@ typedef struct LightGridCache {
 LIB_STATIC_ASSERT_ALIGN(LightProbeCache, 16)
 LIB_STATIC_ASSERT_ALIGN(LightGridCache, 16)
 
-/* ------ Eevee Lightcache ------- */
+/* Eevee Lightcache */
 
 typedef struct LightCacheTexture {
   struct GPUTexture *tex;
@@ -139,14 +139,14 @@ typedef struct LightCacheTexture {
 
 typedef struct LightCache {
   int flag;
-  /** Version number to know if the cache data is compatible with this version of blender. */
+  /* Version num to know if the cache data is compatible with this version of blender. */
   int version;
-  /** Type of data this cache contains. */
+  /* Type of data this cache contains. */
   int type;
   /* only a single cache for now */
-  /** Number of probes to use for rendering. */
+  /* Num of probes to use for rendering. */
   int cube_len, grid_len;
-  /** Number of mipmap level to use. */
+  /* Num of mipmap level to use. */
   int mips_len;
   /* Size of a visibility/reflection sample. */
   int vis_res, ref_res;
