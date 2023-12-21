@@ -3,17 +3,15 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* CacheFile Struct */
-
 #define _TYPES_DEFAULT_CacheFile \
   { \
     .filepath[0] = '\0', \
     .override_frame = false, \
     .frame = 0.0f, \
-    .is_sequence = false, \
+    .is_seq = false, \
     .scale = 1.0f, \
-    .object_paths ={NULL, NULL}, \
+    .ob_paths ={NULL, NULL}, \
  \
     .type = 0, \
     .handle = NULL, \
