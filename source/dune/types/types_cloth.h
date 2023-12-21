@@ -7,14 +7,14 @@ extern "C" {
 #endif
 
 /* This struct contains all the global data required to run a simulation.
- * At the time of this writing, this structure contains data appropriate
+ * At the time of this writing, this struct contains data appropriate
  * to run a simulation as described in Deformation Constraints in a
  * Mass-Spring Model to Describe Rigid Cloth Behavior by Xavier Provot.
  *
  * I've tried to keep similar, if not exact names for the variables as
  * are presented in the paper.  Where I've changed the concept slightly,
  * as in stepsPerFrame compared to the time step in the paper, I've used
- * variables with different names to minimize confusion. */
+ * vars with different names to minimize confusion. */
 
 typedef struct ClothSimSettings {
   /* UNUSED. */
@@ -41,52 +41,50 @@ typedef struct ClothSimSettings {
   float max_bend;
   /* Max structural scaling value, min is "structural". */
   float max_struct TYPES_DEPRECATED;
-  /** Max shear scaling value. */
+  /* Max shear scaling value. */
   float max_shear;
-  /** Max sewing force. */
+  /* Max sewing force. */
   float max_sewing;
-  /** Used for normalized springs. */
+  /* Used for normalized springs. */
   float avg_spring_len;
-  /** Parameter how fast cloth runs. */
+  /* Param how fast cloth runs. */
   float timescale;
-  /** Multiplies cloth speed. */
+  /* Multiplies cloth speed. */
   float time_scale;
-  /** See SB. */
+  /* See SB. */
   float maxgoal;
-  /** Scaling of effector forces (see #softbody_calc_forces). */
+  /* Scaling of effector forces (see #softbody_calc_forces). */
   float eff_force_scale;
-  /** Scaling of effector wind (see #softbody_calc_forces). */
+  /* Scaling of effector wind (see #softbody_calc_forces). */
   float eff_wind_scale;
   float sim_time_old;
   float defgoal;
   float goalspring;
   float goalfrict;
-  /** Smoothing of velocities for hair. */
+  /* Smoothing of velocities for hair. */
   float velocity_smooth;
-  /** Minimum density for hair. */
+  /* Min density for hair. */
   float density_target;
-  /** Influence of hair density. */
+  /* Influence of hair density. */
   float density_strength;
-  /** Friction with colliders. */
+  /* Friction with colliders. */
   float collider_friction;
-  /** Damp the velocity to speed up getting to the resting position. */
+  /* Damp the velocity to speed up getting to the resting position. */
   float vel_damping TYPES_DEPRECATED;
-  /** Min amount to shrink cloth by 0.0f (no shrink), 1.0f (shrink to nothing), -1.0f (double the
+  /* Min amount to shrink cloth by 0.0f (no shrink), 1.0f (shrink to nothing), -1.0f (double the
    * edge length). */
   float shrink_min;
-  /** Max amount to shrink cloth by 0.0f (no shrink), 1.0f (shrink to nothing), -1.0f (double the
+  /* Max amount to shrink cloth by 0.0f (no shrink), 1.0f (shrink to nothing), -1.0f (double the
    * edge length). */
   float shrink_max;
 
   /* Air pressure */
-  /** The uniform pressure that is constantly applied to the mesh. Can be negative. */
+  /* The uniform pressure that is constantly applied to the mesh. Can be negative. */
   float uniform_pressure_force;
-  /** User set volume. This is the volume the mesh wants to expand to (the equilibrium volume). */
+  /* User set volume. This is the volume the mesh wants to expand to (the equilibrium volume). */
   float target_volume;
-  /**
-   * The scaling factor to apply to the actual pressure.
-   * `pressure = ((current_volume/target_volume) - 1 + uniform_pressure_force) * pressure_factor`
-   */
+  /* The scaling factor to apply to the actual pressure.
+   * `pressure = ((current_volume/target_volume) - 1 + uniform_pressure_force) * pressure_factor` */
   float pressure_factor;
   /* Density of the fluid inside or outside the object
    * for use in the hydro-static pressure gradient. */
@@ -96,56 +94,56 @@ typedef struct ClothSimSettings {
 
   /* various hair stuff
    * should be separate, this struct is mess already */
-  /** Damping of bending springs. */
+  /* Damping of bending springs. */
   float bending_damping;
   /* Size of voxel grid cells for continuum dynamics. */
   float voxel_cell_size;
 
-  /** Number of time steps per frame. */
+  /* Number of time steps per frame. */
   int stepsPerFrame;
-  /** Flags, see CSIMSETT_FLAGS enum above. */
+  /* Flags, see CSIMSETT_FLAGS enum above. */
   int flags;
-  /** How many frames of simulation to do before we start. */
+  /* How many frames of simulation to do before we start. */
   int preroll DNA_DEPRECATED;
-  /** In percent!; if tearing enabled, a spring will get cut. */
+  /* In percent!; if tearing enabled, a spring will get cut. */
   int maxspringlen;
-  /** Which solver should be used? txold. */
+  /* Which solver should be used? txold. */
   short solver_type;
-  /** Vertex group for scaling bending stiffness. */
+  /* Vert group for scaling bending stiffness. */
   short vgroup_bend;
-  /** Optional vertexgroup name for assigning weight. */
+  /* Optional vertexgroup name for assigning weight. */
   short vgroup_mass;
-  /** Vertex group for scaling structural stiffness. */
+  /* Vert group for scaling structural stiffness. */
   short vgroup_struct;
-  /** Vertex group for shrinking cloth. */
+  /* Vert group for shrinking cloth. */
   short vgroup_shrink;
-  /** Vertex group for scaling structural stiffness. */
+  /* Vert group for scaling structural stiffness. */
   short shapekey_rest;
-  /** Used for presets on GUI. */
+  /* Used for presets on GUI. */
   short presets;
   short reset;
 
   struct EffectorWeights *effector_weights;
 
   short bending_model;
-  /** Vertex group for scaling structural stiffness. */
+  /* Vert group for scaling structural stiffness. */
   short vgroup_shear;
   float tension;
   float compression;
   float max_tension;
   float max_compression;
-  /** Mechanical damping of tension springs. */
+  /* Mechanical damping of tension springs. */
   float tension_damp;
-  /** Mechanical damping of compression springs. */
+  /* Mechanical damping of compression springs. */
   float compression_damp;
-  /** Mechanical damping of shear springs. */
+  /* Mechanical damping of shear springs. */
   float shear_damp;
 
-  /** The maximum length an internal spring can have during creation. */
+  /* The max length an internal spring can have during creation. */
   float internal_spring_max_length;
-  /** How much the internal spring can diverge from the vertex normal during creation. */
+  /* How much the internal spring can diverge from the vertex normal during creation. */
   float internal_spring_max_diversion;
-  /** Vertex group for scaling structural stiffness. */
+  /* Vert group for scaling structural stiffness. */
   short vgroup_intern;
   char _pad1[2];
   float internal_tension;
@@ -159,29 +157,29 @@ typedef struct ClothSimSettings {
 /* SIMULATION FLAGS: goal flags, etc. */
 /* These are the bits used in SimSettings.flags. */
 typedef enum {
-  /** Object is only collision object, no cloth simulation is done. */
+  /* Ob is only collision object, no cloth simulation is done. */
   CLOTH_SIMSETTINGS_FLAG_COLLOBJ = (1 << 2),
-  /** DEPRECATED, for versioning only. */
+  /* DEPRECATED, for versioning only. */
   CLOTH_SIMSETTINGS_FLAG_GOAL = (1 << 3),
-  /** True if tearing is enabled. */
+  /* True if tearing is enabled. */
   CLOTH_SIMSETTINGS_FLAG_TEARING = (1 << 4),
-  /** True if pressure sim is enabled. */
+  /* True if pressure sim is enabled. */
   CLOTH_SIMSETTINGS_FLAG_PRESSURE = (1 << 5),
-  /** Use the user defined target volume. */
+  /* Use the user defined target volume. */
   CLOTH_SIMSETTINGS_FLAG_PRESSURE_VOL = (1 << 6),
-  /** True if internal spring generation is enabled. */
+  /* True if internal spring generation is enabled. */
   CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS = (1 << 7),
-  /** DEPRECATED, for versioning only. */
+  /* DEPRECATED, for versioning only. */
   CLOTH_SIMSETTINGS_FLAG_SCALING = (1 << 8),
-  /** Require internal springs to be created between points with opposite normals. */
+  /* Require internal springs to be created between points with opposite normals. */
   CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS_NORMAL = (1 << 9),
-  /** Edit cache in edit-mode. */
+  /* Edit cache in edit-mode. */
   /* CLOTH_SIMSETTINGS_FLAG_CCACHE_EDIT = (1 << 12), */ /* UNUSED */
-  /** Don't allow spring compression. */
+  /* Don't allow spring compression. */
   CLOTH_SIMSETTINGS_FLAG_RESIST_SPRING_COMPRESS = (1 << 13),
-  /** Pull ends of loose edges together. */
+  /* Pull ends of loose edges together. */
   CLOTH_SIMSETTINGS_FLAG_SEW = (1 << 14),
-  /** Make simulation respect deformations in the base object. */
+  /* Make sim respect deformations in the base object. */
   CLOTH_SIMSETTINGS_FLAG_DYNAMIC_BASEMESH = (1 << 15),
 } CLOTH_SIMSETTINGS_FLAGS;
 
@@ -192,37 +190,37 @@ typedef enum {
 } CLOTH_BENDING_MODEL;
 
 typedef struct ClothCollSettings {
-  /** E.g. pointer to temp memory for collisions. */
+  /* E.g. ptr to tmp mem for collisions. */
   struct LinkNode *collision_list;
-  /** Min distance for collisions. */
+  /* Min distance for collisions. */
   float epsilon;
-  /** Fiction/damping with self contact. */
+  /* Fiction/damping with self contact. */
   float self_friction;
-  /** Friction/damping applied on contact with other object. */
+  /* Friction/damping applied on contact w other ob. */
   float friction;
-  /** Collision restitution on contact with other object. */
+  /* Collision restitution on contact w other ob. */
   float damping;
-  /** For selfcollision. */
+  /* For selfcollision. */
   float selfepsilon;
-  float repel_force DNA_DEPRECATED;
-  float distance_repel DNA_DEPRECATED;
-  /* Collision flags defined in BKE_cloth.h. */
+  float repel_force TYPES_DEPRECATED;
+  float distance_repel TYPES_DEPRECATED;
+  /* Collision flags defined in dune_cloth.h. */
   int flags;
-  /* How many iterations for the selfcollision loop. */
+  /* How many iters for the selfcollision loop. */
   short self_loop_count TYPES_DEPRECATED;
-  /* How many iterations for the collision loop. */
+  /* How many iters for the collision loop. */
   short loop_count;
   char _pad[4];
-  /** Only use colliders from this group of objects. */
+  /* Only use colliders from this group of objects. */
   struct Collection *group;
-  /** Vgroup to paint which vertices are not used for self collisions. */
+  /* Vgroup to paint which verts are not used for self collisions. */
   short vgroup_selfcol;
-  /** Vgroup to paint which vertices are not used for object collisions. */
+  /* Vgroup to paint which verts are not used for object collisions. */
   short vgroup_objcol;
   char _pad2[4];
-  /** Impulse clamp for object collisions. */
+  /* Impulse clamp for ob collisions. */
   float clamp;
-  /** Impulse clamp for self collisions. */
+  /* Impulse clamp for self collisions. */
   float self_clamp;
 } ClothCollSettings;
 
