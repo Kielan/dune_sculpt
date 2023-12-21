@@ -131,18 +131,18 @@ void overlay_paint_cache_init(OverlayData *vedata)
         state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
         DRW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
 
-        GPUTexture *tex = BKE_image_get_gpu_texture(imapaint->stencil, NULL, NULL);
+        GPUTexture *tex = dune_img_get_gpu_texture(imgpaint->stencil, NULL, NULL);
 
-        const bool mask_premult = (imapaint->stencil->alpha_mode == IMA_ALPHA_PREMUL);
-        const bool mask_inverted = (imapaint->flag & IMAGEPAINT_PROJECT_LAYER_STENCIL_INV) != 0;
+        const bool mask_premult = (imgpaint->stencil->alpha_mode == IMA_ALPHA_PREMUL);
+        const bool mask_inverted = (imgpaint->flag & IMGPAINT_PROJECT_LAYER_STENCIL_INV) != 0;
         sh = overlay_shader_paint_texture();
-        pd->paint_surf_grp = grp = draw_shgroup_create(sh, psl->paint_color_ps);
-        draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-        draw_shgroup_uniform_float_copy(grp, "opacity", opacity);
-        draw_shgroup_uniform_bool_copy(grp, "maskPremult", mask_premult);
-        draw_shgroup_uniform_vec3_copy(grp, "maskColor", imapaint->stencil_col);
-        draw_shgroup_uniform_bool_copy(grp, "maskInvertStencil", mask_inverted);
-        draw_shgroup_uniform_texture(grp, "maskImage", tex);
+        pd->paint_surf_grp = grp = drw_shgroup_create(sh, psl->paint_color_ps);
+        drw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+        drw_shgroup_uniform_float_copy(grp, "opacity", opacity);
+        drw_shgroup_uniform_bool_copy(grp, "maskPremult", mask_premult);
+        drw_shgroup_uniform_vec3_copy(grp, "maskColor", imapaint->stencil_col);
+        drw_shgroup_uniform_bool_copy(grp, "maskInvertStencil", mask_inverted);
+        drw_shgroup_uniform_texture(grp, "maskImage", tex);
       }
       break;
     }
@@ -157,112 +157,112 @@ void overlay_paint_cache_init(OverlayData *vedata)
   }
 
   {
-    state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL;
-    DRAW_PASS_CREATE(psl->paint_overlay_ps, state | pd->clipping_state);
+    state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
+    DRW_PASS_CREATE(psl->paint_overlay_ps, state | pd->clipping_state);
     sh = overlay_shader_paint_face();
-    pd->paint_face_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
-    draw_shgroup_uniform_vec4_copy(grp, "color", (float[4]){1.0f, 1.0f, 1.0f, 0.2f});
-    draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
+    pd->paint_face_grp = grp = drw_shgroup_create(sh, psl->paint_overlay_ps);
+    drw_shgroup_uniform_vec4_copy(grp, "color", (float[4]){1.0f, 1.0f, 1.0f, 0.2f});
+    drw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
 
     sh = overlay_shader_paint_wire();
-    pd->paint_wire_selected_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
-    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    draw_shgroup_uniform_bool_copy(grp, "useSelect", true);
-    draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
+    pd->paint_wire_sel_grp = grp = drw_shgroup_create(sh, psl->paint_overlay_ps);
+    drw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    drw_shgroup_uniform_bool_copy(grp, "useSel", true);
+    drw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
 
     pd->paint_wire_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
-    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    draw_shgroup_uniform_bool_copy(grp, "useSelect", false);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_drw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "useSel", false);
     draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
 
-    sh = Overlayshader_paint_point();
-    pd->paint_point_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
+    sh = overlayshader_paint_point();
+    pd->paint_point_grp = grp = drw_shgroup_create(sh, psl->paint_overlay_ps);
     draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
   }
 }
 
-void overlay_paint_texture_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_paint_texture_cache_populate(OverlayData *vedata, Ob *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUBatch *geom = NULL;
 
-  const Mesh *me_orig = DEG_get_original_object(ob)->data;
+  const Mesh *me_orig = graph_get_original_ob(ob)->data;
   const bool use_face_sel = (me_orig->editflag & ME_EDIT_PAINT_FACE_SEL) != 0;
 
   if (pd->paint_surf_grp) {
-    geom = DRW_cache_mesh_surface_texpaint_single_get(ob);
-    DRW_shgroup_call(pd->paint_surf_grp, geom, ob);
+    geom = drw_cache_mesh_surface_texpaint_single_get(ob);
+    drw_shgroup_call(pd->paint_surf_grp, geom, ob);
   }
 
   if (use_face_sel) {
-    geom = DRW_cache_mesh_surface_get(ob);
-    DRW_shgroup_call(pd->paint_face_grp, geom, ob);
+    geom = drw_cache_mesh_surface_get(ob);
+    drw_shgroup_call(pd->paint_face_grp, geom, ob);
   }
 }
 
-void OVERLAY_paint_vertex_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_paint_ver_cache_populate(OverlayData *vedata, Ob *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUBatch *geom = NULL;
 
-  const Mesh *me_orig = DEG_get_original_object(ob)->data;
-  const bool is_edit_mode = (pd->ctx_mode == CTX_MODE_EDIT_MESH);
+  const Mesh *me_orig = graph_get_original_ob(ob)->data;
+  const bool is_edit_mode = (pd->cxt_mode == CXT_MODE_EDIT_MESH);
   const bool use_wire = !is_edit_mode && (pd->overlay.paint_flag & V3D_OVERLAY_PAINT_WIRE);
   const bool use_face_sel = !is_edit_mode && (me_orig->editflag & ME_EDIT_PAINT_FACE_SEL);
   const bool use_vert_sel = !is_edit_mode && (me_orig->editflag & ME_EDIT_PAINT_VERT_SEL);
 
   if (ELEM(ob->mode, OB_MODE_WEIGHT_PAINT, OB_MODE_EDIT)) {
     if (pd->paint_surf_grp) {
-      geom = DRW_cache_mesh_surface_weights_get(ob);
-      DRW_shgroup_call(pd->paint_surf_grp, geom, ob);
+      geom = drw_cache_mesh_surface_weights_get(ob);
+      drw_shgroup_call(pd->paint_surf_grp, geom, ob);
     }
     if (pd->paint_depth_grp) {
-      geom = DRW_cache_mesh_surface_weights_get(ob);
-      DRW_shgroup_call(pd->paint_depth_grp, geom, ob);
+      geom = drw_cache_mesh_surface_weights_get(ob);
+      drw_shgroup_call(pd->paint_depth_grp, geom, ob);
     }
   }
 
   if (use_face_sel || use_wire) {
-    geom = DRW_cache_mesh_surface_edges_get(ob);
-    DRW_shgroup_call(use_face_sel ? pd->paint_wire_selected_grp : pd->paint_wire_grp, geom, ob);
+    geom = dre_cache_mesh_surface_edges_get(ob);
+    drw_shgroup_call(use_face_sel ? pd->paint_wire_selected_grp : pd->paint_wire_grp, geom, ob);
   }
 
   if (use_face_sel) {
-    geom = DRW_cache_mesh_surface_get(ob);
-    DRW_shgroup_call(pd->paint_face_grp, geom, ob);
+    geom = drw_cache_mesh_surface_get(ob);
+    drw_shgroup_call(pd->paint_face_grp, geom, ob);
   }
 
   if (use_vert_sel) {
-    geom = DRW_cache_mesh_all_verts_get(ob);
-    DRW_shgroup_call(pd->paint_point_grp, geom, ob);
+    geom = drw_cache_mesh_all_verts_get(ob);
+    drw_shgroup_call(pd->paint_point_grp, geom, ob);
   }
 }
 
-void OVERLAY_paint_weight_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_paint_weight_cache_populate(OverlayData *vedata, Ob *ob)
 {
-  OVERLAY_paint_vertex_cache_populate(vedata, ob);
+  overlay_paint_vertex_cache_populate(vedata, ob);
 }
 
-void OVERLAY_paint_draw(OVERLAY_Data *vedata)
+void overlay_paint_drw(OverlayData *vedata)
 {
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPrivateData *pd = stl->pd;
 
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
+  OverlayPassList *psl = vedata->psl;
+  OverlayFramebufList *fbl = vedata->fbl;
 
-  if (DRW_state_is_fbo()) {
-    GPU_framebuffer_bind(pd->painting.in_front ? fbl->overlay_in_front_fb :
-                                                 fbl->overlay_default_fb);
+  if (drw_state_is_fbo()) {
+    gpu_framebuf_bind(pd->painting.in_front ? fbl->overlay_in_front_fb :
+                                              fbl->overlay_default_fb);
   }
 
   if (psl->paint_depth_ps) {
-    DRW_draw_pass(psl->paint_depth_ps);
+    drw_pass(psl->paint_depth_ps);
   }
   if (psl->paint_color_ps) {
-    DRW_draw_pass(psl->paint_color_ps);
+    drw_pass(psl->paint_color_ps);
   }
   if (psl->paint_overlay_ps) {
-    DRW_draw_pass(psl->paint_overlay_ps);
+    drw_pass(psl->paint_overlay_ps);
   }
 }
