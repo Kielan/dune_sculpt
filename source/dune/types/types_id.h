@@ -13,27 +13,27 @@ struct Lib;
 struct PackedFile;
 
 /* Runtime display data */
-struct DrawData;
-typedef void (*DrawDataInitCb)(struct DrawData *engine_data);
-typedef void (*DrawDataFreeCb)(struct DrawData *engine_data);
+struct DrwData;
+typedef void (*DrwDataInitCb)(struct DrwData *engine_data);
+typedef void (*DrwDataFreeCb)(struct DrwData *engine_data);
 
-typedef struct DrawData {
-  struct DrawData *next, *prev;
-  struct DrawEngineType *engine_type;
+typedef struct DrwData {
+  struct DrwData *next, *prev;
+  struct DrwEngineType *engine_type;
   /* Only nested data, NOT the engine data itself. */
-  DrawDataFreeCb free;
+  DrwDataFreeCb free;
   /* Accumulated recalc flags, which corresponds to ID->recalc flags. */
   int recalc;
-} DrawData;
+} DrwData;
 
-typedef struct DrawDataList {
-  struct DrawData *first, *last;
-} DrawDataList;
+typedef struct DrwDataList {
+  struct DrwData *first, *last;
+} DrwDataList;
 
 typedef struct IdPropUIData {
-  /** Tooltip / property description pointer. Owned by the IDProperty. */
+  /* Tooltip/prop description ptr. Owned by the IdProp. */
   char *description;
-  /** API subtype, used for every type except string properties (PropertySubType). */
+  /* API subtype, used for every type except string props (PropSubType). */
   int api_subtype;
   char _pad[4];
 } IdPropUIData;
@@ -49,7 +49,7 @@ typedef struct IdPropUIDataInt {
   int soft_min;
   int soft_max;
   int step;
-  int default_value;
+  int default_val;
 } IdPropUIDataInt;
 
 /* IDP_UI_DATA_TYPE_FLOAT */
@@ -64,13 +64,13 @@ typedef struct IdPropUIDataFloat {
   double max;
   double soft_min;
   double soft_max;
-  double default_value;
+  double default_val;
 } IdPropUIDataFloat;
 
 /* IDP_UI_DATA_TYPE_STRING */
 typedef struct IdPropUIDataString {
   IdPropUIData base;
-  char *default_value;
+  char *default_val;
 } IdPropUIDataString;
 
 /* IDP_UI_DATA_TYPE_ID */
@@ -80,8 +80,8 @@ typedef struct IdPropUIDataId {
 
 typedef struct IdPropData {
   void *ptr;
-  ListBase group;
-  /** NOTE: we actually fit a double into these two 32bit integers. */
+  List group;
+  /* Fits a double into these two 32bit integers. */
   int val, val2;
 } IdPropData;
 
@@ -89,12 +89,12 @@ typedef struct IdProp {
   struct IdProp *next, *prev;
   char type, subtype;
   short flag;
-  /** MAX_IDPROP_NAME. */
+  /* MAX_IDPROP_NAME. */
   char name[64];
   /* saved is used to indicate if this struct has been saved yet.
    * seemed like a good idea as a '_pad' var was needed anyway :) */
   int saved;
-  /** NOTE: alignment for 64 bits. */
+  /* alignment for 64 bits. */
   IdPropData data;
   /* Array length, also (this is important!) string length + 1.
    * the idea is to be able to reuse array realloc functions on strings. */
@@ -114,7 +114,7 @@ typedef enum eIdPropType {
   IDP_STRING = 0,
   IDP_INT = 1,
   IDP_FLOAT = 2,
-  /** Array containing int, floats, doubles or groups. */
+  /* Array containing int, floats, doubles or groups. */
   IDP_ARRAY = 5,
   IDP_GROUP = 6,
   IDP_ID = 7,
@@ -123,7 +123,7 @@ typedef enum eIdPropType {
 } eIdPropType;
 #define IDP_NUMTYPES 10
 
-/** Used by some IDP utils, keep values in sync with type enum above. */
+/* Used by some IDP utils, keep values in sync with type enum above. */
 enum {
   IDP_TYPE_FILTER_STRING = 1 << 0,
   IDP_TYPE_FILTER_INT = 1 << 1,
@@ -136,7 +136,6 @@ enum {
 };
 
 /*->subtype */
-
 /* IDP_STRING */
 enum {
   IDP_STRING_SUB_UTF8 = 0, /* default */
@@ -145,24 +144,22 @@ enum {
 
 /*->flag*/
 enum {
-  /** This IDProp may be statically overridden.
-   * Should only be used/be relevant for custom properties. */
+  /* This IDProp may be statically overridden.
+   * Should only be used/be relevant for custom props. */
   IDP_FLAG_OVERRIDABLE_LIB = 1 << 0,
 
-  /** This collection item IDProp has been inserted in a local override.
-   * This is used by internal code to distinguish between library-originated items and
+  /* This collection item IdProp has been inserted in a local override.
+   * This is used by internal code to distinguish between lib-originated items and
    * local-inserted ones, as many operations are not allowed on the former. */
   IDP_FLAG_OVERRIDELIB_LOCAL = 1 << 1,
 
-  /** This means the property is set but RNA will return false when checking
+  /* This means the prop is set but api will return false when checking
    * 'api_prop_is_set', currently this is a runtime flag */
   IDP_FLAG_GHOST = 1 << 7,
 };
 
 /* add any future new id prop types here. */
-
 /* Static id override structs. */
-
 typedef struct IdOverrideLibPropOp {
   struct IdOverrideLibPropOp *next, *prev;
   /* Type of override. */
@@ -172,15 +169,15 @@ typedef struct IdOverrideLibPropOp {
   short tag;
   char _pad0[2];
 
-  /* Sub-item references, if needed (for arrays or collections only).
-   * We need both reference and local values to allow e.g. insertion into RNA collections
-   * (constraints, modifiers...).
+  /* Sub-item refs, if needed (for arrays or collections only).
+   * We need both ref and local values to allow e.g. insertion into RNA collections
+   * (constraints, mods...).
    * In API collection case, if names are defined, they are used in priority.
-   * Names are pointers (instead of char[64]) to save some space, NULL or empty string when unset.
+   * Names are ptrs (instead of char[64]) to save some space, NULL or empty string when unset.
    * Indices are -1 when unset.
    *
-   * NOTE: For insertion operations in RNA collections, reference may not actually exist in the
-   * linked reference data. It is used to identify the anchor of the insertion operation (i.e. the
+   * For insertion ops in api collections, ref may not actually exist in the
+   * linked ref data. It is used to identify the anchor of the insertion op (i.e. the
    * item after or before which the new local item should be inserted), in the local override. */
   char *subitem_ref_name;
   char *subitem_local_name;
@@ -188,9 +185,9 @@ typedef struct IdOverrideLibPropOp {
   int subitem_local_index;
 } IdOverrideLibPropOp;
 
-/* IdOverrideLibPropOp->operation. */
+/* IdOverrideLibPropOp->op. */
 enum {
-  /* Basic operations. */
+  /* Basic ops. */
   IDOVERRIDE_LIB_OP_NOOP = 0, /* Special value, forbids any overriding. */
 
   IDOVERRIDE_LIB_OP_REPLACE = 1, /* Fully replace local value by reference one. */
