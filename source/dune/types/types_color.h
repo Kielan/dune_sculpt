@@ -22,7 +22,7 @@ typedef struct CurveMapPoint {
 
 /* CurveMapPoint.flag */
 enum {
-  CUMA_SELECT = (1 << 0),
+  CUMA_SEL = (1 << 0),
   CUMA_HANDLE_VECTOR = (1 << 1),
   CUMA_HANDLE_AUTO_ANIM = (1 << 2),
 };
@@ -31,7 +31,7 @@ typedef struct CurveMap {
   short totpoint;
   short flag TYPES_DEPRECATED;
 
-  /* Quick multiply value for reading table. */
+  /* Quick multiply val for reading table. */
   float range;
   /* The x-axis range for the table. */
   float mintable, maxtable;
