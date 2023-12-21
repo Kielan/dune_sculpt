@@ -73,7 +73,7 @@ typedef struct MLoop {
   unsigned int e;
 } MLoop;
 
-/* Ordered Selection Storage */
+/* Ordered Sel Storage */
 /* Optionally store the order of selected elements.
  * This won't always be set since only some selection operations have an order.
  *
@@ -92,12 +92,10 @@ enum {
   ME_FSEL = 2,
 };
 
-/* -------------------------------------------------------------------- */
 /* Loop Tessellation Runtime Data */
-
 /* MLoopTri's are lightweight triangulation data,
  * for functionality that doesn't support ngons (#MPoly).
- * This is cache data created from (#MPoly, #MLoop & #MVert arrays).
+ * This is cache data created from (MPoly, #MLoop & #MVert arrays).
  * There is no attempt to maintain this data's validity over time,
  * any changes to the underlying mesh invalidate the #MLoopTri array,
  * which will need to be re-calculated.
@@ -135,7 +133,7 @@ enum {
  *     mloopuv[lt->tri[2]].uv,
  * };
  *
- * MLoopTri's are allocated in an array, where each polygon's #MLoopTri's are stored contiguously,
+ * MLoopTri's are alloc in an array, where each polygon's #MLoopTri's are stored contiguously,
  * the number of triangles for each polygon is guaranteed to be (#MPoly.totloop - 2),
  * even for degenerate geometry. See #ME_POLY_TRI_TOT macro.
  *
@@ -177,8 +175,7 @@ enum {
  *
  * See dune_mesh_looptri_get_real_edges for a utility that does this.
  *
- * A MLoopTri may be in the middle of an ngon and not ref **any** edges.
- */
+ * A MLoopTri may be in the middle of an ngon and not ref **any** edges. */
 typedef struct MLoopTri {
   unsigned int tri[3];
   unsigned int poly;
