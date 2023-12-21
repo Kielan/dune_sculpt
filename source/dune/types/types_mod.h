@@ -2,7 +2,7 @@
 
 #include "types_defs.h"
 #include "types_list.h"
-#include "types_session_uuid.h"
+#include "types_sess_uuid.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,7 +10,6 @@ extern "C" {
 
 /* WARNING ALERT! TYPEDEF VALUES ARE WRITTEN IN FILES! SO DO NOT CHANGE!
  * (ONLY ADD NEW ITEMS AT THE END) */
-
 struct Mesh;
 
 typedef enum ModType {
@@ -33,7 +32,7 @@ typedef enum ModType {
   eModType_Smooth = 16,
   eModType_Cast = 17,
   eModType_MeshDeform = 18,
-  eModType_ParticleSystem = 19,
+  eModType_ParticleSys = 19,
   eModType_ParticleInstance = 20,
   eModType_Explode = 21,
   eModType_Cloth = 22,
@@ -110,17 +109,17 @@ typedef struct ModData {
   /* Runtime field which contains unique identifier of the modifier. */
   SessionUUID session_uuid;
 
-  /* Runtime field which contains runtime data which is specific to a modifier type. */
+  /* Runtime field which contains runtime data which is specific to a mod type. */
   void *runtime;
 } ModData;
 
 typedef enum {
   /* This mod has been inserted in local override, and hence can be fully edited. */
   eModFlag_OverrideLib_Local = (1 << 0),
-  /* This modifier does not own its caches, but instead shares them with another modifier. */
+  /* This mod does not own its caches, but instead shares them w another mod. */
   eModFlag_SharedCaches = (1 << 1),
-  /* This modifier is the object's active modifier. Used for context in the node editor.
-   * Only one modifier on an object should have this flag set. */
+  /* This mod is the ob's active mod. Used for cxt in the node editor.
+   * Only one mod on an ob should have this flag set. */
   eModFlag_Active = (1 << 2),
 } ModFlag;
 
