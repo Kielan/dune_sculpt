@@ -6,16 +6,16 @@
 
 #include "dune_curve.h"
 #include "dune_displist.h"
-#include "dune_duplilist.h"
-#include "dune_editmesh.h"
+#include "dune_duplist.h"
+#include "dune_meshedit.h"
 #include "dune_global.h"
-#include "dune_object.h"
+#include "dune_ob.h"
 #include "dune_paint.h"
 #include "dune_particle.h"
 
 #include "lib_hash.h"
 
-#include "draw_render.h"
+#include "drw_render.h"
 #include "gpu_shader.h"
 
 #include "ed_view3d.h"
@@ -25,9 +25,9 @@
 void overlay_wireframe_init(OverlayData *vedata)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DrawCtxState *draw_ctx = draw_ctx_state_get();
-  DrawView *default_view = (DrawView *)draw_view_default_get();
-  pd->view_wires = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
+  const DrwCtxState *drw_ctx = drw_cxt_state_get();
+  DrwView *default_view = (DrwView *)drw_view_default_get();
+  pd->view_wires = drw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
 }
 
 void overlay_wireframe_cache_init(OverlayData *vedata)
@@ -35,8 +35,8 @@ void overlay_wireframe_cache_init(OverlayData *vedata)
   OverlayPassList *psl = vedata->psl;
   OverlayTextureList *txl = vedata->txl;
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DrawCtxState *draw_ctx = draw_context_state_get();
-  DrawShadingGroup *grp = NULL;
+  const DrwCtxState *drw_ctx = drw_cxt_state_get();
+  DrwShadingGroup *grp = NULL;
 
   View3DShading *shading = &draw_ctx->v3d->shading;
 
@@ -45,10 +45,10 @@ void overlay_wireframe_cache_init(OverlayData *vedata)
 
   bool is_wire_shmode = (shading->type == OB_WIRE);
   bool is_material_shmode = (shading->type > OB_SOLID);
-  bool is_object_color = is_wire_shmode && (shading->wire_color_type == V3D_SHADING_OBJECT_COLOR);
+  bool is_ob_color = is_wire_shmode && (shading->wire_color_type == V3D_SHADING_OBJECT_COLOR);
   bool is_random_color = is_wire_shmode && (shading->wire_color_type == V3D_SHADING_RANDOM_COLOR);
 
-  const bool use_select = (draw_state_is_select() || DRW_state_is_depth());
+  const bool use_sel = (drw_state_is_sel() || drw_state_is_depth());
   GPUShader *wires_sh = use_select ? overlay_shader_wireframe_select() :
                                      overlay_shader_wireframe(pd->antialiasing.enabled);
 
