@@ -2,7 +2,6 @@
 
 /* Struct members on own line. */
 /* clang-format off */
-
 /* Light Struct */
 #define _TYPES_DEFAULT_Light \
   { \
@@ -26,7 +25,7 @@
     .area_size = 0.25f, \
     .area_sizey = 0.25f, \
     .area_sizez = 0.25f, \
-    .buffers = 1, \
+    .bufs = 1, \
     .preview = NULL, \
     .falloff_type = LA_FALLOFF_INVSQUARE, \
     .coeff_const = 1.0f, \
