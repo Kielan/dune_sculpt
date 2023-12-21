@@ -467,13 +467,13 @@ typedef struct PreviewImg {
 } PreviewImg;
 
 #define PRV_DEFERRED_DATA(prv) \
-  (CHECK_TYPE_INLINE(prv, PreviewImage *), \
+  (CHECK_TYPE_INLINE(prv, PreviewImg *), \
    lib_assert((prv)->tag & PRV_TAG_DEFFERED), \
    (void *)((prv) + 1))
 
-#define ID_FAKE_USERS(id) ((((const ID *)id)->flag & LIB_FAKEUSER) ? 1 : 0)
-#define ID_REAL_USERS(id) (((const ID *)id)->us - ID_FAKE_USERS(id))
-#define ID_EXTRA_USERS(id) (((const ID *)id)->tag & LIB_TAG_EXTRAUSER ? 1 : 0)
+#define ID_FAKE_USERS(id) ((((const Id *)id)->flag & LIB_FAKEUSER) ? 1 : 0)
+#define ID_REAL_USERS(id) (((const Id *)id)->us - ID_FAKE_USERS(id))
+#define ID_EXTRA_USERS(id) (((const Id *)id)->tag & LIB_TAG_EXTRAUSER ? 1 : 0)
 
 #define ID_CHECK_UNDO(id) \
   ((GS((id)->name) != ID_SCR) && (GS((id)->name) != ID_WM) && (GS((id)->name) != ID_WS))
@@ -496,10 +496,10 @@ typedef struct PreviewImg {
 #define ID_IS_OVERRIDABLE_LIB(_id) \
   (ID_IS_OVERRIDABLE_LIB_HIERARCHY((_id)) && (((const Id *)(_id))->tag & LIB_TAG_EXTERN) != 0)
 
-/* The three checks below do not take into account whether given Id is linked or not (when
+/* The 3 checks below dont take into account whether given Id is linked or not (when
  * chaining overrides over several libs). User must ensure the Id is not linked itself
  * currently. */
-/* TODO: add `_EDITABLE` versions of those macros (that would check if ID is linked or not)? */
+/* TODO: add `_EDITABLE` versions of those macros (that would check if Id is linked or not)? */
 #define ID_IS_OVERRIDE_LIB_REAL(_id) \
   (((const Id *)(_id))->override_lib != NULL && \
    ((const Id *)(_id))->override_lib->ref != NULL)
@@ -595,7 +595,7 @@ enum {
   LIB_TAG_NEED_LINK = 1 << 5,
 
   /* RESET_NEVER tag data-block as a place-holder
-   * (because the real one could not be linked from its library e.g.). */
+   * (bc the real one could not be linked from its library e.g.). */
   LIB_TAG_MISSING = 1 << 6,
 
   /* RESET_NEVER tag data-block as being up-to-date regarding its reference. */
@@ -633,14 +633,12 @@ enum {
    * can be different than the COW initial obdata Id.  */
   LIB_TAG_COPIED_ON_WRITE_EVAL_RESULT = 1 << 13,
 
-  /**
-   * The data-block is fully outside of any Id management area, and should be considered as a
+  /* The data-block is fully outside of any Id management area, and should be considered as a
    * purely independent data.
    *
    * RESET_NEVER
    *
-   * NOTE: Only used by node-groups currently.
-   */
+   * Only used by node-groups currently. */
   LIB_TAG_LOCALIZED = 1 << 14,
 
   /* RESET_NEVER tag data-block for freeing etc. behavior
@@ -655,35 +653,33 @@ enum {
    * read from memfile). */
   LIB_TAG_UNDO_OLD_ID_REUSED = 1 << 19,
 
-  /* This ID is part of a temporary #Main which is expected to be freed in a short time-frame.
-   * Don't allow assigning this to non-temporary members (since it's likely to cause errors).
-   * When set #ID.session_uuid isn't initialized, since the data isn't part of the session. */
+  /* This Id is part of a tmp Main which is expected to be freed in a short time-frame.
+   * Don't allow assigning this to non-tmp members (since it's likely to cause errors).
+   * When set Id.sess_uuid isn't initialized, since the data isn't part of the session. */
   LIB_TAG_TEMP_MAIN = 1 << 20,
 
-  /**
-   * The data-block is a library override that needs re-sync to its linked reference.
-   */
+  /* The data-block is a lib override that needs re-sync to its linked ref */
   LIB_TAG_LIB_OVERRIDE_NEED_RESYNC = 1 << 21,
 };
 
-/* Tag given ID for an update in all the dependency graphs. */
+/* Tag given Id for an update in all the dep graphs. */
 typedef enum IDRecalcFlag {
-  /***************************************************************************
-   * Individual update tags, this is what ID gets tagged for update with. */
+  /************************
+   * Individual update tags, what Id gets tagged for update with. */
 
-  /* ** Object transformation changed. ** */
+  /* Ob transformation changed. ** */
   ID_RECALC_TRANSFORM = (1 << 0),
 
-  /* ** Geometry changed. **
+  /* Geometry changed. **
    *
-   * When object of armature type gets tagged with this flag, its pose is
-   * re-evaluated.
+   * When ob of armature type gets tagged with this flag, its pose is
+   * re-eval.
    *
-   * When object of other type is tagged with this flag it makes the modifier
-   * stack to be re-evaluated.
+   * When ob of other type is tagged with this flag it makes the modifier
+   * stack to be re-eval.
    *
-   * When object data type (mesh, curve, ...) gets tagged with this flag it
-   * makes all objects which shares this data-block to be updated.
+   * When ob data type (mesh, curve, ...) gets tagged with this flag it
+   * makes all obs which shares this data-block to be updated.
    *
    * Note that the evaluation depends on the object-mode.
    * So edit-mesh data for example only reevaluate with the updated edit-mesh.
@@ -697,31 +693,31 @@ typedef enum IDRecalcFlag {
   /* ** Animation or time changed and animation is to be re-evaluated. ** */
   ID_RECALC_ANIMATION = (1 << 2),
 
-  /* ** Particle system changed. ** */
+  /* Particle sys changed. ** */
   /* Only do pathcache etc. */
   ID_RECALC_PSYS_REDO = (1 << 3),
   /* Reset everything including pointcache. */
   ID_RECALC_PSYS_RESET = (1 << 4),
   /* Only child settings changed. */
   ID_RECALC_PSYS_CHILD = (1 << 5),
-  /* Physics type changed. */
+  /* Phys type changed. */
   ID_RECALC_PSYS_PHYS = (1 << 6),
 
-  /* ** Material and shading ** */
+  /* Material and shading ** */
 
   /* For materials and node trees this means that topology of the shader tree
    * changed, and the shader is to be recompiled.
-   * For objects it means that the draw batch cache is to be redone. */
+   * For obs it means that the draw batch cache is to be redone. */
   ID_RECALC_SHADING = (1 << 7),
   /* TODO: Consider adding an explicit ID_RECALC_SHADING_PARAMATERS
    * which can be used for cases when only socket value changed, to speed up
    * redraw update in that case. */
 
-  /* Selection of the ID itself or its components (for example, vertices) did
+  /* Sel of the ID itself or its components (for example, vertices) did
    * change, and all the drawing data is to be updated. */
-  ID_RECALC_SELECT = (1 << 9),
+  ID_RECALC_SEL = (1 << 9),
   /* Flags on the base did change, and is to be copied onto all the copies of
-   * corresponding objects. */
+   * corresponding obs. */
   ID_RECALC_BASE_FLAGS = (1 << 10),
   ID_RECALC_POINT_CACHE = (1 << 11),
   /* Only inform editors about the change. Is used to force update of editors
@@ -731,14 +727,13 @@ typedef enum IDRecalcFlag {
    * re-rendered. */
   ID_RECALC_EDITORS = (1 << 12),
 
-  /* ** Update copy on write component. **
+  /* Update copy on write component. **
    * This is most generic tag which should only be used when nothing else
-   * matches.
-   */
+   * matches */
   ID_RECALC_COPY_ON_WRITE = (1 << 13),
 
-  /* Sequences in the sequencer did change.
-   * Use this tag with a scene ID which owns the sequences. */
+  /* Seqs in the seq did change.
+   * Use this tag with a scene Id which owns the seqs. */
   ID_RECALC_SEQUENCER_STRIPS = (1 << 14),
 
   /* Runs on frame-change (used for seeking audio too). */
@@ -751,16 +746,16 @@ typedef enum IDRecalcFlag {
 
   ID_RECALC_AUDIO = (1 << 20),
 
-  /* NOTE: This triggers copy on write for types that require it.
+  /* This triggers copy on write for types that require it.
    * Exceptions to this can be added using #ID_TYPE_SUPPORTS_PARAMS_WITHOUT_COW,
    * this has the advantage that large arrays stored in the idea data don't
    * have to be copied on every update. */
-  ID_RECALC_PARAMETERS = (1 << 21),
+  ID_RECALC_PARAMS = (1 << 21),
 
   /* Input has changed and datablock is to be reload from disk.
    * Applies to movie clips to inform that copy-on-written version is to be refreshed for the new
    * input file or for color space changes. */
-  ID_RECALC_SOURCE = (1 << 23),
+  ID_RECALC_SRC = (1 << 23),
 
   /* Virtual recalc tag/marker required for undo in some cases, where actual data does not change
    * and hence do not require an update, but conceptually we are dealing with something new.
