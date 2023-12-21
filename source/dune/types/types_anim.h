@@ -10,13 +10,10 @@ extern "C" {
 #endif
 
 /* F-Curve DataTypes */
-
-/* Modifiers */
-
+/* Mods */
 /* F-Curve Mods (fcm)
- *
- * These alter the way F-Curves behave, by altering the value that is returned
- * when evaluating the curve's data at some time (t) */
+ * These alter the way F-Curves behave, by altering the val that is returned
+ * when eval the curve's data at some time (t) */
 typedef struct FMod {
   struct FMod *next, *prev;
 
@@ -32,21 +29,21 @@ typedef struct FMod {
   /* Settings for the modifier. */
   short flag;
   /* Expansion state for the mod panel and its sub-panels, stored as a bit-field
-   * in depth-first order. (Maximum of `sizeof(short)` total panels). */
+   * in depth-first order. (Max of `sizeof(short)` total panels). */
   short ui_expand_flag;
 
   char _pad[6];
 
-  /* The amount that the modifier should influence the value. */
+  /* The amount that the mod should influence the value. */
   float influence;
 
   /* Start frame of restricted frame-range. */
   float sfra;
   /* End frame of restricted frame-range. */
   float efra;
-  /* Number of frames from sfra before modifier takes full influence. */
+  /* Num of frames from sfra before modifier takes full influence. */
   float blendin;
-  /* Number of frames from efra before modifier fades out. */
+  /* Num of frames from efra before modifier fades out. */
   float blendout;
 } FMod;
 
@@ -70,7 +67,7 @@ typedef enum eFMod_Types {
 } eFMod_Types;
 
 /* F-Curve Mod Settings. */
-typedef enum eFMod_Flags {
+typedef enum eFModFlags {
   /* Mod is not able to be evald for some reason, and should be skipped (internal). */
   FMOD_FLAG_DISABLED = (1 << 0),
 #ifdef TYPES_DEPRECATED_ALLOW
@@ -79,20 +76,20 @@ typedef enum eFMod_Flags {
 #endif
   /* Mod is active one (in UI) for editing purposes. */
   FMOD_FLAG_ACTIVE = (1 << 2),
-  /* User wants modifier to be skipped. */
+  /* User wants mod to be skipped. */
   FMOD_FLAG_MUTED = (1 << 3),
-  /* Restrict range that F-Modifier can be considered over. */
+  /* Restrict range that F-Mod can be considered over. */
   FMOD_FLAG_RANGERESTRICT = (1 << 4),
-  /* Use influence control. */
+  /* Use influence ctrl. */
   FMOD_FLAG_USEINFLUENCE = (1 << 5),
 } eFMod_Flags;
 
 /* Generator mod data */
-typedef struct FMod_Generator {
-  /* general generator information */
-  /* Coefficients array. */
+typedef struct FModGenerator {
+  /* general generator info */
+  /* Coefficients arr. */
   float *coefficients;
-  /* Size of the coefficients array. */
+  /* Size of the coefficients arr. */
   unsigned int arraysize;
 
   /* Order of polynomial generated (i.e. 1 for linear, 2 for quadratic). */
@@ -105,26 +102,26 @@ typedef struct FMod_Generator {
 } FMod_Generator;
 
 /* generator modes */
-typedef enum eFMod_Generator_Modes {
+typedef enum eFModGeneratorModes {
   FCM_GENERATOR_POLYNOMIAL = 0,
   FCM_GENERATOR_POLYNOMIAL_FACTORISED = 1,
-} eFMod_Generator_Modes;
+} eFModGeneratorModes;
 
 /* generator flags
  * - shared by Generator and Fn Generator */
-typedef enum eFMod_Generator_Flags {
-  /* generator works in conjunction with other modifiers (i.e. doesn't replace those before it) */
+typedef enum eFModGeneratorFlags {
+  /* generator works in conjunction with other mods (i.e. doesn't replace those before it) */
   FCM_GENERATOR_ADDITIVE = (1 << 0),
-} eFMod_Generator_Flags;
+} eFModGeneratorFlags;
 
-/* 'Built-In Function' Generator mod data
+/* 'Built-In Fn' Generator mod data
  *
  * This uses the general equation for equations:
  * y = amplitude * fn(phase_multiplier*x + phase_offset) + y_offset
  *
  * where amplitude, phase_multiplier/offset, y_offset are user-defined coefficients,
- * x is the evaluation 'time', and 'y' is the resultant value */
-typedef struct FMod_FnGenerator {
+ * x is the eval 'time', and 'y' is the resultant val */
+typedef struct FModFnGenerator {
   /* Coefficients for general equation (as above). */
   float amplitude;
   float phase_multiplier;
@@ -132,25 +129,25 @@ typedef struct FMod_FnGenerator {
   float value_offset;
 
   /* flags */
-  /* eFMod_Generator_Functions. */
+  /* eFModGeneratorFns. */
   int type;
-  /* eFMod_Generator_flags. */
+  /* eFModGeneratorflags. */
   int flag;
-} FMod_FnGenerator;
+} FModFnGenerator;
 
 /* 'fn' generator types */
-typedef enum eFMod_Generator_Fns {
+typedef enum eFModGeneratorFns {
   FCM_GENERATOR_FN_SIN = 0,
   FCM_GENERATOR_FN_COS = 1,
   FCM_GENERATOR_FN_TAN = 2,
   FCM_GENERATOR_FN_SQRT = 3,
   FCM_GENERATOR_FN_LN = 4,
   FCM_GENERATOR_FN_SINC = 5,
-} eFMod_Generator_Fns;
+} eFModGeneratorFns;
 
 /* envelope mod - envelope data */
-typedef struct FCM_EnvelopeData {
-  /* Min/max values for envelope at this point (absolute values). */
+typedef struct FCMEnvelopeData {
+  /* Min/max vals for envelope at this point (absolute values). */
   float min, max;
   /* Time for that this sample-point occurs. */
   float time;
@@ -159,12 +156,12 @@ typedef struct FCM_EnvelopeData {
   short f1;
   /* Settings for 'max' control point. */
   short f2;
-} FCM_EnvelopeData;
+} FCMEnvelopeData;
 
 /* envelope-like adjustment to values (for fade in/out) */
-typedef struct FMod_Envelope {
+typedef struct FModEnvelope {
   /* Data-points defining envelope to apply (array). */
-  FCM_EnvelopeData *data;
+  FCMEnvelopeData *data;
   /* Number of envelope points. */
   int totvert;
 
@@ -172,11 +169,11 @@ typedef struct FMod_Envelope {
   float midval;
   /* Distances from 'middle-value' for 1:1 envelope influence. */
   float min, max;
-} FMod_Envelope;
+} FModEnvelope;
 
 /* cycling/repetition modifier data */
 /* TODO: we can only do complete cycles. */
-typedef struct FMod_Cycles {
+typedef struct FModCycles {
   /* Extrapolation mode to use before first keyframe. */
   short before_mode;
   /* Extrapolation mode to use after last keyframe. */
@@ -185,10 +182,10 @@ typedef struct FMod_Cycles {
   short before_cycles;
   /* Number of 'cycles' after last keyframe to do. */
   short after_cycles;
-} FMod_Cycles;
+} FModCycles;
 
 /* cycling modes */
-typedef enum eFMod_Cycling_Modes {
+typedef enum eFModCyclingModes {
   /* don't do anything */
   FCM_EXTRAPOLATE_NONE = 0,
   /* repeat keyframe range as-is */
@@ -197,35 +194,35 @@ typedef enum eFMod_Cycling_Modes {
   FCM_EXTRAPOLATE_CYCLIC_OFFSET,
   /* alternate between forward and reverse playback of keyframe range */
   FCM_EXTRAPOLATE_MIRROR,
-} eFMod_Cycling_Modes;
+} eFModCyclingModes;
 
 /* Python-script mod data */
 typedef struct FMod_Python {
-  /* Text buffer containing script to execute. */
-  struct Text *script;
+  /* Txt buf containing script to execute. */
+  struct Txt *script;
   /* ID-props to provide 'custom' settings. */
   IdProp *prop;
 } FMod_Python;
 
 /* limits mod data */
-typedef struct FMod_Limits {
+typedef struct FModLimits {
   /* Rect defining the min/max values. */
   rctf rect;
   /* Settings for limiting. */
   int flag;
   char _pad[4];
-} FMod_Limits;
+} FModLimits;
 
 /* limiting flags */
-typedef enum eFMod_Limit_Flags {
+typedef enum eFModLimitFlags {
   FCM_LIMIT_XMIN = (1 << 0),
   FCM_LIMIT_XMAX = (1 << 1),
   FCM_LIMIT_YMIN = (1 << 2),
   FCM_LIMIT_YMAX = (1 << 3),
-} eFMod_Limit_Flags;
+} eFModLimitFlags;
 
-/* noise modifier data */
-typedef struct FMod_Noise {
+/* noise mod data */
+typedef struct FModNoise {
   float size;
   float strength;
   float phase;
@@ -233,11 +230,11 @@ typedef struct FMod_Noise {
 
   short depth;
   short modification;
-} FMod_Noise;
+} FModNoise;
 
 /* modification modes */
-typedef enum eFMod_Noise_Modifications {
-  /** Modify existing curve, matching its shape. */
+typedef enum eFModNoiseModifications {
+  /* Modify existing curve, matching its shape. */
   FCM_NOISE_MODIF_REPLACE = 0,
   /* Add noise to the curve. */
   FCM_NOISE_MODIF_ADD,
@@ -245,39 +242,37 @@ typedef enum eFMod_Noise_Modifications {
   FCM_NOISE_MODIF_SUBTRACT,
   /* Multiply the curve by noise. */
   FCM_NOISE_MODIF_MULTIPLY,
-} eFMod_Noise_Modifications;
+} eFModNoiseModifications;
 
-/* stepped modifier data */
-typedef struct FMod_Stepped {
-  /** Number of frames each interpolated value should be held. */
+/* stepped mod data */
+typedef struct FModStepped {
+  /* Num of frames each interpolated value should be held. */
   float step_size;
-  /** Reference frame number that stepping starts from. */
+  /* Ref frame num that stepping starts from. */
   float offset;
 
-  /** Start frame of the frame range that modifier works in. */
+  /* Start frame of the frame range that modifier works in. */
   float start_frame;
-  /** End frame of the frame range that modifier works in. */
+  /* End frame of the frame range that modifier works in. */
   float end_frame;
 
-  /** Various settings. */
+  /* Various settings. */
   int flag;
-} FMod_Stepped;
+} FModStepped;
 
-/* stepped modifier range flags */
-typedef enum eFMod_Stepped_Flags {
+/* stepped mod range flags */
+typedef enum eFModSteppedFlags {
   /* Don't affect frames before the start frame. */
   FCM_STEPPED_NO_BEFORE = (1 << 0),
-  /** Don't affect frames after the end frame. */
+  /* Don't affect frames after the end frame. */
   FCM_STEPPED_NO_AFTER = (1 << 1),
-} eFMod_Stepped_Flags;
+} eFModSteppedFlags;
 
-/* Drivers -------------------------------------- */
-
+/* Drivers */
 /* Driver Target (dtar)
- *
  * Defines how to access a dependency needed for a driver variable. */
 typedef struct DriverTarget {
-  /** ID-block which owns the target, no user count. */
+  /* Id-block which owns the target, no user count. */
   Id *id;
 
   /* API path defining the setting to use (for DVAR_TYPE_SINGLE_PROP). */
@@ -294,14 +289,14 @@ typedef struct DriverTarget {
   char _pad[7];
 
   /* Flags for the validity of the target
-   * (NOTE: these get reset every time the types change). */
+   * These get reset every time the types change). */
   short flag;
-  /** Type of ID-block that this target can use. */
+  /* Type of Id-block that this target can use. */
   int idtype;
 } DriverTarget;
 
 /* Driver Target flags. */
-typedef enum eDriverTarget_Flag {
+typedef enum eDriverTargetFlag {
   /* used for targets that use the pchan_name instead of RNA path
    * (i.e. rotation difference) */
   DTAR_FLAG_STRUCT_REF = (1 << 0),
@@ -316,10 +311,10 @@ typedef enum eDriverTarget_Flag {
 
   /* error flags */
   DTAR_FLAG_INVALID = (1 << 4),
-} eDriverTarget_Flag;
+} eDriverTargetFlag;
 
 /* Transform Channels for Driver Targets */
-typedef enum eDriverTarget_TransformChannels {
+typedef enum eDriverTargetTransformChannels {
   DTAR_TRANSCHAN_LOCX = 0,
   DTAR_TRANSCHAN_LOCY,
   DTAR_TRANSCHAN_LOCZ,
@@ -333,10 +328,10 @@ typedef enum eDriverTarget_TransformChannels {
   DTAR_TRANSCHAN_ROTW,
 
   MAX_DTAR_TRANSCHAN_TYPES,
-} eDriverTarget_TransformChannels;
+} eDriverTargetTransformChannels;
 
 /* Rotation channel mode for Driver Targets */
-typedef enum eDriverTarget_RotationMode {
+typedef enum eDriverTargetRotationMode {
   /* Automatic euler mode. */
   DTAR_ROTMODE_AUTO = 0,
 
@@ -360,16 +355,15 @@ typedef enum eDriverTarget_RotationMode {
   DTAR_ROTMODE_EULER_MAX = DTAR_ROTMODE_EULER_ZYX,
 } eDriverTarget_RotationMode;
 
-/* maximum number of driver targets per variable */
+/* maximum num of driver targets per variable */
 #define MAX_DRIVER_TARGETS 8
 
-/* Driver Variable (dvar)
+/* Driver Var (dvar)
  *
- * A 'variable' for use as an input for the driver evaluation.
+ * A 'var' for use as an input for the driver eval.
  * Defines a way of accessing some channel to use, that can be
- * referred to in the expression as a variable, thus simplifying
- * expressions and also Depsgraph building.
- */
+ * referred to in the expression as a var, thus simplifying
+ * expressions and also Graph building. */
 typedef struct DriverVar {
   struct DriverVar *next, *prev;
 
@@ -377,46 +371,43 @@ typedef struct DriverVar {
    * (must be valid python identifier) - `MAX_ID_NAME - 2 */
   char name[64];
 
-  /** MAX_DRIVER_TARGETS, target slots. */
+  /* MAX_DRIVER_TARGETS, target slots. */
   DriverTarget targets[8];
 
-  /** Number of targets actually used by this variable. */
+  /* Num of targets actually used by this variable. */
   char num_targets;
-  /** Type of driver variable (eDriverVar_Types). */
+  /* Type of driver variable (eDriverVar_Types). */
   char type;
 
-  /** Validation tags, etc. (eDriverVar_Flags). */
+  /* Validation tags, etc. (eDriverVar_Flags). */
   short flag;
-  /** Result of previous evaluation. */
+  /* Result of previous evaluation. */
   float curval;
 } DriverVar;
 
-/** Driver Variable Types.* */
-typedef enum eDriverVar_Types {
-  /** single RNA prop */
+/* Driver Var Types.* */
+typedef enum eDriverVarTypes {
+  /* single api prop */
   DVAR_TYPE_SINGLE_PROP = 0,
-  /** rotation difference (between 2 bones) */
+  /* rotation difference (between 2 bones) */
   DVAR_TYPE_ROT_DIFF,
-  /** distance between objects/bones */
+  /* distance between obs/bones */
   DVAR_TYPE_LOC_DIFF,
-  /** 'final' transform for object/bones */
+  /* 'final' transform for ob/bones */
   DVAR_TYPE_TRANSFORM_CHAN,
 
-  /**
-   * Maximum number of variable types.
-   *
-   * \note This must always be the last item in this list,
-   * so add new types above this line.
-   */
+  /* Max num of var types.
+   * This must always be the last item in this list,
+   * so add new types above this line. */
   MAX_DVAR_TYPES,
-} eDriverVar_Types;
+} eDriverVarTypes;
 
-/* Driver Variable Flags */
-typedef enum eDriverVar_Flags {
-  /* variable is not set up correctly */
+/* Driver Var Flags */
+typedef enum eDriverVarFlags {
+  /* var is not set up correctly */
   DVAR_FLAG_ERROR = (1 << 0),
 
-  /* variable name doesn't pass the validation tests */
+  /* var name doesn't pass the validation tests */
   DVAR_FLAG_INVALID_NAME = (1 << 1),
   /* name starts with a number */
   DVAR_FLAG_INVALID_START_NUM = (1 << 2),
@@ -432,7 +423,7 @@ typedef enum eDriverVar_Flags {
   DVAR_FLAG_INVALID_PY_KEYWORD = (1 << 7),
   /* name is zero-length */
   DVAR_FLAG_INVALID_EMPTY = (1 << 8),
-} eDriverVar_Flags;
+} eDriverVarFlags;
 
 /* All invalid dvar name flags */
 #define DVAR_ALL_INVALID_FLAGS \
@@ -440,156 +431,141 @@ typedef enum eDriverVar_Flags {
    DVAR_FLAG_INVALID_HAS_SPACE | DVAR_FLAG_INVALID_HAS_DOT | DVAR_FLAG_INVALID_HAS_SPECIAL | \
    DVAR_FLAG_INVALID_PY_KEYWORD | DVAR_FLAG_INVALID_EMPTY)
 
-/* --- */
-
-/**
- * Channel Driver (i.e. Drivers / Expressions) (driver)
+/* Channel Driver (i.e. Drivers / Expressions) (driver)
  *
- * Channel Drivers are part of the dependency system, and are executed in addition to
+ * Channel Drivers are part of the dependency system, and are ex in addition to
  * normal user-defined animation. They take the animation result of some channel(s), and
  * use that (optionally combined with its own F-Curve for modification of results) to define
  * the value of some setting semi-procedurally.
  *
  * Drivers are stored as part of F-Curve data, so that the F-Curve's RNA-path settings (for storing
  * what setting the driver will affect). The order in which they are stored defines the order that
- * they're evaluated in. This order is set by the Depsgraph's sorting stuff.
- */
+ * they're eval in. This order is set by the Depsgraph's sorting stuff. */
 typedef struct ChannelDriver {
-  /** Targets for this driver (i.e. list of DriverVar). */
-  ListBase variables;
+  /* Targets for this driver (i.e. list of DriverVar). */
+  List vars;
 
-  /* python expression to execute (may call functions defined in an accessory file)
-   * which relates the target 'variables' in some way to yield a single usable value
-   */
-  /** Expression to compile for evaluation. */
+  /* python expression to execute (may call fns defined in an accessory file)
+   * which relates the target 'variables' in some way to yield a single usable value */
+  /* Expression to compile for eval. */
   char expression[256];
-  /** PyObject - compiled expression, don't save this. */
+  /* PyOb - compiled expression, don't save this. */
   void *expr_comp;
 
-  /** Compiled simple arithmetic expression. */
+  /* Compiled simple arithmetic expression. */
   struct ExprPyLike_Parsed *expr_simple;
 
-  /** Result of previous evaluation. */
+  /* Result of previous evaluation. */
   float curval;
-  /* XXX to be implemented... this is like the constraint influence setting. */
-  /** Influence of driver on result. */
-  float influence;
-
+  /* to be implemented... this is like the constraint influence setting. */
+  /* Influence of driver on result.
+  * float 
   /* general settings */
-  /** Type of driver. */
+  /* Type of driver. */
   int type;
-  /** Settings of driver. */
+  /* Settings of driver. */
   int flag;
 } ChannelDriver;
 
-/** Driver type. */
-typedef enum eDriver_Types {
-  /** target values are averaged together. */
-  DRIVER_TYPE_AVERAGE = 0,
-  /** python expression/function relates targets. */
+/* Driver type. */
+typedef enum eDriverTypes {
+  /* target vals are avgd together. */
+  DRIVER_TYPE_AVG = 0,
+  /* python expression/fn relates targets. */
   DRIVER_TYPE_PYTHON,
-  /** sum of all values. */
+  /* sum of all vals. */
   DRIVER_TYPE_SUM,
-  /** smallest value. */
+  /* smallest val. */
   DRIVER_TYPE_MIN,
-  /** largest value. */
+  /* largest val */
   DRIVER_TYPE_MAX,
-} eDriver_Types;
+} eDriverTypes;
 
 /** Driver flags. */
-typedef enum eDriver_Flags {
-  /** Driver has invalid settings (internal flag). */
+typedef enum eDriverFlags {
+  /* Driver has invalid settings (internal flag). */
   DRIVER_FLAG_INVALID = (1 << 0),
   DRIVER_FLAG_DEPRECATED = (1 << 1),
   /** Driver does replace value, but overrides (for layering of animation over driver) */
   /* TODO: this needs to be implemented at some stage or left out... */
   // DRIVER_FLAG_LAYERING  = (1 << 2),
-  /** Use when the expression needs to be recompiled. */
+  /* Use when the expression needs to be recompiled. */
   DRIVER_FLAG_RECOMPILE = (1 << 3),
   /** The names are cached so they don't need have python unicode versions created each time */
   DRIVER_FLAG_RENAMEVAR = (1 << 4),
   // DRIVER_FLAG_UNUSED_5 = (1 << 5),
   /** Include 'self' in the drivers namespace. */
   DRIVER_FLAG_USE_SELF = (1 << 6),
-} eDriver_Flags;
+} eDriverFlags;
 
 /* F-Curves -------------------------------------- */
 
-/** When #active_keyframe_index is set to this, the FCurve does not have an active keyframe. */
+/* When active_keyframe_index is set to this, the FCurve does not have an active keyframe. */
 #define FCURVE_ACTIVE_KEYFRAME_NONE -1
 
-/**
- * FPoint (fpt)
+/* FPoint (fpt)
  *
  * This is the bare-minimum data required storing motion samples. Should be more efficient
- * than using BPoints, which contain a lot of other unnecessary data...
- */
+ * than using Points, which contain a lot of other unnecessary data... */
 typedef struct FPoint {
-  /** Time + value. */
+  /* Time + val. */
   float vec[2];
-  /** Selection info. */
+  /* Sel info. */
   int flag;
   char _pad[4];
 } FPoint;
 
-/* 'Function-Curve' - defines values over time for a given setting (fcu) */
+/* 'Fn-Curve' - defines vals over time for a given setting (fcu) */
 typedef struct FCurve {
   struct FCurve *next, *prev;
 
   /* group */
-  /** Group that F-Curve belongs to. */
-  bActionGroup *grp;
+  /* Group that F-Curve belongs to. */
+  ActionGroup *grp;
 
   /* driver settings */
-  /** Only valid for drivers (i.e. stored in AnimData not Actions). */
+  /* Only valid for drivers (i.e. stored in AnimData not Actions). */
   ChannelDriver *driver;
-  /* evaluation settings */
-  /** FCurve Modifiers. */
-  ListBase modifiers;
+  /* eval settings */
+  /* FCurve Modifiers. */
+  List mods;
 
   /* motion data */
-  /** User-editable keyframes (array). */
+  /* User-editable keyframes (array). */
   BezTriple *bezt;
-  /** 'baked/imported' motion samples (array). */
+  /* 'baked/imported' motion samples (ar). */
   FPoint *fpt;
-  /** Total number of points which define the curve (i.e. size of arrays in FPoints). */
+  /* Total num of points which define the curve (i.e. size of arrays in FPoints). */
   unsigned int totvert;
 
-  /**
-   * Index of active keyframe in #bezt for numerical editing in the interface. A value of
-   * #FCURVE_ACTIVE_KEYFRAME_NONE indicates that the FCurve has no active keyframe.
-   *
-   * Do not access directly, use #BKE_fcurve_active_keyframe_index() and
-   * #BKE_fcurve_active_keyframe_set() instead.
-   */
+  /* Index of active keyframe in bezt for numerical editing in the interface. A val of
+   * FCURVE_ACTIVE_KEYFRAME_NONE indicates that the FCurve has no active keyframe.
+   * Do not access directly, use dune_fcurve_active_keyframe_index() and
+   * dune_fcurve_active_keyframe_set() instead. */
   int active_keyframe_index;
 
-  /* value cache + settings */
-  /** Value stored from last time curve was evaluated (not threadsafe, debug display only!). */
+  /* val cache + settings */
+  /* Val stored from last time curve was evaluated (not threadsafe, debug display only!). */
   float curval;
-  /** User-editable settings for this curve. */
+  /* User-editable settings for this curve. */
   short flag;
-  /** Value-extending mode for this curve (does not cover). */
+  /* Val-extending mode for this curve (does not cover). */
   short extend;
-  /** Auto-handle smoothing mode. */
+  /* Auto-handle smoothing mode. */
   char auto_smoothing;
 
   char _pad[3];
 
-  /* RNA - data link */
-  /**
-   * When the RNA property from `rna_path` is an array, use this to access the array index.
+  /* Api - data link */
+  /* When the api prop from `api_path` is an array, use this to access the arr index.
    *
-   * \note This may be negative (as it wasn't prevented in 2.91 and older).
+   * This may be negative (as it wasn't prevented in 2.91 and older).
    * Currently it silently fails to resolve the data-path in this case.
    */
   int array_index;
-  /**
-   * RNA-path to resolve data-access, see: #RNA_path_resolve_property.
-   *
-   * \note String look-ups for collection and custom-properties are escaped using #BLI_str_escape.
-   */
-  char *rna_path;
+  /* api-path to resolve data-access, see: api_path_resolve_prop.
+   * String look-ups for collection and custom-properties are escaped using lib_str_escape. */
+  char *api_path;
 
   /* curve coloring (for editor) */
   /** Coloring method to use (eFCurve_Coloring). */
