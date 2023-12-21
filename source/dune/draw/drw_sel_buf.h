@@ -35,91 +35,82 @@ struct ObOffsets {
 };
 
 typedef struct SelIdCxt {
-  /* All context obs */
-  struct Ob **objects;
+  /* All cxt obs */
+  struct Ob **obs;
 
-  /* Array with only drawn objects. When a new object is found within the rect,
+  /* Arr with only drwn obs. When a new ob is found w/in the rect,
    * it is added to the end of the list.
-   * The list is reset to any viewport or context update. */
-  struct Object **objects_drawn;
-  struct ObjectOffsets *index_offsets;
-  uint objects_len;
-  uint objects_drawn_len;
+   * The list is reset to any viewport or cxt update. */
+  struct Ob **obs_drwn;
+  struct ObOffsets *index_offsets;
+  uint obs_len;
+  uint obs_drawn_len;
 
   /** Total number of element indices `index_offsets[object_drawn_len - 1].vert`. */
   uint index_drawn_len;
 
-  short select_mode;
+  short sel_mode;
 
-  /* rect is used to check which objects whose indexes need to be drawn. */
+  /* rect is used to check which obs whose indexes need to be drawn. */
   rcti last_rect;
 
   /* To check for updates. */
   float persmat[4][4];
   bool is_dirty;
-} SelectIdCtx;
+} SelIdCxt;
 
-/* draw_select_buffer.c */
-
-bool draw_select_buffer_elem_get(uint sel_id, uint *r_elem, uint *r_base_index, char *r_elem_type);
-uint draw_select_buffer_ctx_offset_for_object_elem(struct Graph *graph,
-                                                   struct Object *object,
-                                                   char elem_type);
-/** Main function to read a block of pixels from the select frame buffer. */
-uint *draw_select_buffer_read(struct Graph *graph,
-                              struct ARegion *region,
-                              struct View3D *v3d,
-                              const rcti *rect,
-                              uint *r_buf_len);
-/**
- * param rect: The rectangle to sample indices from (min/max inclusive).
- * returns a lib_bitmap the length of a bitmap_len or NULL on failure.
- */
-uint *draw_select_buffer_bitmap_from_rect(struct Graph *graph,
-                                          struct ARegion *region,
-                                          struct View3D *v3d,
-                                          const struct rcti *rect,
-                                          uint *r_bitmap_len);
-/**
- * param center: Circle center.
+/* drw_sel_buf.c */
+bool drw_sel_buf_elem_get(uint sel_id, uint *r_elem, uint *r_base_index, char *r_elem_type);
+uint drw_sel_buf_cxt_offset_for_ob_elem(struct Graph *graph,
+                                        struct Ob *ob,
+                                        char elem_type);
+/** Main fn to read a block of pixels from the sel frame buf. */
+uint *drw_sel_buf_read(struct Graph *graph,
+                       struct ARgn *rgn,
+                       struct View3D *v3d,
+                       const rcti *rect,
+                       uint *r_buf_len);
+/* param rect: The rectangle to sample indices from (min/max inclusive).
+ * returns a lib_bitmap the length of a bitmap_len or NULL on failure */
+uint *drw_sel_buf_bitmap_from_rect(struct Graph *graph,
+                                   struct ARgn *rgn,
+                                   struct View3D *v3d,
+                                   const struct rcti *rect,
+                                   uint *r_bitmap_len);
+/* param center: Circle center.
  * param radius: Circle radius.
- * param r_bitmap_len: Number of indices in the selection id buffer.
- * returns a lib_bitmap the length of a r_bitmap_len or NULL on failure.
- */
-uint *draw_select_buffer_bitmap_from_circle(struct Graph *graph,
-                                            struct ARegion *region,
-                                            struct View3D *v3d,
-                                            const int center[2],
-                                            int radius,
-                                            uint *r_bitmap_len);
-/**
- * param poly: The polygon coordinates.
+ * param r_bitmap_len: Number of indices in the sel id buf.
+ * returns a lib_bitmap the length of a r_bitmap_len or NULL on failure. */
+uint *drw_sel_buf_bitmap_from_circle(struct Graph *graph,
+                                     struct ARgn *rgn,
+                                     struct View3D *v3d,
+                                     const int center[2],
+                                     int radius,
+                                     uint *r_bitmap_len);
+/* param poly: The polygon coords.
  * param poly_len: Length of the polygon.
  * param rect: Polygon boundaries.
- * returns a lib_bitmap.
- */
-uint *draw_select_buffer_bitmap_from_poly(struct Graph *dgraph,
-                                          struct ARegion *region,
-                                          struct View3D *v3d,
-                                          const int poly[][2],
-                                          int poly_len,
-                                          const struct rcti *rect,
-                                          uint *r_bitmap_len);
-/** Samples a single pixel. **/
-uint draw_select_buffer_sample_point(struct Graph *graph,
-                                     struct ARegion *region,
-                                     struct View3D *v3d,
-                                     const int center[2]);
-/**
- * Find the selection id closest to a center.
- * param dist: Use to initialize the distance,
- * when found, this value is set to the distance of the selection that's returned.
- */
-uint draw_select_buffer_find_nearest_to_point(struct Graph *graph,
-                                              struct ARegion *region,
-                                              struct View3D *v3d,
-                                              const int center[2],
-                                              uint id_min,
-                                              uint id_max,
-                                              uint *dist);
-void draw_select_buffer_ctx_create(struct Base **bases, uint bases_len, short select_mode);
+ * returns a lib_bitmap. */
+uint *drw_sel_buf_bitmap_from_poly(struct Graph *graph,
+                                   struct ARgn *rgn,
+                                   struct View3D *v3d,
+                                   const int poly[][2],
+                                   int poly_len,
+                                   const struct rcti *rect,
+                                   uint *r_bitmap_len);
+/* Samples a single pixel. */
+uint drw_sel_buf_sample_point(struct Graph *graph,
+                              struct ARgn *rgn,
+                              struct View3D *v3d,
+                              const int center[2]);
+/* Find the sel id closest to a center.
+ * param dist: Use to init the distance,
+ * when found, this val is set to the distance of the sel that's returned. */
+uint drw_sel_buf_find_nearest_to_point(struct Graph *graph,
+                                       struct ARgn *rgn,
+                                       struct View3D *v3d,
+                                       const int center[2];
+                                       uint id_min,
+                                       uint id_max,
+                                       uint *dist);
+void drw_sel_buf_cxt_create(struct Base **bases, uint bases_len, short sel_mode);
