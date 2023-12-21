@@ -28,13 +28,13 @@ enum {
 };
 #endif
 
-/* Representation of an object's path inside the archive.
- * Note that this is not a file path. */
-typedef struct CacheObjectPath {
-  struct CacheObjectPath *next, *prev;
+/* Representation of an ob's path inside the archive.
+ * This is not a file path. */
+typedef struct CacheObPath {
+  struct CacheObPath *next, *prev;
 
   char path[4096];
-} CacheObjectPath;
+} CacheObPath;
 
 /* CacheFileLayer::flag */
 enum { CACHEFILE_LAYER_HIDDEN = (1 << 0) };
@@ -59,15 +59,15 @@ typedef struct CacheFile {
   Id id;
   struct AnimData *adt;
 
-  /** Paths of the objects inside of the archive referenced by this CacheFile. */
-  List object_paths;
+  /* Paths of the obs inside of the archive ref by this CacheFile. */
+  List ob_paths;
 
   List layers;
 
   /* 1024 = FILE_MAX. */
   char filepath[1024];
 
-  char is_sequence;
+  char is_seq;
   char forward_axis;
   char up_axis;
   char override_frame;
@@ -80,14 +80,14 @@ typedef struct CacheFile {
 
   char _pad[4];
 
-  /* Animation flag. */
+  /* Anim flag. */
   short flag;
 
   /* eCacheFileType enum. */
   char type;
 
-  /* Do not load data from the cache file and display objects in the scene as boxes, Cycles will
-   * load objects directly from the CacheFile. Other render engines which can load Alembic data
+  /* Do not load data from the cache file and display obs in the scene as boxes, Cycles will
+   * load obs directly from the CacheFile. Other render engines which can load Alembic data
    * directly can take care of rendering it themselves */
   char use_render_procedural;
 
