@@ -1,49 +1,46 @@
-#include "DRW_render.h"
+#include "drw_render.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
-#include "DNA_particle_types.h"
+#include "types_particle.h"
 
-#include "BKE_pointcache.h"
+#include "dune_pointcache.h"
 
-#include "ED_particle.h"
+#include "ed_particle.h"
 
 #include "overlay_private.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Edit Particles
- * \{ */
-
-void OVERLAY_edit_particle_cache_init(OVERLAY_Data *vedata)
+/* Edit Particles */
+void overlay_edit_particle_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  ParticleEditSettings *pset = PE_settings(draw_ctx->scene);
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrwCxtState *drw_cxt = drw_cxt_state_get();
+  ParticleEditSettings *pset = PE_settings(drw_cxt->scene);
   GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrwShadingGroup *grp;
 
   pd->edit_particle.use_weight = (pset->brushtype == PE_BRUSH_WEIGHT);
-  pd->edit_particle.select_mode = pset->selectmode;
+  pd->edit_particle.sel_mode = pset->selmode;
 
   DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
   DRW_PASS_CREATE(psl->edit_particle_ps, state | pd->clipping_state);
 
-  sh = OVERLAY_shader_edit_particle_strand();
-  pd->edit_particle_strand_grp = grp = DRW_shgroup_create(sh, psl->edit_particle_ps);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-  DRW_shgroup_uniform_bool_copy(grp, "useWeight", pd->edit_particle.use_weight);
-  DRW_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
+  sh = overlay_shader_edit_particle_strand();
+  pd->edit_particle_strand_grp = grp = drw_shgroup_create(sh, psl->edit_particle_ps);
+  drw_shgroup_uniform_block(grp, "globalsBlock", G_drw.block_ubo);
+  drw_shgroup_uniform_bool_copy(grp, "useWeight", pd->edit_particle.use_weight);
+  drw_shgroup_uniform_texture(grp, "weightTex", G_drw.weight_ramp);
 
-  sh = OVERLAY_shader_edit_particle_point();
-  pd->edit_particle_point_grp = grp = DRW_shgroup_create(sh, psl->edit_particle_ps);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  sh = overlay_shader_edit_particle_point();
+  pd->edit_particle_point_grp = grp = drw_shgroup_create(sh, psl->edit_particle_ps);
+  drw_shgroup_uniform_block(grp, "globalsBlock", G_drw.block_ubo);
 }
 
-void OVERLAY_edit_particle_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_edit_particle_cache_populate(OverlayData *vedata, Ob *ob)
 {
   OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrwCxtState *drw_cxt = DRW_context_state_get();
   Scene *scene_orig = (Scene *)DEG_get_original_id(&draw_ctx->scene->id);
 
   /* Usually the edit structure is created by Particle Edit Mode Toggle
