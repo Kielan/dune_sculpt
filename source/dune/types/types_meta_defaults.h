@@ -2,10 +2,7 @@
 
 /* Struct members on own line. */
 /* clang-format off */
-
-/* -------------------------------------------------------------------- */
 /* MetaBall Struct */
-
 #define _TYPES_DEFAULT_MetaBall \
   { \
     .size = {1, 1, 1}, \
