@@ -3,7 +3,7 @@
 
 #include "types_id_enums.h"
 #include "types_defs.h"
-#include "types_listBase.h"
+#include "types_list.h"
 
 struct FileData;
 struct GHash;
@@ -209,40 +209,37 @@ enum {
 enum {
   /** User cannot remove that override operation. */
   IDOVERRIDE_LIB_FLAG_MANDATORY = 1 << 0,
-  /** User cannot change that override operation. */
+  /* User cannot change that override operation. */
   IDOVERRIDE_LIB_FLAG_LOCKED = 1 << 1,
 
-  /** For overrides of ID pointers: this override still matches (follows) the hierarchy of the
-   *  reference linked data. */
+  /* For overrides of Id ptrs: this override still matches (follows) the hierarchy of the
+   *  ref linked data. */
   IDOVERRIDE_LIB_FLAG_IDPTR_MATCH_REFERENCE = 1 << 8,
 };
 
-/** A single overridden property, contain all operations on this one. */
+/* A single overridden prop, contain all ops on this one. */
 typedef struct IdOverrideLibProp {
   struct IdOverrideLibProp *next, *prev;
 
-  /**
-   * Path from id to overridden prop.
-   * *Does not* include indices/names for final arrays/collections items.
-   */
+  /* Path from id to overridden prop.
+   * *Does not* include indices/names for final arrays/collections items. */
   char *api_path;
 
-  /** List of overriding operations (IdOverrideLibraryPropOp) applied to this property. */
+  /* List of overriding ops (IdOverrideLibraryPropOp) applied to this property. */
   List ops;
 
-  /**
-   * Runtime, tags are common to both IdOverrideLibProp and
+  /* Runtime, tags are common to both IdOverrideLibProp and
    * IdOverrideLibPropOp. */
   short tag;
   char _pad[2];
 
-  /** The property type matching the rna_path. */
+  /* The prop type matching the rna_path. */
   unsigned int api_prop_type;
 } IdOverrideLibProp;
 
 /* IdOverrideLibProp->tag and IdOverrideLibPropOp->tag. */
 enum {
-  /** This override property (operation) is unused and should be removed by cleanup process. */
+  /* This override prop (operation) is unused and should be removed by cleanup process. */
   IDOVERRIDE_LIB_TAG_UNUSED = 1 << 0,
 };
 
@@ -251,68 +248,63 @@ typedef struct IdOverrideLibRuntime {
   uint tag;
 } IdOverrideLibRuntime;
 
-/* IDOverrideLibraryRuntime->tag. */
+/* IdOverrideLibRuntime->tag. */
 enum {
-  /** This override needs to be reloaded. */
-  IDOVERRIDE_LIBRARY_RUNTIME_TAG_NEEDS_RELOAD = 1 << 0,
+  /* This override needs to be reloaded. */
+  IDOVERRIDE_LIB_RUNTIME_TAG_NEEDS_RELOAD = 1 << 0,
 };
 
 /* Main container for all overriding data info of a data-block. */
 typedef struct IdOverrideLib {
-  /** Reference linked id which this one overrides. */
+  /* Ref linked id which this one overrides. */
   struct Id *ref;
-  /** List of IdOverrideLibProp structs. */
-  ListBase properties;
-  /** Override hierarchy root ID. Usually the actual root of the hierarchy, but not always
+  /* List of IdOverrideLibProp structs. */
+  List props;
+  /* Override hierarchy root Id. Usually the actual root of the hierarchy, but not always
    * in degenerated cases.
-   *
    * All liboverrides of a same hierarchy (e.g. a character collection) share the same root. */
   struct Id *hierarchy_root;
   /* Read/write data. */
-  /* Temp ID storing extra override data (used for differential operations only currently).
-   * Always NULL outside of read/write context. */
+  /* Tmp Id storing extra override data (used for differential ops only currently).
+   * Always NULL outside of read/write cxt. */
   struct Id *storage;
   IdOverrideLibRuntime *runtime;
   unsigned int flag;
   char _pad_1[4];
 } IdOverrideLib;
 
-/* IDOverrideLib->flag */
+/* IdOverrideLib->flag */
 enum {
-  /**
-   * The override data-block should not be considered as part of an override hierarchy (generally
-   * because it was created as an single override, outside of any hierarchy consideration).
-   */
+  /* The override data-block should not be considered as part of an override hierarchy (generally
+   * bc it was created as an single override, outside of any hierarchy consideration). */
   IDOVERRIDE_LIB_FLAG_NO_HIERARCHY = 1 << 0,
 };
 
-/* watch it: Sequence has identical beginning. */
-/**
- * ID is the first thing included in all serializable types. It
- * provides a common handle to place all data in double-linked lists.
- */
+/* watch it: Seq has identical beginning. */
+/* Id is the first thing included in all serializable types. It
+ * provides a common handle to place all data in double-linked lists */
 
-/* 2 characters for ID code and 64 for actual name */
+/* 2 chars for Id code and 64 for actual name */
 #define MAX_ID_NAME 66
 
-/* ID_Runtime_Remap.status */
+/* id_Runtime_Remap.status */
 enum {
-  /** new_id is directly linked in current .blend. */
+  /* new_id is directly linked in current .blend. */
   ID_REMAP_IS_LINKED_DIRECT = 1 << 0,
-  /** There was some skipped 'user_one' usages of old_id. */
+  /* There was some skipped 'user_one' usages of old_id. */
   ID_REMAP_IS_USER_ONE_SKIPPED = 1 << 1,
 };
 
-/** Status used and counters created during id-remapping. */
+/* Status used and counters created during id-remapping. */
 typedef struct IdRuntimeRemap {
-  /** Status during id remapping. */
+  /* Status during id remapping. */
   int status;
-  /** During id remapping the number of skipped use cases that refcount the data-block. */
+  /* During id remapping the number of skipped use cases that refcount the data-block. */
   int skipped_refcounted;
-  /** During id remapping the number of direct use cases that could be remapped (e.g. obdata when
+  /* During id remapping the number of direct use cases that could be remapped (e.g. obdata when
 in edit mode). */
   int skipped_direct;
-  /** During id remapping, the number of indirect use cases that could not be remapped. */
+  /* During id remapping, the number of indirect use cases that could not be remapped. */
   int skipped_indirect;
 } IdRuntimeRemap;
 
@@ -328,156 +320,136 @@ typedef struct Id {
 
   struct Lib *lib;
 
-  /** If the ID is an asset, this pointer is set. Owning pointer. */
+  /* If the Id is an asset, this pointer is set. Owning pointer. */
   struct AssetMetaData *asset_data;
 
-  /** MAX_ID_NAME. */
+  /* MAX_ID_NAME. */
   char name[66];
-  /**
-   * lib_... flags report on status of the data-block this ID belongs to
-   * (persistent, saved to and read from .blend).
-   */
+  /* lib_... flags report on status of the data-block this Id belongs to
+   * (persistent, saved to and read from .dune). */
   short flag;
-  /**
-   * LIB_TAG_... tags (runtime only, cleared at read time).
-   */
+  /* LIB_TAG_... tags (runtime only, cleared at read time) */
   int tag;
   int us;
   int icon_id;
   int recalc;
-  /**
-   * Used by undo code. recalc_after_undo_push contains the changes between the
+  /* Used by undo code. recalc_after_undo_push contains the changes between the
    * last undo push and the current state. This is accumulated as IDs are tagged
    * for update in the graph, and only cleared on undo push.
    *
-   * recalc_up_to_undo_push is saved to undo memory, and is the value of
+   * recalc_up_to_undo_push is saved to undo mem, and is the val of
    * recalc_after_undo_push at the time of the undo push. This means it can be
-   * used to find the changes between undo states.
-   */
+   * used to find the changes between undo states */
   int recalc_up_to_undo_push;
   int recalc_after_undo_push;
 
-  /**
-   * A session-wide unique identifier for a given ID, that remain the same across potential
-   * re-allocations (e.g. due to undo/redo steps).
-   */
-  unsigned int session_uuid;
+  /* Session-wide unique id for a given Id, that remain the same across potential
+   * re-allocations (e.g. due to undo/redo steps).  */
+  unsigned int sess_uuid;
 
   IdProp *props;
 
-  /** Ref linked id which this one overrides. */
+  /* Ref linked id which this one overrides. */
   IdOverrideLib *override_lib;
 
-  /**
-   * Only set for data-blocks which are coming from copy-on-write, points to
+  /* Only set for data-blocks which are coming from copy-on-write, points to
    * the original version of it.
-   * Also used temporarily during memfile undo to keep a reference to old ID when found.
-   */
+   * Also used tmp during memfile undo to keep a reference to old Id when found. */
   struct Id *orig_id;
 
-  /**
-   * Holds the PyObject reference to the ID (initialized on demand).
+  /* Holds the PyOb ref to the Id (initialized on demand).
    *
    * This isn't essential, it could be removed however it gives some advantages:
    *
-   * - Every time the ID is accessed a BPy_StructAPI doesn't have to be created & destroyed
+   * - Every time the Id is accessed a BPy_StructAPI doesn't have to be created & destroyed
    *   (consider all the polling and drawing functions that access ID's).
    *
-   * - When this ID is deleted, the BPy_StructAPI can be invalidated
+   * - When this Id is del, the BPy_StructAPI can be invalidated
    *   so accessing it from Python raises an exception instead of crashing.
    *
-   *   This is of limited benefit though, as it doesn't apply to non ID data
-   *   that references this ID (the bones of an armature or the modifiers of an object for e.g.).
-   */
+   *   This is of limited benefit though, as it doesn't apply to non Id data
+   *   that refs this Id (the bones of an armature or the mods of an ob for e.g.). */
   void *py_instance;
 
-  /**
-   * Weak reference to an id in a given lib file, used to allow re-using already appended data
+  /* Weak ref to an id in a given lib file, used to allow re-using already appended data
    * in some cases, instead of appending it again.
    *
-   * May be NULL.
-   */
+   * May be NULL. */
   struct LibWeakRef *lib_weak_ref;
 
   struct IdRuntime runtime;
-} ID;
+} Id;
 
-/**
- * For each lib file used, a Lib struct is added to Main
- * WARNING: readfile.c, expand_doit() reads this struct without DNA check!
- */
+/* For each lib file used, a Lib struct is added to Main
+ * WARNING: readfile.c, expand_doit() reads this struct wo types check! */
 typedef struct Lib {
   Id id;
   struct FileData *filedata;
-  /** Path name used for reading, can be relative and edited in the outliner. */
+  /* Path name used for reading, can be relative and edited in the outliner. */
   char filepath[1024];
 
-  /**
-   * Run-time only, absolute file-path (set on read).
+  /* Run-time only, absolute file-path (set on read).
    * This is only for convenience, `filepath` is the real path
    * used on file read but in some cases its useful to access the absolute one.
    *
    * Use dune_lib_filepath_set() rather than setting `filepath`
-   * directly and it will be kept in sync
-   */
+   * directly and it will be kept in sync */
   char filepath_abs[1024];
 
-  /** Set for indirectly linked libs, used in the outliner and while reading. */
-  struct Library *parent;
+  /* Set for indirectly linked libs, used in the outliner and while reading. */
+  struct Lib *parent;
 
   struct PackedFile *packedfile;
 
   ushort tag;
   char _pad_0[6];
 
-  /* Temp data needed by read/write code, and liboverride recursive resync. */
-  int temp_index;
-  /** See DUNE_FILE_VERSION, DUNE_FILE_SUBVERSION, needed for do_versions. */
+  /* Tmp data needed by read/write code, and liboverride recursive resync. */
+  int tmp_index;
+  /* See DUNE_FILE_VERSION, DUNE_FILE_SUBVERSION, needed for do_versions. */
   short versionfile, subversionfile;
 } Lib;
 
-/* Library.tag */
+/* Lib.tag */
 enum eLibTag {
   /* Automatic recursive resync was needed when linking/loading data from that library. */
   LIB_TAG_RESYNC_REQUIRED = 1 << 0,
 };
 
-/**
- * A weak library/ID reference for local data that has been appended, to allow re-using that local
+/* A weak lib/Id ref for local data that has been appended, to allow re-using that local
  * data instead of creating a new copy of it in future appends.
  *
- * This is by design a weak reference, in other words code should be totally fine and perform
- * a regular append if it cannot find a valid matching local ID.
+ * This is by design a weak ref, in other words code should be totally fine and perform
+ * a regular append if it cannot find a valid matching local Id.
  *
  * There should always be only one single ID in current Main matching a given linked
- * reference.
- */
-typedef struct LibraryWeakReference {
+ * ref. */
+typedef struct LibWeakRef {
   /**  Expected to match a `Library.filepath`. */
-  char library_filepath[1024];
+  char lib_filepath[1024];
 
   /** MAX_ID_NAME. May be different from the current local ID name. */
-  char library_id_name[66];
+  char lib_id_name[66];
 
   char _pad[2];
-} LibraryWeakReference;
+} LibWeakRef;
 
 /* for PreviewImage->flag */
-enum ePreviewImage_Flag {
+enum ePreviewImgFlag {
   PRV_CHANGED = (1 << 0),
   PRV_USER_EDITED = (1 << 1), /* if user-edited, do not auto-update this anymore! */
   PRV_RENDERING = (1 << 2),   /* Rendering was invoked. Cleared on file read. */
 };
 
-/* for PreviewImage->tag */
+/* for PreviewImg->tag */
 enum {
   PRV_TAG_DEFFERED = (1 << 0),           /* Actual loading of preview is deferred. */
   PRV_TAG_DEFFERED_RENDERING = (1 << 1), /* Deferred preview is being loaded. */
-  PRV_TAG_DEFFERED_DELETE = (1 << 2),    /* Deferred preview should be deleted asap. */
+  PRV_TAG_DEFFERED_DEL = (1 << 2),    /* Deferred preview should be deleted asap. */
 };
 
-typedef struct PreviewImage {
-  /* All values of 2 are really NUM_ICON_SIZES */
+typedef struct PreviewImg {
+  /* All vals of 2 are really NUM_ICON_SIZES */
   unsigned int w[2];
   unsigned int h[2];
   short flag[2];
@@ -486,13 +458,13 @@ typedef struct PreviewImage {
 
   /* Runtime-only data. */
   struct GPUTexture *gputexture[2];
-  /** Used by previews outside of ID context. */
+  /* Used by previews outside of ID context. */
   int icon_id;
 
-  /** Runtime data. */
+  /* Runtime data. */
   short tag;
   char _pad[2];
-} PreviewImage;
+} PreviewImg;
 
 #define PRV_DEFERRED_DATA(prv) \
   (CHECK_TYPE_INLINE(prv, PreviewImage *), \
@@ -506,26 +478,26 @@ typedef struct PreviewImage {
 #define ID_CHECK_UNDO(id) \
   ((GS((id)->name) != ID_SCR) && (GS((id)->name) != ID_WM) && (GS((id)->name) != ID_WS))
 
-#define ID_DUNE_PATH(_dmain, _id) \
+#define ID_DUNE_PATH(_main, _id) \
   ((_id)->lib ? (_id)->lib->filepath_abs : DUNE_main_dunefile_path((_dmain)))
 #define ID_DUNE_PATH_FROM_GLOBAL(_id) \
   ((_id)->lib ? (_id)->lib->filepath_abs : DUNE_main_dunefile_path_from_global())
 
-#define ID_MISSING(_id) ((((const ID *)(_id))->tag & LIB_TAG_MISSING) != 0)
+#define ID_MISSING(_id) ((((const Id *)(_id))->tag & LIB_TAG_MISSING) != 0)
 
-#define ID_IS_LINKED(_id) (((const ID *)(_id))->lib != NULL)
+#define ID_IS_LINKED(_id) (((const Id *)(_id))->lib != NULL)
 
-/* Note that these are fairly high-level checks, should be used at user interaction level, not in
- * DUNE_library_override typically (especially due to the check on LIB_TAG_EXTERN). */
-#define ID_IS_OVERRIDABLE_LIBRARY_HIERARCHY(_id) \
+/* That these are fairly high-level checks, should be used at user interaction level, not in
+ * dune_lib_override typically (especially due to the check on LIB_TAG_EXTERN). */
+#define ID_IS_OVERRIDABLE_LIB_HIERARCHY(_id) \
   (ID_IS_LINKED(_id) && !ID_MISSING(_id) && \
-   (DUNE_idtype_get_info_from_id((const ID *)(_id))->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0 && \
-   !ELEM(GS(((ID *)(_id))->name), ID_SCE))
-#define ID_IS_OVERRIDABLE_LIBRARY(_id) \
-  (ID_IS_OVERRIDABLE_LIBRARY_HIERARCHY((_id)) && (((const ID *)(_id))->tag & LIB_TAG_EXTERN) != 0)
+   (DUNE_idtype_get_info_from_id((const Id *)(_id))->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0 && \
+   !ELEM(GS(((Id *)(_id))->name), ID_SCE))
+#define ID_IS_OVERRIDABLE_LIB(_id) \
+  (ID_IS_OVERRIDABLE_LIB_HIERARCHY((_id)) && (((const Id *)(_id))->tag & LIB_TAG_EXTERN) != 0)
 
-/* The three checks below do not take into account whether given ID is linked or not (when
- * chaining overrides over several libraries). User must ensure the ID is not linked itself
+/* The three checks below do not take into account whether given Id is linked or not (when
+ * chaining overrides over several libs). User must ensure the Id is not linked itself
  * currently. */
 /* TODO: add `_EDITABLE` versions of those macros (that would check if ID is linked or not)? */
 #define ID_IS_OVERRIDE_LIBRARY_REAL(_id) \
