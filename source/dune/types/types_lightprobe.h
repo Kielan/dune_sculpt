@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 struct AnimData;
-struct Object;
+struct Ob;
 
 typedef struct LightProbe {
   Id id;
@@ -126,7 +126,6 @@ LIB_STATIC_ASSERT_ALIGN(LightProbeCache, 16)
 LIB_STATIC_ASSERT_ALIGN(LightGridCache, 16)
 
 /* Eevee Lightcache */
-
 typedef struct LightCacheTexture {
   struct GPUTexture *tex;
   /* Copy of GPU data to create GPUTextures on file read. */
