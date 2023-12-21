@@ -40,12 +40,12 @@ enum {
   FREESTYLE_LINESET_FM_BOTH = 1 << 6,
 };
 
-/* FreestyleLineSet::selection */
+/* FreestyleLineSet::sel */
 enum {
   FREESTYLE_SEL_VISIBILITY = 1 << 0,
   FREESTYLE_SEL_EDGE_TYPES = 1 << 1,
   FREESTYLE_SEL_GROUP = 1 << 2,
-  FREESTYLE_SEL_IMAGE_BORDER = 1 << 3,
+  FREESTYLE_SEL_IMG_BORDER = 1 << 3,
   FREESTYLE_SEL_FACE_MARK = 1 << 4,
 };
 
@@ -89,8 +89,8 @@ typedef struct FreestyleLineSet {
   char name[64];
   int flags;
 
-  /* Selection criteria. */
-  int selection;
+  /* Sel criteria. */
+  int sel;
   /* Quantitative invisibility. */
   short qi;
   char _pad1[2];
@@ -98,7 +98,7 @@ typedef struct FreestyleLineSet {
   /* Feature edge types. */
   int edge_types, exclude_edge_types;
   char _pad2[4];
-  /* Group of target objects. */
+  /* Group of target obs. */
   struct Collection *group;
 
   struct FreestyleLineStyle *linestyle;
