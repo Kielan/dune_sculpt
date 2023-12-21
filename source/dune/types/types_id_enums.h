@@ -11,10 +11,10 @@ enum eIconSizes {
   NUM_ICON_SIZES,
 };
 
-/* Defines for working with IDs.
+/* Defines for working with Ids.
  *
  * The tags represent types! This is a dirty way of enabling RTTI. The
- * sig_byte end endian defines aren't really used much. */
+ * sig_byte end endian defines aren't rly used much. */
 
 #ifdef __BIG_ENDIAN__
 /* big endian */
@@ -24,20 +24,19 @@ enum eIconSizes {
 #  define MAKE_ID2(c, d) ((d) << 8 | (c))
 #endif
 
-/* ID from database.
- *
- * Written to #BHead.code (for file IO)
- * and the first 2 bytes of #ID.name (for runtime checks, see #GS macro). */
-typedef enum ID_Type {
+/* Id from database.
+ * Written to Head.code (for file IO)
+ * and the first 2 bytes of ID.name (for runtime checks, see GS macro). */
+typedef enum IdType {
   ID_SCE = MAKE_ID2('S', 'C'),       /* Scene */
   ID_LI = MAKE_ID2('L', 'I'),        /* Lib */
-  ID_OB = MAKE_ID2('O', 'B'),        /* Object */
+  ID_OB = MAKE_ID2('O', 'B'),        /* Ob */
   ID_ME = MAKE_ID2('M', 'E'),        /* Mesh */
   ID_CU_LEGACY = MAKE_ID2('C', 'U'), /* Curve. ID_CV should be used in the future (see T95355). */
   ID_MB = MAKE_ID2('M', 'B'),        /* MetaBall */
   ID_MA = MAKE_ID2('M', 'A'),        /* Material */
   ID_TE = MAKE_ID2('T', 'E'),        /* Tex (Texture) */
-  ID_IM = MAKE_ID2('I', 'M'),        /* Image */
+  ID_IM = MAKE_ID2('I', 'M'),        /* Img */
   ID_LT = MAKE_ID2('L', 'T'),        /* Lattice */
   ID_LA = MAKE_ID2('L', 'A'),        /* Light */
   ID_CA = MAKE_ID2('C', 'A'),        /* Camera */
@@ -56,7 +55,7 @@ typedef enum ID_Type {
   ID_BR = MAKE_ID2('B', 'R'),        /* Brush */
   ID_PA = MAKE_ID2('P', 'A'),        /* ParticleSettings */
   ID_GD = MAKE_ID2('G', 'D'),        /* Pendata, (Pen) */
-  ID_WM = MAKE_ID2('W', 'M'),        /* WindowManager */
+  ID_WIN = MAKE_ID2('W', 'M'),       /* Window */
   ID_MC = MAKE_ID2('M', 'C'),        /* MovieClip */
   ID_MSK = MAKE_ID2('M', 'S'),       /* Mask */
   ID_LS = MAKE_ID2('L', 'S'),        /* FreestyleLineStyle */
@@ -71,13 +70,13 @@ typedef enum ID_Type {
   ID_SIM = MAKE_ID2('S', 'I'),       /* Simulation (geometry node groups) */
 } ID_Type;
 
-/* Only used as 'placeholder' in .blend files for directly linked data-blocks. */
+/* Only used as 'placeholder' in .dune files for directly linked data-blocks. */
 #define ID_LINK_PLACEHOLDER MAKE_ID2('I', 'D') /* (internal use only) */
 
 /* Deprecated. */
 #define ID_SCRN MAKE_ID2('S', 'N')
 
-/* NOTE: Fake IDs, needed for `g.sipo->blocktype` or outliner. */
+/* Fake IDs, needed for `g.sipo->blocktype` or outliner. */
 #define ID_SEQ MAKE_ID2('S', 'Q')
 /* constraint */
 #define ID_CO MAKE_ID2('C', 'O')
