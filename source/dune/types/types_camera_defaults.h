@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
-/** Camera Struct **/
-
+/* Camera Struct */
 #define _TYPES_DEFAULT_CameraDOFSettings \
   { \
     .aperture_fstop = 2.8f, \
