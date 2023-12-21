@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
-/** Lattice Struct **/
-
+/* Lattice Struct */
 #define _TYPES_DEFAULT_Lattice \
   { \
     .flag = LT_GRID, \
