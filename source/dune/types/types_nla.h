@@ -7,10 +7,10 @@ extern "C" {
 #endif
 
 struct Ipo;
-struct Object;
+struct Ob;
 struct Action;
 
-/* Simple uniform mod structure, assumed it can hold all type info. */
+/* Simple uniform mod struct, assumed it can hold all type info. */
 typedef struct ActionMod {
   struct ActionMod *next, *prev;
   short type, flag;
@@ -22,10 +22,10 @@ typedef struct ActionMod {
 
   /* path deform mod */
   short no_rot_axis;
-  struct Object *ob;
+  struct Ob *ob;
 } ActionMod;
 
-/* NLA-Modifier Types (UNUSED) */
+/* NLA-Mod Types (UNUSED) */
 // #define ACTSTRIP_MOD_DEFORM      0
 // #define ACTSTRIP_MOD_NOISE       1
 
@@ -42,7 +42,7 @@ typedef struct ActionStrip {
   /* The action referenced by this strip. */
   struct Action *act;
   /* For groups, the actual object being nla'ed. */
-  struct Object *object;
+  struct Ob *ob;
   /* The range of frames covered by this strip. */
   float start, end;
   /* The range of frames taken from the action. */
@@ -51,12 +51,12 @@ typedef struct ActionStrip {
   float actoffs;
   /* The stridelength (considered when flag & ACT_USESTRIDE). */
   float stridelen;
-  /* The number of times to repeat the action range. */
+  /* The num of times to repeat the action range. */
   float repeat;
   /* The amount the action range is scaled by. */
   float scale;
 
-  /* The number of frames on either end of the strip's length to fade in/out. */
+  /* The num of frames on either end of the strip's length to fade in/out. */
   float blendin, blendout;
 
   /* Instead of stridelen, it uses an action channel. */
@@ -74,7 +74,7 @@ typedef struct ActionStrip {
 
 /* ActionStrip.flag */
 typedef enum eActStrip_Flag {
-  ACTSTRIP_SELECT = (1 << 0),
+  ACTSTRIP_SEL = (1 << 0),
   ACTSTRIP_USESTRIDE = (1 << 1),
   /* Not implemented. Is not used anywhere */
   /* ACTSTRIP_BLENDTONEXT = (1 << 2), */ /* UNUSED */
