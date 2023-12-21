@@ -7,10 +7,9 @@
 extern "C" {
 #endif
 
-/* -------------------------------------------------------------------- */
 /* Geometry Elements */
 
-/* Mesh Vertices.
+/* Mesh Verts.
  * Typically accessed from Mesh.mvert */
 typedef struct MVert {
   float co[3];
