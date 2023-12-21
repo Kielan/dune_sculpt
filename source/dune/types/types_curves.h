@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 #ifdef __cplusplus
-namespace blender::bke {
+namespace dune {
 class CurvesGeometryRuntime;
-}  // namespace blender::bke
+}  // namespace dune
 using CurvesGeometryRuntimeHandle = blender::bke::CurvesGeometryRuntime;
 #else
 typedef struct CurvesGeometryRuntimeHandle CurvesGeometryRuntimeHandle;
@@ -34,7 +34,7 @@ typedef enum HandleType {
   BEZIER_HANDLE_ALIGN = 3,
 } HandleType;
 
-/* Method used to calculate a NURBS curve's knot vector. */
+/* Method used to calc a NURBS curve's knot vector. */
 typedef enum KnotsMode {
   NURBS_KNOT_MODE_NORMAL = 0,
   NURBS_KNOT_MODE_ENDPOINT = 1,
@@ -42,17 +42,17 @@ typedef enum KnotsMode {
   NURBS_KNOT_MODE_ENDPOINT_BEZIER = 3,
 } KnotsMode;
 
-/* A reusable data structure for geometry consisting of many curves. All control point data is
+/* A reusable data struct for geometry consisting of many curves. All control point data is
  * stored contiguously for better efficiency. Data for each curve is stored as a slice of the
  * main point_data array.
  *
- * The data structure is meant to be embedded in other data-blocks to allow reusing
+ * The data struct is meant to be embedded in other data-blocks to allow reusing
  * curve-processing algorithms for multiple Dune data-block types. */
 typedef struct CurvesGeometry {
-  /* A runtime pointer to the "position" attribute data.
+  /* A runtime ptr to the "position" attribute data.
    * This data is owned by point_data. */
   float (*position)[3];
-  /* A runtime pointer to the "radius" attribute data.
+  /* A runtime ptr to the "radius" attribute data.
    * This data is owned by point_data. */
   float *radius;
 
@@ -75,9 +75,9 @@ typedef struct CurvesGeometry {
   /* All attributes stored on curves (ATTR_DOMAIN_CURVE). */
   CustomData curve_data;
 
-  /* The total number of control points in all curves. */
+  /* The total num of ctrl points in all curves. */
   int point_size;
-  /* The number of curves in the data-block */
+  /* The num of curves in the data-block */
   int curve_size;
 
   /* Runtime data for curves, stored as a pointer to allow defining this as a C++ class. */
@@ -86,7 +86,7 @@ typedef struct CurvesGeometry {
 
 typedef struct Curves {
   Id id;
-  /* Animation data (must be immediately after id). */
+  /* Anim data (must be immediately after id). */
   struct AnimData *adt;
 
   CurvesGeometry geometry;
@@ -102,11 +102,10 @@ typedef struct Curves {
   /* Used as base mesh when curves represent e.g. hair or fur. This surface is used in edit modes.
    * When set, the curves will have attributes that indicate a position on this surface. This is
    * used for deforming the curves when the surface is deformed dynamically.
-   *
-   * This is expected to be a mesh object. */
-  struct Object *surface;
+   * This is expected to be a mesh ob. */
+  struct Ob *surface;
 
-  /* Draw Cache. */
+  /* Drw Cache. */
   void *batch_cache;
 } Curves;
 
