@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
 /* LightProbe Struct */
-
 #define _TYPES_DEFAULT_LightProbe \
   { \
     .grid_resolution_x = 4, \
