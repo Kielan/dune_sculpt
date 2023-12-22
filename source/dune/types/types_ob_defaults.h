@@ -5,9 +5,8 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* Object Struct */
-
-#define _TYPES_DEFAULT_Object \
+/* Ob Struct */
+#define _TYPES_DEFAULT_Ob \
   { \
     /* Type is not very meaningful as a default, normally changed. */ \
     .type = OB_EMPTY, \
@@ -19,7 +18,7 @@
  \
     .scale = {1, 1, 1}, \
     .dscale = {1, 1, 1}, \
-    /* Objects should default to having Euler XYZ rotations, \
+    /* Obs should default to having Euler XYZ rotations, \
      * but rotations default to quaternions. */ \
     .rotmode = ROT_MODE_EUL, \
     /* See unit_axis_angle. */ \
@@ -33,16 +32,16 @@
  \
     .dt = OB_TEXTURE, \
  \
-    .empty_drawtype = OB_PLAINAXES, \
-    .empty_drawsize = 1.0, \
-    .empty_image_depth = OB_EMPTY_IMAGE_DEPTH_DEFAULT, \
+    .empty_drwtype = OB_PLAINAXES, \
+    .empty_drwsize = 1.0, \
+    .empty_img_depth = OB_EMPTY_IMG_DEPTH_DEFAULT, \
     .ima_ofs = {-0.5, -0.5}, \
  \
     .instance_faces_scale = 1, \
     .col_group = 0x01,  \
     .col_mask = 0xffff, \
     .preview = NULL, \
-    .duplicator_visibility_flag = OB_DUPLI_FLAG_VIEWPORT | OB_DUPLI_FLAG_RENDER, \
+    .dup_visibility_flag = OB_DUP_FLAG_VIEWPORT | OB_DUP_FLAG_RENDER, \
     .pc_ids = {NULL, NULL}, \
     .lineart = { .crease_threshold = DEG2RAD(140.0f) }, \
   }
