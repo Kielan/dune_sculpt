@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types_object_enums.h"
+#include "types_ob_enums.h"
 
 #include "types_customdata.h"
 #include "types_defs.h"
@@ -25,7 +25,7 @@ struct GeometrySet;
 struct Ipo;
 struct Material;
 struct Mesh;
-struct Object;
+struct Ob;
 struct PartDeflect;
 struct Path;
 struct RigidBodyOb;
@@ -33,7 +33,7 @@ struct SculptSession;
 struct SoftBody;
 struct PenData;
 
-/* Vertex Groups - Name Info */
+/* Vert Groups - Name Info */
 typedef struct DeformGroup {
   struct DeformGroup *next, *prev;
   /* MAX_VGROUP_NAME. */
@@ -88,7 +88,7 @@ enum {
 struct CustomData_MeshMasks;
 
 /* Not saved in file! */
-typedef struct Object_Runtime {
+typedef struct ObRuntime {
   /* The custom data layer mask that was last used
    * to calculate data_eval and mesh_deform_eval. */
   CustomData_MeshMasks last_data_mask;
@@ -106,16 +106,16 @@ typedef struct Object_Runtime {
   /* Only used for drawing the parent/child help-line. */
   float parent_display_origin[3];
 
-  /* Selection id of this object. It might differ between an evaluated and its original object,
-   * when the object is being instanced.  */
+  /* Sel id of this ob. It might differ between an evaluated and its original object,
+   * when the ob is being instanced.  */
   int select_id;
   char _pad1[3];
 
-  /* Denotes whether the evaluated data is owned by this object or is referenced and owned by
+  /* Denotes whether the eval data is owned by this ob or is ref and owned by
    * somebody else. */
   char is_data_eval_owned;
 
-  /* Start time of the mode transfer overlay animation. */
+  /* Start time of the mode transfer overlay anim. */
   double overlay_mode_transfer_start_time;
 
   /* Axis aligned bound-box (in local-space). */
@@ -123,45 +123,45 @@ typedef struct Object_Runtime {
 
   /* Original data ptr, before object->data was changed to point
    * to data_eval.
-   * Is assigned by dependency graph's copy-on-write evaluation. */
+   * Is assigned by graph's copy-on-write eval. */
   struct Id *data_orig;
-  /* Object data structure created during object evaluation. It has all modifiers applied.
-   * The type is determined by the type of the original object. */
+  /* Ob data struct created during ob eval. It has all mods applied.
+   * The type is determined by the type of the original ob. */
   struct Id *data_eval;
 
-  /* Objects can evaluate to a geometry set instead of a single ID. In those cases, the evaluated
-   * geometry set will be stored here. An ID of the correct type is still stored in data_eval.
-   * geometry_set_eval might ref the ID pointed to by data_eval as well, but does not own
+  /* Obs can eval to a geometry set instead of a single Id. In those cases, the evaluated
+   * geometry set will be stored here. An Id of the correct type is still stored in data_eval.
+   * geometry_set_eval might ref the Id pointed to by data_eval as well, but does not own
    * the data. */
   struct GeometrySet *geometry_set_eval;
 
-  /* Mesh structure created during object evaluation.
-   * It has deformation only modifiers applied on it. */
+  /* Mesh struct created during ob eval.
+   * It has deformation only mods applied on it. */
   struct Mesh *mesh_deform_eval;
 
-  /* Evaluated mesh cage in edit mode. */
-  struct Mesh *editmesh_eval_cage;
+  /* Eval'd mesh cage in edit mode. */
+  struct Mesh *meshedit_eval_cage;
 
   /* Cached cage bounding box of `editmesh_eval_cage` for selection. */
   struct BoundBox *editmesh_bb_cage;
 
   /* Original pen PenData ptr, before object->data was changed to point
    * to pd_eval.
-   * Is assigned by dependency graph's copy-on-write evaluation. */
+   * Is assigned by graph's copy-on-write evaluation. */
   struct PenData *pd_orig;
-  /* PenData structure created during object evaluation.
-   * It has all modifiers applied. */
+  /* PenData struct created during object evaluation.
+   * It has all mods applied. */
   struct PenData *pd_eval;
 
   /* This is a mesh representation of corresponding object.
    * It created when Python calls `object.to_mesh()`.  */
-  struct Mesh *object_as_temp_mesh;
+  struct Mesh *ob_as_tmp_mesh;
 
   /* This is a curve representation of corresponding object.
    * It created when Python calls `object.to_curve()`. */
-  struct Curve *object_as_temp_curve;
+  struct Curve *ob_as_tmp_curve;
 
-  /* Runtime evaluated curve-specific data, not stored in the file. */
+  /* Runtime eval curve-specific data, not stored in the file. */
   struct CurveCache *curve_cache;
 
   unsigned short local_collections_bits;
@@ -172,47 +172,47 @@ typedef struct Object_Runtime {
   int crazyspace_num_verts;
 
   int _pad3[3];
-} Object_Runtime;
+} ObRuntime;
 
-typedef struct ObjectLineArt {
+typedef struct ObLineArt {
   short usage;
   short flags;
 
-  /** if OBJECT_LRT_OWN_CREASE is set */
+  /* if OB_LRT_OWN_CREASE is set */
   float crease_threshold;
-} ObjectLineArt;
+} ObLineArt;
 
 /* warning while the values seem to be flags, they aren't treated as flags. */
-enum eObjectLineArt_Usage {
-  OBJECT_LRT_INHERIT = 0,
-  OBJECT_LRT_INCLUDE = (1 << 0),
-  OBJECT_LRT_OCCLUSION_ONLY = (1 << 1),
+enum eObLineArtUsage {
+  OB_LRT_INHERIT = 0,
+  OB_LRT_INCLUDE = (1 << 0),
+  OB_LRT_OCCLUSION_ONLY = (1 << 1),
   OBJECT_LRT_EXCLUDE = (1 << 2),
-  OBJECT_LRT_INTERSECTION_ONLY = (1 << 3),
-  OBJECT_LRT_NO_INTERSECTION = (1 << 4),
+  OB_LRT_INTERSECTION_ONLY = (1 << 3),
+  OB_LRT_NO_INTERSECTION = (1 << 4),
 };
 
-enum eObjectLineArt_Flags {
-  OBJECT_LRT_OWN_CREASE = (1 << 0),
+enum eObLineArt_Flags {
+  OB_LRT_OWN_CREASE = (1 << 0),
 };
 
-typedef struct Object {
+typedef struct Ob {
   Id id;
-  /* Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
   /* Runtime (must be immediately after id for utilities to use it). */
-  struct DrawDataList drawdata;
+  struct DrwDataList drwdata;
 
   struct SculptSession *sculpt;
 
   short type, partype;
-  /** Can be vertexnrs. */
+  /* Can be vertexnrs. */
   int par1, par2, par3;
-  /* String describing subobject info, MAX_ID_NAME-2. */
+  /* String describing subob info, MAX_ID_NAME-2. */
   char parsubstr[64];
-  struct Object *parent, *track;
-  /* Proxy pointer are deprecated, only kept for conversion to liboverrides. */
-  struct Object *proxy TYPES_DEPRECATED;
+  struct Ob *parent, *track;
+  /* Proxy ptr are deprecated, only kept for conversion to liboverrides. */
+  struct Ob *proxy TYPES_DEPRECATED;
   struct Object *proxy_group TYPES_DEPRECATED;
   struct Object *proxy_from TYPES_DEPRECATED;
   /* Old animation system, deprecated for 2.5. */
