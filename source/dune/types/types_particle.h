@@ -177,7 +177,7 @@ typedef struct ParticleSettings {
   char _pad2[4];
   short ren_as, subframes, draw_col;
   /* number of path segments, power of 2 except */
-  short draw_step, ren_step;
+  short drw_step, ren_step;
   short hair_step, keys_step;
 
   /* adaptive path rendering */
@@ -208,7 +208,7 @@ typedef struct ParticleSettings {
   float avefac, phasefac, randrotfac, randphasefac;
   /* phys props */
   float mass, size, randsize;
-  /* global physical properties */
+  /* global phys properties */
   float acc[3], dragfac, brownfac, dampfac;
   /* length */
   float randlength;
@@ -238,7 +238,7 @@ typedef struct ParticleSettings {
   /* branching */
   float branch_thres;
   /* drawing stuff */
-  float draw_line[2];
+  float drw_line[2];
   float path_start, path_end;
   int trail_count;
   /* keyed particles */
@@ -250,15 +250,15 @@ typedef struct ParticleSettings {
   /* hair dynamics */
   float bending_random;
 
-  /** MAX_MTEX. */
+  /* MAX_MTEX. */
   struct MTex *mtex[18];
 
   struct Collection *instance_collection;
   struct List instance_weights;
   struct Collection *force_group TYPES_DEPRECATED; /* deprecated */
-  struct Object *instance_object;
-  struct Object *bb_ob;
-  /** Old animation system, deprecated for 2.5. */
+  struct Ob *instance_object;
+  struct Ob *bb_ob;
+  /* Old anim sys, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
   struct PartDeflect *pd;
   struct PartDeflect *pd2;
@@ -282,14 +282,14 @@ typedef struct ParticleSettings {
   void *_pad7;
 } ParticleSettings;
 
-typedef struct ParticleSystem {
+typedef struct ParticleSys {
   /* note1: make sure all (run-time) are NULL's in 'copy_particlesystem' XXX,
    * this fn is no more! - need to investigate. */
 
   /* note2: make sure any uses of this struct in types are
-   * accounted for in 'dune_object_copy_particlesystems'. */
+   * accounted for in 'dune_ob_copy_particlesystems'. */
 
-  struct ParticleSystem *next, *prev;
+  struct ParticleSys *next, *prev;
 
   /* Particle settings. */
   ParticleSettings *part;
@@ -301,33 +301,33 @@ typedef struct ParticleSystem {
 
   /* Particle editmode (runtime). */
   struct PTCacheEdit *edit;
-  /* Free callback. */
+  /* Free cb. */
   void (*free_edit)(struct PTCacheEdit *edit);
 
   /* Path cache (runtime). */
   struct ParticleCacheKey **pathcache;
   /* Child cache (runtime). */
   struct ParticleCacheKey **childcache;
-  /* Buffers for the above. */
+  /* Bufs for the above. */
   List pathcachebufs, childcachebufs;
 
-  /** Cloth simulation for hair. */
+  /* Cloth simulation for hair. */
   struct ClothModData *clmd;
-  /** Input/output for cloth simulation. */
+  /* Input/output for cloth simulation. */
   struct Mesh *hair_in_mesh, *hair_out_mesh;
 
-  struct Object *target_ob;
+  struct Ob *target_ob;
 
   /* Run-time only lattice deformation data. */
   struct LatticeDeformData *lattice_deform_data;
 
   /* Particles from global space -> parent space. */
-  struct Object *parent;
+  struct Ob *parent;
 
-  /* Used for keyed and boid physics. */
+  /* Used for keyed and boid phys. */
   struct List targets;
 
-  /* Particle system name, MAX_NAME. */
+  /* Particle sys name, MAX_NAME. */
   char name[64];
 
   /* Used for instancing. */
@@ -335,7 +335,7 @@ typedef struct ParticleSystem {
   float cfra, tree_frame, bvhtree_frame;
   int seed, child_seed;
   int flag, totpart, totunexist, totchild, totcached, totchildcache;
-  /* NOTE: Recalc is one of ID_RECALC_PSYS_ALL flags.
+  /* Recalc is one of ID_RECALC_PSYS_ALL flags.
    *
    * TODO: Use ParticleSettings.id.recalc instead of this duplicated flag somehow. */
   int recalc;
@@ -364,7 +364,7 @@ typedef struct ParticleSystem {
   /* Used for interactions with self and other systems. */
   struct BVHTree *bvhtree;
 
-  struct ParticleDrawData *pdd;
+  struct ParticleDrwData *pdd;
 
   /* Current time step, as a fraction of a frame. */
   float dt_frac;
@@ -374,40 +374,40 @@ typedef struct ParticleSystem {
   void *batch_cache;
 
   /* Set by dep graph's copy-on-write, allows to quickly go
-   * from evaluated particle system to original one.
+   * from eval particle sys to original one.
    *
-   * Original system will have this set to NULL.
+   * Original sys will have this set to NULL.
    *
    * Use psys_orig_get() fn to access,  */
-  struct ParticleSystem *orig_psys;
-} ParticleSystem;
+  struct ParticleSys *orig_psys;
+} ParticleSys;
 
 typedef enum eParticleDrawFlag {
-  PART_DRAW_VEL = (1 << 0),
-  PART_DRAW_GLOBAL_OB = (1 << 1),
-  PART_DRAW_SIZE = (1 << 2),
-#ifdef DNA_DEPRECATED_ALLOW
-  /** Render emitter as well. */
-  PART_DRAW_EMITTER = (1 << 3), /* DEPRECATED */
+  PART_DRW_VEL = (1 << 0),
+  PART_DRW_GLOBAL_OB = (1 << 1),
+  PART_DRW_SIZE = (1 << 2),
+#ifdef TYPES_DEPRECATED_ALLOW
+  /* Render emitter as well. */
+  PART_DRW_EMITTER = (1 << 3), /* DEPRECATED */
 #endif
   PART_DRAW_HEALTH = (1 << 4),
   PART_ABS_PATH_TIME = (1 << 5),
   PART_DRAW_COUNT_GR = (1 << 6),
   /* PART_DRAW_BB_LOCK = (1 << 7), */ /* DEPRECATED */
   /* used with billboards */          /* DEPRECATED */
-  PART_DRAW_ROTATE_OB = (1 << 7),     /* used with instance object/collection */
-  PART_DRAW_PARENT = (1 << 8),
-  PART_DRAW_NUM = (1 << 9),
-  PART_DRAW_RAND_GR = (1 << 10),
-  PART_DRAW_REN_ADAPT = (1 << 11),
-  PART_DRAW_VEL_LENGTH = (1 << 12),
-  PART_DRAW_MAT_COL = (1 << 13), /* deprecated, but used in do_versions */
-  PART_DRAW_WHOLE_GR = (1 << 14),
-  PART_DRAW_REN_STRAND = (1 << 15),
-  PART_DRAW_NO_SCALE_OB = (1 << 16), /* used with instance object/collection */
-  PART_DRAW_GUIDE_HAIRS = (1 << 17),
-  PART_DRAW_HAIR_GRID = (1 << 18),
-} eParticleDrawFlag;
+  PART_DRW_ROTATE_OB = (1 << 7),     /* used with instance object/collection */
+  PART_DRW_PARENT = (1 << 8),
+  PART_DRW_NUM = (1 << 9),
+  PART_DRW_RAND_GR = (1 << 10),
+  PART_DRW_REN_ADAPT = (1 << 11),
+  PART_DRW_VEL_LENGTH = (1 << 12),
+  PART_DRW_MAT_COL = (1 << 13), /* deprecated, but used in do_versions */
+  PART_DRW_WHOLE_GR = (1 << 14),
+  PART_DRW_REN_STRAND = (1 << 15),
+  PART_DRW_NO_SCALE_OB = (1 << 16), /* used with instance object/collection */
+  PART_DRW_GUIDE_HAIRS = (1 << 17),
+  PART_DRW_HAIR_GRID = (1 << 18),
+} eParticleDrwFlag;
 
 /* ParticleSettings.type
  * Hair is always baked static in object/geometry space.
@@ -437,7 +437,7 @@ enum {
   PARTICLE_TYPE_BUBBLE = (1 << 2),
   PARTICLE_TYPE_FOAM = (1 << 3),
   PARTICLE_TYPE_TRACER = (1 << 4),
-  PARTICLE_TYPE_DELETE = (1 << 10),
+  PARTICLE_TYPE_DEL = (1 << 10),
   /* PARTICLE_TYPE_INVALID = (1 << 30), */ /* UNUSED */
 };
 
@@ -522,34 +522,34 @@ typedef enum eParticleChildFlag {
   PART_CHILD_USE_TWIST_CURVE = (1 << 3),
 } eParticleChildFlag;
 
-/** ParticleSettings.shape_flag */
+/* ParticleSettings.shape_flag */
 typedef enum eParticleShapeFlag {
   PART_SHAPE_CLOSE_TIP = (1 << 0),
 } eParticleShapeFlag;
 
-/* ParticleSettings.draw_col */
-#define PART_DRAW_COL_NONE 0
-#define PART_DRAW_COL_MAT 1
-#define PART_DRAW_COL_VEL 2
-#define PART_DRAW_COL_ACC 3
+/* ParticleSettings.drw_col */
+#define PART_DRW_COL_NONE 0
+#define PART_DRW_COL_MAT 1
+#define PART_DRW_COL_VEL 2
+#define PART_DRW_COL_ACC 3
 
 /* ParticleSettings.time_flag */
 #define PART_TIME_AUTOSF 1 /* Automatic subframes */
 
 /* ParticleSettings.draw_as */
 /* ParticleSettings.ren_as */
-#define PART_DRAW_NOT 0
-#define PART_DRAW_DOT 1
-#define PART_DRAW_HALO 1
-#define PART_DRAW_CIRC 2
-#define PART_DRAW_CROSS 3
-#define PART_DRAW_AXIS 4
-#define PART_DRAW_LINE 5
-#define PART_DRAW_PATH 6
-#define PART_DRAW_OB 7
-#define PART_DRAW_GR 8
-#define PART_DRAW_BB 9 /* deprecated */
-#define PART_DRAW_REND 10
+#define PART_DRW_NOT 0
+#define PART_DRW_DOT 1
+#define PART_DRW_HALO 1
+#define PART_DRW_CIRC 2
+#define PART_DRW_CROSS 3
+#define PART_DRW_AXIS 4
+#define PART_DRW_LINE 5
+#define PART_DRW_PATH 6
+#define PART_DRW_OB 7
+#define PART_DRW_GR 8
+#define PART_DRW_BB 9 /* deprecated */
+#define PART_DRW_REND 10
 
 /* ParticleSettings.integrator */
 #define PART_INT_EULER 0
@@ -578,9 +578,9 @@ typedef enum eParticleShapeFlag {
 #define PART_AVE_GLOBAL_Z 7
 
 /* ParticleSettings.reactevent */
-#define PART_EVENT_DEATH 0
-#define PART_EVENT_COLLIDE 1
-#define PART_EVENT_NEAR 2
+#define PART_EV_DEATH 0
+#define PART_EV_COLLIDE 1
+#define PART_EV_NEAR 2
 
 /* ParticleSettings.childtype */
 #define PART_CHILD_PARTICLES 1
@@ -617,8 +617,8 @@ typedef enum eParticleShapeFlag {
 #define PARS_ALIVE 3
 #define PARS_DYING 4
 
-/* ParticleDupliWeight->flag */
-#define PART_DUPLIW_CURRENT 1
+/* ParticleDupWeight->flag */
+#define PART_DUPW_CURRENT 1
 
 /* psys->vg */
 #define PSYS_TOT_VG 13
@@ -646,7 +646,7 @@ typedef enum eParticleShapeFlag {
 #define PTARGET_MODE_FRIEND 1
 #define PTARGET_MODE_ENEMY 2
 
-/** #MTex.mapto */
+/* MTex.mapto */
 typedef enum eParticleTextureInfluence {
   /* init */
   PAMAP_TIME = (1 << 0), /* emission time */
@@ -656,7 +656,7 @@ typedef enum eParticleTextureInfluence {
   PAMAP_INIT = (PAMAP_TIME | PAMAP_LIFE | PAMAP_DENS | PAMAP_SIZE),
   /* reset */
   PAMAP_IVEL = (1 << 5), /* initial velocity */
-  /* physics */
+  /* phys */
   PAMAP_FIELD = (1 << 6), /* force fields */
   PAMAP_GRAVITY = (1 << 10),
   PAMAP_DAMP = (1 << 11),
