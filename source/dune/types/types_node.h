@@ -2,8 +2,8 @@
 
 #include "types_id.h"
 #include "types_list.h"
-#include "types_scene.h" /* for #ImageFormatData */
-#include "types_vec.h"   /* for #rctf */
+#include "types_scene.h" /* for ImgFormatData */
+#include "types_vec.h"   /* for rctf */
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,13 +103,13 @@ typedef struct NodeSocket {
   char idname[64];
 
   /* The location of the sockets, in the view-space of the node editor.
-   * These are runtime data-- only calculated when drawing, and could be removed from Types. */
+   * These are runtime data. Is only calc when drwing, could be removed from Types. */
   float locx, locy;
 
   /* Default input val used for unlinked sockets. */
-  void *default_value;
+  void *default_val;
 
-  /* execution data */
+  /* ex data */
   /* Local stack index. */
   short stack_index;
   /* deprecated, kept for forward compatibility */
@@ -130,9 +130,8 @@ typedef struct NodeSocket {
   void *cache;
 
   /* internal data to retrieve relations and groups
-   * DEPRECATED, now uses the generic id string instead
-   */
-  /** Group socket ids, to find matching pairs after reading files. */
+   * DEPRECATED, now uses the generic id string instead */
+  /* Group socket ids, to find matching pairs after reading files. */
   int own_index TYPES_DEPRECATED;
   /* deprecated, only used for restoring old group node links */
   int to_index TYPES_DEPRECATED;
@@ -155,7 +154,7 @@ typedef struct NodeSocket {
   /* eNodeTreeChangedFlag. */
   uint32_t changed_flag;
   char _pad[4];
-} bNodeSocket;
+} NodeSocket;
 
 /* NodeSocket.type & NodeSocketType.type */
 typedef enum eNodeSocketDatatype {
@@ -228,7 +227,7 @@ typedef struct Node {
   IdProp *prop;
 
   /* Runtime type info. */
-  struct bNodeType *typeinfo;
+  struct NodeType *typeinfo;
   /* Runtime type id. */
   char idname[64];
 
@@ -268,7 +267,7 @@ typedef struct Node {
   float miniwidth;
   /* Additional offset from loc. */
   float offsetx, offsety;
-  /* Initial locx for insert offset animation. */
+  /* Init locx for insert offset animation. */
   float anim_init_locx;
   /* Offset that will be added to locx for insert offset animation. */
   float anim_ofsx;
@@ -289,10 +288,10 @@ typedef struct Node {
   /* Optional preview area. */
   rctf prvr;
   /* TODO: Node totr size depends on the prvr size, which in turn is determined from preview size.
-   * In earlier versions bNodePreview was stored directly in nodes, but since now there can be
-   * multiple instances using different preview images it is possible that required node size
+   * In earlier versions NodePreview was stored directly in nodes, but since now there can be
+   * multiple instances using different preview imags it is possible that required node size
    * varies between instances. preview_xsize, preview_ysize defines a common reserved size for
-   * preview rect for now, could be replaced by more accurate node instance drawing,
+   * preview rect for now, could be replaced by more accurate node instance drwing,
    * but that requires removing totr from types and replacing all uses with per-instance data. */
   /* Reserved size of the preview rect. */
   short preview_xsize, preview_ysize;
@@ -300,31 +299,31 @@ typedef struct Node {
   short tmp_flag;
   /* Used at runtime to tag derivatives branches. EEVEE only. */
   char branch_tag;
-  /* Used at runtime when iterating over node branches. */
+  /* Used at runtime when iter over node branches. */
   char iter_flag;
 
   /* eevee only, id of screen space reflection layer,
    * needs to be a float to feed gpu_uniform. */
   float ssr_id;
-  /* XXX: eevee only, id of screen subsurface scatter layer,
+  /* eevee only, id of screen subsurface scatter layer,
    * needs to be a float to feed gpu_uniform. */
   float sss_id;
 
   /* Describes the desired interface of the node. This is run-time data only.
-   * The actual interface of the node may deviate from the declaration temporarily.
+   * The actual interface of the node may deviate from the declaration tmprarily.
    * It's possible to sync the actual state of the node to the desired state. Currently, this is
    * only done when a node is created or loaded.
    *
    * In the future, we may want to keep more data only in the declaration, so that it does not have
    * to be synced to other places that are stored in files. That especially applies to data that
-   * can't be edited by users directly (e.g. min/max values of sockets, tooltips, ...).
+   * can't be edited by users directly (e.g. min/max vals of sockets, tooltips, ...).
    *
    * The declaration of a node can be recreated at any time when it is used. Caching it here is
    * just a bit more efficient when it is used a lot. To make sure that the cache is up-to-date,
    * call nodeDeclarationEnsure before using it.
    *
-   * Currently, the declaration is the same for every node of the same type. Going forward, that is
-   * intended to change though. Especially when nodes become more dynamic with respect to how many
+   * Current: the declaration is the same for every node of the same type. Is
+   * a todo to change. Especially when nodes become more dynamic w respect to how many
    * sockets they have. */
   NodeDeclarationHandle *declaration;
 } Node;
@@ -375,9 +374,9 @@ typedef struct Node {
 #define NODE_UPDATE_OP 2 /* node update triggered from update operator */
 
 /* Unique hash key for identifying node instances
- * Defined as a struct because DNA does not support other typedefs */
+ * Defined as a struct because types does not support other typedefs */
 typedef struct NodeInstanceKey {
-  unsigned int value;
+  unsigned int val;
 } NodeInstanceKey;
 
 /* Base struct for entries in node instance hash.
@@ -435,119 +434,108 @@ typedef struct NodeLink {
 
 /** Workaround to forward-declare C++ type in C header. */
 #ifdef __cplusplus
-namespace blender::nodes {
+namespace dunes::nodes {
 struct FieldInferencingInterface;
 }
-using FieldInferencingInterfaceHandle = blender::nodes::FieldInferencingInterface;
+using FieldInferencingInterfaceHandle = dune::nodes::FieldInferencingInterface;
 #else
 typedef struct FieldInferencingInterfaceHandle FieldInferencingInterfaceHandle;
 #endif
 
 /* the basis for a Node tree, all links and nodes reside internal here */
-/* only re-usable node trees are in the library though,
- * materials and textures allocate own tree struct */
-typedef struct bNodeTree {
-  ID id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+/* only re-usable node trees are in the lib though,
+ * materials and textures alloc own tree struct */
+typedef struct NodeTree {
+  Id id;
+  /* Anim data (must be immediately after id for utils to use it). */
   struct AnimData *adt;
 
-  /** Runtime type information. */
-  struct bNodeTreeType *typeinfo;
-  /** Runtime type identifier. */
+  /* Runtime type info. */
+  struct NodeTreeType *typeinfo;
+  /* Runtime type id. */
   char idname[64];
 
-  /** Runtime RNA type of the group interface. */
-  struct StructRNA *interface_type;
+  /* Runtime api type of the group interface. */
+  struct ApiStruct *interface_type;
 
-  /** Grease pencil data. */
-  struct bGPdata *gpd;
-  /** Node tree stores own offset for consistent editor view. */
+  /* pen data. */
+  struct PenData *pd;
+  /* Node tree stores own offset for consistent editor view. */
   float view_center[2];
 
-  ListBase nodes, links;
-  /** Information about how inputs and outputs of the node group interact with fields. */
+  List nodes, links;
+  /* Info about how inputs and outputs of the node group interact with fields. */
   FieldInferencingInterfaceHandle *field_inferencing_interface;
 
   int type;
 
   char _pad1[4];
 
-  /**
-   * Sockets in groups have unique identifiers, adding new sockets always
-   * will increase this counter.
-   */
+  /* Sockets in groups have unique identifiers, adding new sockets always
+   * will increase this counter. */
   int cur_index;
   int flag;
-  /**
-   * Keeps track of what changed in the node tree until the next update.
-   * Should not be changed directly, instead use the functions in `BKE_node_tree_update.h`.
-   * #eNodeTreeChangedFlag.
-   */
+  /* Keeps track of what changed in the node tree until the next update.
+   * Should not be changed directly, instead use the fns in `dune_node_tree_update.h`.
+   * eNodeTreeChangedFlag. */
   uint32_t changed_flag;
-  /** Flag to prevent re-entrant update calls. */
+  /* Flag to prevent re-entrant update calls. */
   short is_updating;
-  /** Generic temporary flag for recursion check (DFS/BFS). */
+  /* Generic tmp flag for recursion check (DFS/BFS). */
   short done;
 
-  /** Specific node type this tree is used for. */
-  int nodetype DNA_DEPRECATED;
+  /* Specific node type this tree is used for. */
+  int nodetype TYPES_DEPRECATED;
 
-  /** Quality setting when editing. */
+  /* Quality setting when editing. */
   short edit_quality;
-  /** Quality setting when rendering. */
+  /* Quality setting when rendering. */
   short render_quality;
-  /** Tile size for compositor engine. */
+  /* Tile size for compositor engine. */
   int chunksize;
-  /** Execution mode to use for compositor engine. */
-  int execution_mode;
+  /* Ex mode to use for compositor engine. */
+  int ex_mode;
 
   rctf viewer_border;
 
   /* Lists of bNodeSocket to hold default values and own_index.
    * Warning! Don't make links to these sockets, input/output nodes are used for that.
-   * These sockets are used only for generating external interfaces.
-   */
-  ListBase inputs, outputs;
+   * These sockets are used only for generating external interfaces. */
+  List inputs, outputs;
 
   /* Node preview hash table
-   * Only available in base node trees (e.g. scene->node_tree)
-   */
-  struct bNodeInstanceHash *previews;
-  /* Defines the node tree instance to use for the "active" context,
-   * in case multiple different editors are used and make context ambiguous.
-   */
-  bNodeInstanceKey active_viewer_key;
-  /**
-   * A hash of the topology of the node tree leading up to the outputs. This is used to determine
-   * of the node tree changed in a way that requires updating geometry nodes or shaders.
-   */
+   * Only available in base node trees (e.g. scene->node_tree) */
+  struct NodeInstanceHash *previews;
+  /* Defines the node tree instance to use for the "active" cxt,
+   * in case multiple diff editors are used and make cxt ambiguous. */
+  NodeInstanceKey active_viewer_key;
+  /* A hash of the topology of the node tree leading up to the outputs. This is used to determine
+   * of the node tree changed in a way that requires updating geometry nodes or shaders. */
   uint32_t output_topology_hash;
 
   /** Execution data.
    *
-   * XXX It would be preferable to completely move this data out of the underlying node tree,
+   * It would be preferable to completely move this data out of the underlying node tree,
    * so node tree execution could finally run independent of the tree itself.
    * This would allow node trees to be merely linked by other data (materials, textures, etc.),
-   * as ID data is supposed to.
+   * as Id data is supposed to.
    * Execution data is generated from the tree once at execution start and can then be used
-   * as long as necessary, even while the tree is being modified.
-   */
-  struct bNodeTreeExec *execdata;
+   * as long as necessary, even while the tree is being modified. */
+  struct NodeTreeEx *exdata;
 
-  /* Callbacks. */
+  /* Cbs. */
   void (*progress)(void *, float progress);
-  /** \warning may be called by different threads */
-  void (*stats_draw)(void *, const char *str);
+  /* warning may be called by diff threads */
+  void (*stats_drw)(void *, const char *str);
   int (*test_break)(void *);
-  void (*update_draw)(void *);
+  void (*update_drw)(void *);
   void *tbh, *prh, *sdh, *udh;
 
-  /** Image representing what the node group does. */
-  struct PreviewImage *preview;
-} bNodeTree;
+  /* Img representing what the node group does. */
+  struct PreviewImg *preview;
+} NodeTree;
 
-/** #NodeTree.type, index */
-
+/* NodeTree.type, index */
 #define NTREE_UNDEFINED -2 /* Represents #NodeTreeTypeUndefined type. */
 #define NTREE_CUSTOM -1    /* for dynamically registered custom types */
 #define NTREE_SHADER 0
@@ -555,70 +543,68 @@ typedef struct bNodeTree {
 #define NTREE_TEXTURE 2
 #define NTREE_GEOMETRY 3
 
-/** #NodeTree.flag */
+/* NodeTree.flag */
 #define NTREE_DS_EXPAND (1 << 0)            /* for animation editors */
 #define NTREE_COM_OPENCL (1 << 1)           /* use opencl */
 #define NTREE_TWO_PASS (1 << 2)             /* two pass */
 #define NTREE_COM_GROUPNODE_BUFFER (1 << 3) /* use groupnode buffers */
 #define NTREE_VIEWER_BORDER (1 << 4)        /* use a border for viewer nodes */
-/* NOTE: DEPRECATED, use (id->tag & LIB_TAG_LOCALIZED) instead. */
+/* DEPRECATED, use (id->tag & LIB_TAG_LOCALIZED) instead. */
 
 /* tree is localized copy, free when deleting node groups */
 /* #define NTREE_IS_LOCALIZED           (1 << 5) */
 
-/* tree->execution_mode */
-typedef enum eNodeTreeExecutionMode {
-  NTREE_EXECUTION_MODE_TILED = 0,
-  NTREE_EXECUTION_MODE_FULL_FRAME = 1,
-} eNodeTreeExecutionMode;
+/* tree->ex_mode */
+typedef enum eNodeTreeExMode {
+  NTREE_EX_MODE_TILED = 0,
+  NTREE_EX_MODE_FULL_FRAME = 1,
+} eNodeTreeExMode;
 
-/* socket value structs for input buttons
- * DEPRECATED now using ID properties
- */
-
-typedef struct bNodeSocketValueInt {
-  /** RNA subtype. */
+/* socket val structs for input btns
+ * DEPRECATED now using Id props */
+typedef struct NodeSocketValInt {
+  /* api subtype. */
   int subtype;
-  int value;
+  int val;
   int min, max;
-} bNodeSocketValueInt;
+} NodeSocketValInt;
 
-typedef struct bNodeSocketValueFloat {
-  /** RNA subtype. */
+typedef struct NodeSocketValFloat {
+  /* api subtype. */
   int subtype;
-  float value;
+  float val;
   float min, max;
-} bNodeSocketValueFloat;
+} NodeSocketValFloat;
 
-typedef struct bNodeSocketValueBoolean {
+typedef struct NodeSocketValBool {
   char value;
-} bNodeSocketValueBoolean;
+} NodeSocketValBool;
 
-typedef struct bNodeSocketValueVector {
-  /** RNA subtype. */
+typedef struct NodeSocketValVector {
+  /* api subtype. */
   int subtype;
-  float value[3];
+  float val[3];
   float min, max;
-} bNodeSocketValueVector;
+} NodeSocketValVector;
 
-typedef struct bNodeSocketValueRGBA {
-  float value[4];
-} bNodeSocketValueRGBA;
+typedef struct NodeSocketValRGBA {
+  float val[4];
+} NodeSocketValRGBA;
 
-typedef struct bNodeSocketValueString {
+typedef struct NodeSocketValString {
   int subtype;
   char _pad[4];
-  /** 1024 = FILEMAX. */
-  char value[1024];
-} bNodeSocketValueString;
+  /* 1024 = FILEMAX. */
+  char val[1024];
+} NodeSocketValString;
 
-typedef struct bNodeSocketValueObject {
-  struct Object *value;
-} bNodeSocketValueObject;
+typedef struct NodeSocketValOb {
+  struct Ob *val;
+} bNodeSocketValOb;
 
-typedef struct bNodeSocketValueImage {
-  struct Image *value;
-} bNodeSocketValueImage;
+typedef struct NodeSocketValImg {
+  struct Img *val;
+} NodeSocketValImg;
 
 typedef struct bNodeSocketValueCollection {
   struct Collection *value;
