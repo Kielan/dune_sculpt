@@ -85,7 +85,7 @@ typedef struct ParticleData {
   /* Current global coords. */
   ParticleKey state;
 
-  /* Previous state. */
+  /* Prev state. */
   ParticleKey prev_state;
 
   /* Hair verts. */
@@ -106,11 +106,11 @@ typedef struct ParticleData {
   float dietime;
 
   /* WARNING! Those two indices,
-   * when not affected to vertices, are for !!! TESSELLATED FACES !!!, not POLYGONS! */
+   * when not affected to verts, are for !!! TESSELLATED FACES !!!, not POLYGONS! */
   /* Index to vert/edge/face. */
   int num;
   /* Index to derived mesh data (face) to avoid slow lookups. It can also have negative
-   * values DMCACHE_NOTFOUND and DMCACHE_ISCHILD. */
+   * valus DMCACHE_NOTFOUND and DMCACHE_ISCHILD. */
   int num_dmcache;
 
   /* Coords on face/edge number "num" and depth along. */
@@ -126,7 +126,7 @@ typedef struct ParticleData {
 
   int hair_index;
   short flag;
-  /** The life state of a particle. */
+  /* The life state of a particle. */
   short alive;
 } ParticleData;
 
@@ -152,7 +152,7 @@ typedef struct SPHFluidSettings {
 #define SPH_FAC_VISCOSITY 32
 #define SPH_FAC_REST_LENGTH 64
 
-/* fluid->solver (numerical ID field, not bitfield) */
+/* fluid->solver (numerical Id field, not bitfield) */
 #define SPH_SOLVER_DDR 0
 #define SPH_SOLVER_CLASSICAL 1
 
@@ -171,9 +171,9 @@ typedef struct ParticleSettings {
   short type, from, distr, texact;
   /* phys modes */
   short phystype, rotmode, avemode, reactevent;
-  int draw;
-  float draw_size;
-  short draw_as, childtype;
+  int drw;
+  float drw_size;
+  short drw_as, childtype;
   char _pad2[4];
   short ren_as, subframes, draw_col;
   /* number of path segments, power of 2 except */
@@ -191,7 +191,7 @@ typedef struct ParticleSettings {
   short bb_align, bb_uv_split, bb_anim, bb_split_offset DNA_DEPRECATED;
   float bb_tilt, bb_rand_tilt, bb_offset[2], bb_size[2], bb_vel_head, bb_vel_tail DNA_DEPRECATED;
 
-  /* draw color */
+  /* drw color */
   float color_vec_max;
 
   /* time and emission */
@@ -202,11 +202,11 @@ typedef struct ParticleSettings {
   short time_flag;
   char _pad0[6];
 
-  /* initial velocity factors */
+  /* init velocity factors */
   float normfac, obfac, randfac, partfac, tanfac, tanphase, reactfac;
   float ob_vel[3];
   float avefac, phasefac, randrotfac, randphasefac;
-  /* physical properties */
+  /* phys props */
   float mass, size, randsize;
   /* global physical properties */
   float acc[3], dragfac, brownfac, dampfac;
