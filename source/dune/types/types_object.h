@@ -143,7 +143,7 @@ typedef struct ObRuntime {
   struct Mesh *meshedit_eval_cage;
 
   /* Cached cage bounding box of `editmesh_eval_cage` for selection. */
-  struct BoundBox *editmesh_bb_cage;
+  struct BoundBox *meshedit_bb_cage;
 
   /* Original pen PenData ptr, before object->data was changed to point
    * to pd_eval.
@@ -220,7 +220,7 @@ typedef struct Ob {
   /* struct Path *path; */
   struct Action *action TYPES_DEPRECATED; /* XXX deprecated... old animation system */
   struct Action *poselib;
-  /** Pose data, armature objects only. */
+  /* Pose data, armature obs only. */
   struct Pose *pose;
   /* Ptr to objects data - an 'Id' or NULL. */
   void *data;
@@ -229,7 +229,7 @@ typedef struct Ob {
   struct PenData *pd
       TYPES_DEPRECATED; /* XXX deprecated... replaced by Pen object, keep for readfile */
 
-  /** Settings for visualization of object-transform animation. */
+  /* Settings for visualization of object-transform animation. */
   AnimVizSettings avs;
   /* Motion path cache for this object. */
   MotionPath *mpath;
@@ -247,7 +247,7 @@ typedef struct Ob {
   /* List of viewport effects. Actually only used by grease pencil. */
   List shader_fx;
 
-  /* Local object mode. */
+  /* Local ob mode. */
   int mode;
   int restore_mode;
 
@@ -258,12 +258,12 @@ typedef struct Ob {
   char *matbits;
   /* Copy of mesh, curve & meta struct member of same name (keep in sync). */
   int totcol;
-  /* Currently selected material in the UI. */
+  /* Currently sel material in the UI. */
   int actcol;
 
   /* rot en drot have to be together! (transform('r' en 's')) */
   float loc[3], dloc[3];
-  /** Scale (can be negative). */
+  /* Scale (can be negative). */
   float scale[3];
   /* DEPRECATED, 2.60 and older only. */
   float dsize[3] TYPES_DEPRECATED;
@@ -285,7 +285,6 @@ typedef struct Ob {
    * doesn't include effect of parent or object local transform. */
   float constinv[4][4];
   /* Inverse matrix of 'obmat' for any other use than rendering!
-   *
    * note this isn't assured to be valid as with 'obmat',
    * before using this value you should do: `invert_m4_m4(ob->imat, ob->obmat) */
   float imat[4][4];
@@ -308,7 +307,7 @@ typedef struct Ob {
   char duplicator_visibility_flag;
 
   /* Graph */
-  /* Used by depsgraph, flushed from base. */
+  /* Used by graph, flushed from base. */
   short base_flag;
   /* Used by viewport, synced from base. */
   unsigned short base_local_view_bits;
@@ -324,23 +323,23 @@ typedef struct Ob {
   /* Bounding box type used for collision. */
   char collision_boundtype;
 
-  /* Viewport draw extra settings. */
+  /* Viewport drw extra settings. */
   short dtx;
-  /* Viewport draw type. */
+  /* Viewport drw type. */
   char dt;
-  char empty_drawtype;
-  float empty_drawsize;
-  /* Dupliface scale. */
+  char empty_drwtype;
+  float empty_drwsize;
+  /* Dupface scale. */
   float instance_faces_scale;
 
   /* Custom index, for renderpasses. */
   short index;
-  /* Current deformation group, NOTE: index starts at 1. */
+  /* Current deformation group. Index starts at 1. */
   unsigned short actdef TYPES_DEPRECATED;
-  /** Current face map, NOTE: index starts at 1. */
+  /* Current face map. Index starts at 1. */
   unsigned short actfmap;
   char _pad2[2];
-  /** Object color (in most cases the material color is used for drawing). */
+  /* Ob color (in most cases the material color is used for drawing). */
   float color[4];
 
   /* Softbody settings. */
@@ -356,54 +355,54 @@ typedef struct Ob {
 
   char _pad3[1];
 
-  /* Object constraints. */
+  /* Ob constraints. */
   List constraints;
-  List nlastrips TYPES_DEPRECATED; /* XXX deprecated... old animation system */
-  List hooks TYPES_DEPRECATED;     /* XXX deprecated... old animation system */
-  /* Particle systems. */
-  List particlesystem;
+  List nlastrips TYPES_DEPRECATED; /* deprecated... old anim system */
+  List hooks TYPES_DEPRECATED;     /* deprecated... old anim system */
+  /* Particle sys. */
+  List particlesys;
 
   /* Particle deflector/attractor/collision data. */
   struct PartDeflect *pd;
   /* If exists, saved in file. */
   struct SoftBody *soft;
-  /* Object duplicator for group. */
+  /* Ob duplicator for group. */
   struct Collection *instance_collection;
 
   /* If fluidsim enabled, store additional settings. */
   struct FluidsimSettings *fluidsimSettings
-      TYPES_DEPRECATED; /* XXX deprecated... replaced by mantaflow, keep for readfile */
+      TYPES_DEPRECATED; /* deprecated... replaced by mantaflow, keep for readfile */
 
   List pc_ids;
 
   /* Settings for Bullet rigid body. */
-  struct RigidBodyOb *rigidbody_object;
+  struct RigidBodyOb *rigidbody_ob;
   /* Settings for Bullet constraint. */
   struct RigidBodyCon *rigidbody_constraint;
 
-  /* Offset for image empties. */
+  /* Offset for img empties. */
   float ima_ofs[2];
   /* Must be non-null when object is an empty image. */
-  ImageUser *iuser;
-  char empty_image_visibility_flag;
-  char empty_image_depth;
-  char empty_image_flag;
+  ImgUser *iuser;
+  char empty_img_visibility_flag;
+  char empty_img_depth;
+  char empty_img_flag;
   char _pad8[5];
 
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
-  ObjectLineArt lineart;
+  ObLineArt lineart;
 
   /* Runtime evaluation data (keep last). */
   void *_pad9;
-  Object_Runtime runtime;
-} Object;
+  ObRuntime runtime;
+} Ob;
 
-/* DEPRECATED: this is not used anymore because hooks are now modifiers. */
+/* DEPRECATED: this is not used anymore bc hooks are now mods. */
 typedef struct ObHook {
   struct ObHook *next, *prev;
 
-  struct Object *parent;
+  struct Ob *parent;
   /* Matrix making current transform unmodified. */
   float parentinv[4][4];
   /* Temp matrix while hooking. */
@@ -419,17 +418,17 @@ typedef struct ObHook {
   int *indexar;
   /* Curindex is cache for fast lookup. */
   int totindex, curindex;
-  /* Active is only first hook, for button menu. */
+  /* Active is only first hook, for btn menu. */
   short type, active;
   float force;
 } ObHook;
 
-/* **************** OBJECT ********************* */
+/* OB */
 
 /* used many places, should be specialized. */
-#define SELECT 1
+#define SEL 1
 
-/* Object.type */
+/* Ob.type */
 enum {
   OB_EMPTY = 0,
   OB_MESH = 1,
@@ -449,7 +448,7 @@ enum {
 
   OB_ARMATURE = 25,
 
-  /* Pen object used in 3D view but not used for annotation in 2D. */
+  /* Pen ob used in 3D view but not used for annotation in 2D. */
   OB_PEN = 26,
 
   OB_CURVES = 27,
@@ -462,7 +461,7 @@ enum {
   OB_TYPE_MAX,
 };
 
-/* check if the object type supports materials */
+/* check if the ob type supports materials */
 #define OB_TYPE_SUPPORT_MATERIAL(_type) \
   (((_type) >= OB_MESH && (_type) <= OB_MBALL) || ((_type) >= OB_PEN && (_type) <= OB_VOLUME))
 /* Does the object have some render-able geometry (unlike empties, cameras, etc.). */
@@ -490,10 +489,10 @@ enum {
 #define OB_TYPE_SUPPORT_PARVERT(_type) \
   (ELEM(_type, OB_MESH, OB_SURF, OB_CURVES_LEGACY, OB_LATTICE))
 
-/** Matches OB_TYPE_SUPPORT_EDITMODE. */
+/* Matches OB_TYPE_SUPPORT_EDITMODE. */
 #define OB_DATA_SUPPORT_EDITMODE(_type) (ELEM(_type, ID_ME, ID_CU_LEGACY, ID_MB, ID_LT, ID_AR))
 
-/* is this ID type used as object data */
+/* is this Id type used as ob data */
 #define OB_DATA_SUPPORT_ID(_id_type) \
   (ELEM(_id_type, \
         ID_ME, \
@@ -525,10 +524,10 @@ enum {
   case ID_PT: \
   case ID_VO
 
-/* Object.partype: first 4 bits: type. */
+/* Ob.partype: first 4 bits: type. */
 enum {
   PARTYPE = (1 << 4) - 1,
-  PAROBJECT = 0,
+  PAROB = 0,
   PARSKEL = 4,
   PARVERT1 = 5,
   PARVERT3 = 6,
@@ -545,20 +544,20 @@ enum {
   OB_DUPLIVERTS = 1 << 4,
   OB_DUPLIROT = 1 << 5,
   OB_TRANSFLAG_UNUSED_6 = 1 << 6, /* cleared */
-  /* runtime, calculate derivedmesh for dupli before it's used */
+  /* runtime, calculate derivedmesh for dup before it's used */
   OB_TRANSFLAG_UNUSED_7 = 1 << 7, /* dirty */
-  OB_DUPLICOLLECTION = 1 << 8,
-  OB_DUPLIFACES = 1 << 9,
-  OB_DUPLIFACES_SCALE = 1 << 10,
-  OB_DUPLIPARTS = 1 << 11,
+  OB_DUPCOLLECTION = 1 << 8,
+  OB_DUPFACES = 1 << 9,
+  OB_DUPFACES_SCALE = 1 << 10,
+  OB_DUPPARTS = 1 << 11,
   OB_TRANSFLAG_UNUSED_12 = 1 << 12, /* cleared */
   /* runtime constraints disable */
   OB_NO_CONSTRAINTS = 1 << 13,
 
-  OB_DUPLI = OB_DUPLIVERTS | OB_DUPLICOLLECTION | OB_DUPLIFACES | OB_DUPLIPARTS,
+  OB_DUP = OB_DUPVERTS | OB_DUPCOLLECTION | OB_DUPFACES | OB_DUPPARTS,
 };
 
-/* Object.trackflag / Object.upflag (short) */
+/* Obtrackflag/Ob.upflag (short) */
 enum {
   OB_POSX = 0,
   OB_POSY = 1,
@@ -568,26 +567,26 @@ enum {
   OB_NEGZ = 5,
 };
 
-/* Object.dtx draw type extra flags (short) */
+/* Ob.dtx drw type extra flags (short) */
 enum {
   OB_DRAWBOUNDOX = 1 << 0,
   OB_AXIS = 1 << 1,
   OB_TEXSPACE = 1 << 2,
-  OB_DRAWNAME = 1 << 3,
-  /* OB_DRAWIMAGE = 1 << 4, */ /* UNUSED */
+  OB_DRWNAME = 1 << 3,
+  /* OB_DRWIMG = 1 << 4, */ /* UNUSED */
   /* for solid+wire display */
-  OB_DRAWWIRE = 1 << 5,
+  OB_DRWWIRE = 1 << 5,
   /* For overdrawing. */
-  OB_DRAW_IN_FRONT = 1 << 6,
+  OB_DRW_IN_FRONT = 1 << 6,
   /* Enable transparent draw. */
-  OB_DRAWTRANSP = 1 << 7,
-  OB_DRAW_ALL_EDGES = 1 << 8, /* only for meshes currently */
-  OB_DRAW_NO_SHADOW_CAST = 1 << 9,
+  OB_DRWTRANSP = 1 << 7,
+  OB_DRW_ALL_EDGES = 1 << 8, /* only for meshes currently */
+  OB_DRW_NO_SHADOW_CAST = 1 << 9,
   /* Enable lights for grease pencil. */
   OB_USE_PEN_LIGHTS = 1 << 10,
 };
 
-/* Object.empty_drawtype: no flags */
+/* Ob.empty_drwtype: no flags */
 enum {
   OB_ARROWS = 1,
   OB_PLAINAXES = 2,
@@ -596,7 +595,7 @@ enum {
   OB_CUBE = 5,
   OB_EMPTY_SPHERE = 6,
   OB_EMPTY_CONE = 7,
-  OB_EMPTY_IMAGE = 8,
+  OB_EMPTY_IMG = 8,
 };
 
 /* Pen add types.
@@ -606,11 +605,11 @@ enum {
   P_STROKE = 1,
   P_MONKEY = 2,
   P_LRT_SCENE = 3,
-  P_LRT_OBJECT = 4,
+  P_LRT_OB = 4,
   P_LRT_COLLECTION = 5,
 };
 
-/* Object.boundtype */
+/* Ob.boundtype */
 enum {
   OB_BOUND_BOX = 0,
   OB_BOUND_SPHERE = 1,
@@ -622,7 +621,7 @@ enum {
   OB_BOUND_CAPSULE = 7,
 };
 
-/* **************** BASE ********************* */
+/* BASE */
 
 /* Base.flag_legacy */
 enum {
@@ -634,8 +633,8 @@ enum {
   BA_SNAP_FIX_DEPS_FIASCO = (1 << 2),
 };
 
-/* NOTE: this was used as a proper setting in past, so nullify before using */
-#define BA_TEMP_TAG (1 << 5)
+/* This was used as a proper setting in past, so nullify before using */
+#define BA_TMP_TAG (1 << 5)
 
 /* Even if this is tagged for transform, this flag means it's being locked in place.
  * Use for SCE_XFORM_SKIP_CHILDREN. */
@@ -651,7 +650,7 @@ enum {
 #  define OB_FLAG_UNUSED_12 (1 << 12) /* cleared */
 #endif
 
-/* Object.visibility_flag */
+/* Ob.visibility_flag */
 enum {
   OB_HIDE_VIEWPORT = 1 << 0,
   OB_HIDE_SELECT = 1 << 1,
