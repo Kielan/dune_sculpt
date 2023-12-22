@@ -108,7 +108,7 @@ typedef struct ObRuntime {
 
   /* Sel id of this ob. It might differ between an evaluated and its original object,
    * when the ob is being instanced.  */
-  int select_id;
+  int sel_id;
   char _pad1[3];
 
   /* Denotes whether the eval data is owned by this ob or is ref and owned by
@@ -121,7 +121,7 @@ typedef struct ObRuntime {
   /* Axis aligned bound-box (in local-space). */
   struct BoundBox *bb;
 
-  /* Original data ptr, before object->data was changed to point
+  /* Original data ptr, before ob->data was changed to point
    * to data_eval.
    * Is assigned by graph's copy-on-write eval. */
   struct Id *data_orig;
@@ -192,7 +192,7 @@ enum eObLineArtUsage {
   OB_LRT_NO_INTERSECTION = (1 << 4),
 };
 
-enum eObLineArt_Flags {
+enum eObLineArtFlags {
   OB_LRT_OWN_CREASE = (1 << 0),
 };
 
@@ -622,7 +622,6 @@ enum {
 };
 
 /* BASE */
-
 /* Base.flag_legacy */
 enum {
   BA_WAS_SEL = (1 << 1),
@@ -653,7 +652,7 @@ enum {
 /* Ob.visibility_flag */
 enum {
   OB_HIDE_VIEWPORT = 1 << 0,
-  OB_HIDE_SELECT = 1 << 1,
+  OB_HIDE_SEL = 1 << 1,
   OB_HIDE_RENDER = 1 << 2,
   OB_HIDE_CAMERA = 1 << 3,
   OB_HIDE_DIFFUSE = 1 << 4,
@@ -665,7 +664,7 @@ enum {
   OB_SHADOW_CATCHER = 1 << 10
 };
 
-/* Object.shapeflag */
+/* Ob.shapeflag */
 enum {
   OB_SHAPE_LOCK = 1 << 0,
 #ifdef TYPES_DEPRECATED_ALLOW
@@ -674,23 +673,23 @@ enum {
   OB_SHAPE_EDIT_MODE = 1 << 2,
 };
 
-/* Object.nlaflag */
+/* Ob.nlaflag */
 enum {
   OB_ADS_UNUSED_1 = 1 << 0, /* cleared */
   OB_ADS_UNUSED_2 = 1 << 1, /* cleared */
-  /* object-channel expanded status */
+  /* ob-channel expanded status */
   OB_ADS_COLLAPSED = 1 << 10,
-  /* object's ipo-block */
+  /* ob's ipo-block */
   /* OB_ADS_SHOWIPO = 1 << 11, */ /* UNUSED */
   /* object's constraint channels */
   /* OB_ADS_SHOWCONS = 1 << 12, */ /* UNUSED */
-  /* object's material channels */
+  /* ob's material channels */
   /* OB_ADS_SHOWMATS = 1 << 13, */ /* UNUSED */
-  /* object's particle channels */
+  /* ob's particle channels */
   /* OB_ADS_SHOWPARTS = 1 << 14, */ /* UNUSED */
 };
 
-/* Object.protectflag */
+/* Ob.protectflag */
 enum {
   OB_LOCK_LOCX = 1 << 0,
   OB_LOCK_LOCY = 1 << 1,
@@ -708,32 +707,32 @@ enum {
   OB_LOCK_ROT4D = 1 << 10,
 };
 
-/* Object.duplicator_visibility_flag */
+/* Ob.duplicator_visibility_flag */
 enum {
-  OB_DUPLI_FLAG_VIEWPORT = 1 << 0,
-  OB_DUPLI_FLAG_RENDER = 1 << 1,
+  OB_DUP_FLAG_VIEWPORT = 1 << 0,
+  OB_DUP_FLAG_RENDER = 1 << 1,
 };
 
-/* Object.empty_image_depth */
-#define OB_EMPTY_IMAGE_DEPTH_DEFAULT 0
-#define OB_EMPTY_IMAGE_DEPTH_FRONT 1
-#define OB_EMPTY_IMAGE_DEPTH_BACK 2
+/* Ob.empty_img_depth */
+#define OB_EMPTY_IMG_DEPTH_DEFAULT 0
+#define OB_EMPTY_IMG_DEPTH_FRONT 1
+#define OB_EMPTY_IMG_DEPTH_BACK 2
 
-/* Object.empty_image_visibility_flag */
+/* Ob.empty_img_visibility_flag */
 enum {
-  OB_EMPTY_IMAGE_HIDE_PERSPECTIVE = 1 << 0,
-  OB_EMPTY_IMAGE_HIDE_ORTHOGRAPHIC = 1 << 1,
-  OB_EMPTY_IMAGE_HIDE_BACK = 1 << 2,
-  OB_EMPTY_IMAGE_HIDE_FRONT = 1 << 3,
-  OB_EMPTY_IMAGE_HIDE_NON_AXIS_ALIGNED = 1 << 4,
+  OB_EMPTY_IMG_HIDE_PERSPECTIVE = 1 << 0,
+  OB_EMPTY_IMG_HIDE_ORTHOGRAPHIC = 1 << 1,
+  OB_EMPTY_IMG_HIDE_BACK = 1 << 2,
+  OB_EMPTY_IMG_HIDE_FRONT = 1 << 3,
+  OB_EMPTY_IMG_HIDE_NON_AXIS_ALIGNED = 1 << 4,
 };
 
-/* Object.empty_image_flag */
+/* Ob.empty_img_flag */
 enum {
-  OB_EMPTY_IMAGE_USE_ALPHA_BLEND = 1 << 0,
+  OB_EMPTY_IMG_USE_ALPHA_BLEND = 1 << 0,
 };
 
-#define MAX_DUPLI_RECUR 8
+#define MAX_DUP_RECUR 8
 
 #ifdef __cplusplus
 }
