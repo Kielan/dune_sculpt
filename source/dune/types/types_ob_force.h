@@ -61,7 +61,7 @@ typedef struct PartDeflect {
   short kink, kink_axis;
   short zdir;
 
-  /* Main effector values */
+  /* Main effector vals */
   /* The strength of the force (+ or - ). */
   float f_strength;
   /* Damping ratio of the harmonic effector. */
@@ -108,11 +108,11 @@ typedef struct PartDeflect {
   float absorption;
 
   /* softbody collisions */
-  /** Damping factor for softbody deflection. */
+  /* Damping factor for softbody deflection. */
   float pdef_sbdamp;
-  /** Inner face thickness for softbody deflection. */
+  /* Inner face thickness for softbody deflection. */
   float pdef_sbift;
-  /** Outer face thickness for softbody deflection. */
+  /* Outer face thickness for softbody deflection. */
   float pdef_sboft;
 
   /* guide curve, same as for particle child effects */
@@ -139,14 +139,14 @@ typedef struct PartDeflect {
   /* Runtime only : end of the curve. */
   float drawvec2[4];
   /* Runtime only. */
-  float drawvec_falloff_min[3];
+  float drwvec_falloff_min[3];
   char _pad1[4];
   /* Runtime only. */
   float drawvec_falloff_max[3];
   char _pad2[4];
 
-  /* Force source object. */
-  struct Object *f_source;
+  /* Force src ob. */
+  struct Ob *f_src;
 
   /* Friction of cloth collisions. */
   float pdef_cfrict;
@@ -167,48 +167,48 @@ typedef struct EffectorWeights {
 /* EffectorWeights->flag */
 #define EFF_WEIGHT_DO_HAIR 1
 
-typedef struct SBVertex {
+typedef struct SBVert {
   float vec[4];
-} SBVertex;
+} SBVert;
 
 /* Container for data that is shared among CoW copies.
  *
  * This is placed in a separate struct so that values can be changed
- * without having to update all CoW copies. */
+ * wo having to update all CoW copies. */
 typedef struct SoftBody_Shared {
   struct PointCache *pointcache;
-  struct ListBase ptcaches;
+  struct List ptcaches;
 } SoftBody_Shared;
 
 typedef struct SoftBody {
   /* dynamic data */
   int totpoint, totspring;
-  /** Not saved in file. */
+  /* Not saved in file. */
   struct BodyPoint *bpoint;
-  /** Not saved in file. */
+  /* Not saved in file. */
   struct BodySpring *bspring;
   char _pad;
   char msg_lock;
-  short msg_value;
+  short msg_val;
 
   /* part of UI: */
 
   /* general options */
-  /* Softbody mass of *vertex*. */
+  /* Softbody mass of *vert*. */
   float nodemass;
   /* Along with it introduce mass painting
    * starting to fix old bug .. nastiness that VG are indexes
    * rather find them by name tag to find it -> jow20090613.
    * MAX_VGROUP_NAME */
   char namedVG_Mass[64];
-  /** Softbody amount of gravitation to apply. */
+  /* Softbody amount of gravitation to apply. */
   float grav;
-  /** Friction to env. */
+  /* Friction to env. */
   float mediafrict;
-  /** Error limit for ODE solver. */
+  /* Error limit for ODE solver. */
   float rklimit;
-  /** User control over simulation speed. */
-  float physics_speed;
+  /* User ctrl over simulation speed. */
+  float phys_speed;
 
   /* goal */
   /* Softbody goal springs. */
@@ -218,7 +218,7 @@ typedef struct SoftBody {
   /* Quick limits for goal. */
   float mingoal;
   float maxgoal;
-  /* Default goal for vertices without vgroup. */
+  /* Default goal for verts without vgroup. */
   float defgoal;
   /* Index starting at 1. */
   short vertgroup;
@@ -246,11 +246,11 @@ typedef struct SoftBody {
   char local, solverflags;
 
   /* -- these must be kept for backwards compatibility -- */
-  /* Array of size totpointkey. */
-  SBVertex **keys;
+  /* Arr of size totpointkey. */
+  SBVert **keys;
   /* If totpointkey != totpoint or totkey!- (efra-sfra)/interval -> free keys. */
   int totpointkey, totkey;
-  /* ---------------------------------------------------- */
+  
   float secondspring;
 
   /* Self collision. */
@@ -265,7 +265,7 @@ typedef struct SoftBody {
   short minloops;
   short maxloops;
   short choke;
-  short solver_ID;
+  short solver_id;
   short plastic;
   short springpreload;
 
