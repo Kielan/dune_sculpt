@@ -37,7 +37,7 @@ typedef struct ParticleKey { /* when changed update size of struct to copy_parti
 } ParticleKey;
 
 typedef struct BoidParticle {
-  struct Object *ground;
+  struct Ob *ground;
   struct BoidData data;
   float gravity[3];
   float wander[3];
@@ -58,37 +58,37 @@ typedef struct ChildParticle {
   int pa[4];
   /* Interpolation weights for the above particles. */
   float w[4];
-  /* Face vertex weights and offset. */
+  /* Face vert weights and offset. */
   float fuv[4], foffset;
   char _pad0[4];
 } ChildParticle;
 
 typedef struct ParticleTarget {
   struct ParticleTarget *next, *prev;
-  struct Object *ob;
+  struct Ob *ob;
   int psys;
   short flag, mode;
   float time, duration;
 } ParticleTarget;
 
-typedef struct ParticleDupliWeight {
-  struct ParticleDupliWeight *next, *prev;
-  struct Object *ob;
+typedef struct ParticleDupWeight {
+  struct ParticleDupWeight *next, *prev;
+  struct Ob *ob;
   short count;
   short flag;
   /* Only updated on file save and used on file load. */
   short index;
   char _pad0[2];
-} ParticleDupliWeight;
+} ParticleDupWeight;
 
 typedef struct ParticleData {
-  /* Current global coordinates. */
+  /* Current global coords. */
   ParticleKey state;
 
   /* Previous state. */
   ParticleKey prev_state;
 
-  /* Hair vertices. */
+  /* Hair verts. */
   HairKey *hair;
 
   /* Keyed keys. */
@@ -113,7 +113,7 @@ typedef struct ParticleData {
    * values DMCACHE_NOTFOUND and DMCACHE_ISCHILD. */
   int num_dmcache;
 
-  /* Coordinates on face/edge number "num" and depth along. */
+  /* Coords on face/edge number "num" and depth along. */
   float fuv[4], foffset;
   /* face normal for volume emission. */
 
