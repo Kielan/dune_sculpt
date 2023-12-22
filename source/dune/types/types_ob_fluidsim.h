@@ -1,6 +1,6 @@
 #pragma once
 
-#include "types_ID.h"
+#include "types_id.h"
 #include "types_defs.h"
 
 #ifdef __cplusplus
@@ -9,14 +9,14 @@ extern "C" {
 
 struct Ipo;
 
-typedef struct FluidVertexVelocity {
+typedef struct FluidVertVelocity {
   float vel[3];
-} FluidVertexVelocity;
+} FluidVertVelocity;
 
 typedef struct FluidsimSettings {
   /* For fast API access. */
   struct FluidsimModData *fmd;
-  /* threadcont the calculation is done with */
+  /* threadcont the calc is done with */
   int threads;
   char _pad1[4];
   /* domain, fluid or obstacle */
@@ -24,7 +24,7 @@ typedef struct FluidsimSettings {
   /* Display advanced options in fluid sim tab (on=1, off=0). */
   short show_advancedoptions;
 
-  /* domain object settings */
+  /* domain ob settings */
   /* resolutions */
   short resolutionxyz;
   short previewresxyz;
@@ -35,7 +35,7 @@ typedef struct FluidsimSettings {
   short renderDisplayMode;
 
   /* fluid props */
-  float viscosityValue;
+  float viscosityVal;
   short viscosityMode TYPES_DEPRECATED;
   short viscosityExponent;
   /* gravity strength */
@@ -52,7 +52,7 @@ typedef struct FluidsimSettings {
   /* activate refinement? */
   int maxRefine;
 
-  /* fluid object type settings */
+  /* fluid ob type settings */
   /* gravity strength */
   float iniVelx, iniVely, iniVelz;
 
@@ -64,7 +64,7 @@ typedef struct FluidsimSettings {
   /* values are inited during derived mesh display */
   float bbStart[3], bbSize[3];
 
-  /* animated params */
+  /* anim params */
   struct Ipo *ipo;
 
   /* additional flags depending on the type, lower short contains flags
@@ -74,31 +74,31 @@ typedef struct FluidsimSettings {
    * volume init type for fluid/obstacles (volume=1, shell=2, both=3). */
   char domainNovecgen, volumeInitType;
 
-  /* boundary "stickiness" for part slip values */
-  float partSlipValue;
+  /* boundary "stickiness" for part slip vals */
+  float partSlipVal;
 
-  /* number of tracers to generate */
+  /* num of tracers to generate */
   int generateTracers;
   /* particle generation - on if >0, then determines amount (experimental...) */
   float generateParticles;
   /* smooth fluid surface? */
   float surfaceSmoothing;
-  /* Number of surface subdivisions. */
+  /* Num of surface subdivisions. */
   int surfaceSubdivs;
   /* GUI flags. */
   int flag;
 
-  /** Particle display - size scaling, and alpha influence. */
+  /* Particle display - size scaling, and alpha influence. */
   float particleInfSize, particleInfAlpha;
   /* testing vars */
   float farFieldSize;
 
-  /* Vertex velocities of simulated fluid mesh. */
-  struct FluidVertexVelocity *meshVelocities;
-  /* Number of vertices in simulated fluid mesh. */
+  /* Vert velocities of simulated fluid mesh. */
+  struct FluidVertVelocity *meshVelocities;
+  /* Number of verts in simulated fluid mesh. */
   int totvert;
 
-  /* Fluid control settings */
+  /* Fluid ctrl settings */
   float cpsTimeStart;
   float cpsTimeEnd;
   float cpsQuality;
