@@ -1,11 +1,11 @@
 #pragma once
 
-/** vector of two shorts. */
+/* vec of two shorts. */
 typedef struct vec2s {
   short x, y;
 } vec2s;
 
-/** vector of two floats. */
+/* vec of two floats. */
 typedef struct vec2f {
   float x, y;
 } vec2f;
@@ -40,19 +40,19 @@ typedef struct vec4d {
 } vec4d;
 */
 
-/** integer rectangle. */
+/* int rectangle. */
 typedef struct rcti {
   int xmin, xmax;
   int ymin, ymax;
 } rcti;
 
-/** float rectangle. */
+/* float rectangle. */
 typedef struct rctf {
   float xmin, xmax;
   float ymin, ymax;
 } rctf;
 
-/** dual quaternion. */
+/* dual quaternion. */
 typedef struct DualQuat {
   float quat[4];
   float trans[4];
