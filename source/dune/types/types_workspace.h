@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-/** #ToolRef_Runtime.flag */
+/* ToolRef_Runtime.flag */
 enum {
   /* This tool should use the fallback key-map.
    * Typically gizmos handle this but some tools (such as the knife tool) don't use a gizmo.   */
@@ -19,54 +19,54 @@ enum {
 typedef struct ToolRef_Runtime {
   int cursor;
 
-  /** One of these 3 must be defined. */
+  /* One of these 3 must be defined. */
   char keymap[64];
   char gizmo_group[64];
   char data_block[64];
 
-  /** Keymap for #ToolRef.idname_fallback, if set. */
+  /* Keymap for ToolRef.idname_fallback, if set. */
   char keymap_fallback[64];
 
-  /** Use to infer primary operator to use when setting accelerator keys. */
+  /* Use to infer primary operator to use when setting accelerator keys. */
   char op[64];
 
-  /** Index when a tool is a member of a group. */
+  /* Index when a tool is a member of a group. */
   int index;
-  /** Options: `TOOLREF_FLAG_*`. */
+  /* Opts: `TOOLREF_FLAG_*`. */
   int flag;
 } ToolRef_Runtime;
 
-/** Stored per mode. */
+/* Stored per mode. */
 typedef struct ToolRef {
   struct ToolRef *next, *prev;
   char idname[64];
 
-  /** Optionally use these when not interacting directly with the primary tools gizmo. */
+  /* Optionally use these when not interacting directly with the primary tools gizmo. */
   char idname_fallback[64];
 
-  /** Use to avoid initializing the same tool multiple times. */
+  /* Use to avoid init'ing the same tool mult times. */
   short tag;
 
-  /** #ToolKey (spacetype, mode), used in 'wm_api.h' */
+  /* ToolKey (spacetype, mode), used in 'win_api.h' */
   short space_type;
-  /* Value depends on the 'space_type', object mode for 3D view, image editor has own mode too.
+  /* Val depends on the 'space_type', ob mode for 3D view, img editor has own mode too.
    * api needs to handle using item function. */
   int mode;
 
-  /* Use for tool options, each group's name must match a tool name:
+  /* Use for tool opts, each group's name must match a tool name:
    *
-   *    {"Tool Name": {"SOME_OT_operator": {...}, ..}, ..}
+   *    {"Tool Name": {"SOME_OT_op": {...}, ..}, ..}
    *
-   * This is done since different tools may call the same operators with their own options. */
+   * This is done since diff tools may call the same ops w their own opts. */
   IdProp *props;
 
-  /** Variables needed to operate the tool. */
+  /* Vars needed to op the tool. */
   ToolRef_Runtime *runtime;
 } ToolRef;
 
 /* Wrapper for Screen.
  *
- * #Screens are IDs and thus stored in a main list.
+ * Screens are Ids and thus stored in a main list.
  * We also want to store a list of them within the workspace
  * (so each workspace can have its own set of screen-layouts)
  * which would mess with the next/prev pointers.
@@ -76,55 +76,54 @@ typedef struct WorkSpaceLayout {
 
   struct Screen *screen;
   /* The name of this layout, we override the api name of the screen with this
-   * (but not ID name itself) */
-  /** MAX_NAME. */
+   * (but not Id name itself) */
+  /* MAX_NAME. */
   char name[64];
 } WorkSpaceLayout;
 
-/** Optional tags, which features to use, aligned with #bAddon names by convention. */
-typedef struct wmOwnerId {
-  struct wmOwnerId *next, *prev;
-  /** MAX_NAME. */
+/* Optional tags, which features to use, aligned with Addon names by convention. */
+typedef struct WinOwnerId {
+  struct WinOwnerId *next, *prev;
+  /* MAX_NAME. */
   char name[64];
-} wmOwnerId;
+} WinOwnerId;
 
 typedef struct WorkSpace {
   Id id;
 
-  /** WorkSpaceLayout. */
+  /* WorkSpaceLayout. */
   List layouts;
   /* Store for each hook (so for each window) which layout has
    * been activated the last time this workspace was visible. */
-  /** WorkSpaceDataRelation. */
+  /* WorkSpaceDataRelation. */
   List hook_layout_relations;
 
   /* Feature tagging (use for addons) */
-  /** #wmOwnerID. */
+  /* #WinOwnerId. */
   List owner_ids;
 
-  /** List of #bToolRef */
+  /* List of ToolRef */
   List tools;
 
   char _pad[4];
 
-  int object_mode;
+  int ob_mode;
 
-  /** Enum eWorkSpaceFlags. */
+  /* Enum eWorkSpaceFlags. */
   int flags;
 
-  /** Number for workspace tab reordering in the UI. */
+  /* Num for workspace tab reordering in the UI. */
   int order;
 
-  /** Info text from modal operators (runtime). */
-  char *status_text;
+  /* Info txt from modal ops (runtime). */
+  char *status_txt;
 
-  /** Workspace-wide active asset library, for asset UIs to use (e.g. asset view UI template). The
+  /* Workspace-wide active asset lib, for asset UIs to use (e.g. asset view UI template). The
    * Asset Browser has its own and doesn't use this. */
   AssetLibRef asset_lib_ref;
 } WorkSpace;
 
-/**
- * Generic (and simple/primitive) struct for storing a history of assignments/relations
+/* Generic (and simple/primitive) struct for storing a history of assignments/relations
  * of workspace data to non-workspace data in a listbase inside the workspace.
  *
  * Using this we can restore the old state of a workspace if the user switches back to it.
@@ -144,35 +143,32 @@ typedef struct WorkSpace {
  * relation. This struct is used to store an active screen-layout for each window within the
  * workspace.
  * To find the screen-layout to activate for this window-workspace combination, simply lookup
- * the WorkSpaceDataRelation with the workspace-hook of the window set as parent.
- */
+ * the WorkSpaceDataRelation with the workspace-hook of the win set as parent. */
 typedef struct WorkSpaceDataRelation {
   struct WorkSpaceDataRelation *next, *prev;
 
-  /** The data used to identify the relation
-   * (e.g. to find screen-layout (= value) from/for a hook).
-   * NOTE: Now runtime only. */
+  /* The data used to id the relation
+   * (e.g. to find screen-layout (= val) from/for a hook).
+   * Now runtime only. */
   void *parent;
-  /** The value for this parent-data/workspace relation. */
-  void *value;
+  /* The val for this parent-data/workspace relation. */
+  void *val;
 
-  /** Reference to the actual parent window, wmWindow->winid. Used in read/write code. */
+  /* Ref to the actual parent win, Win->winid. Used in read/write code. */
   int parentid;
   char _pad_0[4];
 } WorkSpaceDataRelation;
 
-/**
- * Little wrapper to store data that is going to be per window, but coming from the workspace.
- * It allows us to keep workspace and window data completely separate.
- */
+/* Little wrapper to store data that is going to be per win, but coming from the workspace.
+ * It allows us to keep workspace and win data completely separate. */
 typedef struct WorkSpaceInstanceHook {
   WorkSpace *active;
   struct WorkSpaceLayout *act_layout;
 
-  /** Needed because we can't change workspaces/layouts in running handler loop,
-   * it would break context. */
-  WorkSpace *temp_workspace_store;
-  struct WorkSpaceLayout *temp_layout_store;
+  /* Needed bc we can't change workspaces/layouts in running handler loop,
+   * it would break cxt. */
+  WorkSpace *tmp_workspace_store;
+  struct WorkSpaceLayout *tmp_layout_store;
 } WorkSpaceInstanceHook;
 
 typedef enum eWorkSpaceFlags {
