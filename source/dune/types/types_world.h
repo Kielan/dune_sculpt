@@ -16,13 +16,13 @@ struct NodeTree;
 #endif
 
 /* World defines general modeling data such as a background fill,
- * gravity, color model etc. It mixes rendering data and modeling data. */
+ * gravity, color model etc. It mixes rndring data and modeling data. */
 typedef struct World {
   Id id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
   /* runtime (must be immediately after id for utilities to use it). */
-  DrawDataList drawdata;
+  DrwDataList drwdata;
 
   char _pad0[4];
   short texact, mistype;
@@ -40,29 +40,29 @@ typedef struct World {
 
   float misi, miststa, mistdist, misthi;
 
-  /** Ambient occlusion. */
+  /* Ambient occlusion. */
   float aodist, aoenergy;
 
-  /** Assorted settings. */
+  /* Assorted settings. */
   short flag;
   char _pad3[6];
 
-  /** Old animation system, deprecated for 2.5. */
+  /* Old anim system, deprecated for 2.5. */
   struct Ipo *ipo TYPES_DEPRECATED;
   short pr_texture, use_nodes;
   char _pad[4];
 
   /* previews */
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   /* nodes */
   struct NodeTree *nodetree;
 
-  /** Runtime. */
+  /* Runtime. */
   List gpumaterial;
 } World;
 
-/* **************** WORLD ********************* */
+/* WORLD */
 /* mode */
 #define WO_MIST (1 << 0)
 #define WO_MODE_UNUSED_1 (1 << 1) /* cleared */
@@ -81,7 +81,7 @@ enum {
 
 /* flag */
 #define WO_DS_EXPAND (1 << 0)
-/* NOTE: this must have the same value as MA_DS_SHOW_TEXS,
+/* NOTE: this must have the same val as MA_DS_SHOW_TEXS,
  * otherwise anim-editors will not read correctly */
 #define WO_DS_SHOW_TEXS (1 << 2)
 
