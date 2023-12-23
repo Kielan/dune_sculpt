@@ -7,48 +7,48 @@
 /* Themes; defines in `BIF_resource.h`. */
 struct ColorBand;
 
-/* ************************ style definitions ******************** */
+/* style definitions */
 #define MAX_STYLE_NAME 64
 
-/** Default offered by Dune.
+/* Default offered by Dune.
  * uiFont.uifont_id */
 typedef enum eUIFontId {
   UIFONT_DEFAULT = 0,
-  /*  UIFONT_BITMAP   = 1 */ /* UNUSED */
+  /* UIFONT_BITMAP   = 1 */ /* UNUSED */
   /* free slots */
   UIFONT_CUSTOM1 = 2,
   /* UIFONT_CUSTOM2 = 3, */ /* UNUSED */
 } eUIFontId;
 
-/** Default fonts to load/initialize.
+/* Default fonts to load/init.
  * First font is the default (index 0), others optional. */
 typedef struct uiFont {
   struct uiFont *next, *prev;
-  /** 1024 = FILE_MAX. */
+  /* 1024 = FILE_MAX. */
   char filepath[1024];
-  /** From dlfont lib. */
-  short blf_id;
-  /** Own id (eUIFontId). */
+  /* From dlfont lib. */
+  short font_id;
+  /* Own id (eUIFontId). */
   short uifont_id;
 } uiFont;
 
-/** This state defines appearance of text. */
+/* This state defines appearance of txt. */
 typedef struct uiFontStyle {
-  /** Saved in file, 0 is default. */
+  /* Saved in file, 0 is default. */
   short uifont_id;
   char _pad1[2];
-  /** Actual size depends on 'global' dpi. */
+  /* Actual size deps on 'global' dpi. */
   float points;
-  /** Style hint. */
+  /* Style hint. */
   short italic, bold;
-  /** Value is amount of pixels blur. */
+  /* Val is amnt of pixels blur. */
   short shadow;
-  /** Shadow offset in pixels. */
+  /* Shadow offset in pixels. */
   short shadx, shady;
   char _pad0[2];
-  /** Total alpha. */
+  /* Total alpha. */
   float shadowalpha;
-  /** 1 value, typically white or black anyway. */
+  /* 1 val, typically white or black anyway. */
   float shadowcolor;
   char _pad2[4];
 } uiFontStyle;
@@ -57,19 +57,19 @@ typedef struct uiFontStyle {
 typedef struct uiStyle {
   struct uiStyle *next, *prev;
 
-  /** MAX_STYLE_NAME. */
+  /* MAX_STYLE_NAME. */
   char name[64];
 
-  uiFontStyle paneltitle;
+  uiFontStyle pnltitle;
   uiFontStyle grouplabel;
   uiFontStyle widgetlabel;
   uiFontStyle widget;
 
-  float panelzoom;
+  float pnlzoom;
 
-  /** In characters. */
+  /* In chars. */
   short minlabelchars;
-  /** In characters. */
+  /* In mainlabelchars. */
   short minwidgetchars;
 
   short columnspace;
@@ -77,8 +77,8 @@ typedef struct uiStyle {
   short boxspace;
   short btnspacex;
   short btnspacey;
-  short panelspace;
-  short panelouter;
+  short pnlspace;
+  short pnlouter;
 
   char _pad0[2];
 } uiStyle;
@@ -88,8 +88,8 @@ typedef struct uiWidgetColors {
   unsigned char inner[4];
   unsigned char inner_sel[4];
   unsigned char item[4];
-  unsigned char text[4];
-  unsigned char text_sel[4];
+  unsigned char txt[4];
+  unsigned char txt_sel[4];
   unsigned char shaded;
   char _pad0[7];
   short shadetop, shadedown;
@@ -111,16 +111,16 @@ typedef struct uiWidgetStateColors {
   char _pad0[4];
 } uiWidgetStateColors;
 
-typedef struct uiPanelColors {
+typedef struct uiPnlColors {
   unsigned char header[4];
   unsigned char back[4];
   unsigned char sub_back[4];
   char _pad0[4];
-} uiPanelColors;
+} uiPnlColors;
 
 typedef struct ThemeUI {
-  /* Interface Elements (buttons, menus, icons) */
-  uiWidgetColors wcol_regular, wcol_tool, wcol_toolbar_item, wcol_text;
+  /* Interface Elements (btns, menus, icons) */
+  uiWidgetColors wcol_regular, wcol_tool, wcol_toolbar_item, wcol_txt;
   uiWidgetColors wcol_radio, wcol_option, wcol_toggle;
   uiWidgetColors wcol_num, wcol_numslider, wcol_tab;
   uiWidgetColors wcol_menu, wcol_pulldown, wcol_menu_back, wcol_menu_item, wcol_tooltip;
@@ -143,7 +143,7 @@ typedef struct ThemeUI {
 
   float icon_alpha;
   float icon_saturation;
-  unsigned char widget_text_cursor[4];
+  unsigned char widget_txt_cursor[4];
 
   /* Axis Colors */
   unsigned char xaxis[4], yaxis[4], zaxis[4];
@@ -157,82 +157,81 @@ typedef struct ThemeUI {
   unsigned char gizmo_b[4];
 
   /* Icon Colors. */
-  /** Scene items. */
+  /* Scene items. */
   unsigned char icon_scene[4];
-  /** Collection items. */
+  /* Collection items. */
   unsigned char icon_collection[4];
-  /** Object items. */
-  unsigned char icon_object[4];
-  /** Object data items. */
-  unsigned char icon_object_data[4];
-  /** Modifier and constraint items. */
+  /* Ob items. */
+  unsigned char icon_ob[4];
+  /* Ob data items. */
+  unsigned char icon_ob_data[4];
+  /* Mod and constraint items. */
   unsigned char icon_modifier[4];
-  /** Shading related items. */
+  /* Shading related items. */
   unsigned char icon_shading[4];
-  /** File folders. */
+  /* File folders. */
   unsigned char icon_folder[4];
-  /** Intensity of the border icons. >0 will render an border around themed
+  /* Intensity of the border icons. >0 will render an border around themed
    * icons. */
   float icon_border_intensity;
-  float panel_roundness;
+  float pnl_roundness;
   char _pad2[4];
 
 } ThemeUI;
 
 /* try to put them all in one, if needed a special struct can be created as well
- * for example later on, when we introduce wire colors for ob types or so...
- */
+ * for example later on, when we introduce wire colors for ob types or so... */
 typedef struct ThemeSpace {
-  /* main window colors */
+  /* main win colors */
   unsigned char back[4];
   unsigned char back_grad[4];
 
   char background_type;
   char _pad0[3];
 
-  /** Panel title. */
+  /* Pnl title. */
   unsigned char title[4];
-  unsigned char text[4];
-  unsigned char text_hi[4];
+  unsigned char txt[4];
+  unsigned char txt_hi[4];
 
   /* header colors */
-  /** Region background. */
+  /* Rgn background. */
   unsigned char header[4];
-  /** Unused. */
+  /* Unused. */
   unsigned char header_title[4];
-  unsigned char header_text[4];
-  unsigned char header_text_hi[4];
+  unsigned char header_txt[4];
+  unsigned char header_txt_hi[4];
 
-  /* region tabs */
+  /* rgn tabs */
   unsigned char tab_active[4];
   unsigned char tab_inactive[4];
   unsigned char tab_back[4];
   unsigned char tab_outline[4];
 
-  /* button/tool regions */
-  /** Region background. */
+  /* btn/tool rgns */
+  /* Rgn background. */
   unsigned char btn[4];
-  /** Panel title. */
+  /* Pnl title. */
   unsigned char btn_title[4];
-  unsigned char btn_text[4];
-  unsigned char btn_text_hi[4];
+  unsigned char btn_txt[4];
+  unsigned char btn_txt_hi[4];
 
-  /* listview regions */
-  /** Region background. */
+  /* listview rgns */
+  /* Rgn background. */
   unsigned char list[4];
-  /** Panel title. */
+  /* Pnl title. */
   unsigned char list_title[4];
-  unsigned char list_text[4];
-  unsigned char list_text_hi[4];
+  unsigned char list_txt[4];
+  unsigned char list_txt_hi[4];
 
-  /* navigation bar regions */
-  /** Region background. */
+  /* nav bar rgns */
+  /* Rgn background. */
   unsigned char nav_bar[4];
-  /** Region background. */
-  unsigned char execution_buts[4];
+  /* Rgn background. */
+  unsigned char ex_btns[4];
 
-  /* NOTE: cannot use name 'panel' because of DNA mapping old files. */
-  uiPanelColors panelcolors;
+  /* Cannot use name 'pnls' bc of Types mapping old files. */
+  uiPanelColors pnlcolors;
 
   unsigned char shade1[4];
   unsigned char shade2[4];
@@ -242,20 +241,20 @@ typedef struct ThemeSpace {
 
   unsigned char view_overlay[4];
 
-  unsigned char wire[4], wire_edit[4], select[4];
+  unsigned char wire[4], wire_edit[4], sel[4];
   unsigned char lamp[4], speaker[4], empty[4], camera[4];
   unsigned char active[4], group[4], group_active[4], transform[4];
-  unsigned char vertex[4], vertex_select[4], vertex_active[4], vertex_bevel[4],
-      vertex_unreferenced[4];
-  unsigned char edge[4], edge_select[4];
+  unsigned char vert[4], vert_sel[4], vert_active[4], vert_bevel[4],
+      vert_unref[4];
+  unsigned char edge[4], edge_sel[4];
   unsigned char edge_seam[4], edge_sharp[4], edge_facesel[4], edge_crease[4], edge_bevel[4];
-  /** Solid faces. */
-  unsigned char face[4], face_select[4], face_back[4], face_front[4];
-  /** Selected color. */
+  /* Solid faces. */
+  unsigned char face[4], face_sel[4], face_back[4], face_front[4];
+  /* Sel color. */
   unsigned char face_dot[4];
   unsigned char extra_edge_len[4], extra_edge_angle[4], extra_face_angle[4], extra_face_area[4];
   unsigned char normal[4];
-  unsigned char vertex_normal[4];
+  unsigned char vert_normal[4];
   unsigned char loop_normal[4];
   unsigned char bone_solid[4], bone_pose[4], bone_pose_active[4], bone_locked_weight[4];
   unsigned char strip[4], strip_select[4];
@@ -273,13 +272,13 @@ typedef struct ThemeSpace {
   unsigned char handle_sel_free[4], handle_sel_auto[4], handle_sel_vect[4], handle_sel_align[4],
       handle_sel_auto_clamped[4];
 
-  /** Dopesheet. */
+  /* Dopesheet. */
   unsigned char ds_channel[4], ds_subchannel[4], ds_ipoline[4];
-  /** Keytypes. */
+  /* Keytypes. */
   unsigned char keytype_keyframe[4], keytype_extreme[4], keytype_breakdown[4], keytype_jitter[4],
       keytype_movehold[4];
-  /** Keytypes. */
-  unsigned char keytype_keyframe_select[4], keytype_extreme_select[4], keytype_breakdown_select[4],
+  /* Keytypes. */
+  unsigned char keytype_keyframe_select[4], keytype_extreme_select[4], keytype_breakdown_sel[4],
       keytype_jitter_select[4], keytype_movehold_select[4];
   unsigned char keyborder[4], keyborder_select[4];
   char _pad4[3];
@@ -287,13 +286,13 @@ typedef struct ThemeSpace {
   unsigned char console_output[4], console_input[4], console_info[4], console_error[4];
   unsigned char console_cursor[4], console_select[4];
 
-  unsigned char vertex_size, outline_width, obcenter_dia, facedot_size;
+  unsigned char vert_size, outline_width, obcenter_dia, facedot_size;
   unsigned char noodle_curving;
   unsigned char grid_levels;
   char _pad5[3];
   float dash_alpha;
 
-  /* syntax for textwindow and nodes */
+  /* syntax for txtwin and nodes */
   unsigned char syntaxl[4], syntaxs[4]; /* in nodespace used for backdrop matte */
   unsigned char syntaxb[4], syntaxn[4]; /* in nodespace used for color input */
   unsigned char syntaxv[4], syntaxc[4]; /* in nodespace used for converter group */
@@ -308,21 +307,21 @@ typedef struct ThemeSpace {
   unsigned char nodeclass_pattern[4], nodeclass_layout[4];
   unsigned char nodeclass_geometry[4], nodeclass_attribute[4];
 
-  /** For sequence editor. */
+  /* For Seq editor. */
   unsigned char movie[4], movieclip[4], mask[4], image[4], scene[4], audio[4];
   unsigned char effect[4], transition[4], meta[4], text_strip[4], color_strip[4];
-  unsigned char active_strip[4], selected_strip[4];
+  unsigned char active_strip[4], sel_strip[4];
 
-  /** For dopesheet - scale factor for size of keyframes (i.e. height of channels). */
+  /* Dopesheet: scale factor for size of keyframes (i.e. height of channels). */
   char _pad7[1];
   float keyframe_scale_fac;
 
   unsigned char editmesh_active[4];
 
-  unsigned char handle_vertex[4];
-  unsigned char handle_vertex_select[4];
+  unsigned char handle_vert[4];
+  unsigned char handle_vert_sel[4];
 
-  unsigned char handle_vertex_size;
+  unsigned char handle_vert_size;
 
   unsigned char clipping_border_3d[4];
 
@@ -335,7 +334,7 @@ typedef struct ThemeSpace {
   unsigned char _pad1[6];
 
   unsigned char pen_vertex_size;
-  unsigned char pen_vertex[4], pen_vertex_select[4];
+  unsigned char pen_vertex[4], pen_vert_se[4];
 
   unsigned char preview_back[4];
   unsigned char preview_stitch_face[4];
@@ -345,61 +344,61 @@ typedef struct ThemeSpace {
   unsigned char preview_stitch_unstitchable[4];
   unsigned char preview_stitch_active[4];
 
-  /** Two uses, for uvs with modifier applied on mesh and uvs during painting. */
+  /** Two uses, for uvs w mod applied on mesh and uvs during painting. */
   unsigned char uv_shadow[4];
 
-  /** Search filter match, used for property search and in the outliner. */
+  /* Search filter match, used for prop search and in the outliner. */
   unsigned char match[4];
-  /** Outliner - selected item. */
-  unsigned char selected_highlight[4];
-  /** Outliner - selected object. */
-  unsigned char selected_object[4];
-  /** Outliner - active object. */
-  unsigned char active_object[4];
-  /** Outliner - edited object. */
-  unsigned char edited_object[4];
-  /** Outliner - row color difference. */
+  /* Outliner - sel item. */
+  unsigned char sel_highlight[4];
+  /* Outliner - sel object. */
+  unsigned char sel_ob[4];
+  /* Outliner - active ob. */
+  unsigned char active_ob[4];
+  /* Outliner - edited ob. */
+  unsigned char edited_ob[4];
+  /* Outliner - row color diff. */
   unsigned char row_alternate[4];
 
-  /** Skin modifier root color. */
+  /* Skin mod root color. */
   unsigned char skin_root[4];
 
   /* NLA */
-  /** Active Action + Summary Channel. */
+  /* Active Action + Summary Channel. */
   unsigned char anim_active[4];
-  /** Active Action = NULL. */
+  /* Active Action = NULL. */
   unsigned char anim_non_active[4];
-  /** Preview range overlay. */
+  /* Preview range overlay. */
   unsigned char anim_preview_range[4];
 
-  /** NLA 'Tweaking' action/strip. */
+  /* NLA 'Tweaking' action/strip. */
   unsigned char nla_tweaking[4];
-  /** NLA - warning color for duplicate instances of tweaking strip. */
+  /* NLA - warning color for dup instances of tweaking strip. */
   unsigned char nla_tweakdupli[4];
 
-  /** NLA "Track" */
+  /* NLA "Track" */
   unsigned char nla_track[4];
-  /** NLA "Transition" strips. */
+  /* NLA "Transition" strips. */
   unsigned char nla_transition[4], nla_transition_sel[4];
-  /** NLA "Meta" strips. */
+  /* NLA "Meta" strips. */
   unsigned char nla_meta[4], nla_meta_sel[4];
-  /** NLA "Sound" strips. */
+  /* NLA "Sound" strips. */
   unsigned char nla_sound[4], nla_sound_sel[4];
 
   /* info */
-  unsigned char info_selected[4], info_selected_text[4];
-  unsigned char info_error[4], info_error_text[4];
-  unsigned char info_warning[4], info_warning_text[4];
-  unsigned char info_info[4], info_info_text[4];
-  unsigned char info_debug[4], info_debug_text[4];
-  unsigned char info_property[4], info_property_text[4];
-  unsigned char info_operator[4], info_operator_text[4];
+  unsigned char info_sel[4], info_sel_txt[4];
+  unsigned char info_error[4], info_error_txt[4];
+  unsigned char info_warning[4], info_warning_txt[4];
+  unsigned char info_info[4], info_info_txt[4];
+  unsigned char info_debug[4], info_debug_txt[4];
+  unsigned char info_prop[4], info_prop_txt[4];
+  unsigned char info_op[4], info_op_txt[4];
 
   unsigned char paint_curve_pivot[4];
   unsigned char paint_curve_handle[4];
 
   unsigned char metadatabg[4];
-  unsigned char metadatatext[4];
+  unsigned char metadatatxt[4];
 
 } ThemeSpace;
 
@@ -410,20 +409,20 @@ typedef enum eBackgroundGradientTypes {
   TH_BACKGROUND_GRADIENT_RADIAL = 2,
 } eBackgroundGradientTypes;
 
-/** Set of colors for use as a custom color set for Objects/Bones wire drawing. */
+/* Set of colors for use as a custom color set for Objects/Bones wire drawing. */
 typedef struct ThemeWireColor {
   unsigned char solid[4];
-  unsigned char select[4];
+  unsigned char sel[4];
   unsigned char active[4];
-  /** eWireColor_Flags. */
+  /* eWireColor_Flags. */
   short flag;
   char _pad0[2];
 } ThemeWireColor;
 
-/** ThemeWireColor.flag */
-typedef enum eWireColor_Flags {
+/* ThemeWireColor.flag */
+typedef enum eWireColorFlags {
   TH_WIRECOLOR_CONSTCOLS = (1 << 0),
-  /* TH_WIRECOLOR_TEXTCOLS = (1 << 1), */ /* UNUSED */
+  /* TH_WIRECOLOR_TXTCOLS = (1 << 1), */ /* UNUSED */
 } eWireColor_Flags;
 
 typedef struct ThemeCollectionColor {
@@ -435,15 +434,13 @@ typedef struct ThemeStripColor {
 } ThemeStripColor;
 
 /* Currently only a single theme is ever used at once.
- * Different theme presets are stored as external files now. */
-typedef struct duneTheme {
-  struct duneTheme *next, *prev;
+ * Diff theme presets are stored as external files now. */
+typedef struct DuneTheme {
+  struct DuneTheme *next, *prev;
   char name[32];
   ThemeUI tui;
-  /**
-   * Individual Spacetypes:
-   * Ensure UI_THEMESPACE_END is updated when adding.
-   */
+  /* Individual Spacetypes:
+   * Ensure UI_THEMESPACE_END is updated when adding. */
   ThemeSpace space_props;
   ThemeSpace space_view3d;
   ThemeSpace space_file;
@@ -451,9 +448,9 @@ typedef struct duneTheme {
   ThemeSpace space_info;
   ThemeSpace space_action;
   ThemeSpace space_nla;
-  ThemeSpace space_sequencer;
-  ThemeSpace space_image;
-  ThemeSpace space_text;
+  ThemeSpace space_seq;
+  ThemeSpace space_img;
+  ThemeSpace space_txt;
   ThemeSpace space_outliner;
   ThemeSpace space_node;
   ThemeSpace space_prefs;
@@ -465,26 +462,26 @@ typedef struct duneTheme {
 
   /* 20 sets of bone colors for this theme */
   ThemeWireColor tarm[20];
-  // ThemeWireColor tobj[20];
+  // ThemeWireColor toob[20];
 
-  /* See COLLECTION_COLOR_TOT for the number of collection colors. */
+  /* See COLLECTION_COLOR_TOT for the num of collection colors. */
   ThemeCollectionColor collection_color[8];
 
-  /* See SEQUENCE_COLOR_TOT for the total number of strip colors. */
+  /* See SEQ_COLOR_TOT for the total num of strip colors. */
   ThemeStripColor strip_color[9];
 
   int active_theme_area;
-} duneTheme;
+} DuneTheme;
 
 #define UI_THEMESPACE_START(dunetheme) \
   (CHECK_TYPE_INLINE(dunetheme, duneTheme *), &((dunetheme)->space_properties))
 #define UI_THEMESPACE_END(dunetheme) \
   (CHECK_TYPE_INLINE(dunetheme, duneTheme *), (&((dunetheme)->space_spreadsheet) + 1))
 
-typedef struct duneAddon {
+typedef struct DuneAddon {
   struct duneAddon *next, *prev;
   char module[64];
-  /** User-Defined Properties on this add-on (for storing preferences). */
+  /* User-Defined Props on this add-on (for storing preferences). */
   IdProp *prop;
 } duneAddon;
 
