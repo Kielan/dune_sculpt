@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
-/** Viewport Struct */
-
+/* Viewport Struct */
 #define _TYPES_DEFAULT_View3DShading \
   { \
     .type = OB_SOLID, \
@@ -24,7 +22,7 @@
     .single_color = {0.8f, 0.8f, 0.8f}, \
     .background_color = {0.05f, 0.05f, 0.05f}, \
     .studiolight_intensity = 1.0f, \
-    .render_pass = SCE_PASS_COMBINED, \
+    .rndr_pass = SCE_PASS_COMBINED, \
   }
 
 #define _TYPES_DEFAULT_View3DOverlay \
@@ -36,7 +34,7 @@
     .fade_alpha = 0.40f, \
     .texture_paint_mode_opacity = 1.0f, \
     .weight_paint_mode_opacity = 1.0f, \
-    .vertex_paint_mode_opacity = 1.0f, \
+    .vert_paint_mode_opacity = 1.0f, \
     /* Intentionally different to vertex/paint mode, \
      * we typically want to see shading too. */ \
     .sculpt_mode_mask_opacity = 0.75f, \
@@ -46,7 +44,7 @@
                              V3D_OVERLAY_EDIT_SHARP | V3D_OVERLAY_EDIT_FREESTYLE_EDGE | \
                              V3D_OVERLAY_EDIT_FREESTYLE_FACE | V3D_OVERLAY_EDIT_EDGES | \
                              V3D_OVERLAY_EDIT_CREASES | V3D_OVERLAY_EDIT_BWEIGHTS, \
-    .handle_display = CURVE_HANDLE_SELECTED, \
+    .handle_display = CURVE_HANDLE_SEL, \
  \
     .pen_paper_opacity = 0.5f, \
     .pen_grid_opacity = 0.9f, \
@@ -73,7 +71,7 @@
  \
     .gridflag = V3D_SHOW_X | V3D_SHOW_Y | V3D_SHOW_FLOOR | V3D_SHOW_ORTHO_GRID, \
  \
-    .flag = V3D_SELECT_OUTLINE, \
+    .flag = V3D_SEL_OUTLINE, \
     .flag2 = V3D_SHOW_RECONSTRUCTION | V3D_SHOW_ANNOTATION, \
  \
     .lens = 50.0f, \
@@ -81,7 +79,7 @@
     .clip_end = 1000.0f, \
  \
     .bundle_size = 0.2f, \
-    .bundle_drawtype = OB_PLAINAXES, \
+    .bundle_drwtype = OB_PLAINAXES, \
  \
     /* stereo */ \
     .stereo3d_camera = STEREO_3D_ID, \
@@ -90,6 +88,6 @@
     .stereo3d_volume_alpha = 0.05f, \
  \
     /* Pen settings. */ \
-    .vertex_opacity = 1.0f, \
+    .very_opacity = 1.0f, \
     .pen_flag = V3D_PEN_SHOW_EDIT_LINES, \
   }
