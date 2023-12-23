@@ -4,13 +4,12 @@
 /* clang-format off */
 
 /* ParticleSettings Struct */
-
 #define _TYPES_DEFAULT_ParticleSettings \
   { \
     .type = PART_EMITTER, \
     .distr = PART_DISTR_JIT, \
-    .draw_as = PART_DRAW_REND, \
-    .ren_as = PART_DRAW_HALO, \
+    .drw_as = PART_DRW_REND, \
+    .ren_as = PART_DRW_HALO, \
     .bb_uv_split = 1, \
     .flag = PART_EDISTR | PART_TRAND | PART_HIDE_ADVANCED_HAIR, \
  \
@@ -28,7 +27,7 @@
     .hair_step = 5, \
     .keys_step = 5, \
     .draw_step = 2, \
-    .ren_step = 3, \
+    .rndr_step = 3, \
     .adapt_angle = 5, \
     .adapt_pix = 3, \
     .kink_axis = 2, \
@@ -49,7 +48,7 @@
     .avemode = PART_AVE_VELOCITY, \
  \
     .child_nbr = 10, \
-    .ren_child_nbr = 100, \
+    .rndr_child_nbr = 100, \
     .childrad = 0.2f, \
     .childflat = 0.0f, \
     .clumppow = 0.0f, \
@@ -63,8 +62,8 @@
     .clength = 1.0f, \
     .clength_thres = 0.0f, \
  \
-    .draw = 0, \
-    .draw_line = {0.5f,}, \
+    .drw = 0, \
+    .drw_line = {0.5f,}, \
     .path_start = 0.0f, \
     .path_end = 1.0f, \
  \
@@ -73,7 +72,7 @@
     .keyed_loops = 1, \
  \
     .color_vec_max = 1.0f, \
-    .draw_col = PART_DRAW_COL_MAT, \
+    .drw_col = PART_DRW_COL_MAT, \
  \
     .omat = 1, \
     .use_mod_stack = false, \
