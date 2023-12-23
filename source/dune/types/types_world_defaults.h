@@ -3,9 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/* -------------------------------------------------------------------- */
-/** World Struct **/
-
+/* World Struct */
 #define _TYPES_DEFAULT_World \
   { \
     .horr = 0.05f, \
