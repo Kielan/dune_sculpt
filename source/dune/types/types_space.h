@@ -1,112 +1,95 @@
-/** \file
- * \ingroup DNA
- *
- * Structs for each of space type in the user interface.
- */
-
+/* Structs for each of space type in the user interface. */
 #pragma once
 
-#include "DNA_asset_types.h"
-#include "DNA_color_types.h" /* for Histogram */
-#include "DNA_defs.h"
-#include "DNA_image_types.h" /* ImageUser */
-#include "DNA_listBase.h"
-#include "DNA_movieclip_types.h" /* MovieClipUser */
-#include "DNA_node_types.h"      /* for bNodeInstanceKey */
-#include "DNA_outliner_types.h"  /* for TreeStoreElem */
-#include "DNA_sequence_types.h"  /* SequencerScopes */
-#include "DNA_vec_types.h"
-/* Hum ... Not really nice... but needed for spacebuts. */
-#include "DNA_view2d_types.h"
+#include "types_asset.h"
+#include "types_color.h" /* for Histogram */
+#include "types_defs.h"
+#include "types_img.h" /* ImgUser */
+#include "types_list.h"
+#include "types_movieclip.h" /* MovieClipUser */
+#include "types_node.h"      /* for NodeInstanceKey */
+#include "types_outliner.h"  /* for TreeStoreElem */
+#include "types_seq.h"  /* SeqScopes */
+#include "types_vec.h"
+/* Hum ... Not really nice... but needed for spacebtns. */
+#include "types_view2d.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct BLI_mempool;
+struct lib_mempool;
 struct FileLayout;
 struct FileList;
-struct FileSelectParams;
+struct FileSelParams;
 struct Histogram;
-struct ID;
-struct Image;
+struct Id;
+struct Img;
 struct Mask;
 struct MovieClip;
 struct MovieClipScopes;
 struct Scopes;
 struct Script;
 struct SpaceGraph;
-struct Text;
-struct bDopeSheet;
-struct bGPdata;
-struct bNodeTree;
-struct wmOperator;
-struct wmTimer;
+struct Txt;
+struct DopeSheet;
+struct PenData;
+struct NodeTree;
+struct WinOp;
+struct WinTimer;
 
-/** Defined in `buttons_intern.h`. */
-typedef struct SpaceProperties_Runtime SpaceProperties_Runtime;
+/* Defined in `btns_intern.h`. */
+typedef struct SpacePropsRuntime SpacePropsRuntime;
 
-/** Defined in `node_intern.hh`. */
+/* Defined in `node_intern.hh`. */
 #ifdef __cplusplus
-namespace blender::ed::space_node {
-struct SpaceNode_Runtime;
-}  // namespace blender::ed::space_node
-using SpaceNode_Runtime = blender::ed::space_node::SpaceNode_Runtime;
+namespace dune::ed::space_node {
+struct SpaceNodeRuntime;
+}  // namespace dune::ed::space_node
+using SpaceNodeRuntime = dune::ed::space_node::SpaceNodeRuntime;
 #else
-typedef struct SpaceNode_Runtime SpaceNode_Runtime;
+typedef struct SpaceNodeRuntime SpaceNodeRuntime;
 #endif
 
-/** Defined in `file_intern.h`. */
-typedef struct SpaceFile_Runtime SpaceFile_Runtime;
+/* Defined in `file_intern.h`. */
+typedef struct SpaceFileRuntime SpaceFileRuntime;
 
-/** Defined in `spreadsheet_intern.hh`. */
-typedef struct SpaceSpreadsheet_Runtime SpaceSpreadsheet_Runtime;
+/* Defined in `spreadsheet_intern.hh`. */
+typedef struct SpaceSpreadsheetRuntime SpaceSpreadsheetRuntime;
 
-/* -------------------------------------------------------------------- */
-/** \name SpaceLink (Base)
- * \{ */
+/* SpaceLink (Base) */
 
-/**
- * The base structure all the other spaces
+/* The base struct all the other spaces
  * are derived (implicitly) from. Would be
- * good to make this explicit.
- */
+ * good to make this explicit. */
 typedef struct SpaceLink {
   struct SpaceLink *next, *prev;
-  /** Storage of regions for inactive spaces. */
-  ListBase regionbase;
+  /* Storage of rgns for inactive spaces. */
+  List rgnbase;
   char spacetype;
   char link_flag;
   char _pad0[6];
 } SpaceLink;
 
-/** #SpaceLink.link_flag */
+/* SpaceLink.link_flag */
 enum {
-  /**
-   * The space is not a regular one opened through the editor menu (for example) but spawned by an
-   * operator to fulfill some task and then disappear again.
+  /* The space is not a regular one opened through the editor menu (for example) but spawned by an
+   * op to fulfill some task and then disappear again.
    * Can typically be cancelled using Escape, but that is handled on the editor level. */
-  SPACE_FLAG_TYPE_TEMPORARY = (1 << 0),
-  /**
-   * Used to mark a space as active but "overlapped" by temporary full-screen spaces. Without this
-   * we wouldn't be able to restore the correct active space after closing temp full-screens
+  SPACE_FLAG_TYPE_TMP = (1 << 0),
+  /* Used to mark a space as active but "overlapped" by tmp full-screen spaces. Wo this
+   * we wouldn't be able to restore the correct active space after closing tmp full-screens
    * reliably if the same space type is opened twice in a full-screen stack (see T19296). We don't
-   * actually open the same space twice, we have to pretend it is by managing area order carefully.
-   */
+   * actually open the same space twice, we have to pretend it is by managing area order carefully. */
   SPACE_FLAG_TYPE_WAS_ACTIVE = (1 << 1),
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Space Info
- * \{ */
-
-/** Info Header. */
+/* Space Info */
+/* Info Header. */
 typedef struct SpaceInfo {
   SpaceLink *next, *prev;
-  /** Storage of regions for inactive spaces. */
-  ListBase regionbase;
+  /* Storage of rgns for inactive spaces. */
+  List rgnbase;
   char spacetype;
   char link_flag;
   char _pad0[6];
@@ -116,131 +99,127 @@ typedef struct SpaceInfo {
   char _pad[7];
 } SpaceInfo;
 
-/** #SpaceInfo.rpt_mask */
-typedef enum eSpaceInfo_RptMask {
+/* SpaceInfo.rpt_mask */
+typedef enum eSpaceInfoRptMask {
   INFO_RPT_DEBUG = (1 << 0),
   INFO_RPT_INFO = (1 << 1),
   INFO_RPT_OP = (1 << 2),
   INFO_RPT_WARN = (1 << 3),
   INFO_RPT_ERR = (1 << 4),
-} eSpaceInfo_RptMask;
+} eSpaceInfoRptMask;
 
-/** \} */
+/* Props Editor */
 
-/* -------------------------------------------------------------------- */
-/** \name Properties Editor
- * \{ */
-
-/** Properties Editor. */
-typedef struct SpaceProperties {
+/* Props Editor. */
+typedef struct SpaceProps {
   SpaceLink *next, *prev;
-  /** Storage of regions for inactive spaces. */
-  ListBase regionbase;
+  /* Storage of rgns for inactive spaces. */
+  List rgnbase;
   char spacetype;
   char link_flag;
   char _pad0[6];
   /* End 'SpaceLink' header. */
 
-  /** Deprecated, copied to region. */
-  View2D v2d DNA_DEPRECATED;
+  /* Deprecated, copied to rgn. */
+  View2D v2d TYPES_DEPRECATED;
 
-  /* For different kinds of property editors (exposed in the space type selector). */
+  /* For different kinds of proP editors (exposed in the space type sel). */
   short space_subtype;
 
-  /** Context tabs. */
+  /* Cxt tabs. */
   short mainb, mainbo, mainbuser;
-  /** Preview is signal to refresh. */
+  /* Preview is signal to refresh. */
   short preview;
   char _pad[4];
   char flag;
 
-  /* eSpaceButtons_OutlinerSync */
+  /* eSpaceBtnsOutlinerSync */
   char outliner_sync;
 
-  /** Runtime. */
+  /* Runtime. */
   void *path;
-  /** Runtime. */
+  /* Runtime. */
   int pathflag, dataicon;
-  ID *pinid;
+  Id *pinid;
 
   void *texuser;
 
-  /* Doesn't necessarily need to be a pointer, but runtime structs are still written to files. */
-  struct SpaceProperties_Runtime *runtime;
-} SpaceProperties;
+  /* Doesn't necessarily need to be a ptr, but runtime structs are still written to files. */
+  struct SpacePropsRuntime *runtime;
+} SpaceProps;
 
-/* button defines (deprecated) */
-#ifdef DNA_DEPRECATED_ALLOW
-/* warning: the values of these defines are used in SpaceProperties.tabs[8] */
-/* SpaceProperties.mainb new */
-#  define CONTEXT_SCENE 0
-#  define CONTEXT_OBJECT 1
-// #define CONTEXT_TYPES   2
-#  define CONTEXT_SHADING 3
-#  define CONTEXT_EDITING 4
-// #define CONTEXT_SCRIPT  5
-// #define CONTEXT_LOGIC   6
+/* btn defines (deprecated) */
+#ifdef TYPES_DEPRECATED_ALLOW
+/* warning: the valS of these defines are used in SpaceProperties.tabs[8] */
+/* SpacePropS.mainb new */
+#  define CXT_SCENE 0
+#  define CXT_OB 1
+// #define CXT_TYPES   2
+#  define CXT_SHADING 3
+#  define CXT_EDITING 4
+// #define CXT_SCRIPT  5
+// #define CXT_LOGIC   6
 
-/* SpaceProperties.mainb old (deprecated) */
-// #define BUTS_VIEW           0
-#  define BUTS_LAMP 1
-#  define BUTS_MAT 2
-#  define BUTS_TEX 3
-#  define BUTS_ANIM 4
-#  define BUTS_WORLD 5
-#  define BUTS_RENDER 6
-#  define BUTS_EDIT 7
-// #define BUTS_GAME           8
-#  define BUTS_FPAINT 9
-#  define BUTS_RADIO 10
-#  define BUTS_SCRIPT 11
-// #define BUTS_SOUND          12
-#  define BUTS_CONSTRAINT 13
-// #define BUTS_EFFECTS        14
-#endif /* DNA_DEPRECATED_ALLOW */
+/* SpaceProps.mainb old (deprecated) */
+// #define BTNS_VIEW           0
+#  define BTNS_LAMP 1
+#  define BTNS_MAT 2
+#  define BTNS_TEX 3
+#  define BTNS_ANIM 4
+#  define BTNS_WORLD 5
+#  define BTNS_RENDER 6
+#  define BTNS_EDIT 7
+// #define BTNS_GAME           8
+#  define BTNS_FPAINT 9
+#  define BTNS_RADIO 10
+#  define BTNS_SCRIPT 11
+// #define BTNS_SOUND          12
+#  define BTNS_CONSTRAINT 13
+// #define BTNS_EFFECTS        14
+#endif /* TYPES_DEPRECATED_ALLOW */
 
-/** #SpaceProperties.mainb new */
-typedef enum eSpaceButtons_Context {
-  BCONTEXT_RENDER = 0,
-  BCONTEXT_SCENE = 1,
-  BCONTEXT_WORLD = 2,
-  BCONTEXT_OBJECT = 3,
-  BCONTEXT_DATA = 4,
-  BCONTEXT_MATERIAL = 5,
-  BCONTEXT_TEXTURE = 6,
-  BCONTEXT_PARTICLE = 7,
-  BCONTEXT_PHYSICS = 8,
-  BCONTEXT_BONE = 9,
-  BCONTEXT_MODIFIER = 10,
-  BCONTEXT_CONSTRAINT = 11,
-  BCONTEXT_BONE_CONSTRAINT = 12,
-  BCONTEXT_VIEW_LAYER = 13,
-  BCONTEXT_TOOL = 14,
-  BCONTEXT_SHADERFX = 15,
-  BCONTEXT_OUTPUT = 16,
-  BCONTEXT_COLLECTION = 17,
+/* SpaceProps.main new */
+typedef enum eSpaceBtnsCxt {
+  CXT_RENDER = 0,
+  CXT_SCENE = 1,
+  CXT_WORLD = 2,
+  CXT_OB = 3,
+  CXT_DATA = 4,
+  CXT_MATERIAL = 5,
+  CXT_TEXTURE = 6,
+  CXT_PARTICLE = 7,
+  CXT_PHYS = 8,
+  CXT_BONE = 9,
+  CXT_MOD = 10,
+  CXT_CONSTRAINT = 11,
+  CXT_BONE_CONSTRAINT = 12,
+  CXT_VIEW_LAYER = 13,
+  CXT_TOOL = 14,
+  CXT_SHADERFX = 15,
+  CXT_OUTPUT = 16,
+  CXT_COLLECTION = 17,
 
   /* Keep last. */
-  BCONTEXT_TOT,
-} eSpaceButtons_Context;
+  CXT_TOT,
+} eSpaceBtnsCxt;
 
-/** #SpaceProperties.flag */
-typedef enum eSpaceButtons_Flag {
+/* SpaceProps.flag */
+typedef enum eSpaceBtnsFlag {
   /* SB_PRV_OSA = (1 << 0), */ /* UNUSED */
-  SB_PIN_CONTEXT = (1 << 1),
+  SB_PIN_CXT = (1 << 1),
   SB_FLAG_UNUSED_2 = (1 << 2),
   SB_FLAG_UNUSED_3 = (1 << 3),
-  /** Do not add materials, particles, etc. in TemplateTextureUser list. */
+  /* Do not add materials, particles, etc. in TemplateTextureUser list. */
   SB_TEX_USER_LIMITED = (1 << 3),
-  SB_SHADING_CONTEXT = (1 << 4),
-} eSpaceButtons_Flag;
+  SB_SHADING_CXT = (1 << 4),
+} eSpaceBtnsFlag;
 
-/** #SpaceProperties.outliner_sync */
-typedef enum eSpaceButtons_OutlinerSync {
-  PROPERTIES_SYNC_AUTO = 0,
+/* SpaceProps.outliner_sync */
+typedef enum eSpaceBtnsOutlinerSync {
+  PROPS_SYNC_AUTO = 0,
   PROPERTIES_SYNC_NEVER = 1,
   PROPERTIES_SYNC_ALWAYS = 2,
-} eSpaceButtons_OutlinerSync;
+} eSpaceBtnsOutlinerSync;
 
 /** \} */
 
