@@ -1162,7 +1162,7 @@ typedef enum ePenUserdefSettings {
 } ePenUserdefSettings;
 
 enum {
-  USER_GIZMO_DRAW = (1 << 0),
+  USER_GIZMO_DRW = (1 << 0),
 };
 
 /* Color Picker Types.
@@ -1173,28 +1173,28 @@ typedef enum eColorPickerTypes {
   USER_CP_SQUARE_HS = 2,
   USER_CP_SQUARE_HV = 3,
   USER_CP_CIRCLE_HSL = 4,
-} eColorPicker_Types;
+} eColorPickerTypes;
 
-/** Time-code display styles.
+/* Time-code display styles.
  * UserDef.timecode_style */
 typedef enum eTimecodeStyles {
   /* As little info as is necessary to show relevant info with '+' to denote the frames
    * i.e. HH:MM:SS+FF, MM:SS+FF, SS+FF, or MM:SS. */
   USER_TIMECODE_MINIMAL = 0,
-  /** Reduced SMPTE - (HH:)MM:SS:FF */
+  /* Reduced SMPTE - (HH:)MM:SS:FF */
   USER_TIMECODE_SMPTE_MSF = 1,
-  /** Full SMPTE - HH:MM:SS:FF */
+  /* Full SMPTE - HH:MM:SS:FF */
   USER_TIMECODE_SMPTE_FULL = 2,
-  /** Milliseconds for sub-frames - HH:MM:SS.sss. */
+  /* Milliseconds for sub-frames - HH:MM:SS.sss. */
   USER_TIMECODE_MILLISECONDS = 3,
-  /** Seconds only. */
+  /* Seconds only. */
   USER_TIMECODE_SECONDS_ONLY = 4,
   /* Private (not exposed as generic choices) options.
    * milliseconds for sub-frames, SubRip format- HH:MM:SS,sss. */
   USER_TIMECODE_SUBRIP = 100,
 } eTimecodeStyles;
 
-/** UserDef.ndof_flag (3D mouse options) */
+/* UserDef.ndof_flag (3D mouse options) */
 typedef enum eNdofFlag {
   NDOF_SHOW_GUIDE = (1 << 0),
   NDOF_FLY_HELICOPTER = (1 << 1),
@@ -1207,7 +1207,6 @@ typedef enum eNdofFlag {
   NDOF_SHOULD_ROTATE = (1 << 5),
 
   /* Orbit nav modes. */
-
   NDOF_MODE_ORBIT = (1 << 6),
 
   /* actually... users probably don't care about what the mode
@@ -1227,23 +1226,23 @@ typedef enum eNdofFlag {
 
 #define NDOF_PIXELS_PER_SECOND 600.0f
 
-/** UserDef.ogl_multisamples */
-typedef enum eMultiSample_Type {
+/* UserDef.ogl_multisamples */
+typedef enum eMultiSampleType {
   USER_MULTISAMPLE_NONE = 0,
   USER_MULTISAMPLE_2 = 2,
   USER_MULTISAMPLE_4 = 4,
   USER_MULTISAMPLE_8 = 8,
   USER_MULTISAMPLE_16 = 16,
-} eMultiSample_Type;
+} eMultiSampleType;
 
-/** UserDef.image_draw_method */
-typedef enum eImageDrawMethod {
-  IMAGE_DRAW_METHOD_AUTO = 0,
-  IMAGE_DRAW_METHOD_GLSL = 1,
-  IMAGE_DRAW_METHOD_2DTEXTURE = 2,
-} eImageDrawMethod;
+/* UserDef.img_drw_method */
+typedef enum eImgDrwMethod {
+  IMG_DRW_METHOD_AUTO = 0,
+  IMG_DRW_METHOD_GLSL = 1,
+  IMG_DRW_METHOD_2DTEXTURE = 2,
+} eImgDrwMethod;
 
-/** UserDef.virtual_pixel */
+/* UserDef.virtual_pixel */
 typedef enum eUserprefVirtualPixel {
   VIRTUAL_PIXEL_NATIVE = 0,
   VIRTUAL_PIXEL_DOUBLE = 1,
@@ -1259,23 +1258,23 @@ typedef enum eOpensubdivComputeType {
   USER_OPENSUBDIV_COMPUTE_GLSL_COMPUTE = 6,
 } eOpensubdivComputeType;
 
-/** UserDef.factor_display_type */
+/* UserDef.factor_display_type */
 typedef enum eUserprefFactorDisplay {
   USER_FACTOR_AS_FACTOR = 0,
   USER_FACTOR_AS_PERCENTAGE = 1,
 } eUserprefFactorDisplay;
 
-typedef enum eUserprefRenderDisplayType {
-  USER_RENDER_DISPLAY_NONE = 0,
-  USER_RENDER_DISPLAY_SCREEN = 1,
-  USER_RENDER_DISPLAY_AREA = 2,
-  USER_RENDER_DISPLAY_WINDOW = 3
-} eUserprefRenderDisplayType;
+typedef enum eUserprefRndrDisplayType {
+  USER_RNDR_DISPLAY_NONE = 0,
+  USER_RNDR_DISPLAY_SCREEN = 1,
+  USER_RNDR_DISPLAY_AREA = 2,
+  USER_RNDR_DISPLAY_WIN = 3
+} eUserprefRndrDisplayType;
 
-typedef enum eUserprefTempSpaceDisplayType {
-  USER_TEMP_SPACE_DISPLAY_FULLSCREEN = 0,
-  USER_TEMP_SPACE_DISPLAY_WINDOW = 1,
-} eUserprefTempSpaceDisplayType;
+typedef enum eUserprefTmpSpaceDisplayType {
+  USER_TMP_SPACE_DISPLAY_FULLSCREEN = 0,
+  USER_TMP_SPACE_DISPLAY_WIN = 1,
+} eUserprefTmpSpaceDisplayType;
 
 typedef enum eUserprefEmulateMMBMod {
   USER_EMU_MMB_MOD_ALT = 0,
@@ -1294,7 +1293,7 @@ typedef enum eUserprefSeqProxySetup {
 } eUserprefSeqProxySetup;
 
 /* Locale Ids. Auto will try to get local from OS. Our default is English though. */
-/** UserDef.lang */
+/* UserDef.lang */
 enum {
   ULANG_AUTO = 0,
   ULANG_ENGLISH = 1,
