@@ -1,8 +1,7 @@
 #include "fn_lazy_ex.hh"
 
-namespace dune::fn::lazy_function {
+namespace dune::fn::lazy_fn {
 
-/* -------------------------------------------------------------------- */
 /* BasicParams */
 BasicParams::BasicParams(const LazyFn &fn,
                          const Span<GMutablePtr> inputs,
@@ -28,7 +27,7 @@ void *BasicParams::try_get_input_data_ptr_or_request_impl(const int index)
 {
   void *val = inputs_[index].get();
   if (val == nullptr) {
-    input_usages_[index] = ValueUsage::Used;
+    input_usages_[index] = ValUsage::Used;
   }
   return value;
 }
@@ -102,7 +101,7 @@ bool RemappedParams::output_was_set_impl(const int index) const
   return base_params_.output_was_set(output_map_[index]);
 }
 
-lf::ValueUsage RemappedParams::get_output_usage_impl(const int index) const
+lf::ValUsage RemappedParams::get_output_usage_impl(const int index) const
 {
   return base_params_.get_output_usage(output_map_[index]);
 }
@@ -124,6 +123,4 @@ bool RemappedParams::try_enable_multi_threading_impl()
   return false;
 }
 
-/** \} */
-
-}  // namespace blender::fn::lazy_function
+}  // namespace dune::fn::lazy_fn
