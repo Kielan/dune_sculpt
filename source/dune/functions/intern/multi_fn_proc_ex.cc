@@ -8,7 +8,7 @@ ProcEx::ProcEx(const Proc &proc) : proc_(proc)
 {
   SignatureBuilder builder("Proc Ex", signature_);
 
-  for (const ConstParam &param : procedure.params()) {
+  for (const ConstParam &param : proc.params()) {
     builder.add("Param", ParamType(param.type, param.var->data_type()));
   }
 
@@ -48,7 +48,7 @@ struct VarValGVArray : public VarVal {
   }
 };
 
-/* This var has a different val for every index. Some vals may be uninitialized. The span
+/* This var has a diff val for every index. Some vals may be uninit. The span
  * may be owned by the caller. */
 struct VarValSpan : public VarVal {
   static inline constexpr ValType static_type = ValType::Span;
@@ -60,19 +60,19 @@ struct VarValSpan : public VarVal {
   }
 };
 
-/* This variable is the unmodified virtual vector array from the caller. */
-struct VariableValue_GVVectorArray : public VariableValue {
-  static inline constexpr ValueType static_type = ValueType::GVVectorArray;
+/* This var is the unmodified virtual vector array from the caller. */
+struct VarValGVVectorArray : public VarVal {
+  static inline constexpr ValType static_type = ValType::GVVectorArray;
   const GVVectorArray &data;
 
-  VariableValue_GVVectorArray(const GVVectorArray &data) : VariableValue(static_type), data(data)
+  VarValGVVectorArray(const GVVectorArray &data) : VarVal(static_type), data(data)
   {
   }
 };
 
-/* This variable has a different vector for every index. */
-struct VariableValue_GVectorArray : public VariableValue {
-  static inline constexpr ValueType static_type = ValueType::GVectorArray;
+/* This var has a different vector for every index. */
+struct VarValGVectorArray : public VarVal {
+  static inline constexpr ValType static_type = ValType::GVectorArray;
   GVectorArray &data;
   bool owned;
 
@@ -86,25 +86,25 @@ struct VariableValue_GVectorArray : public VariableValue {
 struct VarValOneSingle : public VarVal {
   static inline constexpr ValType static_type = ValType::OneSingle;
   void *data;
-  bool is_initialized = false;
+  bool is_init = false;
 
-  VarValOneSingle(void *data) : VariableValue(static_type), data(data) {}
+  VarValOneSingle(void *data) : VarVal(static_type), data(data) {}
 };
 
 /* This var has the same vector for every index. */
 struct VarValOneVector : public VarVal {
-  static inline constexpr ValType static_type = ValueType::OneVector;
+  static inline constexpr ValType static_type = ValType::OneVector;
   GVectorArray &data;
 
-  VariableValue_OneVector(GVectorArray &data) : VariableValue(static_type), data(data) {}
+  VarValOneVector(GVectorArray &data) : VarVal(static_type), data(data) {}
 };
 
-static_assert(std::is_trivially_destructible_v<VariableValue_GVArray>);
-static_assert(std::is_trivially_destructible_v<VariableValue_Span>);
-static_assert(std::is_trivially_destructible_v<VariableValue_GVVectorArray>);
-static_assert(std::is_trivially_destructible_v<VariableValue_GVectorArray>);
-static_assert(std::is_trivially_destructible_v<VariableValue_OneSingle>);
-static_assert(std::is_trivially_destructible_v<VariableValue_OneVector>);
+static_assert(std::is_trivially_destructible_v<VarVal_GVArray>);
+static_assert(std::is_trivially_destructible_v<VarVal_Span>);
+static_assert(std::is_trivially_destructible_v<VarVal_GVVectorArray>);
+static_assert(std::is_trivially_destructible_v<VarVal_GVectorArray>);
+static_assert(std::is_trivially_destructible_v<VarVal_OneSingle>);
+static_assert(std::is_trivially_destructible_v<VarVal_OneVector>);
 
 class VariableState;
 
