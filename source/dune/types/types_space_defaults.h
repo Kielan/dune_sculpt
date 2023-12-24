@@ -3,11 +3,11 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-/** SpaceClip Struct **/
+/* SpaceClip Struct */
 #define _TYPES_DEFAULT_MaskSpaceInfo \
   { \
-    .draw_flag = 0, \
-    .draw_type = MASK_DT_OUTLINE, \
+    .drw_flag = 0, \
+    .drw_type = MASK_DT_OUTLINE, \
     .overlay_mode = MASK_OVERLAY_ALPHACHANNEL, \
   }
 
