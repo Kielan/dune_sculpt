@@ -14,7 +14,7 @@ void InstructionCursor::set_next(Proc &proc, Instruction *new_instruction) const
       break;
     }
     case Type::Entry: {
-      procedure.set_entry(*new_instruction);
+      proc.set_entry(*new_instruction);
       break;
     }
     case Type::Call: {
@@ -87,7 +87,7 @@ void CallInstruction::set_param_var(int param_index, Var *var)
   if (params_[param_index] != nullptr) {
     params_[param_index]->users_.remove_first_occurrence_and_reorder(this);
   }
-  if (variable != nullptr) {
+  if (var != nullptr) {
     lib_assert(fn_->param_type(param_index).data_type() == var->data_type());
     variable->users_.append(this);
   }
@@ -183,7 +183,7 @@ CallInstruction &Proc::new_call_instruction(const MultiFn &fn)
   CallInstruction &instruction = *allocator_.construct<CallInstruction>().release();
   instruction.type_ = InstructionType::Call;
   instruction.fn_ = &fn;
-  instruction.params_ = allocator_.allocate_array<Var *>(fn.param_amount());
+  instruction.params_ = allocator_.alloc_array<Var *>(fn.param_amount());
   instruction.params_.fill(nullptr);
   call_instructions_.append(&instruction);
   return instruction;
@@ -221,7 +221,7 @@ ReturnInstruction &Proc::new_return_instruction()
   return instruction;
 }
 
-void Proc::add_parameter(ParamType::InterfaceType interface_type, Variable &variable)
+void Proc::add_param(ParamType::InterfaceType interface_type, Var &var)
 {
   params_.append({interface_type, &variable});
 }
@@ -274,7 +274,7 @@ bool Proc::validate() const
   if (!this->validate_params()) {
     return false;
   }
-  if (!this->validate_initialization()) {
+  if (!this->validate_init()) {
     return false;
   }
   return true;
@@ -311,7 +311,7 @@ bool Proc::validate_all_instruction_ptrs_set() const
 bool Proc::validate_all_params_provided() const
 {
   for (const CallInstruction *instruction : call_instructions_) {
-    const MultiFunction &fn = instruction->fn();
+    const MultiFn &fn = instruction->fn();
     for (const int param_index : fn.param_indices()) {
       const ParamType param_type = fn.param_type(param_index);
       if (param_type.category() == ParamCategory::SingleOutput) {
@@ -343,7 +343,7 @@ bool Proc::validate_same_vars_in_one_call() const
     const MultiFn &fn = *instruction->fn_;
     for (const int param_index : fn.param_indices()) {
       const ParamType param_type = fn.param_type(param_index);
-      const Variable *variable = instruction->params_[param_index];
+      const Var *var = instruction->params_[param_index];
       if (variable == nullptr) {
         continue;
       }
@@ -382,46 +382,46 @@ bool Proc::validate_params() const
   return true;
 }
 
-bool Proc::validate_initialization() const
+bool Proc::validate_init() const
 {
   /* TODO: Issue warning when it maybe wrongly initialized. */
   for (const DestructInstruction *instruction : destruct_instructions_) {
-    const Variable &variable = *instruction->variable_;
-    const InitState state = this->find_initialization_state_before_instruction(*instruction,
-                                                                               variable);
-    if (!state.can_be_initialized) {
+    const Var &var = *instruction->var_;
+    const InitState state = this->find_init_state_before_instruction(*instruction,
+                                                                     var);
+    if (!state.can_be_init) {
       return false;
     }
   }
   for (const BranchInstruction *instruction : branch_instructions_) {
-    const Variable &variable = *instruction->condition_;
-    const InitState state = this->find_initialization_state_before_instruction(*instruction,
-                                                                               variable);
-    if (!state.can_be_initialized) {
+    const Var &var = *instruction->condition_;
+    const InitState state = this->find_init_state_before_instruction(*instruction,
+                                                                     var);
+    if (!state.can_be_init) {
       return false;
     }
   }
   for (const CallInstruction *instruction : call_instructions_) {
-    const MultiFunction &fn = *instruction->fn_;
+    const MultiFn &fn = *instruction->fn_;
     for (const int param_index : fn.param_indices()) {
       const ParamType param_type = fn.param_type(param_index);
-      /* If the parameter was an unneeded output, it could be null. */
+      /* If the param was an unneeded output, it could be null. */
       if (!instruction->params_[param_index]) {
         continue;
       }
-      const Variable &variable = *instruction->params_[param_index];
-      const InitState state = this->find_initialization_state_before_instruction(*instruction,
-                                                                                 variable);
+      const Var &var = *instruction->params_[param_index];
+      const InitState state = this->find_init_state_before_instruction(*instruction,
+                                                                       var);
       switch (param_type.interface_type()) {
         case ParamType::Input:
         case ParamType::Mutable: {
-          if (!state.can_be_initialized) {
+          if (!state.can_be_init) {
             return false;
           }
           break;
         }
         case ParamType::Output: {
-          if (!state.can_be_uninitialized) {
+          if (!state.can_be_uninit) {
             return false;
           }
           break;
@@ -429,23 +429,23 @@ bool Proc::validate_initialization() const
       }
     }
   }
-  Set<const Variable *> variables_that_should_be_initialized_on_return;
-  for (const Parameter &param : params_) {
+  Set<const Var *> vars_that_should_be_init_on_return;
+  for (const Param &param : params_) {
     if (ELEM(param.type, ParamType::Mutable, ParamType::Output)) {
-      variables_that_should_be_initialized_on_return.add_new(param.variable);
+      vars_that_should_be_init_on_return.add_new(param.var);
     }
   }
   for (const ReturnInstruction *instruction : return_instructions_) {
-    for (const Variable *variable : variables_) {
-      const InitState init_state = this->find_initialization_state_before_instruction(*instruction,
-                                                                                      *variable);
-      if (variables_that_should_be_initialized_on_return.contains(variable)) {
-        if (!init_state.can_be_initialized) {
+    for (const Var *var : vars_) {
+      const InitState init_state = this->find_init_state_before_instruction(*instruction,
+                                                                            *var);
+      if (vars_that_should_be_init_on_return.contains(var)) {
+        if (!init_state.can_be_init) {
           return false;
         }
       }
       else {
-        if (!init_state.can_be_uninitialized) {
+        if (!init_state.can_be_uninit) {
           return false;
         }
       }
@@ -454,26 +454,26 @@ bool Proc::validate_initialization() const
   return true;
 }
 
-Procedure::InitState Procedure::find_initialization_state_before_instruction(
-    const Instruction &target_instruction, const Variable &target_variable) const
+Proc::InitState Proc::find_init_state_before_instruction(
+    const Instruction &target_instruction, const Var &target_var) const
 {
   InitState state;
 
   auto check_entry_instruction = [&]() {
-    bool caller_initialized_var = false;
-    for (const Parameter &param : params_) {
-      if (param.variable == &target_variable) {
+    bool caller_init_var = false;
+    for (const Param &param : params_) {
+      if (param.var == &target_var) {
         if (ELEM(param.type, ParamType::Input, ParamType::Mutable)) {
-          caller_initialized_var = true;
+          caller_init_var = true;
           break;
         }
       }
     }
-    if (caller_initialized_var) {
-      state.can_be_initialized = true;
+    if (caller_init_var) {
+      state.can_be_init = true;
     }
     else {
-      state.can_be_uninitialized = true;
+      state.can_be_uninit = true;
     }
   };
 
@@ -492,7 +492,7 @@ Procedure::InitState Procedure::find_initialization_state_before_instruction(
   while (!instructions_to_check.is_empty()) {
     const Instruction &instruction = *instructions_to_check.pop();
     if (!checked_instructions.add(&instruction)) {
-      /* Skip if the instruction has been checked already. */
+      /* Skip if the instruction has been checked alrdy. */
       continue;
     }
     bool state_modified = false;
@@ -500,12 +500,12 @@ Procedure::InitState Procedure::find_initialization_state_before_instruction(
       case InstructionType::Call: {
         const CallInstruction &call_instruction = static_cast<const CallInstruction &>(
             instruction);
-        const MultiFunction &fn = *call_instruction.fn_;
+        const MultiFn &fn = *call_instruction.fn_;
         for (const int param_index : fn.param_indices()) {
-          if (call_instruction.params_[param_index] == &target_variable) {
+          if (call_instruction.params_[param_index] == &target_var) {
             const ParamType param_type = fn.param_type(param_index);
             if (param_type.interface_type() == ParamType::Output) {
-              state.can_be_initialized = true;
+              state.can_be_init = true;
               state_modified = true;
               break;
             }
@@ -516,8 +516,8 @@ Procedure::InitState Procedure::find_initialization_state_before_instruction(
       case InstructionType::Destruct: {
         const DestructInstruction &destruct_instruction = static_cast<const DestructInstruction &>(
             instruction);
-        if (destruct_instruction.variable_ == &target_variable) {
-          state.can_be_uninitialized = true;
+        if (destruct_instruction.var_ == &target_var) {
+          state.can_be_uninit = true;
           state_modified = true;
         }
         break;
@@ -525,7 +525,7 @@ Procedure::InitState Procedure::find_initialization_state_before_instruction(
       case InstructionType::Branch:
       case InstructionType::Dummy:
       case InstructionType::Return: {
-        /* These instruction types don't change the initialization state of variables. */
+        /* These instruction types don't change the init state of vars. */
         break;
       }
     }
@@ -545,15 +545,15 @@ Procedure::InitState Procedure::find_initialization_state_before_instruction(
   return state;
 }
 
-class ProcedureDotExport {
+class ProcDotExport {
  private:
-  const Procedure &procedure_;
+  const Proc &proc_;
   dot::DirectedGraph digraph_;
   Map<const Instruction *, dot::Node *> dot_nodes_by_begin_;
   Map<const Instruction *, dot::Node *> dot_nodes_by_end_;
 
  public:
-  ProcedureDotExport(const Procedure &procedure) : procedure_(procedure) {}
+  ProcDotExport(const Proc &proc) : proc_(proc) {}
 
   std::string generate()
   {
@@ -568,11 +568,11 @@ class ProcedureDotExport {
     auto add_instructions = [&](auto instructions) {
       all_instructions.extend(instructions.begin(), instructions.end());
     };
-    add_instructions(procedure_.call_instructions_);
-    add_instructions(procedure_.branch_instructions_);
-    add_instructions(procedure_.destruct_instructions_);
-    add_instructions(procedure_.dummy_instructions_);
-    add_instructions(procedure_.return_instructions_);
+    add_instructions(proc_.call_instructions_);
+    add_instructions(proc_.branch_instructions_);
+    add_instructions(proc_.destruct_instructions_);
+    add_instructions(proc_.dummy_instructions_);
+    add_instructions(proc_.return_instructions_);
 
     Set<const Instruction *> handled_instructions;
 
@@ -635,7 +635,7 @@ class ProcedureDotExport {
 
     for (auto item : dot_nodes_by_end_.items()) {
       const Instruction &from_instruction = *item.key;
-      dot::Node &from_node = *item.value;
+      dot::Node &from_node = *item.val;
       switch (from_instruction.type()) {
         case InstructionType::Call: {
           const Instruction *to_instruction =
@@ -694,7 +694,7 @@ class ProcedureDotExport {
     while (!this->has_to_be_block_begin(*current)) {
       current = current->prev()[0].instruction();
       if (current == &representative) {
-        /* There is a loop without entry or exit, just break it up here. */
+        /* There is a loop wo entry or exit, just break it up here. */
         break;
       }
     }
@@ -753,9 +753,9 @@ class ProcedureDotExport {
       ss << "null";
     }
     else {
-      ss << "$" << variable->index_in_procedure();
-      if (!variable->name().is_empty()) {
-        ss << "(" << variable->name() << ")";
+      ss << "$" << var->index_in_proc();
+      if (!var->name().is_empty()) {
+        ss << "(" << var->name() << ")";
       }
     }
   }
@@ -771,7 +771,7 @@ class ProcedureDotExport {
     this->instruction_name_format(fn.debug_name() + ": ", ss);
     for (const int param_index : fn.param_indices()) {
       const ParamType param_type = fn.param_type(param_index);
-      const Variable *variable = instruction.params()[param_index];
+      const Var *var = instruction.params()[param_index];
       ss << R"(<font color="grey30">)";
       switch (param_type.interface_type()) {
         case ParamType::Input: {
@@ -798,7 +798,7 @@ class ProcedureDotExport {
   void instruction_to_string(const DestructInstruction &instruction, std::stringstream &ss)
   {
     instruction_name_format("Destruct ", ss);
-    variable_to_string(instruction.var(), ss);
+    var_to_string(instruction.var(), ss);
   }
 
   void instruction_to_string(const DummyInstruction & /*instruction*/, std::stringstream &ss)
@@ -811,14 +811,14 @@ class ProcedureDotExport {
     instruction_name_format("Return ", ss);
 
     Vector<ConstParam> outgoing_params;
-    for (const ConstParam &param : procedure_.params()) {
+    for (const ConstParam &param : proc_.params()) {
       if (ELEM(param.type, ParamType::Mutable, ParamType::Output)) {
         outgoing_params.append(param);
       }
     }
     for (const int param_index : outgoing_params.index_range()) {
       const ConstParam &param = outgoing_params[param_index];
-      variable_to_string(param.var, ss);
+      var_to_string(param.var, ss);
       if (param_index < outgoing_params.size() - 1) {
         ss << ", ";
       }
@@ -828,7 +828,7 @@ class ProcedureDotExport {
   void instruction_to_string(const BranchInstruction &instruction, std::stringstream &ss)
   {
     instruction_name_format("Branch ", ss);
-    variable_to_string(instruction.condition(), ss);
+    var_to_string(instruction.condition(), ss);
   }
 
   dot::Node &create_entry_node()
@@ -836,14 +836,14 @@ class ProcedureDotExport {
     std::stringstream ss;
     ss << "Entry: ";
     Vector<ConstParam> incoming_params;
-    for (const ConstParam &param : procedure_.params()) {
+    for (const ConstParam &param : proc_.params()) {
       if (ELEM(param.type, ParamType::Input, ParamType::Mutable)) {
         incoming_params.append(param);
       }
     }
     for (const int param_index : incoming_params.index_range()) {
       const ConstParam &param = incoming_params[param_index];
-      variable_to_string(param.variable, ss);
+      var_to_string(param.var, ss);
       if (param_index < incoming_params.size() - 1) {
         ss << ", ";
       }
@@ -855,10 +855,10 @@ class ProcedureDotExport {
   }
 };
 
-std::string Procedure::to_dot() const
+std::string Proc::to_dot() const
 {
-  ProcedureDotExport dot_export{*this};
+  ProcDotExport dot_export{*this};
   return dot_export.generate();
 }
 
-}  // namespace blender::fn::multi_function
+}  // namespace dune::fn::multi_fn
