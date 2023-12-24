@@ -40,7 +40,7 @@ typedef struct PTCacheMem {
   unsigned int frame, totpoint;
   unsigned int data_types, flag;
 
-  /** BPHYS_TOT_DATA. */
+  /* PHYS_TOT_DATA. */
   void *data[8];
 
   struct List extradata;
@@ -51,14 +51,14 @@ typedef struct PointCache {
   /* Generic flag. */
   int flag;
 
-  /* The number of frames between cached frames.
+  /* The num of frames between cached frames.
    * This should probably be an upper bound for a per point adaptive step in the future,
-   * but for now it's the same for all points. Without adaptivity this can effect the perceived
-   * simulation quite a bit though. If for example particles are colliding with a horizontal
-   * plane (with high damping) they quickly come to a stop on the plane, however there are still
+   * but for now it's the same for all points. Wo adaptivity this can effect the perceived
+   * sim quite a bit though. If for example particles are colliding with a horizontal
+   * plane (w high damping) they quickly come to a stop on the plane, however there are still
    * forces acting on the particle (gravity and collisions), so the particle velocity isn't
    * necessarily zero for the whole duration of the frame even if the particle seems stationary.
-   * If all simulation frames aren't cached (step > 1) these velocities are interpolated into
+   * If all sim frames aren't cached (step > 1) these velocities are interpolated into
    * movement for the non-cached frames.
    * The result will look like the point is oscillating around the collision location.
    * So for now cache step should be set to 1 for accurate reproduction of collisions.  */
