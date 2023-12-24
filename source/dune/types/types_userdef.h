@@ -344,7 +344,7 @@ typedef struct ThemeSpace {
   unsigned char preview_stitch_unstitchable[4];
   unsigned char preview_stitch_active[4];
 
-  /** Two uses, for uvs w mod applied on mesh and uvs during painting. */
+  /* Two uses, for uvs w mod applied on mesh and uvs during painting. */
   unsigned char uv_shadow[4];
 
   /* Search filter match, used for prop search and in the outliner. */
@@ -774,7 +774,7 @@ typedef struct UserDef {
   char _pad11[4];
   /* eZoomFrameMode. */
   char view_frame_type;
-  /* Number of keyframes to zoom around current frame. */
+  /* Num of keyframes to zoom around current frame. */
   int view_frame_keyframes;
   /* Seconds to zoom around current frame. */
   float view_frame_seconds;
@@ -807,40 +807,40 @@ typedef struct UserDef {
   short autokey_flag;
   /* Flags for anim. */
   short anim_flag;
-  /* Options for txt rendering. */
+  /* Options for txt rndring. */
   char txt_render;
   char nav_mode;
-  /** Turn-table rotation amount per-pixel in radians. Scaled with DPI. */
+  /* Turn-table rotation amount per-pixel in radians. Scaled with DPI. */
   float view_rotate_sensitivity_turntable;
-  /** Track-ball rotation scale. */
+  /* Track-ball rotation scale. */
   float view_rotate_sensitivity_trackball;
-  /** From texture.h. */
+  /* From texture.h. */
   struct ColorBand coba_weight;
   float sculpt_paint_overlay_col[3];
-  /** Default color for newly created Grease Pencil layers. */
+  /* Default color for newly created Grease Pencil layers. */
   float pen_new_layer_col[4];
-  /** Drag pixels (scaled by DPI). */
+  /* Drag pixels (scaled by DPI). */
   char drag_threshold_mouse;
   char drag_threshold_tablet;
   char drag_threshold;
   char move_threshold;
   char font_path_ui[1024];
   char font_path_ui_mono[1024];
-  /** Legacy, for backwards compatibility only. */
+  /* Legacy, for backwards compatibility only. */
   int compute_device_type;
-  /** Opacity of inactive F-Curves in F-Curve Editor. */
+  /* Opacity of inactive F-Curves in F-Curve Editor. */
   float fcu_inactive_alpha;
-  /* If keeping a pie menu spawn button pressed after this time,
+  /* If keeping a pie menu spawn btn pressed after this time,
    * it turns into a drag/release pie menu. */
   short pie_tap_timeout;
-  /* Direction in the pie menu will always be calculated from the
-   * initial position within this time limit.   */
-  short pie_initial_timeout;
-  short pie_animation_timeout;
+  /* Direction in the pie menu will always be calc from the
+   * init position within this time limit.   */
+  short pie_init_timeout;
+  short pie_anim_timeout;
   short pie_menu_confirm;
-  /** Pie menu radius. */
+  /* Pie menu radius. */
   short pie_menu_radius;
-  /** Pie menu distance from center before a direction is set. */
+  /* Pie menu distance from center before a direction is set. */
   short pie_menu_threshold;
 
   short opensubdiv_compute_type;
@@ -868,25 +868,25 @@ typedef struct UserDef {
 
   struct WalkNav walk_nav;
 
-  /** The UI for the user preferences. */
+  /* The UI for the user prefs. */
   UserDefSpaceData space_data;
   UserDefFileSpaceData file_space_data;
 
   UserDefExperimental experimental;
 
-  /** Runtime data (keep last). */
+  /* Runtime data (keep last). */
   UserDefRuntime runtime;
 } UserDef;
 
-/** From dune_kernel `dune.c`. */
+/* From dune_kernel `dune.c`. */
 extern UserDef U;
 
-/* ***************** USERDEF ****************** */
+/* USERDEF */
 
 /* Toggles for unfinished 2.8 UserPref design. */
 //#define WITH_USERDEF_WORKSPACES
 
-/** UserDefSpaceData.section_active (UI active_section) */
+/* UserDefSpaceData.section_active (UI active_section) */
 typedef enum eUserPrefSection {
   USER_SECTION_INTERFACE = 0,
   USER_SECTION_EDITING = 1,
@@ -903,20 +903,20 @@ typedef enum eUserPrefSection {
   USER_SECTION_WORKSPACE_KEYMAPS = 11,
 #endif
   USER_SECTION_VIEWPORT = 12,
-  USER_SECTION_ANIMATION = 13,
-  USER_SECTION_NAVIGATION = 14,
+  USER_SECTION_ANIM = 13,
+  USER_SECTION_NAV = 14,
   USER_SECTION_FILE_PATHS = 15,
   USER_SECTION_EXPERIMENTAL = 16,
 } eUserPrefSection;
 
-/** UserDefSpaceData.flag (State of the user preferences UI). */
+/* UserDefSpaceData.flag (State of the user preferences UI). */
 typedef enum eUserPrefSpaceDataFlag {
-  /** Hide/expand key-map preferences. */
+  /* Hide/expand key-map prefs. */
   USER_SPACEDATA_INPUT_HIDE_UI_KEYCONFIG = (1 << 0),
   USER_SPACEDATA_ADDONS_SHOW_ONLY_ENABLED = (1 << 1),
 } eUserPrefSpaceDataFlag;
 
-/** UserDef.flag */
+/* UserDef.flag */
 typedef enum eUserPrefFlag {
   USER_AUTOSAVE = (1 << 0),
   USER_FLAG_NUMINPUT_ADVANCED = (1 << 1),
@@ -940,7 +940,7 @@ typedef enum eUserPrefFlag {
   USER_ADD_VIEWALIGNED = (1 << 19),
   USER_RELPATHS = (1 << 20),
   USER_RELEASECONFIRM = (1 << 21),
-  USER_SCRIPT_AUTOEXEC_DISABLE = (1 << 22),
+  USER_SCRIPT_AUTOEX_DISABLE = (1 << 22),
   USER_FILENOUI = (1 << 23),
   USER_NONEGFRAMES = (1 << 24),
   USER_TXT_TABSTOSPACES_DISABLE = (1 << 25),
@@ -948,7 +948,7 @@ typedef enum eUserPrefFlag {
   USER_FLAG_UNUSED_27 = (1 << 27), /* dirty */
 } eUserPrefFlag;
 
-/** UserDef.file_preview_type */
+/* UserDef.file_preview_type */
 typedef enum eUserprefFilePreviewType {
   USER_FILE_PREVIEW_NONE = 0,
   USER_FILE_PREVIEW_AUTO,
@@ -960,7 +960,7 @@ typedef enum eUserPrefPrefFlag {
   USER_PREF_FLAG_SAVE = (1 << 0),
 } eUserPrefPrefFlag;
 
-/** dunePathCompare.flag */
+/* dunePathCompare.flag */
 typedef enum ePathCompareFlag {
   USER_PATHCMP_GLOB = (1 << 0),
 } ePathCompareFlag;
@@ -974,36 +974,36 @@ typedef enum ePathCompareFlag {
   } \
   (void)0
 
-/** UserDef.viewzoom */
+/* UserDef.viewzoom */
 typedef enum eViewZoomStyle {
-  /** Update zoom continuously with a timer while dragging the cursor. */
+  /* Update zoom continuously with a timer while dragging the cursor. */
   USER_ZOOM_CONTINUE = 0,
-  /** Map changes in distance from the view center to zoom. */
+  /* Map changes in distance from the view center to zoom. */
   USER_ZOOM_SCALE = 1,
-  /** Map horizontal/vertical motion to zoom. */
+  /* Map horizontal/vertical motion to zoom. */
   USER_ZOOM_DOLLY = 2,
 } eViewZoomStyle;
 
-/** UserDef.navigation_mode */
+/* UserDef.nav_mode */
 typedef enum eViewNavMethod {
-  VIEW_NAVIGATION_WALK = 0,
-  VIEW_NAVIGATION_FLY = 1,
-} eViewNavigationMethod;
+  VIEW_NAV_WALK = 0,
+  VIEW_NAV_FLY = 1,
+} eViewNavMethod;
 
-/** UserDef.uiflag */
+/* UserDef.uiflag */
 typedef enum eUserprefMiniAxisType {
   USER_MINI_AXIS_TYPE_GIZMO = 0,
   USER_MINI_AXIS_TYPE_MINIMAL = 1,
   USER_MINI_AXIS_TYPE_NONE = 2,
 } eUserprefMiniAxisType;
 
-/** UserDef.flag */
+/* UserDef.flag */
 typedef enum eWalkNavFlag {
   USER_WALK_GRAVITY = (1 << 0),
   USER_WALK_MOUSE_REVERSE = (1 << 1),
-} eWalkNavigationFlag;
+} eWalkNavFlag;
 
-/** UserDef.uiflag */
+/* UserDef.uiflag */
 typedef enum eUserprefUIFlag {
   USER_UIFLAG_UNUSED_0 = (1 << 0), /* cleared */
   USER_UIFLAG_UNUSED_1 = (1 << 1), /* cleared */
@@ -1013,17 +1013,17 @@ typedef enum eUserprefUIFlag {
   USER_PLAINMENUS = (1 << 5),
   USER_LOCK_CURSOR_ADJUST = (1 << 6),
   USER_HEADER_BOTTOM = (1 << 7),
-  /** Otherwise use header alignment from the file. */
+  /* Otherwise use header alignment from the file. */
   USER_HEADER_FROM_PREF = (1 << 8),
   USER_MENUOPENAUTO = (1 << 9),
   USER_DEPTH_CURSOR = (1 << 10),
   USER_AUTOPERSP = (1 << 11),
   USER_UIFLAG_UNUSED_12 = (1 << 12), /* cleared */
   USER_GLOBALUNDO = (1 << 13),
-  USER_ORBIT_SELECTION = (1 << 14),
-  USER_DEPTH_NAVIGATE = (1 << 15),
+  USER_ORBIT_SEL = (1 << 14),
+  USER_DEPTH_NAV = (1 << 15),
   USER_HIDE_DOT = (1 << 16),
-  USER_SHOW_GIZMO_NAVIGATE = (1 << 17),
+  USER_SHOW_GIZMO_NAV = (1 << 17),
   USER_SHOW_VIEWPORTNAME = (1 << 18),
   USER_UIFLAG_UNUSED_3 = (1 << 19), /* Cleared. */
   USER_ZOOM_TO_MOUSEPOS = (1 << 20),
@@ -1044,11 +1044,11 @@ typedef enum eUserprefUIFlag {
   USER_HIDE_SYSTEM_BOOKMARKS = (1u << 31),
 } eUserprefUIFlag;
 
-/** UserDef.uiflag2
+/* UserDef.uiflag2
  * note don't add new flags here, use 'uiflag' which has flags free. */
 typedef enum eUserprefUIFlag2 {
   USER_UIFLAG2_UNUSED_0 = (1 << 0), /* cleared */
-  USER_REGION_OVERLAP = (1 << 1),
+  USER_RGN_OVERLAP = (1 << 1),
   USER_UIFLAG2_UNUSED_2 = (1 << 2),
   USER_UIFLAG2_UNUSED_3 = (1 << 3), /* dirty */
 } eUserprefUIFlag2;
@@ -1061,29 +1061,29 @@ typedef enum eUserprefGPUFlag {
   USER_GPU_FLAG_SUBDIVISION_EVAL = (1 << 3),
 } eUserprefGPUFlag;
 
-/** UserDef.tablet_api */
+/* UserDef.tablet_api */
 typedef enum eUserprefTableAPI {
   USER_TABLET_AUTOMATIC = 0,
   USER_TABLET_NATIVE = 1,
   USER_TABLET_WINTAB = 2,
 } eUserprefTabletAPI;
 
-/** UserDef.app_flag */
+/* UserDef.app_flag */
 typedef enum eUserprefAPPFlag {
   USER_APP_LOCK_CORNER_SPLIT = (1 << 0),
-  USER_APP_HIDE_REGION_TOGGLE = (1 << 1),
+  USER_APP_HIDE_RGN_TOGGLE = (1 << 1),
   USER_APP_LOCK_EDGE_RESIZE = (1 << 2),
 } eUserprefAPPFlag;
 
-/** UserDef.statusbar_flag */
+/* UserDef.statusbar_flag */
 typedef enum eUserprefStatusBarFlag {
-  STATUSBAR_SHOW_MEMORY = (1 << 0),
+  STATUSBAR_SHOW_MEM = (1 << 0),
   STATUSBAR_SHOW_VRAM = (1 << 1),
   STATUSBAR_SHOW_STATS = (1 << 2),
   STATUSBAR_SHOW_VERSION = (1 << 3),
 } eUserprefStatusBarFlag;
 
-/** Auto-Keying mode.
+/* Auto-Keying mode.
  * UserDef.autokey_mode */
 typedef enum eAutokeyMode {
   /* AUTOKEY_ON is a bitflag */
@@ -1095,13 +1095,13 @@ typedef enum eAutokeyMode {
   AUTOKEY_MODE_EDITKEYS = 5,
 } eAutokeyMode;
 
-/** Zoom to frame mode.
+/* Zoom to frame mode.
  * UserDef.view_frame_type */
-typedef enum eZoomFrame_Mode {
+typedef enum eZoomFrameMode {
   ZOOM_FRAME_MODE_KEEP_RANGE = 0,
   ZOOM_FRAME_MODE_SECONDS = 1,
   ZOOM_FRAME_MODE_KEYFRAMES = 2,
-} eZoomFrame_Mode;
+} eZoomFrameMode;
 
 /* Auto-Keying flag
  * UserDef.autokey_flag (not strictly used when autokeying only -
@@ -1120,14 +1120,14 @@ typedef enum eAutokeyFlag {
   ANIMRECORD_FLAG_WITHNLA = (1 << 10),
 } eAutokeyFlag;
 
-/** Animation flags
- * UserDef.anim_flag, used for animation flags that aren't covered by more specific flags
+/* Anim flags
+ * UserDef.anim_flag, used for anim flags that aren't covered by more specific flags
  * (like eAutokey_Flag). */
 typedef enum eUserprefAnimFlags {
   USER_ANIM_SHOW_CHANNEL_GROUP_COLORS = (1 << 0),
 } eUserprefAnimFlags;
 
-/** UserDef.transopts */
+/* UserDef.transopts */
 typedef enum eUserprefTranslationFlags {
   USER_TR_TOOLTIPS = (1 << 0),
   USER_TR_IFACE = (1 << 1),
@@ -1140,13 +1140,13 @@ typedef enum eUserprefTranslationFlags {
   USER_TR_NEWDATANAME = (1 << 8),
 } eUserprefTranslationFlags;
 
-/** Text Editor options
- * UserDef.text_flag */
-typedef enum eTextEditFlags {
-  USER_TEXT_EDIT_AUTO_CLOSE = (1 << 0),
+/* Txt Editor options
+ * UserDef.txt_flag */
+typedef enum eTxtEditFlags {
+  USER_TXT_EDIT_AUTO_CLOSE = (1 << 0),
 } eTextEditFlags;
 
-/** Text draw options
+/* Text drw options
  * UserDef.text_render */
 typedef enum eTextDrawOptions {
   USER_TEXT_DISABLE_AA = (1 << 0),
