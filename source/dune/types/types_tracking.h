@@ -121,14 +121,14 @@ typedef struct MovieTrackingTrack {
   /* Avg track reprojection error. */
   float error;
 
-  /* UI editing ** */
-  /* Flags (selection, ...). */
+  /* UI editing */
+  /* Flags (sel, ...). */
   int flag, pat_flag, search_flag;
   /* Custom color for track. */
   float color[3];
 
   /* ctrl how tracking happens */
-  /* Num of frames to be tracked during single tracking session
+  /* Num of frames to be tracked during single tracking sess
    * (if TRACKING_FRAMES_LIMIT is set) */
   short frames_limit;
   /* Margin from frame boundaries. */
@@ -220,7 +220,7 @@ typedef struct MovieTrackingSettings {
   /* Flags for the tracking algorithm (use brute, use ESM, use pyramid, etc. */
   short default_algorithm_flag;
   /* Minimal correlation which is still treated as successful tracking. */
-  float default_minimum_correlation;
+  float default_min_correlation;
   /* Size of pattern area for new tracks, measured in pixels. */
   short default_pattern_size;
   /* Size of search area for new tracks, measured in pixels. */
@@ -383,7 +383,6 @@ typedef struct MovieTrackingDopesheet {
   short flag;
 
   /* runtime stuff */
-
   /* summary */
   List coverage_segments;
 
