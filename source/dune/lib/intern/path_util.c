@@ -1,20 +1,17 @@
-/** \file
- * \ingroup bli
- * Various string, file, list operations.
- */
+/* Various string, file, list ops. */
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "DNA_listBase.h"
+#include "types_list.h"
 
-#include "BLI_fileops.h"
-#include "BLI_fnmatch.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
+#include "lib_fileops.h"
+#include "lib_fnmatch.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_string_utf8.h"
+#include "lib_utildefines.h"
 
 #ifdef WIN32
 #  include "utf_winfunc.h"
@@ -24,25 +21,22 @@
 #    undef _WIN32_IE
 #  endif
 #  define _WIN32_IE 0x0501
-#  include "BLI_alloca.h"
-#  include "BLI_winstuff.h"
+#  include "lib_alloc.h"
+#  include "lib_winstuff.h"
 #  include <shlobj.h>
 #  include <windows.h>
 #else
 #  include <unistd.h>
 #endif /* WIN32 */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* Declarations */
-
 #ifdef WIN32
 
-/**
- * Return true if the path is absolute ie starts with a drive specifier
- * (eg A:\) or is a UNC path.
- */
-static bool BLI_path_is_abs(const char *name);
+/* Return true if the path is absolute ie starts with a drive specifier
+ * (eg A:\) or is a UNC path. */
+static bool lib_path_is_abs(const char *name);
 
 #endif /* WIN32 */
 
