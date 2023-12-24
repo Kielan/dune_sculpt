@@ -782,7 +782,7 @@ typedef struct UserDef {
   /* Private, defaults to 20 for 72 DPI setting. */
   short widget_unit;
   short anisotropic_filter;
-  /*Tablet API to use (Wins only). */
+  /* Tablet API to use (Wins only). */
   short tablet_api;
   /* Raw tablet pressure that maps to 100%. */
   float pressure_threshold_max;
@@ -1106,7 +1106,7 @@ typedef enum eZoomFrameMode {
 /* Auto-Keying flag
  * UserDef.autokey_flag (not strictly used when autokeying only -
  * is also used when keyframing these days).
- * eAutokey_Flag is used with a macro, search for lines like IS_AUTOKEY_FLAG(INSERTAVAIL) */
+ * eAutokeyFlag is used with a macro, search for lines like IS_AUTOKEY_FLAG(INSERTAVAIL) */
 typedef enum eAutokeyFlag {
   AUTOKEY_FLAG_INSERTAVAIL = (1 << 0),
   AUTOKEY_FLAG_INSERTNEEDED = (1 << 1),
@@ -1147,13 +1147,13 @@ typedef enum eTxtEditFlags {
 } eTextEditFlags;
 
 /* Text drw options
- * UserDef.text_render */
-typedef enum eTextDrawOptions {
-  USER_TEXT_DISABLE_AA = (1 << 0),
-  USER_TEXT_HINTING_NONE = (1 << 1),
-  USER_TEXT_HINTING_SLIGHT = (1 << 2),
-  USER_TEXT_HINTING_FULL = (1 << 3),
-} eTextDrawOptions;
+ * UserDef.txt_render */
+typedef enum eTxtDawOpts {
+  USER_TXT_DISABLE_AA = (1 << 0),
+  USER_TXT_HINTING_NONE = (1 << 1),
+  USER_TXT_HINTING_SLIGHT = (1 << 2),
+  USER_TXT_HINTING_FULL = (1 << 3),
+} eTxtDrwOpts;
 
 /* Pen Settings.
  * UserDef.pen_settings */
