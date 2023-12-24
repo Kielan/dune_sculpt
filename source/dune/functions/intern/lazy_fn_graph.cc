@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-namespace dune::fn::lazy_function {
+namespace dune::fn::lazy_fn {
 
 Graph::Graph()
 {
@@ -43,8 +43,8 @@ FnNode &Graph::add_fn(const LazyFn &fn)
 
   FnNode &node = *allocator_.construct<FunctionNode>().release();
   node.fn_ = &fn;
-  node.inputs_ = allocator_.construct_elements_and_pointer_array<InputSocket>(inputs.size());
-  node.outputs_ = allocator_.construct_elements_and_pointer_array<OutputSocket>(outputs.size());
+  node.inputs_ = allocator_.construct_elements_and_ptr_array<InputSocket>(inputs.size());
+  node.outputs_ = allocator_.construct_elements_and_ptr_array<OutputSocket>(outputs.size());
 
   for (const int i : inputs.index_range()) {
     InputSocket &socket = *node.inputs_[i];
@@ -140,9 +140,9 @@ bool Graph::node_indices_are_valid() const
 
 std::string Socket::name() const
 {
-  if (node_->is_function()) {
-    const FunctionNode &fn_node = static_cast<const FunctionNode &>(*node_);
-    const LazyFunction &fn = fn_node.function();
+  if (node_->is_fn()) {
+    const FnNode &fn_node = static_cast<const FunctionNode &>(*node_);
+    const LazyFn &fn = fn_node.function();
     if (is_input_) {
       return fn.input_name(index_in_node_);
     }
@@ -162,7 +162,7 @@ std::string Socket::detailed_name() const
 
 std::string Node::name() const
 {
-  if (this->is_function()) {
+  if (this->is_fn()) {
     return fn_->name();
   }
   return "Interface";
@@ -208,12 +208,12 @@ std::string Graph::to_dot(const ToDotOptions &options) const
       dot_input.fontcolor = options.socket_font_color(*socket);
     }
     for (const OutputSocket *socket : node->outputs()) {
-      dot::NodeWithSockets::Output &dot_output = dot_node_with_sockets.add_output(
+      dot::NodeWithSockets::Output &dot_output = dot_node_w_sockets.add_output(
           options.socket_name(*socket));
       dot_output.fontcolor = options.socket_font_color(*socket);
     }
 
-    dot_nodes.add_new(node, dot::NodeWithSocketsRef(dot_node, dot_node_with_sockets));
+    dot_nodes.add_new(node, dot::NodeWithSocketsRef(dot_node, dot_node_w_sockets));
   }
 
   for (const Node *node : nodes_) {
@@ -227,19 +227,19 @@ std::string Graph::to_dot(const ToDotOptions &options) const
                                                        to_dot_port);
         options.add_edge_attributes(*origin, *socket, dot_edge);
       }
-      else if (const void *default_value = socket->default_value()) {
+      else if (const void *default_val = socket->default_val()) {
         const CPPType &type = socket->type();
-        std::string value_string;
+        std::string val_string;
         if (type.is_printable()) {
-          val_string = type.to_string(default_value);
+          val_string = type.to_string(default_val);
         }
         else {
           val_string = type.name();
         }
-        dot::Node &default_value_dot_node = digraph.new_node(value_string);
-        default_value_dot_node.set_shape(dot::Attr_shape::Ellipse);
-        default_value_dot_node.attributes.set("color", "#00000055");
-        digraph.new_edge(default_value_dot_node, to_dot_port);
+        dot::Node &default_val_dot_node = digraph.new_node(val_string);
+        default_val_dot_node.set_shape(dot::Attr_shape::Ellipse);
+        default_val_dot_node.attributes.set("color", "#00000055");
+        digraph.new_edge(default_val_dot_node, to_dot_port);
       }
     }
   }
