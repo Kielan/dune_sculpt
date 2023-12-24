@@ -87,10 +87,8 @@ static Vector<GVArray> get_field_cxt_inputs(
   return field_cxt_inputs;
 }
 
-/**
- * \return A set that contains all fields from the field tree that depend on an input that varies
- * for diff indices.
- */
+/* return A set that contains all fields from the field tree that depend on an input that varies
+ * for diff indices. */
 static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
                                           Span<GVArray> field_cxt_inputs)
 {
@@ -126,26 +124,24 @@ static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
   return found_fields;
 }
 
-/**
- * Builds the #procedure so that it computes the fields.
- */
-static void build_multi_function_procedure_for_fields(mf::Procedure &procedure,
-                                                      ResourceScope &scope,
-                                                      const FieldTreeInfo &field_tree_info,
-                                                      Span<GFieldRef> output_fields)
+/* Builds the proc so that it computes the fields. */
+static void build_multi_fn_proc_for_fields(mf::Proc &proc,
+                                           ResourceScope &scope,
+                                           const FieldTreeInfo &field_tree_info,
+                                           Span<GFieldRef> output_fields)
 {
-  mf::ProcedureBuilder builder{procedure};
-  /* Every input, intermediate and output field corresponds to a variable in the procedure. */
-  Map<GFieldRef, mf::Variable *> variable_by_field;
+  mf::ProcBuilder builder{proc};
+  /* Every input, intermediate and output field corresponds to a var in the proc */
+  Map<GFieldRef, mf::Var *> vari_by_field;
 
-  /* Start by adding the field inputs as parameters to the procedure. */
+  /* Start by adding the field inputs as params to the procedure. */
   for (const FieldInput &field_input : field_tree_info.deduplicated_field_inputs) {
-    mf::Variable &variable = builder.add_input_parameter(
+    mf::Var &var = builder.add_input_param(
         mf::DataType::ForSingle(field_input.cpp_type()), field_input.debug_name());
-    variable_by_field.add_new({field_input, 0}, &variable);
+    var_by_field.add_new({field_input, 0}, &var);
   }
 
-  /* Utility struct that is used to do proper depth first search traversal of the tree below. */
+  /* Util struct that is used to do proper depth first search traversal of the tree below. */
   struct FieldWithIndex {
     GFieldRef field;
     int current_input_index = 0;
@@ -159,7 +155,7 @@ static void build_multi_function_procedure_for_fields(mf::Procedure &procedure,
     while (!fields_to_check.is_empty()) {
       FieldWithIndex &field_with_index = fields_to_check.peek();
       const GFieldRef &field = field_with_index.field;
-      if (variable_by_field.contains(field)) {
+      if (var_by_field.contains(field)) {
         /* The field has been handled already. */
         fields_to_check.pop();
         continue;
@@ -167,23 +163,23 @@ static void build_multi_function_procedure_for_fields(mf::Procedure &procedure,
       const FieldNode &field_node = field.node();
       switch (field_node.node_type()) {
         case FieldNodeType::Input: {
-          /* Field inputs should already be handled above. */
+          /* Field inputs should alrdy be handled above. */
           break;
         }
-        case FieldNodeType::Operation: {
-          const FieldOperation &operation_node = static_cast<const FieldOperation &>(field.node());
-          const Span<GField> operation_inputs = operation_node.inputs();
+        case FieldNodeType::Op: {
+          const FieldOp &op_node = static_cast<const FieldO &>(field.node());
+          const Span<GField> op_inputs = op_node.inputs();
 
-          if (field_with_index.current_input_index < operation_inputs.size()) {
+          if (field_with_index.current_input_index < op_inputs.size()) {
             /* Not all inputs are handled yet. Push the next input field to the stack and increment
              * the input index. */
-            fields_to_check.push({operation_inputs[field_with_index.current_input_index]});
+            fields_to_check.push({op_inputs[field_with_index.current_input_index]});
             field_with_index.current_input_index++;
           }
           else {
-            /* All inputs variables are ready, now gather all variables that are used by the
-             * function and call it. */
-            const mf::MultiFunction &multi_function = operation_node.multi_function();
+            /* All inputs vars are rdy, now gather all vars that are used by the
+             * fn and call it. */
+            const mf::MultiFn &multi_fn = op_node.multi_function();
             Vector<mf::Variable *> variables(multi_function.param_amount());
 
             int param_input_index = 0;
