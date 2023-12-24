@@ -7,7 +7,7 @@
   { \
     .texco = TEXCO_UV, \
     .mapto = MAP_COL, \
-    .object = NULL, \
+    .ob = NULL, \
     .projx = PROJ_X, \
     .projy = PROJ_Y, \
     .projz = PROJ_Z, \
@@ -72,11 +72,11 @@
 
 #define _TYPES_DEFAULT_Tex \
   { \
-    .type = TEX_IMAGE, \
+    .type = TEX_IMG, \
     .ima = NULL, \
     .stype = 0, \
     .flag = TEX_CHECKER_ODD, \
-    .imaflag = TEX_INTERPOL | TEX_MIPMAP | TEX_USEALPHA, \
+    .imgflag = TEX_INTERPOL | TEX_MIPMAP | TEX_USEALPHA, \
     .extend = TEX_REPEAT, \
     .cropxmin = 0.0, \
     .cropymin = 0.0, \
