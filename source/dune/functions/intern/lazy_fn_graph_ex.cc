@@ -1,5 +1,4 @@
-/**
- * This file implements the eval of a lazy-fn graph. It's main objectives are:
+/* This file implements the eval of a lazy-fn graph. It's main objectives are:
  * - Only compute vals that are actually used.
  * - Stay single threaded when nodes are ex quickly.
  * - Allow spreading the work over an arbitrary num of threads efficiently.
@@ -26,13 +25,13 @@
  * state of its inputs and outputs. Every time a node is executed, it has to advance its state in
  * some way (e.g. it requests a new input or computes a new output).
  *
- * When a node is executed it may send notifications to other nodes which may in turn schedule
+ * When a node is ex it may send notifications to other nodes which may in turn schedule
  * those nodes. For example, when the current node has computed one of its outputs, then the
- * computed value is forwarded to all linked inputs, changing their node states in the process. If
+ * computed val is forwarded to all linked inputs, changing their node states in the process. If
  * this input was the last missing required input, the node will be scheduled that it is executed
  * next.
  *
- * When all tasks are completed, the executor gives back control to the caller which may later
+ * When all tasks are completed, the ex gives back ctrl to the caller which may later
  * provide new inputs to the graph which in turn leads to new nodes being scheduled and the process
  * starts again. */
 
@@ -56,143 +55,99 @@ enum class NodeScheduleState : uint8_t {
   /* The node has been added to the task pool or is otherwise scheduled to be executed in the
    * future. */
   Scheduled,
-  /**
-   * The node is currently running.
-   */
+  /* The node is currently running. */
   Running,
   /* The node is running and has been rescheduled while running. In this case the node run again.
-   * This state exists, because we don't want to add the node to the task pool twice, because then
+   * This state exists, bc we don't want to add the node to the task pool twice, bc then
    * the node might run twice at the same time, which is not allowed. Instead, once the node is
    * done running, it will reschedule itself */
   RunningAndRescheduled,
 };
 
 struct InputState {
-  /**
-   * Value of this input socket. By default, the value is empty. When other nodes are done
+  /* Val of this input socket. By default, the val is empty. When other nodes are done
    * computing their outputs, the computed values will be forwarded to linked input sockets. The
    * value will then live here until it is found that it is not needed anymore.
    *
-   * If was_rdy_for_ex is true, access does not require holding the node lock.
-   */
+   * If was_rdy_for_ex is true, access does not require holding the node lock. */
   void *val = nullptr;
   /* How the node intends to use this input. By default, all inputs may be used. Based on which
    * outputs are used, a node can decide that an input will definitely be used or is never used.
-   * This allows freeing vals early and avoids unnecessary computations.
-   */
+   * This allows freeing vals early and avoids unnecessary computations.*/
   ValUsage usage = ValUsage::Maybe;
-  /**
-   * Set to true once #value is set and will stay true afterwards. Access during execution of a
-   * node, does not require holding the node lock.
-   */
-  bool was_ready_for_execution = false;
+  /* Set to true once val is set and will stay true afterwards. Access during execution of a
+   * node, does not require holding the node lock. */
+  bool was_rdy_for_ex = false;
 };
 
 struct OutputState {
-  /**
-   * Keeps track of how the output value is used. If a connected input becomes used, this output
+  /* Keeps track of how the output val is used. If a connected input becomes used, this output
    * has to become used as well. The output becomes unused when it is used by no input socket
-   * anymore and it's not an output of the graph.
-   */
-  ValueUsage usage = ValueUsage::Maybe;
-  /**
-   * This is a copy of #usage that is done right before node execution starts. This is done so that
+   * anymore and it's not an output of the graph. */
+  ValUsage usage = ValUsage::Maybe;
+  /* This is a copy of usage that is done right before node ex starts. This is done so that
    * the node gets a consistent view of what outputs are used, even when this changes while the
-   * node is running (the node might be reevaluated in that case). Access during execution of a
-   * node, does not require holding the node lock.
-   */
-  ValueUsage usage_for_execution = ValueUsage::Maybe;
-  /**
-   * Is set to true once the output has been computed and then stays true. Access does not require
-   * holding the node lock.
-   */
+   * node is running (the node might be reevaluated in that case). Access during ex of a
+   * node, does not require holding the node lock */
+  ValUsage usage_for_ex = ValUsage::Maybe;
+  /* Is set to true once the output has been computed and then stays true. Access does not require
+   * holding the node lock. */
   bool has_been_computed = false;
-  /**
-   * Number of linked sockets that might still use the value of this output.
-   */
+  /* Num of linked sockets that might still use the value of this output.  */
   int potential_target_sockets = 0;
-  /**
-   * Holds the output value for a short period of time while the node is initializing it and before
-   * it's forwarded to input sockets. Access does not require holding the node lock.
-   */
-  void *value = nullptr;
+  /* Holds the output val for a short period of time while the node is init it and before
+   * it's forwarded to input sockets. Access does not require holding the node lock. */
+  void *val = nullptr;
 };
 
 struct NodeState {
-  /**
-   * Needs to be locked when any data in this state is accessed that is not explicitly marked as
-   * not needing the lock.
-   */
+  /* Needs to be locked when any data in this state is accessed that is not explicitly marked as
+   * not needing the lock. */
   mutable std::mutex mutex;
-  /**
-   * States of the individual input and output sockets. One can index into these arrays without
+  /* States of the individual input and output sockets. One can index into these arrays wo
    * locking. However, to access data inside, a lock is needed unless noted otherwise.
-   * Those are not stored as #Span to reduce memory usage. The number of inputs and outputs is
-   * stored on the node already.
-   */
+   * Those are not stored as Span to reduce mem usage. The num of inputs and outputs is
+   * stored on the node alrdy.  */
   InputState *inputs;
   OutputState *outputs;
-  /**
-   * Counts the number of inputs that still have to be provided to this node, until it should run
+  /* Counts the num of inputs that still have to be provided to this node, until it should run
    * again. This is used as an optimization so that nodes are not scheduled unnecessarily in many
-   * cases.
-   */
+   * cases. */
   int missing_required_inputs = 0;
-  /**
-   * Is set to true once the node is done with its work, i.e. when all outputs that may be used
-   * have been computed.
-   */
+  /* Is set to true once the node is done with its work, i.e. when all outputs that may be used
+   * have been computed. */
   bool node_has_finished = false;
-  /**
-   * Set to true once the always required inputs have been requested.
-   * This happens the first time the node is run.
-   */
+  /* Set to true once the always required inputs have been requested.
+   * This happens the first time the node is run. */
   bool always_used_inputs_requested = false;
-  /**
-   * Set to true when the storage and defaults have been initialized.
-   * This happens the first time the node function is executed.
-   */
+  /* Set to true when the storage and defaults have been init.
+   * This happens the first time the node fn is ex. */
   bool storage_and_defaults_initialized = false;
-  /**
-   * Nodes with side effects should always be executed when their required inputs have been
-   * computed.
-   */
+  /* Nodes with side effects should always be ex when their required inputs have been
+   * computed. */
   bool has_side_effects = false;
-  /**
-   * Whether this node has enabled multi-threading. If this is true, the node is allowed to call
-   * methods on #Params from multiple threads.
-   */
+  /* Whether this node has enabled multi-threading. If this is true, the node is allowed to call
+   * methods on Params from multiple threads. */
   bool enabled_multi_threading = false;
-  /**
-   * A node is always in one specific schedule state. This helps to ensure that the same node does
-   * not run twice at the same time accidentally.
-   */
+  /* A node is always in one specific schedule state. This helps to ensure that the same node does
+   * not run twice at the same time accidentally. */
   NodeScheduleState schedule_state = NodeScheduleState::NotScheduled;
-  /**
-   * Custom storage of the node.
-   */
+  /* Custom storage of the node. */
   void *storage = nullptr;
 };
 
-/**
- * Utility class that wraps a node whose state is locked. Having this is a separate class is useful
- * because it allows methods to communicate that they expect the node to be locked.
- */
+/* Util class that wraps a node whose state is locked. Having this is a separate class is useful
+ * bc it allows methods to communicate that they expect the node to be locked. */
 struct LockedNode {
-  /**
-   * This is the node that is currently locked.
-   */
+  /* This is the node that is currently locked. */
   const Node &node;
   NodeState &node_state;
 
-  /**
-   * Used to delay notifying (and therefore locking) other nodes until the current node is not
+  /* Used to delay notifying (and therefore locking) other nodes until the current node is not
    * locked anymore. This might not be strictly necessary to avoid deadlocks in the current code,
    * but is a good measure to avoid accidentally adding a deadlock later on. By not locking more
    * than one node per thread at a time, deadlocks are avoided.
-   *
-   * The notifications will be send right after the node is not locked anymore.
-   */
+   * The notifications will be send right after the node is not locked anymore. */
   Vector<const OutputSocket *> delayed_required_outputs;
   Vector<const OutputSocket *> delayed_unused_outputs;
 
@@ -202,18 +157,16 @@ struct LockedNode {
 class Executor;
 class GraphExecutorLFParams;
 
-/**
- * Keeps track of nodes that are currently scheduled on a thread. A node can only be scheduled by
- * one thread at the same time.
- */
+/* Keeps track of nodes that are currently scheduled on a thread. A node can only be scheduled by
+ * one thread at the same time. */
 struct ScheduledNodes {
  private:
-  /** Use two stacks of scheduled nodes for different priorities. */
-  Vector<const FunctionNode *> priority_;
-  Vector<const FunctionNode *> normal_;
+  /* Use two stacks of scheduled nodes for diff priorities. */
+  Vector<const FnNode *> priority_;
+  Vector<const FnNode *> normal_;
 
  public:
-  void schedule(const FunctionNode &node, const bool is_priority)
+  void schedule(const FnNode &node, const bool is_priority)
   {
     if (is_priority) {
       this->priority_.append(&node);
@@ -223,7 +176,7 @@ struct ScheduledNodes {
     }
   }
 
-  const FunctionNode *pop_next_node()
+  const FnNode *pop_next_node()
   {
     if (!this->priority_.is_empty()) {
       return this->priority_.pop_last();
@@ -244,12 +197,10 @@ struct ScheduledNodes {
     return priority_.size() + normal_.size();
   }
 
-  /**
-   * Split up the scheduled nodes into two groups that can be worked on in parallel.
-   */
+  /* Split up the scheduled nodes into two groups that can be worked on in parallel. */
   void split_into(ScheduledNodes &other)
   {
-    BLI_assert(this != &other);
+    lib_assert(this != &other);
     const int64_t priority_split = priority_.size() / 2;
     const int64_t normal_split = normal_.size() / 2;
     other.priority_.extend(priority_.as_span().drop_front(priority_split));
@@ -260,70 +211,50 @@ struct ScheduledNodes {
 };
 
 struct CurrentTask {
-  /**
-   * Mutex used to protect #scheduled_nodes when the executor uses multi-threading.
-   */
+  /* Mutex used to protect scheduled_nodes when the executor uses multi-threading. */
   std::mutex mutex;
-  /**
-   * Nodes that have been scheduled to execute next.
-   */
+  /* Nodes that have been scheduled to ex next. */
   ScheduledNodes scheduled_nodes;
-  /**
-   * Makes it cheaper to check if there are any scheduled nodes because it avoids locking the
-   * mutex.
-   */
+  /* Makes it cheaper to check if there are any scheduled nodes bc it avoids locking the
+   * mutex. */
   std::atomic<bool> has_scheduled_nodes = false;
 };
 
 class Executor {
  private:
   const GraphExecutor &self_;
-  /**
-   * Remembers which inputs have been loaded from the caller already, to avoid loading them twice.
-   * Atomics are used to make sure that every input is only retrieved once.
-   */
+  /* Remembers which inputs have been loaded from the caller alrdy, to avoid loading them twice.
+   * Atomics are used to make sure that every input is only retrieved once. */
   MutableSpan<std::atomic<uint8_t>> loaded_inputs_;
-  /**
-   * State of every node, indexed by #Node::index_in_graph.
-   */
+  /* State of every node, indexed by Node::index_in_graph. */
   MutableSpan<NodeState *> node_states_;
-  /**
-   * Parameters provided by the caller. This is always non-null, while a node is running.
-   */
+  /* Params provided by the caller. This is always non-null, while a node is running. */
   Params *params_ = nullptr;
   const Context *context_ = nullptr;
-  /**
-   * Used to distribute work on separate nodes to separate threads.
-   * If this is empty, the executor is in single threaded mode.
-   */
+  /* Used to distribute work on separate nodes to separate threads.
+   * If this is empty, the executor is in single threaded mode. */
   std::atomic<TaskPool *> task_pool_ = nullptr;
-#ifdef FN_LAZY_FUNCTION_DEBUG_THREADS
+#ifdef FN_LAZY_DEBUG_THREADS
   std::thread::id current_main_thread_;
 #endif
 
   struct ThreadLocalStorage {
-    /**
-     * A separate linear allocator for every thread. We could potentially reuse some memory, but
-     * that doesn't seem worth it yet.
-     */
+    /* A separate linear allocator for every thread. We could potentially reuse some memory, but
+     * that doesn't seem worth it yet. */
     LinearAllocator<> allocator;
     std::optional<destruct_ptr<LocalUserData>> local_user_data;
   };
   std::unique_ptr<threading::EnumerableThreadSpecific<ThreadLocalStorage>> thread_locals_;
   LinearAllocator<> main_allocator_;
-  /**
-   * Set to false when the first execution ends.
-   */
+  /* Set to false when the first execution ends. */
   bool is_first_execution_ = true;
 
   friend GraphExecutorLFParams;
 
-  /**
-   * Data that is local to the current thread. It is passed around in many places to avoid
-   * retrieving it too often which would be more costly. If this evaluator does not use
+  /* Data that is local to the current thread. It is passed around in many places to avoid
+   * retrieving it too often which would be more costly. If this eval does not use
    * multi-threading, this may use the `main_allocator_` and the local user data passed in by the
-   * caller.
-   */
+   * caller. */
   struct LocalData {
     LinearAllocator<> *allocator;
     LocalUserData *local_user_data;
@@ -332,14 +263,14 @@ class Executor {
  public:
   Executor(const GraphExecutor &self) : self_(self)
   {
-    /* The indices are necessary, because they are used as keys in #node_states_. */
-    BLI_assert(self_.graph_.node_indices_are_valid());
+    /* The indices are necessary, bc they are used as keys in node_states_. */
+    lib_assert(self_.graph_.node_indices_are_valid());
   }
 
   ~Executor()
   {
     if (TaskPool *task_pool = task_pool_.load()) {
-      BLI_task_pool_free(task_pool);
+      lib_task_pool_free(task_pool);
     }
     threading::parallel_for(node_states_.index_range(), 1024, [&](const IndexRange range) {
       for (const int node_index : range) {
@@ -350,59 +281,57 @@ class Executor {
     });
   }
 
-  /**
-   * Main entry point to the execution of this graph.
-   */
-  void execute(Params &params, const Context &context)
+  /* Main entry point to the ex of this graph. */
+  void ex(Params &params, const Cxt &cxt)
   {
     params_ = &params;
-    context_ = &context;
-#ifdef FN_LAZY_FUNCTION_DEBUG_THREADS
+    cxt_ = &cxt;
+#ifdef FN_LAZY_DEBUG_THREADS
     current_main_thread_ = std::this_thread::get_id();
 #endif
-    const auto deferred_func = [&]() {
-      /* Make sure the pointers are not dangling, even when it shouldn't be accessed by anyone. */
+    const auto deferred_fn = [&]() {
+      /* Make sure the ptrs are not dangling, even when it shouldn't be accessed by anyone. */
       params_ = nullptr;
-      context_ = nullptr;
-      is_first_execution_ = false;
-#ifdef FN_LAZY_FUNCTION_DEBUG_THREADS
+      cxt_ = nullptr;
+      is_first_ex_ = false;
+#ifdef FN_LAZY_DEBUG_THREADS
       current_main_thread_ = {};
 #endif
     };
-    BLI_SCOPED_DEFER(deferred_func);
+    LIB_SCOPED_DEFER(deferred_fn);
 
     const LocalData local_data = this->get_local_data();
 
     CurrentTask current_task;
     if (is_first_execution_) {
-      /* Allocate a single large buffer instead of making many smaller allocations below. */
-      char *buffer = static_cast<char *>(
-          local_data.allocator->allocate(self_.init_buffer_info_.total_size, alignof(void *)));
-      this->initialize_node_states(buffer);
+      /* Alloc a single large buf instead of making many smaller allocs below. */
+      char *buf = static_cast<char *>(
+          local_data.alloc->alloc(self_.init_buf_info_.total_size, alignof(void *)));
+      this->init_node_states(buf);
 
       loaded_inputs_ = MutableSpan{
           reinterpret_cast<std::atomic<uint8_t> *>(
-              buffer + self_.init_buffer_info_.loaded_inputs_array_offset),
+              buf + self_.init_buf_info_.loaded_inputs_array_offset),
           self_.graph_inputs_.size()};
-      /* Initialize atomics to zero. */
+      /* Init atomics to zero. */
       memset(static_cast<void *>(loaded_inputs_.data()), 0, loaded_inputs_.size() * sizeof(bool));
 
       this->set_always_unused_graph_inputs();
       this->set_defaulted_graph_outputs(local_data);
 
       /* Retrieve and tag side effect nodes. */
-      Vector<const FunctionNode *> side_effect_nodes;
+      Vector<const FnNode *> side_effect_nodes;
       if (self_.side_effect_provider_ != nullptr) {
         side_effect_nodes = self_.side_effect_provider_->get_nodes_with_side_effects(context);
         for (const FunctionNode *node : side_effect_nodes) {
-          BLI_assert(self_.graph_.nodes().contains(node));
+          lib_assert(self_.graph_.nodes().contains(node));
           const int node_index = node->index_in_graph();
           NodeState &node_state = *node_states_[node_index];
           node_state.has_side_effects = true;
         }
       }
 
-      this->initialize_static_value_usages(side_effect_nodes);
+      this->init_static_val_usages(side_effect_nodes);
       this->schedule_side_effect_nodes(side_effect_nodes, current_task, local_data);
     }
 
@@ -412,12 +341,12 @@ class Executor {
     this->run_task(current_task, local_data);
 
     if (TaskPool *task_pool = task_pool_.load()) {
-      BLI_task_pool_work_and_wait(task_pool);
+      lib_task_pool_work_and_wait(task_pool);
     }
   }
 
  private:
-  void initialize_node_states(char *buffer)
+  void init_node_states(char *buf)
   {
     Span<const Node *> nodes = self_.graph_.nodes();
     node_states_ = MutableSpan{
@@ -427,19 +356,19 @@ class Executor {
     threading::parallel_for(nodes.index_range(), 256, [&](const IndexRange range) {
       for (const int i : range) {
         const Node &node = *nodes[i];
-        char *memory = buffer + self_.init_buffer_info_.node_states_offsets[i];
+        char *mem = buf + self_.init_buffer_info_.node_states_offsets[i];
 
-        /* Initialize node state. */
+        /* Init node state. */
         NodeState *node_state = reinterpret_cast<NodeState *>(memory);
         memory += sizeof(NodeState);
         new (node_state) NodeState();
 
-        /* Initialize socket states. */
+        /* Init socket states. */
         const int num_inputs = node.inputs().size();
         const int num_outputs = node.outputs().size();
-        node_state->inputs = reinterpret_cast<InputState *>(memory);
-        memory += sizeof(InputState) * num_inputs;
-        node_state->outputs = reinterpret_cast<OutputState *>(memory);
+        node_state->inputs = reinterpret_cast<InputState *>(mem);
+        mem += sizeof(InputState) * num_inputs;
+        node_state->outputs = reinterpret_cast<OutputState *>(mem);
 
         default_construct_n(node_state->inputs, num_inputs);
         default_construct_n(node_state->outputs, num_outputs);
@@ -451,8 +380,8 @@ class Executor {
 
   void destruct_node_state(const Node &node, NodeState &node_state)
   {
-    if (node.is_function()) {
-      const LazyFunction &fn = static_cast<const FunctionNode &>(node).function();
+    if (node.is_fn()) {
+      const LazyFn &fn = static_cast<const FnNode &>(node).fn();
       if (node_state.storage != nullptr) {
         fn.destruct_storage(node_state.storage);
       }
@@ -460,22 +389,20 @@ class Executor {
     for (const int i : node.inputs().index_range()) {
       InputState &input_state = node_state.inputs[i];
       const InputSocket &input_socket = node.input(i);
-      this->destruct_input_value_if_exists(input_state, input_socket.type());
+      this->destruct_input_val_if_exists(input_state, input_socket.type());
     }
     std::destroy_at(&node_state);
   }
 
-  /**
-   * When the usage of output values changed, propagate that information backwards.
-   */
+  /* When the usage of output vals changed, propagate that info backwards. */
   void schedule_for_new_output_usages(CurrentTask &current_task, const LocalData &local_data)
   {
     for (const int graph_output_index : self_.graph_outputs_.index_range()) {
       if (params_->output_was_set(graph_output_index)) {
         continue;
       }
-      const ValueUsage output_usage = params_->get_output_usage(graph_output_index);
-      if (output_usage == ValueUsage::Maybe) {
+      const ValUsage output_usage = params_->get_output_usage(graph_output_index);
+      if (output_usage == ValUsage::Maybe) {
         continue;
       }
       const InputSocket &socket = *self_.graph_outputs_[graph_output_index];
@@ -483,7 +410,7 @@ class Executor {
       NodeState &node_state = *node_states_[node.index_in_graph()];
       this->with_locked_node(
           node, node_state, current_task, local_data, [&](LockedNode &locked_node) {
-            if (output_usage == ValueUsage::Used) {
+            if (output_usage == ValUsage::Used) {
               this->set_input_required(locked_node, socket);
             }
             else {
@@ -501,12 +428,12 @@ class Executor {
         continue;
       }
       const CPPType &type = socket.type();
-      const void *default_value = socket.default_value();
-      BLI_assert(default_value != nullptr);
+      const void *default_val = socket.default_val();
+      lib_assert(default_val != nullptr);
 
       if (self_.logger_ != nullptr) {
-        const Context context{context_->storage, context_->user_data, local_data.local_user_data};
-        self_.logger_->log_socket_value(socket, {type, default_value}, context);
+        const Cxt cxt{cxt_->storage, cxt_->user_data, local_data.local_user_data};
+        self_.logger_->log_socket_val(socket, {type, default_val}, cxt);
       }
 
       void *output_ptr = params_->get_output_data_ptr(graph_output_index);
@@ -522,19 +449,17 @@ class Executor {
       const Node &node = socket.node();
       const NodeState &node_state = *node_states_[node.index_in_graph()];
       const OutputState &output_state = node_state.outputs[socket.index()];
-      if (output_state.usage == ValueUsage::Unused) {
+      if (output_state.usage == ValUsage::Unused) {
         params_->set_input_unused(i);
       }
     }
   }
 
-  /**
-   * Determines which nodes might be executed and which are unreachable. The set of reachable nodes
+  /* Determines which nodes might be ex and which are unreachable. The set of reachable nodes
    * can dynamically depend on the side effect nodes.
    *
-   * Most importantly, this function initializes `InputState.usage` and
-   * `OutputState.potential_target_sockets`.
-   */
+   * Most importantly, this fn inits `InputState.usage` and
+   * `OutputState.potential_target_sockets`. */
   void initialize_static_value_usages(const Span<const FunctionNode *> side_effect_nodes)
   {
     const Span<const Node *> all_nodes = self_.graph_.nodes();
