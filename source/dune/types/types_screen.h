@@ -639,7 +639,7 @@ typedef enum eRgnType {
 /* use for fn args */
 #define RGN_TYPE_ANY -1
 
-/* Region supports panel tabs (categories). */
+/* Region supports pnl tabs (categories). */
 #define RGN_TYPE_HAS_CATEGORY_MASK (1 << RGN_TYPE_UI)
 
 /* Check for any kind of header rgn. */
@@ -668,7 +668,7 @@ enum {
 #define RGN_ALIGN_ENUM_FROM_MASK(align) ((align) & ((1 << 4) - 1))
 #define RGN_ALIGN_FLAG_FROM_MASK(align) ((align) & ~((1 << 4) - 1))
 
-/** ARgn.flag */
+/* ARgn.flag */
 enum {
   RGN_FLAG_HIDDEN = (1 << 0),
   RGN_FLAG_TOO_SMALL = (1 << 1),
@@ -686,7 +686,7 @@ enum {
   /* When the user sets the rgn is hidden,
    * needed for floating rgns that may be hidden for other reasons. */
   RGN_FLAG_HIDDEN_BY_USER = (1 << 7),
-  /** Prop search filter is active. */
+  /* Prop search filter is active. */
   RGN_FLAG_SEARCH_FILTER_ACTIVE = (1 << 8),
   /* Update the expansion of the rgn's pnls and switch cxts. Only Set
    * tmp when the search filter is updated and cleared at the end of the
@@ -696,7 +696,7 @@ enum {
 
 /* Rgn.do_drw */
 enum {
-  /* Rgn must be fully redrawn. */
+  /* Rgn must be fully redrwn. */
   RGN_DRW = 1,
   /* Redrw only part of rgn, for sculpting and painting to get smoother
    * stroke painting on heavy meshes. */
@@ -711,6 +711,6 @@ enum {
   /* For popups, to refresh UI layout along with drwing. */
   RGN_REFRESH_UI = 16,
 
-  /* Only editor overlays (currently gizmos only!) should be redrawn. */
+  /* Only editor overlays (currently gizmos only!) should be redrwn. */
   RGN_DRW_EDITOR_OVERLAYS = 32,
 };
