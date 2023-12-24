@@ -1,5 +1,4 @@
 /* Structs used for camera tracking and the movie-clip editor */
-
 #pragma once
 
 #include "types_defs.h"
@@ -82,7 +81,7 @@ typedef struct MovieTrackingMarker {
    * relative to marker->pos */
   float search_min[2], search_max[2];
 
-  /* Num of frame marker is associated with. */
+  /* Num of frame marker is assoc with. */
   int framenr;
   /* Marker's flag (alive, ...). */
   int flag;
@@ -259,7 +258,6 @@ typedef struct MovieTrackingSettings {
   int refine_camera_intrinsics;
 
   /* tool settings */
-
   /* set scale */
   /* Distance between 2 bundles used for scene scaling. */
   float dist;
@@ -327,18 +325,18 @@ typedef struct MovieTrackingOb {
   /** Name of tracking object, MAX_NAME. */
   char name[64];
   int flag;
-  /** Scale of object solution in camera space. */
+  /* Scale of ob solution in camera space. */
   float scale;
 
-  /** List of tracks use to tracking this object. */
+  /* List of tracks use to tracking this object. */
   List tracks;
-  /** List of plane tracks used by this object. */
+  /* List of plane tracks used by this object. */
   List plane_tracks;
-  /** Reconstruction data for this object. */
+  /* Reconstruction data for this ob. */
   MovieTrackingReconstruction reconstruction;
 
-  /* reconstruction options */
-  /** Two keyframes for reconstruction initialization. */
+  /* reconstruction opts */
+  /* Two keyframes for reconstruction init. */
   int keyframe1, keyframe2;
 } MovieTrackingObject;
 
@@ -349,20 +347,20 @@ typedef struct MovieTrackingStats {
 typedef struct MovieTrackingDopesheetChannel {
   struct MovieTrackingDopesheetChannel *next, *prev;
 
-  /** Motion track for which channel is created. */
+  /* Motion track for which channel is created. */
   MovieTrackingTrack *track;
   char _pad[4];
 
-  /** Name of channel. */
+  /* Name of channel. */
   char name[64];
 
-  /** Total number of segments. */
+  /* Total num of segments. */
   int tot_segment;
-  /** Tracked segments. */
+  /* Tracked segments. */
   int *segments;
-  /** Longest segment length and total number of tracked frames. */
+  /* Longest segment length and total number of tracked frames. */
   int max_segment, total_frames;
-  /** These numbers are valid only if tot_segment > 0. */
+  /* These nums are valid only if tot_segment > 0. */
   int first_not_disabled_marker_framenr, last_not_disabled_marker_framenr;
 } MovieTrackingDopesheetChannel;
 
@@ -377,15 +375,15 @@ typedef struct MovieTrackingDopesheetCoverageSegment {
 } MovieTrackingDopesheetCoverageSegment;
 
 typedef struct MovieTrackingDopesheet {
-  /** Flag if dopesheet information is still relevant. */
+  /* Flag if dopesheet information is still relevant. */
   int ok;
 
-  /** Method to be used to sort tracks. */
+  /* Method to be used to sort tracks. */
   short sort_method;
-  /** Dopesheet building flag such as inverted order of sort. */
+  /* Dopesheet building flag such as inverted order of sort. */
   short flag;
 
-  /* ** runtime stuff ** */
+  /* runtime stuff */
 
   /* summary */
   List coverage_segments;
@@ -398,35 +396,35 @@ typedef struct MovieTrackingDopesheet {
 } MovieTrackingDopesheet;
 
 typedef struct MovieTracking {
-  /** Different tracking-related settings. */
+  /* Different tracking-related settings. */
   MovieTrackingSettings settings;
-  /** Camera intrinsics. */
+  /* Camera intrinsics. */
   MovieTrackingCamera camera;
-  /** List of tracks used for camera object. */
-  ListBase tracks;
-  /** List of plane tracks used by camera object. */
-  ListBase plane_tracks;
-  /** Reconstruction data for camera object. */
+  /* List of tracks used for camera ob. */
+  List tracks;
+  /* List of plane tracks used by camera ob. */
+  List plane_tracks;
+  /* Reconstruction data for camera ob. */
   MovieTrackingReconstruction reconstruction;
-  /** Stabilization data. */
+  /* Stabilization data. */
   MovieTrackingStabilization stabilization;
-  /** Active track. */
+  /* Active track. */
   MovieTrackingTrack *act_track;
-  /** Active plane track. */
+  /* Active plane track. */
   MovieTrackingPlaneTrack *act_plane_track;
 
-  List objects;
-  /** Index of active object and total number of objects. */
-  int objectnr, tot_object;
+  List obs;
+  /* Index of active ob and total num of obs. */
+  int obnr, tot_ob;
 
-  /** Statistics displaying in clip editor. */
+  /* Statistics displaying in clip editor. */
   MovieTrackingStats *stats;
 
-  /** Dopesheet data. */
+  /* Dopesheet data. */
   MovieTrackingDopesheet dopesheet;
 } MovieTracking;
 
-/** #MovieTrackingCamera.distortion_model */
+/* MovieTrackingEditor.distortion_model */
 enum {
   TRACKING_DISTORTION_MODEL_POLYNOMIAL = 0,
   TRACKING_DISTORTION_MODEL_DIVISION = 1,
@@ -434,13 +432,13 @@ enum {
   TRACKING_DISTORTION_MODEL_BROWN = 3,
 };
 
-/** #MovieTrackingCamera.units */
+/* MovieTrackingCamera.units */
 enum {
   CAMERA_UNITS_PX = 0,
   CAMERA_UNITS_MM = 1,
 };
 
-/** #MovieTrackingMarker.flag */
+/* MovieTrackingMarker.flag */
 enum {
   MARKER_DISABLED = (1 << 0),
   MARKER_TRACKED = (1 << 1),
@@ -449,7 +447,7 @@ enum {
   MARKER_GRAPH_SEL = (MARKER_GRAPH_SEL_X | MARKER_GRAPH_SEL_Y),
 };
 
-/** #MovieTrackingTrack.flag */
+/* MovieTrackingTrack.flag */
 enum {
   TRACK_HAS_BUNDLE = (1 << 1),
   TRACK_DISABLE_RED = (1 << 2),
@@ -465,7 +463,7 @@ enum {
   TRACK_USE_2D_STAB_ROT = (1 << 12),
 };
 
-/** #MovieTrackingTrack.motion_model */
+/* MovieTrackingTrack.motion_model */
 enum {
   TRACK_MOTION_MODEL_TRANSLATION = 0,
   TRACK_MOTION_MODEL_TRANSLATION_ROTATION = 1,
@@ -475,27 +473,27 @@ enum {
   TRACK_MOTION_MODEL_HOMOGRAPHY = 5,
 };
 
-/** #MovieTrackingTrack.algorithm_flag */
+/* MovieTrackingTrack.algorithm_flag */
 enum {
   TRACK_ALGORITHM_FLAG_USE_BRUTE = (1 << 0),
   TRACK_ALGORITHM_FLAG_USE_NORMALIZATION = (1 << 2),
   TRACK_ALGORITHM_FLAG_USE_MASK = (1 << 3),
 };
 
-/** #MovieTrackingTrack.pattern_match */
+/* MovieTrackingTrack.pattern_match */
 typedef enum eTrackFrameMatch {
   TRACK_MATCH_KEYFRAME = 0,
   TRACK_MATCH_PREVIOS_FRAME = 1,
 } eTrackFrameMatch;
 
-/** #MovieTrackingSettings.motion_flag */
+/* MovieTrackingSettings.motion_flag */
 enum {
   TRACKING_MOTION_TRIPOD = (1 << 0),
 
   TRACKING_MOTION_MODAL = (TRACKING_MOTION_TRIPOD),
 };
 
-/** #MovieTrackingSettings.speed */
+/* MovieTrackingSettings.speed */
 enum {
   TRACKING_SPEED_FASTEST = 0,
   TRACKING_SPEED_REALTIME = 1,
@@ -504,13 +502,13 @@ enum {
   TRACKING_SPEED_DOUBLE = 5,
 };
 
-/** #MovieTrackingSettings.reconstruction_flag */
+/* MovieTrackingSettings.reconstruction_flag */
 enum {
   /* TRACKING_USE_FALLBACK_RECONSTRUCTION = (1 << 0), */ /* DEPRECATED */
-  TRACKING_USE_KEYFRAME_SELECTION = (1 << 1),
+  TRACKING_USE_KEYFRAME_SEL = (1 << 1),
 };
 
-/** #MovieTrackingSettings.refine_camera_intrinsics */
+/* MovieTrackingSettings.refine_camera_intrinsics */
 enum {
   REFINE_NO_INTRINSICS = (0),
 
@@ -520,7 +518,7 @@ enum {
   REFINE_TANGENTIAL_DISTORTION = (1 << 3),
 };
 
-/** #MovieTrackingStabilization.flag */
+/* MovieTrackingStabilization.flag */
 enum {
   TRACKING_2D_STABILIZATION = (1 << 0),
   TRACKING_AUTOSCALE = (1 << 1),
@@ -529,60 +527,60 @@ enum {
   TRACKING_SHOW_STAB_TRACKS = (1 << 5),
 };
 
-/** #MovieTrackingStabilization.filter */
+/* MovieTrackingStabilization.filter */
 enum {
   TRACKING_FILTER_NEAREST = 0,
   TRACKING_FILTER_BILINEAR = 1,
   TRACKING_FILTER_BICUBIC = 2,
 };
 
-/** #MovieTrackingReconstruction.flag */
+/* MovieTrackingReconstruction.flag */
 enum {
   TRACKING_RECONSTRUCTED = (1 << 0),
 };
 
-/** #MovieTrackingObject.flag */
+/* MovieTrackingOb .flag */
 enum {
-  TRACKING_OBJECT_CAMERA = (1 << 0),
+  TRACKING_OB_CAMERA = (1 << 0),
 };
 
 enum {
-  TRACKING_CLEAN_SELECT = 0,
-  TRACKING_CLEAN_DELETE_TRACK = 1,
-  TRACKING_CLEAN_DELETE_SEGMENT = 2,
+  TRACKING_CLEAN_SEL = 0,
+  TRACKING_CLEAN_DEL_TRACK = 1,
+  TRACKING_CLEAN_DEL_SEGMENT = 2,
 };
 
-/** #MovieTrackingDopesheet.sort_method */
+/* MovieTrackingDopesheet.sort_method */
 enum {
   TRACKING_DOPE_SORT_NAME = 0,
   TRACKING_DOPE_SORT_LONGEST = 1,
   TRACKING_DOPE_SORT_TOTAL = 2,
-  TRACKING_DOPE_SORT_AVERAGE_ERROR = 3,
+  TRACKING_DOPE_SORT_AVG_ERROR = 3,
   TRACKING_DOPE_SORT_START = 4,
   TRACKING_DOPE_SORT_END = 5,
 };
 
-/** #MovieTrackingDopesheet.flag */
+/* MovieTrackingDopesheet.flag */
 enum {
   TRACKING_DOPE_SORT_INVERSE = (1 << 0),
-  TRACKING_DOPE_SELECTED_ONLY = (1 << 1),
+  TRACKING_DOPE_SEL_ONLY = (1 << 1),
   TRACKING_DOPE_SHOW_HIDDEN = (1 << 2),
 };
 
-/** #MovieTrackingDopesheetCoverageSegment.trackness */
+/* MovieTrackingDopesheetCoverageSegment.trackness */
 enum {
   TRACKING_COVERAGE_BAD = 0,
   TRACKING_COVERAGE_ACCEPTABLE = 1,
   TRACKING_COVERAGE_OK = 2,
 };
 
-/** #MovieTrackingPlaneMarker.flag */
+/* MovieTrackingPlaneMarker.flag */
 enum {
   PLANE_MARKER_DISABLED = (1 << 0),
   PLANE_MARKER_TRACKED = (1 << 1),
 };
 
-/** #MovieTrackingPlaneTrack.flag */
+/* MovieTrackingPlaneTrack.flag */
 enum {
   PLANE_TRACK_HIDDEN = (1 << 1),
   PLANE_TRACK_LOCKED = (1 << 2),
