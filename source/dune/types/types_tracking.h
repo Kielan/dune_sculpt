@@ -94,7 +94,6 @@ typedef struct MovieTrackingTrack {
   char name[64];
 
   /* settings */
-
   /* positions of left-bottom and right-top corners of pattern (in unified 0..1 units,
    * relative to marker->pos)
    * moved to marker's corners since planar tracking implementation */
@@ -201,7 +200,7 @@ typedef struct MovieTrackingPlaneTrack {
   /* Count of markers in track (size of markers array). */
   int markersnr;
 
-  /* Flags (selection, ...). */
+  /* Flags (sel, ...). */
   int flag;
 
   /* Img displaying during editing. */
@@ -322,7 +321,7 @@ typedef struct MovieTrackingReconstruction {
 typedef struct MovieTrackingOb {
   struct MovieTrackingOb *next, *prev;
 
-  /** Name of tracking object, MAX_NAME. */
+  /* Name of tracking ob, MAX_NAME. */
   char name[64];
   int flag;
   /* Scale of ob solution in camera space. */
@@ -338,10 +337,10 @@ typedef struct MovieTrackingOb {
   /* reconstruction opts */
   /* Two keyframes for reconstruction init. */
   int keyframe1, keyframe2;
-} MovieTrackingObject;
+} MovieTrackingOb;
 
 typedef struct MovieTrackingStats {
-  char message[256];
+  char msg[256];
 } MovieTrackingStats;
 
 typedef struct MovieTrackingDopesheetChannel {
