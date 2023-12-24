@@ -1,5 +1,4 @@
-/**
- * A platform-independent definition of [u]intXX_t
+/* A platform-independent definition of [u]intXX_t
  * Plus the accompanying header include for htonl/ntohl
  *
  * This file includes <sys/types.h> to define [u]intXX_t types, where
@@ -7,8 +6,7 @@
  * file.
  * - Windows uses __intXX compiler-builtin types. These are signed,
  *   so we have to flip the signs.
- * For these rogue platforms, we make the typedefs ourselves.
- */
+ * For these rogue platforms, we make the typedefs ourselves. */
 
 #pragma once
 
@@ -18,7 +16,6 @@
 /* Linux-i386, Linux-Alpha, Linux-PPC */
 #  include <stdint.h>
 
-/* XXX */
 #  ifndef UINT64_MAX
 #    define UINT64_MAX 18446744073709551615
 typedef uint8_t u_int8_t;
