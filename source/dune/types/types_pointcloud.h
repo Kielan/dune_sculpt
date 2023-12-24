@@ -30,11 +30,11 @@ typedef struct PointCloud {
   short totcol;
   short _pad3[3];
 
-  /* Draw Cache */
+  /* Drw Cache */
   void *batch_cache;
 } PointCloud;
 
-/** #PointCloud.flag */
+/* PointCloud.flag */
 enum {
   PT_DS_EXPAND = (1 << 0),
 };
