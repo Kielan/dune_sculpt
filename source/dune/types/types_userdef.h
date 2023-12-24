@@ -479,71 +479,71 @@ typedef struct DuneTheme {
   (CHECK_TYPE_INLINE(dunetheme, duneTheme *), (&((dunetheme)->space_spreadsheet) + 1))
 
 typedef struct DuneAddon {
-  struct duneAddon *next, *prev;
+  struct DuneAddon *next, *prev;
   char module[64];
   /* User-Defined Props on this add-on (for storing preferences). */
   IdProp *prop;
-} duneAddon;
+} DuneAddon;
 
-typedef struct dunePathCompare {
-  struct dunePathCompare *next, *prev;
-  /** FILE_MAXDIR. */
+typedef struct DunePathCompare {
+  struct DunePathCompare *next, *prev;
+  /* FILE_MAXDIR. */
   char path[768];
   char flag;
   char _pad0[7];
-} dunePathCompare;
+} DunePathCompare;
 
-typedef struct duneUserMenu {
-  struct duneUserMenu *next, *prev;
+typedef struct DuneUserMenu {
+  struct DuneUserMenu *next, *prev;
   char space_type;
   char _pad0[7];
-  char context[64];
+  char cxt[64];
   /* duneUserMenuItem */
   List items;
-} duneUserMenu;
+} DuneUserMenu;
 
-/** May be part of duneUserMenu or other list. */
-typedef struct duneUserMenuItem {
-  struct duneUserMenuItem *next, *prev;
+/* May be part of DuneUserMenu or other list. */
+typedef struct DuneUserMenuItem {
+  struct DuneUserMenuItem *next, *prev;
   char ui_name[64];
   char type;
   char _pad0[7];
-} duneUserMenuItem;
+} DuneUserMenuItem;
 
-typedef struct duneUserMenuItemOp {
-  duneUserMenuItem item;
+typedef struct DuneUserMenuItemOp {
+  DuneUserMenuItem item;
   char op_idname[64];
   struct IdProp *prop;
-  char opcontext; /* wmOpCallCtx */
+  char opcxt; /* WinOpCallCtx */
   char _pad0[7];
-} duneUserMenuItemOp;
+} DuneUserMenuItemOp;
 
-typedef struct duneUserMenuItemMenu {
-  duneUserMenuItem item;
+typedef struct DuneUserMenuItemMenu {
+  DuneUserMenuItem item;
   char mt_idname[64];
-} duneUserMenuItemMenu;
+} DuneUserMenuItemMenu;
 
-typedef struct duneUserMenuItemProp {
-  duneUserMenuItem item;
-  char context_data_path[256];
+typedef struct DuneUserMenuItemProp {
+  DuneUserMenuItem item;
+  char cxt_data_path[256];
   char prop_id[64];
   int prop_index;
   char _pad0[4];
-} duneUserMenuItemProp;
+} DuneUserMenuItemProp;
 
 enum {
   USER_MENU_TYPE_SEP = 1,
-  USER_MENU_TYPE_OPERATOR = 2,
+  USER_MENU_TYPE_O = 2,
   USER_MENU_TYPE_MENU = 3,
   USER_MENU_TYPE_PROP = 4,
 };
 
-typedef struct duneUserAssetLib {
-  struct duneUserAssetLib *next, *prev;
+typedef struct DuneUserAssetLib {
+  struct DuneUserAssetLib *next, *prev;
 
   char name[64];   /* MAX_NAME */
   char path[1024]; /* FILE_MAX */
-} duneUserAssetLib;
+} DuneUserAssetLib;
 
 typedef struct SolidLight {
   int flag;
@@ -553,134 +553,134 @@ typedef struct SolidLight {
 } SolidLight;
 
 typedef struct WalkNav {
-  /** Speed factor for look around. */
+  /* Speed factor for look around. */
   float mouse_speed;
   float walk_speed;
   float walk_speed_factor;
   float view_height;
   float jump_height;
-  /** Duration to use for teleporting. */
+  /* Duration to use for teleporting. */
   float teleport_time;
   short flag;
   char _pad0[6];
 } WalkNav;
 
 typedef struct UserDefRuntime {
-  /** Mark as changed so the preferences are saved on exit. */
+  /* Mark as changed so the prefs are saved on exit. */
   char is_dirty;
   char _pad0[7];
 } UserDefRuntime;
 
 /* Store UI data here instead of the space
- * since the space is typically a window which is freed. */
+ * since the space is typically a win which is freed. */
 typedef struct UserDefSpaceData {
   char section_active;
-  /** eUserPrefSpaceDataFlag UI options. */
+  /* eUserPrefSpaceDataFlag UI opts. */
   char flag;
   char _pad0[6];
 } UserDefSpaceData;
 
-/** Storage for UI data that to keep it even after the window was closed. (Similar to
- * UserDef_SpaceData.) */
+/* Storage for UI data that to keep it even after the win was closed. (Similar to
+ * UserDefSpaceData.) */
 typedef struct UserDefFileSpaceData {
-  int display_type;   /* FileSelectParams.display */
-  int thumbnail_size; /* FileSelectParams.thumbnail_size */
-  int sort_type;      /* FileSelectParams.sort */
+  int display_type;   /* FileSelParams.display */
+  int thumbnail_size; /* FileSelParams.thumbnail_size */
+  int sort_type;      /* FileSelParams.sort */
   int details_flags;  /* FileSelectParams.details_flags */
-  int flag;           /* FileSelectParams.flag */
+  int flag;           /* FileSelParams.flag */
   int _pad0;
-  uint64_t filter_id; /* FileSelectParams.filter_id */
+  uint64_t filter_id; /* FileSelParams.filter_id */
 
-  /** Info used when creating the file browser in a temporary window. */
-  int temp_win_sizex;
-  int temp_win_sizey;
+  /* Info used when creating the file browser in a tmp win. */
+  int tmp_win_sizex;
+  int tmp_win_sizey;
 } UserDefFileSpaceData;
 
 typedef struct UserDefExperimental {
-  /* Debug options, always available. */
+  /* Debug optss, always available. */
   char use_undo_legacy;
   char no_override_auto_resync;
   char use_cycles_debug;
   char show_asset_debug_info;
   char no_asset_indexing;
   char SANITIZE_AFTER_HERE;
-  /* The following options are automatically sanitized (set to 0)
+  /* The following opts are automatically sanitized (set to 0)
    * when the release cycle is not alpha. */
   char use_new_curves_type;
   char use_new_point_cloud_type;
   char use_full_frame_compositor;
-  char use_sculpt_vertex_colors;
+  char use_sculpt_vert_colors;
   char use_sculpt_tools_tilt;
   char use_extended_asset_browser;
   char use_override_templates;
   char use_named_attribute_nodes;
   char enable_eevee_next;
   char _pad[1];
-  /** `types` does not allow empty structs. */
+  /* `types` does not allow empty structs. */
 } UserDefExperimental;
 
 #define USER_EXPERIMENTAL_TEST(userdef, member) \
   (((userdef)->flag & USER_DEVELOPER_UI) && ((userdef)->experimental).member)
 
 typedef struct UserDef {
-  /** UserDef has separate do-version handling, and can be read from other files. */
+  /* UserDef has separate do-version handling, and can be read from other files. */
   int versionfile, subversionfile;
-  /** eUserPrefFlag. */
+  /* eUserPrefFlag. */
   int flag;
-  /** eDupliIdFlags. */
+  /* eDupIdFlags. */
   unsigned int dupflag;
-  /** eUserPrefPrefFlag prefs for the preferences. */
+  /* eUserPrefPrefFlag prefs for the preferences. */
   char pref_flag;
   char savetime;
   char mouse_emulate_3_btn_mod;
   char _pad4[1];
-  /** FILE_MAXDIR length. */
-  char tempdir[768];
+  /* FILE_MAXDIR length. */
+  char tmpdir[768];
   char fontdir[768];
-  /** FILE_MAX length. */
-  char renderdir[1024];
+  /* FILE_MAX length. */
+  char rndrdir[1024];
   /* EXR cache path */
-  /** 768 = FILE_MAXDIR. */
-  char render_cachedir[768];
+  /* 768 = FILE_MAXDIR. */
+  char rndr_cachedir[768];
   char textudir[768];
   /* Optional user location for scripts.
    *
    * This supports the same layout as Dune's scripts directory `release/scripts`.
    *
-   * note Unlike most paths, changing this is not fully supported at run-time,
+   * Unlike most paths, changing this is not fully supported at run-time,
    * requiring a restart to properly take effect. Supporting this would cause complications as
    * the script path can contain `startup`, `addons` & `modules` etc. properly unwinding the
    * Python environment to the state it _would_ have been in gets complicated.
    *
-   * Although this is partially supported as the `sys.path` is refreshed when loading preferences.
-   * This is done to support PREFERENCES_OT_copy_prev which is available to the user when they
+   * Altho this is partially supported as the `sys.path` is refreshed when loading prefs.
+   * This is done to support PREFS_OT_copy_prev which is available to the user when they
    * launch with a new version of Dune. In this case setting the script path on top of
-   * factory settings will work without problems. */
+   * factory settings will work wo problems. */
   char pythondir[768];
   char sounddir[768];
   char langdir[768];
-  /** 1024 = FILE_MAX. */
-  char image_editor[1024];
-  /** 1024 = FILE_MAX. */
+  /* 1024 = FILE_MAX. */
+  char img_editor[1024];
+  /* 1024 = FILE_MAX. */
   char anim_player[1024];
   int anim_player_preset;
 
-  /** Minimum spacing between grid-lines in View2D grids. */
+  /* Min spacing between grid-lines in View2D grids. */
   short v2d_min_gridsize;
-  /** eTimecodeStyles, style of time-code display. */
+  /* eTimecodeStyles, style of time-code display. */
   short timecode_style;
   short versions;
   short dbl_click_time;
   char _pad0[3];
   char mini_axis_type;
-  /** eUserprefUIFlag. */
+  /* eUserprefUIFlag. */
   int uiflag;
-  /** eUserprefUIFlag2. */
+  /* eUserprefUIFlag2. */
   char uiflag2;
   char gpu_flag;
   char _pad8[6];
   /* Experimental flag for app-templates to make changes to behavior
-   * which are outside the scope of typical preferences. */
+   * which are outside the scope of typical prefs. */
   char app_flag;
   char viewzoom;
   short language;
@@ -689,59 +689,59 @@ typedef struct UserDef {
   int audiorate;
   int audioformat;
   int audiochannels;
-  /** Setting for UI scale (fractional), before screen DPI has been applied. */
+  /* Setting for UI scale (fractional), before screen DPI has been applied. */
   float ui_scale;
-  /** Setting for UI line width. */
+  /* Setting for UI line width. */
   int ui_line_width;
-  /** Runtime, full DPI divided by `pixelsize`. */
+  /* Runtime, full DPI divided by `pixelsize`. */
   int dpi;
-  /** Runtime, multiplier to scale UI elements based on DPI (fractional). */
+  /* Runtime, multiplier to scale UI elements based on DPI (fractional). */
   float dpi_fac;
-  /** Runtime, `1.0 / dpi_fac` */
+  /* Runtime, `1.0 / dpi_fac` */
   float inv_dpi_fac;
-  /** Runtime, calculated from line-width and point-size based on DPI (rounded to int). */
+  /* Runtime, calc from line-width and point-size based on DPI (rounded to int). */
   float pixelsize;
-  /** Deprecated, for forward compatibility. */
+  /* Deprecated, for forward compatibility. */
   int virtual_pixel;
-  /** Console scroll-back limit. */
+  /* Console scroll-back limit. */
   int scrollback;
-  /** Node insert offset (aka auto-offset) margin, but might be useful for later stuff as well. */
+  /* Node insert offset (aka auto-offset) margin, but might be useful for later stuff as well. */
   char node_margin;
   char _pad2[1];
-  /** eUserprefTranslationFlags. */
+  /* eUserprefTranslationFlags. */
   short transopts;
   short menuthreshold1, menuthreshold2;
-  /** Startup application template. */
+  /* Startup application template. */
   char app_template[64];
   struct List themes;
   struct List uifonts;
   struct List uistyles;
   struct List user_keymaps;
-  /** wmKeyConfigPref. */
+  /* WinKeyConfigPref. */
   struct List user_keyconfig_prefs;
   struct List addons;
   struct List autoex_paths;
-  /** duneUserMenu. */
+  /* duneUserMenu. */
   struct List user_menus;
-  /** duneUserAssetLibrary */
+  /* duneUserAssetLib */
   struct List asset_libs;
 
   char keyconfigstr[64];
 
   short undosteps;
   char _pad1[2];
-  int undomemory;
+  int undomem;
   float gpu_viewport_quality TYPES_DEPRECATED;
   short pen_manhattandist, pen_euclideandist, pen_eraser;
-  /** ePenUserdefSettings. */
+  /* ePenUserdefSettings. */
   short pen_settings;
   char _pad13[4];
   struct SolidLight light_param[4];
   float light_ambient[3];
   char gizmo_flag;
-  /** Generic gizmo size. */
+  /* Generic gizmo size. */
   char gizmo_size;
-  /** Navigate gizmo size. */
+  /* Nav gizmo size. */
   char gizmo_size_nav_v3d;
   char _pad3[5];
   short edit_studio_light;
@@ -749,66 +749,66 @@ typedef struct UserDef {
   short vbotimeout, vbocollectrate;
   short textimeout, texcollectrate;
   int memcachelimit;
-  /** Unused. */
+  /* Unused. */
   int prefetchframes;
-  /** Control the rotation step of the view when PAD2, PAD4, PAD6&PAD8 is use. */
+  /* Ctrl the rotation step of the view when PAD2, PAD4, PAD6&PAD8 is use. */
   float pad_rot_angle;
   char _pad12[4];
-  /** Rotating view icon size. */
+  /* Rotating view icon size. */
   short rvisize;
-  /** Rotating view icon brightness. */
+  /* Rotating view icon brightness. */
   short rvibright;
-  /** Maximum number of recently used files to remember. */
+  /* Max num of recently used files to remember. */
   short recent_files;
-  /** Milliseconds to spend spinning the view. */
+  /* Milliseconds to spend spinning the view. */
   short smooth_viewtx;
   short glreslimit;
-  /** eColorPicker_Types. */
+  /* eColorPickerTypes. */
   short color_picker_type;
-  /** Curve smoothing type for newly added F-Curves. */
+  /* Curve smoothing type for newly added F-Curves. */
   char auto_smoothing_new;
-  /** Interpolation mode for newly added F-Curves. */
+  /* Interpolation mode for newly added F-Curves. */
   char ipo_new;
   /** Handle types for newly added keyframes. */
   char keyhandles_new;
   char _pad11[4];
-  /** eZoomFrame_Mode. */
+  /* eZoomFrameMode. */
   char view_frame_type;
-  /** Number of keyframes to zoom around current frame. */
+  /* Number of keyframes to zoom around current frame. */
   int view_frame_keyframes;
-  /** Seconds to zoom around current frame. */
+  /* Seconds to zoom around current frame. */
   float view_frame_seconds;
   char _pad7[6];
-  /** Private, defaults to 20 for 72 DPI setting. */
+  /* Private, defaults to 20 for 72 DPI setting. */
   short widget_unit;
   short anisotropic_filter;
-  /** Tablet API to use (Windows only). */
+  /*Tablet API to use (Wins only). */
   short tablet_api;
-  /** Raw tablet pressure that maps to 100%. */
+  /* Raw tablet pressure that maps to 100%. */
   float pressure_threshold_max;
-  /** Curve non-linearity parameter. */
+  /* Curve non-linearity param. */
   float pressure_softness;
-  /** Overall sensitivity of 3D mouse. */
+  /* Overall sensitivity of 3D mouse. */
   float ndof_sensitivity;
   float ndof_orbit_sensitivity;
-  /** Dead-zone of 3D mouse. */
+  /* Dead-zone of 3D mouse. */
   float ndof_deadzone;
-  /** eNdof_Flag, flags for 3D mouse. */
+  /* eNdof_Flag, flags for 3D mouse. */
   int ndof_flag;
-  /** eMultiSample_Type, amount of samples for OpenGL FSA, if zero no FSA. */
+  /* eMultiSampleType, amount of samples for OpenGL FSA, if zero no FSA. */
   short ogl_multisamples;
-  /** eImageDrawMethod, Method to be used to draw the images
-   * (AUTO, GLSL, Textures or DrawPixels) */
-  short image_draw_method;
+  /* eImgDrwMethod, Method to be used to drw the imgs
+   * (AUTO, GLSL, Textures or DrwPixels) */
+  short img_drw_method;
   float glalphaclip;
-  /** eAutokey_Mode, autokeying mode. */
+  /* eAutokey_Mode, autokeying mode. */
   short autokey_mode;
-  /** Flags for autokeying. */
+  /* Flags for autokeying. */
   short autokey_flag;
-  /** Flags for animation. */
-  short animation_flag;
-  /** Options for text rendering. */
-  char text_render;
+  /* Flags for anim. */
+  short anim_flag;
+  /* Options for txt rendering. */
+  char txt_render;
   char nav_mode;
   /** Turn-table rotation amount per-pixel in radians. Scaled with DPI. */
   float view_rotate_sensitivity_turntable;
