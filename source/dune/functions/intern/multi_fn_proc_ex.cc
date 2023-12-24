@@ -133,109 +133,109 @@ class ValueAllocator : NonCopyable, NonMovable {
    * The integer key is the size of one element (e.g. 4 for an integer buffer). All buffers are
    * aligned to #min_alignment bytes.
    */
-  Stack<void *> small_span_buffers_free_list_;
-  Map<int, Stack<void *>> span_buffers_free_lists_;
+  Stack<void *> small_span_bufs_free_list_;
+  Map<int, Stack<void *>> span_bufs_free_lists_;
 
-  /** Cache buffers for single values of different types. */
-  static constexpr inline int small_value_max_size = 16;
-  static constexpr inline int small_value_max_alignment = 8;
-  Stack<void *> small_single_value_free_list_;
-  Map<const CPPType *, Stack<void *>> single_value_free_lists_;
+  /** Cache buffers for single vals of different types. */
+  static constexpr inline int small_val_max_size = 16;
+  static constexpr inline int small_val_max_alignment = 8;
+  Stack<void *> small_single_val_free_list_;
+  Map<const CPPType *, Stack<void *>> single_val_free_lists_;
 
  public:
   ValueAllocator(LinearAllocator<> &linear_allocator) : linear_allocator_(linear_allocator) {}
 
-  VariableValue_GVArray *obtain_GVArray(const GVArray &varray)
+  VarVal_GVArray *obtain_GVArray(const GVArray &varray)
   {
-    return this->obtain<VariableValue_GVArray>(varray);
+    return this->obtain<VarVal_GVArray>(varray);
   }
 
-  VariableValue_GVVectorArray *obtain_GVVectorArray(const GVVectorArray &varray)
+  VarVal_GVVectorArray *obtain_GVVectorArray(const GVVectorArray &varray)
   {
     return this->obtain<VariableValue_GVVectorArray>(varray);
   }
 
-  VariableValue_Span *obtain_Span_not_owned(void *buffer)
+  VarVal_Span *obtain_Span_not_owned(void *buffer)
   {
-    return this->obtain<VariableValue_Span>(buffer, false);
+    return this->obtain<VarVal_Span>(buffer, false);
   }
 
-  VariableValue_Span *obtain_Span(const CPPType &type, int size)
+  VarVal_Span *obtain_Span(const CPPType &type, int size)
   {
-    void *buffer = nullptr;
+    void *buf = nullptr;
 
     const int64_t element_size = type.size();
     const int64_t alignment = type.alignment();
 
     if (alignment > min_alignment) {
       /* In this rare case we fallback to not reusing existing buffers. */
-      buffer = linear_allocator_.allocate(element_size * size, alignment);
+      buffer = linear_allocator_.alloc(element_size * size, alignment);
     }
     else {
-      Stack<void *> *stack = type.can_exist_in_buffer(small_value_max_size,
-                                                      small_value_max_alignment) ?
+      Stack<void *> *stack = type.can_exist_in_buf(small_val_max_size,
+                                                   small_val_max_alignment) ?
                                  &small_span_buffers_free_list_ :
-                                 span_buffers_free_lists_.lookup_ptr(element_size);
+                                 span_bufs_free_lists_.lookup_ptr(element_size);
       if (stack == nullptr || stack->is_empty()) {
-        buffer = linear_allocator_.allocate(
-            std::max<int64_t>(element_size, small_value_max_size) * size, min_alignment);
+        buf = linear_allocator_.alloc(
+            std::max<int64_t>(element_size, small_val_max_size) * size, min_alignment);
       }
       else {
-        /* Reuse existing buffer. */
-        buffer = stack->pop();
+        /* Reuse existing buf. */
+        buf = stack->pop();
       }
     }
 
-    return this->obtain<VariableValue_Span>(buffer, true);
+    return this->obtain<VarVal_Span>(buf, true);
   }
 
-  VariableValue_GVectorArray *obtain_GVectorArray_not_owned(GVectorArray &data)
+  VarVal_GVectorArray *obtain_GVectorArray_not_owned(GVectorArray &data)
   {
-    return this->obtain<VariableValue_GVectorArray>(data, false);
+    return this->obtain<VarVal_GVectorArray>(data, false);
   }
 
-  VariableValue_GVectorArray *obtain_GVectorArray(const CPPType &type, int size)
+  VarVal_GVectorArray *obtain_GVectorArray(const CPPType &type, int size)
   {
     GVectorArray *vector_array = new GVectorArray(type, size);
     return this->obtain<VariableValue_GVectorArray>(*vector_array, true);
   }
 
-  VariableValue_OneSingle *obtain_OneSingle(const CPPType &type)
+  VarVal_OneSingle *obtain_OneSingle(const CPPType &type)
   {
     const bool is_small = type.can_exist_in_buffer(small_value_max_size,
                                                    small_value_max_alignment);
     Stack<void *> &stack = is_small ? small_single_value_free_list_ :
                                       single_value_free_lists_.lookup_or_add_default(&type);
-    void *buffer;
+    void *buf;
     if (stack.is_empty()) {
-      buffer = linear_allocator_.allocate(
-          std::max<int>(small_value_max_size, type.size()),
-          std::max<int>(small_value_max_alignment, type.alignment()));
+      buf = linear_allocator_.alloc(
+          std::max<int>(small_val_max_size, type.size()),
+          std::max<int>(small_val_max_alignment, type.alignment()));
     }
     else {
-      buffer = stack.pop();
+      buf = stack.pop();
     }
     return this->obtain<VariableValue_OneSingle>(buffer);
   }
 
-  VariableValue_OneVector *obtain_OneVector(const CPPType &type)
+  VarVal_OneVector *obtain_OneVector(const CPPType &type)
   {
     GVectorArray *vector_array = new GVectorArray(type, 1);
-    return this->obtain<VariableValue_OneVector>(*vector_array);
+    return this->obtain<VarVal_OneVector>(*vector_array);
   }
 
-  void release_value(VariableValue *value, const DataType &data_type)
+  void release_value(VarVal *val, const DataType &data_type)
   {
-    switch (value->type) {
-      case ValueType::GVArray: {
+    switch (val->type) {
+      case ValType::GVArray: {
         break;
       }
-      case ValueType::Span: {
-        auto *value_typed = static_cast<VariableValue_Span *>(value);
-        if (value_typed->owned) {
+      case ValType::Span: {
+        auto *val_typed = static_cast<VarValSpan *>(val);
+        if (val_typed->owned) {
           const CPPType &type = data_type.single_type();
-          /* Assumes all values in the buffer are uninitialized already. */
-          Stack<void *> &buffers = type.can_exist_in_buffer(small_value_max_size,
+          /* Assumes all vals in the buf are uninitialized already. */
+          Stack<void *> &bufs = type.can_exist_in_buffer(small_value_max_size,
                                                             small_value_max_alignment) ?
                                        small_span_buffers_free_list_ :
                                        span_buffers_free_lists_.lookup_or_add_default(type.size());
