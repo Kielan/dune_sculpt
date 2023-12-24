@@ -1,27 +1,27 @@
 /**
- * This file implements the evaluation of a lazy-function graph. It's main objectives are:
- * - Only compute values that are actually used.
- * - Stay single threaded when nodes are executed quickly.
- * - Allow spreading the work over an arbitrary number of threads efficiently.
+ * This file implements the eval of a lazy-fn graph. It's main objectives are:
+ * - Only compute vals that are actually used.
+ * - Stay single threaded when nodes are ex quickly.
+ * - Allow spreading the work over an arbitrary num of threads efficiently.
  *
- * This executor makes use of `FN_lazy_threading.hh` to enable multi-threading only when it seems
- * beneficial. It operates in two modes: single- and multi-threaded. The use of a task pool and
+ * This executor makes use of `fn_lazy_threading.hh` to enable multi-threading only when it seems
+ * beneficial. It ops in 2 modes: single- and multi-threaded. The use of a task pool and
  * locks is avoided in single-threaded mode. Once multi-threading is enabled the executor starts
  * using both. It is not possible to switch back from multi-threaded to single-threaded mode.
  *
  * The multi-threading design implemented in this executor requires *no* main thread that
- * coordinates everything. Instead, one thread will trigger some initial work and then many threads
+ * coordinates everything. Instead, one thread will trigger some init work and then many threads
  * coordinate themselves in a distributed fashion. In an ideal situation, every thread ends up
  * processing a separate part of the graph which results in less communication overhead. The way
  * TBB schedules tasks helps with that: a thread will next process the task that it added to a task
  * pool just before.
  *
- * Communication between threads is synchronized by using a mutex in every node. When a thread
+ * Communication between threads is syncd by using a mutex in every node. When a thread
  * wants to access the state of a node, its mutex has to be locked first (with some documented
  * exceptions). The assumption here is that most nodes are only ever touched by a single thread and
  * therefore the lock contention is reduced the more nodes there are.
  *
- * Similar to how a #LazyFunction can be thought of as a state machine (see `FN_lazy_function.hh`),
+ * Similar to how a LazyFn can be thought of as a state machine (see `FN_lazy_function.hh`),
  * each node can also be thought of as a state machine. The state of a node contains the evaluation
  * state of its inputs and outputs. Every time a node is executed, it has to advance its state in
  * some way (e.g. it requests a new input or computes a new output).
@@ -34,43 +34,36 @@
  *
  * When all tasks are completed, the executor gives back control to the caller which may later
  * provide new inputs to the graph which in turn leads to new nodes being scheduled and the process
- * starts again.
- */
+ * starts again. */
 
 #include <mutex>
 #include <sstream>
 
-#include "BLI_compute_context.hh"
-#include "BLI_enumerable_thread_specific.hh"
-#include "BLI_function_ref.hh"
-#include "BLI_task.h"
-#include "BLI_task.hh"
-#include "BLI_timeit.hh"
+#include "lib_compute_cxt.hh"
+#include "lib_enumerable_thread_specific.hh"
+#include "lib_fn_ref.hh"
+#include "lib_task.h"
+#include "lib_task.hh"
+#include "lib_timeit.hh"
 
-#include "FN_lazy_function_graph_executor.hh"
+#include "fn_lazy_graph_executor.hh"
 
-namespace blender::fn::lazy_function {
+namespace dune::fn::lazy_fn {
 
 enum class NodeScheduleState : uint8_t {
-  /**
-   * Default state of every node.
-   */
+  /* Default state of every node*/
   NotScheduled,
-  /**
-   * The node has been added to the task pool or is otherwise scheduled to be executed in the
-   * future.
-   */
+  /* The node has been added to the task pool or is otherwise scheduled to be executed in the
+   * future. */
   Scheduled,
   /**
    * The node is currently running.
    */
   Running,
-  /**
-   * The node is running and has been rescheduled while running. In this case the node run again.
+  /* The node is running and has been rescheduled while running. In this case the node run again.
    * This state exists, because we don't want to add the node to the task pool twice, because then
    * the node might run twice at the same time, which is not allowed. Instead, once the node is
-   * done running, it will reschedule itself.
-   */
+   * done running, it will reschedule itself */
   RunningAndRescheduled,
 };
 
@@ -80,15 +73,14 @@ struct InputState {
    * computing their outputs, the computed values will be forwarded to linked input sockets. The
    * value will then live here until it is found that it is not needed anymore.
    *
-   * If #was_ready_for_execution is true, access does not require holding the node lock.
+   * If was_rdy_for_ex is true, access does not require holding the node lock.
    */
-  void *value = nullptr;
-  /**
-   * How the node intends to use this input. By default, all inputs may be used. Based on which
+  void *val = nullptr;
+  /* How the node intends to use this input. By default, all inputs may be used. Based on which
    * outputs are used, a node can decide that an input will definitely be used or is never used.
-   * This allows freeing values early and avoids unnecessary computations.
+   * This allows freeing vals early and avoids unnecessary computations.
    */
-  ValueUsage usage = ValueUsage::Maybe;
+  ValUsage usage = ValUsage::Maybe;
   /**
    * Set to true once #value is set and will stay true afterwards. Access during execution of a
    * node, does not require holding the node lock.
