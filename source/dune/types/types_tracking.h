@@ -1,4 +1,4 @@
-/** Structs used for camera tracking and the movie-clip editor */
+/* Structs used for camera tracking and the movie-clip editor */
 
 #pragma once
 
@@ -10,8 +10,7 @@ extern "C" {
 #endif
 
 /* match-moving data */
-
-struct Image;
+struct Img;
 struct MovieReconstructedCamera;
 struct MovieTracking;
 struct MovieTrackingCamera;
@@ -26,26 +25,26 @@ typedef struct MovieReconstructedCamera {
 } MovieReconstructedCamera;
 
 typedef struct MovieTrackingCamera {
-  /** Intrinsics handle. */
+  /* Intrinsics handle. */
   void *intrinsics;
 
   short distortion_model;
   char _pad[2];
 
-  /** Width of CCD sensor. */
+  /* Width of CCD sensor. */
   float sensor_width;
-  /** Pixel aspect ratio. */
+  /* Pixel aspect ratio. */
   float pixel_aspect;
-  /** Focal length. */
+  /* Focal length. */
   float focal;
-  /** Units of focal length user is working with. */
+  /* Units of focal length user is working with. */
   short units;
   char _pad1[2];
-  /** Principal point. */
+  /* Principal point. */
   float principal[2];
 
   /* Polynomial distortion */
-  /** Polynomial radial distortion. */
+  /* Polynomial radial distortion. */
   float k1, k2, k3;
 
   /* Division distortion model coefficients */
@@ -55,14 +54,14 @@ typedef struct MovieTrackingCamera {
   float nuke_k1, nuke_k2;
 
   /* Brown-Conrady distortion model coefficients */
-  /** Brown-Conrady radial distortion. */
+  /* Brown-Conrady radial distortion. */
   float brown_k1, brown_k2, brown_k3, brown_k4;
-  /** Brown-Conrady tangential distortion. */
+  /* Brown-Conrady tangential distortion. */
   float brown_p1, brown_p2;
 } MovieTrackingCamera;
 
 typedef struct MovieTrackingMarker {
-  /** 2d position of marker on frame (in unified 0..1 space). */
+  /* 2d position of marker on frame (in unified 0..1 space). */
   float pos[2];
 
   /* corners of pattern in the following order:
@@ -76,26 +75,26 @@ typedef struct MovieTrackingMarker {
    *       | (0) --- (1)
    *       +-------------> X
    *
-   * the coordinates are stored relative to pos. */
+   * the coords are stored relative to pos. */
   float pattern_corners[4][2];
 
   /* positions of left-bottom and right-top corners of search area (in unified 0..1 units,
    * relative to marker->pos */
   float search_min[2], search_max[2];
 
-  /** Number of frame marker is associated with. */
+  /* Num of frame marker is associated with. */
   int framenr;
-  /** Marker's flag (alive, ...). */
+  /* Marker's flag (alive, ...). */
   int flag;
 } MovieTrackingMarker;
 
 typedef struct MovieTrackingTrack {
   struct MovieTrackingTrack *next, *prev;
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
-  /* ** settings ** */
+  /* settings */
 
   /* positions of left-bottom and right-top corners of pattern (in unified 0..1 units,
    * relative to marker->pos)
@@ -107,59 +106,57 @@ typedef struct MovieTrackingTrack {
    * moved to marker since affine tracking implementation */
   float search_min[2] TYPES_DEPRECATED, search_max[2] TYPES_DEPRECATED;
 
-  /** Offset to "parenting" point. */
+  /* Offset to "parenting" point. */
   float offset[2];
 
-  /* ** track ** */
-  /** Count of markers in track. */
+  /* track */
+  /* Count of markers in track. */
   int markersnr;
-  /** Most recently used marker. */
+  /* Most recently used marker. */
   int _pad;
-  /** Markers in track. */
+  /* Markers in track. */
   MovieTrackingMarker *markers;
 
-  /* ** reconstruction data ** */
-  /** Reconstructed position. */
+  /* reconstruction data */
+  /* Reconstructed position. */
   float bundle_pos[3];
-  /** Average track reprojection error. */
+  /* Avg track reprojection error. */
   float error;
 
-  /* ** UI editing ** */
-  /** Flags (selection, ...). */
+  /* UI editing ** */
+  /* Flags (selection, ...). */
   int flag, pat_flag, search_flag;
-  /** Custom color for track. */
+  /* Custom color for track. */
   float color[3];
 
-  /* ** control how tracking happens */
-  /* Number of frames to be tracked during single tracking session
+  /* ctrl how tracking happens */
+  /* Num of frames to be tracked during single tracking session
    * (if TRACKING_FRAMES_LIMIT is set) */
   short frames_limit;
-  /** Margin from frame boundaries. */
+  /* Margin from frame boundaries. */
   short margin;
-  /** Denotes which frame is used for the reference during tracking.
-   * An enumerator of `eTrackFrameMatch`. */
+  /* Denotes which frame is used for the reference during tracking.
+   * An enum of `eTrackFrameMatch`. */
   short pattern_match;
 
   /* tracking params */
-  /** Model of the motion for this track. */
+  /* Model of the motion for this track. */
   short motion_model;
-  /** Flags for the tracking algorithm (use brute, use ESM, use pyramid, etc. */
+  /* Flags for the tracking algorithm (use brute, use ESM, use pyramid, etc. */
   int algorithm_flag;
-  /** Minimal correlation which is still treated as successful tracking. */
-  float minimum_correlation;
+  /* Minimal correlation which is still treated as successful tracking. */
+  float min_correlation;
 
-  /** Pen data. */
+  /* Pen data. */
   struct PenData *pd;
 
   /* Weight of this track.
-   *
    * Weight defines how much the track affects on the final reconstruction,
-   * usually gets animated in a way so when track has just appeared its
+   * usually gets anim in a way so when track has just appeared its
    * weight is zero and then it gets faded up.
    *
    * Used to prevent jumps of the camera when tracks are appearing or
-   * disappearing.
-   */
+   * disappearing. */
   float weight;
 
   /* track weight especially for 2D stabilization */
@@ -178,82 +175,81 @@ typedef struct MovieTrackingPlaneMarker {
    *       | (0) --- (1)
    *       +-------------> X
    *
-   * The coordinates are stored in frame normalized coordinates.
-   */
+   * The coords are stored in frame normalized coords. */
   float corners[4][2];
 
-  /** Number of frame plane marker is associated with. */
+  /* Num of frame plane marker is associated with. */
   int framenr;
-  /** Marker's flag (alive, ...). */
+  /* Marker's flag (alive, ...). */
   int flag;
 } MovieTrackingPlaneMarker;
 
 typedef struct MovieTrackingPlaneTrack {
   struct MovieTrackingPlaneTrack *next, *prev;
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
   /* Array of point tracks used to define this plane.
-   * Each element is a pointer to MovieTrackingTrack */
+   * Each element is a ptr to MovieTrackingTrack */
   MovieTrackingTrack **point_tracks;
-  /** Number of tracks in point_tracks array. */
+  /* Num of tracks in point_tracks array. */
   int point_tracksnr;
   char _pad[4];
 
-  /** Markers in the plane track. */
+  /* Markers in the plane track. */
   MovieTrackingPlaneMarker *markers;
-  /** Count of markers in track (size of markers array). */
+  /* Count of markers in track (size of markers array). */
   int markersnr;
 
-  /** Flags (selection, ...). */
+  /* Flags (selection, ...). */
   int flag;
 
-  /** Image displaying during editing. */
-  struct Image *image;
-  /** Opacity of the image. */
-  float image_opacity;
+  /* Img displaying during editing. */
+  struct Img *img;
+  /* Opacity of the img. */
+  float img_opacity;
 
   /* Runtime data */
-  /** Most recently used marker. */
+  /* Most recently used marker. */
   int last_marker;
 } MovieTrackingPlaneTrack;
 
 typedef struct MovieTrackingSettings {
-  /* ** default tracker settings */
-  /** Model of the motion for this track. */
+  /* default tracker settings */
+  /* Model of the motion for this track. */
   short default_motion_model;
-  /** Flags for the tracking algorithm (use brute, use ESM, use pyramid, etc. */
+  /* Flags for the tracking algorithm (use brute, use ESM, use pyramid, etc. */
   short default_algorithm_flag;
-  /** Minimal correlation which is still treated as successful tracking. */
+  /* Minimal correlation which is still treated as successful tracking. */
   float default_minimum_correlation;
-  /** Size of pattern area for new tracks, measured in pixels. */
+  /* Size of pattern area for new tracks, measured in pixels. */
   short default_pattern_size;
-  /** Size of search area for new tracks, measured in pixels. */
+  /* Size of search area for new tracks, measured in pixels. */
   short default_search_size;
-  /** Number of frames to be tracked during single tracking session
+  /* Num of frames to be tracked during single tracking session
    * (if TRACKING_FRAMES_LIMIT is set). */
   short default_frames_limit;
-  /** Margin from frame boundaries. */
+  /* Margin from frame boundaries. */
   short default_margin;
-  /** Denotes which frame is used for the reference during tracking.
-   * An enumerator of `eTrackFrameMatch`. */
+  /* Denotes which frame is used for the reference during tracking.
+   * An enum of `eTrackFrameMatch`. */
   short default_pattern_match;
-  /** Default flags like color channels used by default. */
+  /* Default flags like color channels used by default. */
   short default_flag;
-  /** Default weight of the track. */
+  /* Default weight of the track. */
   float default_weight;
 
-  /** Flags describes motion type. */
+  /* Flags describes motion type. */
   short motion_flag;
 
-  /* ** common tracker settings ** */
-  /** Speed of tracking. */
+  /* common tracker settings */
+  /* Speed of tracking. */
   short speed;
 
-  /* ** reconstruction settings ** */
-  /* two keyframes for reconstruction initialization
-   * were moved to per-tracking object settings */
+  /* reconstruction settings */
+  /* 2 keyframes for reconstruction initialization
+   * were moved to per-tracking ob settings */
   int keyframe1 TYPES_DEPRECATED;
   int keyframe2 TYPES_DEPRECATED;
 
@@ -262,71 +258,71 @@ typedef struct MovieTrackingSettings {
   /* which camera intrinsics to refine. uses on the REFINE_* flags */
   int refine_camera_intrinsics;
 
-  /* ** tool settings ** */
+  /* tool settings */
 
   /* set scale */
-  /** Distance between two bundles used for scene scaling. */
+  /* Distance between 2 bundles used for scene scaling. */
   float dist;
 
   /* cleanup */
   int clean_frames, clean_action;
   float clean_error;
 
-  /* set object scale */
-  /** Distance between two bundles used for object scaling. */
-  float object_distance;
+  /* set ob scale */
+  /* Distance between w bundles used for ob scaling. */
+  float ob_distance;
 } MovieTrackingSettings;
 
 typedef struct MovieTrackingStabilization {
   int flag;
-  /** Total number of translation tracks and index of active track in list. */
+  /* Total num of translation tracks and index of active track in list. */
   int tot_track, act_track;
-  /** Total number of rotation tracks and index of active track in list. */
+  /* Total num of rotation tracks and index of active track in list. */
   int tot_rot_track, act_rot_track;
 
   /* 2d stabilization */
-  /** Max auto-scale factor. */
+  /* Max auto-scale factor. */
   float maxscale;
-  /** Use TRACK_USE_2D_STAB_ROT on individual tracks instead. */
+  /* Use TRACK_USE_2D_STAB_ROT on individual tracks instead. */
   MovieTrackingTrack *rot_track TYPES_DEPRECATED;
 
-  /** Reference point to anchor stabilization offset. */
+  /* Ref point to anchor stabilization offset. */
   int anchor_frame;
-  /** Expected target position of frame after raw stabilization, will be subtracted. */
+  /* Expected target position of frame after raw stabilization, will be subtracted. */
   float target_pos[2];
-  /** Expected target rotation of frame after raw stabilization, will be compensated. */
+  /* Expected target rotation of frame after raw stabilization, will be compensated. */
   float target_rot;
-  /** Zoom factor known to be present on original footage. Also used for auto-scale. */
+  /* Zoom factor known to be present on original footage. Also used for auto-scale. */
   float scale;
 
-  /** Influence on location, scale and rotation. */
+  /* Influence on location, scale and rotation. */
   float locinf, scaleinf, rotinf;
 
-  /** Filter used for pixel interpolation. */
+  /* Filter used for pixel interpolation. */
   int filter;
 
-  /* initialization and run-time data */
-  /** Without effect now, we initialize on every frame.
-   * Formerly used for caching of init values. */
+  /* init and run-time data */
+  /* Wo effect now, we init on every frame.
+   * Formerly used for caching of init vals. */
   int ok TYPES_DEPRECATED;
 } MovieTrackingStabilization;
 
 typedef struct MovieTrackingReconstruction {
   int flag;
 
-  /** Average error of reconstruction. */
+  /* Avg error of reconstruction. */
   float error;
 
-  /** Most recently used camera. */
+  /* Most recently used camera. */
   int last_camera;
-  /** Number of reconstructed cameras. */
+  /* Num of reconstructed cameras. */
   int camnr;
-  /** Reconstructed cameras. */
+  /* Reconstructed cameras. */
   struct MovieReconstructedCamera *cameras;
 } MovieTrackingReconstruction;
 
-typedef struct MovieTrackingObject {
-  struct MovieTrackingObject *next, *prev;
+typedef struct MovieTrackingOb {
+  struct MovieTrackingOb *next, *prev;
 
   /** Name of tracking object, MAX_NAME. */
   char name[64];
