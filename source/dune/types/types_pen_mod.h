@@ -1,7 +1,7 @@
 #pragma once
 
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
+#include "types_defs.h"
+#include "types_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,22 +10,21 @@ extern "C" {
 struct LatticeDeformData;
 struct ShrinkwrapTreeData;
 
-/* WARNING ALERT! TYPEDEF VALUES ARE WRITTEN IN FILES! SO DO NOT CHANGE!
- * (ONLY ADD NEW ITEMS AT THE END)
- */
+/* WARNING ALERT! TYPEDEF VALS ARE WRITTEN IN FILES! SO DO NOT CHANGE!
+ * (ONLY ADD NEW ITEMS AT THE END) */
 
-typedef enum GpencilModifierType {
-  eGpencilModifierType_None = 0,
-  eGpencilModifierType_Noise = 1,
-  eGpencilModifierType_Subdiv = 2,
-  eGpencilModifierType_Thick = 3,
-  eGpencilModifierType_Tint = 4,
-  eGpencilModifierType_Array = 5,
-  eGpencilModifierType_Build = 6,
-  eGpencilModifierType_Opacity = 7,
-  eGpencilModifierType_Color = 8,
-  eGpencilModifierType_Lattice = 9,
-  eGpencilModifierType_Simplify = 10,
+typedef enum PenModType {
+  eGpenModType_None = 0,
+  eGpenModType_Noise = 1,
+  eGpenModType_Subdiv = 2,
+  eGpenModType_Thick = 3,
+  eGpenModType_Tint = 4,
+  eGpenModType_Array = 5,
+  eGpenModType_Build = 6,
+  eGpenModType_Opacity = 7,
+  eGpencilModType_Color = 8,
+  eGpencilModType_Lattice = 9,
+  eGpencilModType_Simplify = 10,
   eGpencilModifierType_Smooth = 11,
   eGpencilModifierType_Hook = 12,
   eGpencilModifierType_Offset = 13,
@@ -39,45 +38,45 @@ typedef enum GpencilModifierType {
   eGpencilModifierType_WeightProximity = 21,
   eGpencilModifierType_Dash = 22,
   eGpencilModifierType_WeightAngle = 23,
-  eGpencilModifierType_Shrinkwrap = 24,
+  eGpencilModType_Shrinkwrap = 24,
   /* Keep last. */
-  NUM_GREASEPENCIL_MODIFIER_TYPES,
-} GpencilModifierType;
+  NUM_PEN_MOD_TYPES,
+} GpenModType;
 
-typedef enum GpencilModifierMode {
-  eGpencilModifierMode_Realtime = (1 << 0),
-  eGpencilModifierMode_Render = (1 << 1),
-  eGpencilModifierMode_Editmode = (1 << 2),
-#ifdef DNA_DEPRECATED_ALLOW
-  eGpencilModifierMode_Expanded_DEPRECATED = (1 << 3),
+typedef enum PenModMode {
+  eGpenModMode_Realtime = (1 << 0),
+  eGpenModMode_Render = (1 << 1),
+  eGpenModMode_Editmode = (1 << 2),
+#ifdef TYPES_DEPRECATED_ALLOW
+  eGpencilModMode_Expanded_DEPRECATED = (1 << 3),
 #endif
-  eGpencilModifierMode_Virtual = (1 << 4),
-} GpencilModifierMode;
+  eGpenModMode_Virtual = (1 << 4),
+} PenModMode;
 
 typedef enum {
-  /* This modifier has been inserted in local override, and hence can be fully edited. */
-  eGpencilModifierFlag_OverrideLibrary_Local = (1 << 0),
-} GpencilModifierFlag;
+  /* This mod has been inserted in local override, and hence can be fully edited. */
+  ePenModFlagOverrideLibLocal = (1 << 0),
+} penModFlag;
 
-typedef struct GpencilModifierData {
-  struct GpencilModifierData *next, *prev;
+typedef struct PenModData {
+  struct PenModData *next, *prev;
 
   int type, mode;
   char _pad0[4];
   short flag;
   /* An "expand" bit for each of the modifier's (sub)panels (uiPanelDataExpansion). */
   short ui_expand_flag;
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
   char *error;
-} GpencilModifierData;
+} PenModData;
 
-typedef struct NoiseGpencilModifierData {
-  GpencilModifierData modifier;
-  /** Material for filtering. */
+typedef struct NoisePenModData {
+  PenModData modifier;
+  /* Material for filtering. */
   struct Material *material;
-  /** Layer name. */
+  /* Layer name. */
   char layername[64];
   /** Material name. */
   char materialname[64] DNA_DEPRECATED;
