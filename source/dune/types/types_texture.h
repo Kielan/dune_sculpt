@@ -2,22 +2,22 @@
 
 #include "types_id.h"
 #include "types_defs.h"
-#include "types_image.h" /* ImageUser */
+#include "types_img.h" /* ImgUser */
 
 struct AnimData;
 struct ColorBand;
 struct CurveMapping;
-struct Image;
+struct Img;
 struct Ipo;
-struct Object;
-struct PreviewImage;
+struct Ob;
+struct PreviewImg;
 struct Tex;
 
 typedef struct MeshTex {
   short texco, mapto, maptoneg, blendtype;
-  struct Object *object;
+  struct Ob *ob;
   struct Tex *tex;
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvname[64];
   char projx, projy, projz, mapping;
   char brush_map_mode, brush_angle_mode;
@@ -54,11 +54,9 @@ typedef struct MeshTex {
 
 #ifndef TYPES_USHORT_FIX
 #  define TYPES_USHORT_FIX
-/**
- * deprecated This typedef serves to avoid badly typed functions when
+/* deprecated This typedef serves to avoid badly typed fns when
  * deprecated compiling while delivering a proper types.c. Do not use
- * deprecated it in any case.
- */
+ * deprecated it in any case. */
 typedef unsigned short TYPES_ushort_fix;
 #endif
 
@@ -67,10 +65,8 @@ typedef struct CBData {
   int cur;
 } CBData;
 
-/**
- * 32 = #MAXCOLORBAND
- * note that this has to remain a single struct, for UserDef.
- */
+/* 32 = #MAXCOLORBAND
+ * note that this has to remain a single struct, for UserDef. */
 typedef struct ColorBand {
   short tot, cur;
   char ipotype, ipotype_hue;
@@ -84,25 +80,25 @@ typedef struct PointDensity {
   short falloff_type;
   float falloff_softness;
   float radius;
-  short source;
+  short src;
   char _pad0[2];
-  /** psys_color_source */
-  short color_source;
-  short ob_color_source;
+  /* psys_color_source */
+  short color_src;
+  short ob_color_src;
   int totpoints;
-  /** for 'Object' or 'Particle system' type - source object */
-  struct Object *object;
-  /** `index + 1` in ob.particlesystem, non-ID pointer not allowed */
+  /* for 'Ob' or 'Particle sys' type: src ob */
+  struct Ob *ob;
+  /* `index + 1` in ob.particlesys, non-Id ptr not allowed */
   int psys;
-  /** cache points in world-space, object space, ... ? */
+  /* cache points in world-space, ob space, ... ? */
   short psys_cache_space;
-  /** cache points in world-space, object space, ... ? */
+  /* cache points in world-space, ob space, ... ? */
   short ob_cache_space;
-  /** vertex attribute layer for color source, MAX_CUSTOMDATA_LAYER_NAME */
-  char vertex_attribute_name[64];
-  /** The acceleration tree containing points. */
+  /* vert attribute layer for color src, MAX_CUSTOMDATA_LAYER_NAME */
+  char vert_attribute_name[64];
+  /* The acceleration tree containing points. */
   void *point_tree;
-  /** Dynamically allocated extra for extra information, like particle age. */
+  /* Dynamically alloc extra for extra info, like particle age. */
   float *point_data;
   float noise_size;
   short noise_depth;
@@ -112,22 +108,22 @@ typedef struct PointDensity {
   float noise_fac;
   float speed_scale, falloff_speed_scale;
   char _pad2[4];
-  /** For time -> color */
+  /* For time -> color */
   struct ColorBand *coba;
-  /** Falloff density curve. */
+  /* Falloff density curve. */
   struct CurveMapping *falloff_curve;
 } PointDensity;
 
 typedef struct Tex {
   Id id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+  /* Anim data (must be immediately after id for utils to use it). */
   struct AnimData *adt;
   float noisesize, turbul;
   float bright, contrast, saturation, rfac, gfac, bfac;
   float filtersize;
   char _pad2[4];
 
-  /* newnoise: musgrave parameters */
+  /* newnoise: musgrave params */
   float mg_H, mg_lacunarity, mg_octaves, mg_offset, mg_gain;
 
   /* newnoise: distorted noise amount, musgrave & voronoi output scale */
@@ -153,11 +149,11 @@ typedef struct Tex {
 
   float cropxmin, cropymin, cropxmax, cropymax;
   int texfilter;
-  int afmax; /* anisotropic filter maximum value, ewa -> max eccentricity, feline -> max probes */
+  int afmax; /* anisotropic filter max val, ewa -> max eccentricity, feline -> max probes */
   short xrepeat, yrepeat;
   short extend;
 
-  /* variables disabled, moved to struct iuser */
+  /* vars disabled, moved to struct iuser */
   short _pad0;
   int len;
   int frames, offset, sfra;
@@ -165,24 +161,24 @@ typedef struct Tex {
   float checkerdist, nabla;
   char _pad1[4];
 
-  struct ImageUser iuser;
+  struct ImgUser iuser;
 
   struct NodeTree *nodetree;
-  /* old animation system, deprecated for 2.5 */
+  /* old anim sys, deprecated for 2.5 */
   struct Ipo *ipo TYPES_DEPRECATED;
-  struct Image *ima;
+  struct Img *img;
   struct ColorBand *coba;
-  struct PreviewImage *preview;
+  struct PreviewImg *preview;
 
   char use_nodes;
   char _pad[7];
 
 } Tex;
 
-/** Used for mapping and texture nodes. */
+/* Used for mapping and texture nodes. */
 typedef struct TexMapping {
   float loc[3];
-  /** Rotation in radians. */
+  /* Rotation in radians. */
   float rot[3];
   float size[3];
   int flag;
@@ -191,7 +187,7 @@ typedef struct TexMapping {
 
   float mat[4][4];
   float min[3], max[3];
-  struct Object *ob;
+  struct Ob *ob;
 
 } TexMapping;
 
@@ -219,7 +215,7 @@ typedef struct ColorMapping {
 /* colormap->flag */
 #define COLORMAP_USE_RAMP 1
 
-/* **************** TEX ********************* */
+/* TEX */
 
 /* type */
 #define TEX_CLOUDS 1
@@ -229,7 +225,7 @@ typedef struct ColorMapping {
 #define TEX_BLEND 5
 #define TEX_STUCCI 6
 #define TEX_NOISE 7
-#define TEX_IMAGE 8
+#define TEX_IMG 8
 //#define TEX_PLUGIN        9 /* Deprecated */
 //#define TEX_ENVMAP        10 /* Deprecated */
 #define TEX_MUSGRAVE 11
@@ -267,7 +263,7 @@ typedef struct ColorMapping {
 #define TEX_MINKOVSKY_FOUR 5
 #define TEX_MINKOVSKY 6
 
-/* imaflag */
+/* imgflag */
 #define TEX_INTERPOL (1 << 0)
 #define TEX_USEALPHA (1 << 1)
 #define TEX_MIPMAP (1 << 2)
@@ -354,7 +350,7 @@ typedef struct ColorMapping {
 /* mtex->normapspace */
 #define MTEX_NSPACE_CAMERA 0
 #define MTEX_NSPACE_WORLD 1
-#define MTEX_NSPACE_OBJECT 2
+#define MTEX_NSPACE_OB 2
 #define MTEX_NSPACE_TANGENT 3
 
 /* wrap */
@@ -363,7 +359,7 @@ typedef struct ColorMapping {
 #define MTEX_TUBE 2
 #define MTEX_SPHERE 3
 
-/* return value */
+/* return val */
 #define TEX_INT 0
 #define TEX_RGB (1 << 0)
 #define TEX_NOR (1 << 1)
@@ -373,7 +369,7 @@ typedef struct ColorMapping {
 #define TEX_PR_OTHER 1
 #define TEX_PR_BOTH 2
 
-/* **************** MTEX ********************* */
+/* MTEX */
 
 /* proj */
 #define PROJ_N 0
@@ -411,16 +407,15 @@ typedef struct ColorMapping {
 #define MTEX_ANGLE_RANDOM 1
 #define MTEX_ANGLE_RAKE 2
 
-/* **************** ColorBand ********************* */
-
-/** color-mode. */
+/* ColorBand */
+/* color-mode. */
 enum {
   COLBAND_BLEND_RGB = 0,
   COLBAND_BLEND_HSV = 1,
   COLBAND_BLEND_HSL = 2,
 };
 
-/** Interpolation. */
+/* Interpolation. */
 enum {
   COLBAND_INTERP_LINEAR = 0,
   COLBAND_INTERP_EASE = 1,
@@ -429,7 +424,7 @@ enum {
   COLBAND_INTERP_CONSTANT = 4,
 };
 
-/** Color interpolation. */
+/* Color interpolation. */
 enum {
   COLBAND_HUE_NEAR = 0,
   COLBAND_HUE_FAR = 1,
@@ -437,11 +432,10 @@ enum {
   COLBAND_HUE_CCW = 3,
 };
 
-/* **************** PointDensity ********************* */
-
-/* source */
+/* PointDensity */
+/* src */
 #define TEX_PD_PSYS 0
-#define TEX_PD_OBJECT 1
+#define TEX_PD_OB 1
 #define TEX_PD_FILE 2
 
 /* falloff_type */
@@ -454,8 +448,8 @@ enum {
 #define TEX_PD_FALLOFF_PARTICLE_VEL 6
 
 /* psys_cache_space */
-#define TEX_PD_OBJECTLOC 0
-#define TEX_PD_OBJECTSPACE 1
+#define TEX_PD_OBLOC 0
+#define TEX_PD_OBSPACE 1
 #define TEX_PD_WORLDSPACE 2
 
 /* flag */
@@ -468,14 +462,14 @@ enum {
 /* #define TEX_PD_NOISE_AGE     2 */ /* Deprecated */
 /* #define TEX_PD_NOISE_TIME    3 */ /* Deprecated */
 
-/** color_source. */
+/* color_src. */
 enum {
   TEX_PD_COLOR_CONSTANT = 0,
-  /* color_source: particles */
+  /* color_src: particles */
   TEX_PD_COLOR_PARTAGE = 1,
   TEX_PD_COLOR_PARTSPEED = 2,
   TEX_PD_COLOR_PARTVEL = 3,
-  /* color_source: vertices */
+  /* color_src: vertices */
   TEX_PD_COLOR_VERTCOL = 1,
   TEX_PD_COLOR_VERTWEIGHT = 2,
   TEX_PD_COLOR_VERTNOR = 3,
