@@ -166,13 +166,12 @@ typedef struct Pnl {
   PnlRuntime runtime;
 } Pnl;
 
-/* Used for passing expansion between instanced panel data and the panels themselves.
- * There are 16 defines because the expansion data is typically stored in a short.
- *
- * note Expansion for instanced panels is stored in depth first order. For example, the value of
- * UI_SUBPNL_DATA_EXPAND_2 correspond to mean the expansion of the second subpanel or the first
- * subpanel's first subpanel. */
-typedef enum uiPanelDataExpansion {
+/* Used for passing expansion between instanced panel data and the pnls themselves.
+ * There are 16 defines bc the expansion data is typically stored in a short.
+ * Expansion for instanced panels is stored in depth first order. For example, the value of
+ * UI_SUBPNL_DATA_EXPAND_2 correspond to mean the expansion of the second subpnl or the first
+ * subpnl's first subpnl. */
+typedef enum uiPnlDataExpansion {
   UI_PNL_DATA_EXPAND_ROOT = (1 << 0),
   UI_SUBPNL_DATA_EXPAND_1 = (1 << 1),
   UI_SUBPNL_DATA_EXPAND_2 = (1 << 2),
@@ -224,7 +223,7 @@ typedef struct PnlCategoryStack {
 typedef void (*uiListFreeRuntimeDataFn)(struct uiList *ui_list);
 
 /* uiList dynamic data... */
-/* These two Lines with # tell type this struct can be excluded. */
+/* These 2 Lines w # tell type this struct can be excluded. */
 #
 #
 typedef struct uiListDyn {
@@ -235,7 +234,7 @@ typedef struct uiListDyn {
   int height;
   /* Actual visual height of the list (in rows). */
   int visual_height;
-  /* Minimal visual height of the list (in rows). */
+  /* Min visual height of the list (in rows). */
   int visual_height_min;
 
   /* Number of columns drwn for grid layouts. */
@@ -365,7 +364,7 @@ typedef struct ScrArea {
   /* Rect bound by v1 v2 v3 v4. */
   rcti totrct;
 
-  /* eSpace_Type (SPACE_FOO).
+  /* eSpaceType (SPACE_FOO).
    * Tmp used while switching area type, otherwise this should be SPACE_EMPTY.
    * Also, versioning uses it to nicely replace deprecated * editors.
    * It's been there for ages, name doesn't fit any more */
@@ -408,20 +407,19 @@ typedef struct ScrArea {
   /* AZone. */
   List actionzones;
 
-  ScrArea_Runtime runtime;
+  ScrAreaRuntime runtime;
 } ScrArea;
 
-typedef struct ARegion_Runtime {
-  /* Panel category to use between 'layout' and 'draw'. */
+typedef struct ARgnRuntime {
+  /* Pnl category to use between 'layout' and 'draw'. */
   const char *category;
 
-  /* The visible part of the region, use with region overlap not to draw
-   * on top of the overlapping regions.
-   *
+  /* The visible part of the rgn, use w rgn overlap not to draw
+   * on top of the overlapping rgns.
    * Lazy init, zero'd when unset, relative to #ARegion.winrct x/y min. */
   rcti visible_rect;
 
-  /* The offset needed to not overlap with window scrollbars. Only used by HUD regions for now. */
+  /* The offset needed to not overlap with win scrollbars. Only used by HUD rgns for now. */
   int offset_x, offset_y;
 
   /* Maps uiBlock->name to uiBlock for faster lookups. */
@@ -468,7 +466,7 @@ typedef struct ARgn {
 
   /* uiBlock. */
   List uiblocks;
-  /* Panel. */
+  /* Pnl. */
   List pnls;
   /* Stack of pnl categories. */
   List pnls_category_active;
@@ -479,7 +477,7 @@ typedef struct ARgn {
   /* WinEvHandler. */
   List handlers;
   /* Pnl categories runtime. */
-  List panels_category;
+  List pnls_category;
 
   /* Gizmo-map of this rgn. */
   struct WinGizmoMap *gizmo_map;
@@ -489,7 +487,7 @@ typedef struct ARgn {
 
   /* Use this string to drw info. */
   char *headerstr;
-  /* XXX 2.50, need spacedata equivalent? */
+  /*2.50, need spacedata equivalent? */
   void *rgndata;
 
   ARgnRuntime runtime;
@@ -503,7 +501,7 @@ enum {
 #ifdef TYPES_DEPRECATED_ALLOW
   AREA_TMP_INFO = (1 << 3), /* versioned to make slot reusable */
 #endif
-  /* Update size of regions within the area. */
+  /* Update size of rgns within the area. */
   AREA_FLAG_RGN_SIZE_UPDATE = (1 << 3),
   AREA_FLAG_ACTIVE_TOOL_UPDATE = (1 << 4),
   // AREA_FLAG_UNUSED_5 = (1 << 5),
@@ -513,7 +511,7 @@ enum {
   /* For tmp full-screens (file browser, image editor render)
    * that are opened above user set full-screens. */
   AREA_FLAG_STACKED_FULLSCREEN = (1 << 7),
-  /** Update action zones (even if the mouse is not intersecting them). */
+  /* Update action zones (even if the mouse is not intersecting them). */
   AREA_FLAG_ACTIONZONES_UPDATE = (1 << 8),
 };
 
@@ -535,8 +533,8 @@ enum {
   SCREENFULL = 2,      /* one editor taking over the screen with no bare-minimum UI elements */
 };
 
-/* Screen.redraws_flag */
-typedef enum eScreen_Redraws_Flag {
+/* Screen.redrws_flag */
+typedef enum eScreenRedrwsFlag {
   TIME_RGN = (1 << 0),
   TIME_ALL_3D_WIN = (1 << 1),
   TIME_ALL_ANIM_WIN = (1 << 2),
@@ -627,7 +625,7 @@ typedef enum eRgnType {
   RGN_TYPE_HUD = 8,
   /* Region to nav the main region from (RGN_TYPE_WIN). */
   RGN_TYPE_NAV_BAR = 9,
-  /* A place for buttons to trigger ex of something that was set up in other rgns. */
+  /* A place for btns to trigger ex of something that was set up in other rgns. */
   RGN_TYPE_EX = 10,
   RGN_TYPE_FOOTER = 11,
   RGN_TYPE_TOOL_HEADER = 12,
@@ -644,12 +642,12 @@ typedef enum eRgnType {
 /* Region supports panel tabs (categories). */
 #define RGN_TYPE_HAS_CATEGORY_MASK (1 << RGN_TYPE_UI)
 
-/* Check for any kind of header region. */
-#define RGN_TYPE_IS_HEADER_ANY(regiontype) \
-  (((1 << (regiontype)) & \
+/* Check for any kind of header rgn. */
+#define RGN_TYPE_IS_HEADER_ANY(rgntype) \
+  (((1 << (rgntype)) & \
     ((1 << RGN_TYPE_HEADER) | 1 << (RGN_TYPE_TOOL_HEADER) | (1 << RGN_TYPE_FOOTER))) != 0)
 
-/** #ARegion.alignment */
+/* ARgn.alignment */
 enum {
   RGN_ALIGN_NONE = 0,
   RGN_ALIGN_TOP = 1,
@@ -660,59 +658,59 @@ enum {
   RGN_ALIGN_VSPLIT = 6,
   RGN_ALIGN_FLOAT = 7,
   RGN_ALIGN_QSPLIT = 8,
-  /* Maximum 15. */
+  /* Max 15. */
 
   /* Flags start here. */
   RGN_SPLIT_PREV = 32,
 };
 
-/** Mask out flags so we can check the alignment. */
+/* Mask out flags so we can check the alignment. */
 #define RGN_ALIGN_ENUM_FROM_MASK(align) ((align) & ((1 << 4) - 1))
 #define RGN_ALIGN_FLAG_FROM_MASK(align) ((align) & ~((1 << 4) - 1))
 
-/** ARegion.flag */
+/** ARgn.flag */
 enum {
   RGN_FLAG_HIDDEN = (1 << 0),
   RGN_FLAG_TOO_SMALL = (1 << 1),
   /* Force delayed reinit of region size data, so that region size is calculated
    * just big enough to show all its content (if enough space is available).
-   * Note that only ed_region_header supports this right now. */
+   * Only ed_rgn_header supports this right now. */
   RGN_FLAG_DYNAMIC_SIZE = (1 << 2),
-  /** Region data is NULL'd on read, never written. */
-  RGN_FLAG_TEMP_REGIONDATA = (1 << 3),
-  /** The region must either use its prefsizex/y or be hidden. */
+  /* Rgn data is NULL'd on read, never written. */
+  RGN_FLAG_TMP_RGNDATA = (1 << 3),
+  /* The regn must either use its prefsizex/y or be hidden. */
   RGN_FLAG_PREFSIZE_OR_HIDDEN = (1 << 4),
-  /** Size has been clamped (floating regions only). */
+  /* Size has been clamped (floating regions only). */
   RGN_FLAG_SIZE_CLAMP_X = (1 << 5),
   RGN_FLAG_SIZE_CLAMP_Y = (1 << 6),
-  /** When the user sets the region is hidden,
-   * needed for floating regions that may be hidden for other reasons. */
+  /* When the user sets the rgn is hidden,
+   * needed for floating rgns that may be hidden for other reasons. */
   RGN_FLAG_HIDDEN_BY_USER = (1 << 7),
   /** Prop search filter is active. */
   RGN_FLAG_SEARCH_FILTER_ACTIVE = (1 << 8),
-  /** Update the expansion of the region's panels and switch contexts. Only Set
-   * temporarily when the search filter is updated and cleared at the end of the
-   * region's layout pass. so that expansion is still interactive, */
+  /* Update the expansion of the rgn's pnls and switch cxts. Only Set
+   * tmp when the search filter is updated and cleared at the end of the
+   * rgn's layout pass. so that expansion is still interactive, */
   RGN_FLAG_SEARCH_FILTER_UPDATE = (1 << 9),
 };
 
-/** #ARegion.do_draw */
+/* Rgn.do_drw */
 enum {
-  /* Region must be fully redrawn. */
-  RGN_DRAW = 1,
-  /* Redraw only part of region, for sculpting and painting to get smoother
+  /* Rgn must be fully redrawn. */
+  RGN_DRW = 1,
+  /* Redrw only part of rgn, for sculpting and painting to get smoother
    * stroke painting on heavy meshes. */
-  RGN_DRAW_PARTIAL = 2,
-  /* For outliner, to do faster redraw without rebuilding outliner tree.
-   * For 3D viewport, to display a new progressive render sample without
-   * while other buffers and overlays remain unchanged. */
-  RGN_DRAW_NO_REBUILD = 4,
+  RGN_DRW_PARTIAL = 2,
+  /* For outliner, to do faster redrw wo rebuilding outliner tree.
+   * For 3D viewport, to display a new progressive rndr sample wo
+   * while other bufs and overlays remain unchanged. */
+  RGN_DRW_NO_REBUILD = 4,
 
-  /* Set while region is being drawn. */
-  RGN_DRAWING = 8,
-  /* For popups, to refresh UI layout along with drawing. */
+  /* Set while rgn is being drwn. */
+  RGN_DRWING = 8,
+  /* For popups, to refresh UI layout along with drwing. */
   RGN_REFRESH_UI = 16,
 
   /* Only editor overlays (currently gizmos only!) should be redrawn. */
-  RGN_DRAW_EDITOR_OVERLAYS = 32,
+  RGN_DRW_EDITOR_OVERLAYS = 32,
 };
