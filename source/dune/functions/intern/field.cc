@@ -1,40 +1,32 @@
-#include "BLI_array_utils.hh"
-#include "BLI_map.hh"
-#include "BLI_multi_value_map.hh"
-#include "BLI_set.hh"
-#include "BLI_stack.hh"
-#include "BLI_vector_set.hh"
+#include "lib_array_utils.hh"
+#include "lib_map.hh"
+#include "lib_multi_val_map.hh"
+#include "lib_set.hh"
+#include "lib_stack.hh"
+#include "lib_vector_set.hh"
 
-#include "FN_field.hh"
-#include "FN_multi_function_builder.hh"
-#include "FN_multi_function_procedure.hh"
-#include "FN_multi_function_procedure_builder.hh"
-#include "FN_multi_function_procedure_executor.hh"
-#include "FN_multi_function_procedure_optimization.hh"
+#include "fn_field.hh"
+#include "fn_multi_fn_builder.hh"
+#include "fn_multi_proc.hh"
+#include "fn_multi_proc_builder.hh"
+#include "fn_multi_proc_executor.hh"
+#include "fn_multi_proc_optimization.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
-/* -------------------------------------------------------------------- */
-/** \name Field Evaluation
- * \{ */
+/* Field Eval */
 
 struct FieldTreeInfo {
-  /**
-   * When fields are built, they only have references to the fields that they depend on. This map
+  /* When fields are built, they only have refs to the fields that they depend on. This map
    * allows traversal of fields in the opposite direction. So for every field it stores the other
-   * fields that depend on it directly.
-   */
-  MultiValueMap<GFieldRef, GFieldRef> field_users;
-  /**
-   * The same field input may exist in the field tree as separate nodes due to the way
-   * the tree is constructed. This set contains every different input only once.
-   */
-  VectorSet<std::reference_wrapper<const FieldInput>> deduplicated_field_inputs;
+   * fields that depend on it directly */
+  MultiValMap<GFieldRef, GFieldRef> field_users;
+  /* The same field input may exist in the field tree as separate nodes due to the way
+   * the tree is constructed. This set contains every different input only once. */
+  VectorSet<std::ref_wrapper<const FieldInput>> dedupd_field_inputs;
 };
 
-/**
- * Collects some information from the field tree that is required by later steps.
- */
+/* Collects some info from the field tree that is required by later steps. */
 static FieldTreeInfo preprocess_field_tree(Span<GFieldRef> entry_fields)
 {
   FieldTreeInfo field_tree_info;
@@ -54,15 +46,15 @@ static FieldTreeInfo preprocess_field_tree(Span<GFieldRef> entry_fields)
     switch (field_node.node_type()) {
       case FieldNodeType::Input: {
         const FieldInput &field_input = static_cast<const FieldInput &>(field_node);
-        field_tree_info.deduplicated_field_inputs.add(field_input);
+        field_tree_info.dedupd_field_inputs.add(field_input);
         break;
       }
-      case FieldNodeType::Operation: {
-        const FieldOperation &operation = static_cast<const FieldOperation &>(field_node);
-        for (const GFieldRef operation_input : operation.inputs()) {
-          field_tree_info.field_users.add(operation_input, field);
-          if (handled_fields.add(operation_input)) {
-            fields_to_check.push(operation_input);
+      case FieldNodeType::Op: {
+        const FieldOp &op = static_cast<const FieldOp &>(field_node);
+        for (const GFieldRef op_input : op.inputs()) {
+          field_tree_info.field_users.add(op_input, field);
+          if (handled_fields.add(op_input)) {
+            fields_to_check.push(op_input);
           }
         }
         break;
@@ -76,33 +68,31 @@ static FieldTreeInfo preprocess_field_tree(Span<GFieldRef> entry_fields)
   return field_tree_info;
 }
 
-/**
- * Retrieves the data from the context that is passed as input into the field.
- */
-static Vector<GVArray> get_field_context_inputs(
+/* Retrieves the data from the cxt that is passed as input into the field */
+static Vector<GVArray> get_field_cxt_inputs(
     ResourceScope &scope,
     const IndexMask &mask,
-    const FieldContext &context,
-    const Span<std::reference_wrapper<const FieldInput>> field_inputs)
+    const FieldCxt &cxt,
+    const Span<std::ref_wrapper<const FieldInput>> field_inputs)
 {
-  Vector<GVArray> field_context_inputs;
+  Vector<GVArray> field_cxt_inputs;
   for (const FieldInput &field_input : field_inputs) {
-    GVArray varray = context.get_varray_for_input(field_input, mask, scope);
+    GVArray varray = cxt.get_varray_for_input(field_input, mask, scope);
     if (!varray) {
       const CPPType &type = field_input.cpp_type();
       varray = GVArray::ForSingleDefault(type, mask.min_array_size());
     }
-    field_context_inputs.append(varray);
+    field_cxt_inputs.append(varray);
   }
-  return field_context_inputs;
+  return field_cxt_inputs;
 }
 
 /**
  * \return A set that contains all fields from the field tree that depend on an input that varies
- * for different indices.
+ * for diff indices.
  */
 static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
-                                          Span<GVArray> field_context_inputs)
+                                          Span<GVArray> field_cxt_inputs)
 {
   Set<GFieldRef> found_fields;
   Stack<GFieldRef> fields_to_check;
@@ -110,8 +100,8 @@ static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
   /* The varying fields are the ones that depend on inputs that are not constant. Therefore we
    * start the tree search at the non-constant input fields and traverse through all fields that
    * depend on them. */
-  for (const int i : field_context_inputs.index_range()) {
-    const GVArray &varray = field_context_inputs[i];
+  for (const int i : field_cxt_inputs.index_range()) {
+    const GVArray &varray = field_cxt_inputs[i];
     if (varray.is_single()) {
       continue;
     }
