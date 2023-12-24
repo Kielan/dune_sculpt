@@ -1,4 +1,4 @@
-#include "fn_multi_procedure.hh"
+#include "fn_multi_proc.hh"
 
 #include "lib_dot_export.hh"
 #include "lib_stack.hh"
@@ -7,7 +7,7 @@
 
 namespace dune::fn::multi_fn {
 
-void InstructionCursor::set_next(Procedure &procedure, Instruction *new_instruction) const
+void InstructionCursor::set_next(Proc &proc, Instruction *new_instruction) const
 {
   switch (type_) {
     case Type::None: {
@@ -48,7 +48,7 @@ Instruction *InstructionCursor::next(Procedure &procedure) const
     case Type::None:
       return nullptr;
     case Type::Entry:
-      return procedure.entry();
+      return proc.entry();
     case Type::Call:
       return static_cast<CallInstruction *>(instruction_)->next();
     case Type::Branch: {
@@ -66,7 +66,7 @@ Instruction *InstructionCursor::next(Procedure &procedure) const
   return nullptr;
 }
 
-void Variable::set_name(std::string name)
+void Var::set_name(std::string name)
 {
   name_ = std::move(name);
 }
@@ -82,35 +82,35 @@ void CallInstruction::set_next(Instruction *instruction)
   next_ = instruction;
 }
 
-void CallInstruction::set_param_variable(int param_index, Variable *variable)
+void CallInstruction::set_param_var(int param_index, Var *var)
 {
   if (params_[param_index] != nullptr) {
     params_[param_index]->users_.remove_first_occurrence_and_reorder(this);
   }
   if (variable != nullptr) {
-    BLI_assert(fn_->param_type(param_index).data_type() == variable->data_type());
+    lib_assert(fn_->param_type(param_index).data_type() == var->data_type());
     variable->users_.append(this);
   }
-  params_[param_index] = variable;
+  params_[param_index] = var;
 }
 
-void CallInstruction::set_params(Span<Variable *> variables)
+void CallInstruction::set_params(Span<Var *> vars)
 {
-  BLI_assert(variables.size() == params_.size());
-  for (const int i : variables.index_range()) {
-    this->set_param_variable(i, variables[i]);
+  lib_assert(vars.size() == params_.size());
+  for (const int i : vars.index_range()) {
+    this->set_param_var(i, vars[i]);
   }
 }
 
-void BranchInstruction::set_condition(Variable *variable)
+void BranchInstruction::set_condition(Var *var)
 {
   if (condition_ != nullptr) {
     condition_->users_.remove_first_occurrence_and_reorder(this);
   }
-  if (variable != nullptr) {
-    variable->users_.append(this);
+  if (var != nullptr) {
+    var->users_.append(this);
   }
-  condition_ = variable;
+  condition_ = var;
 }
 
 void BranchInstruction::set_branch_true(Instruction *instruction)
@@ -135,15 +135,15 @@ void BranchInstruction::set_branch_false(Instruction *instruction)
   branch_false_ = instruction;
 }
 
-void DestructInstruction::set_variable(Variable *variable)
+void DestructInstruction::set_var(Var *var)
 {
-  if (variable_ != nullptr) {
-    variable_->users_.remove_first_occurrence_and_reorder(this);
+  if (var_ != nullptr) {
+    var_->users_.remove_first_occurrence_and_reorder(this);
   }
-  if (variable != nullptr) {
-    variable->users_.append(this);
+  if (var != nullptr) {
+    var->users_.append(this);
   }
-  variable_ = variable;
+  var_ = var;
 }
 
 void DestructInstruction::set_next(Instruction *instruction)
@@ -168,28 +168,28 @@ void DummyInstruction::set_next(Instruction *instruction)
   next_ = instruction;
 }
 
-Variable &Procedure::new_variable(DataType data_type, std::string name)
+Var &Proc::new_var(DataType data_type, std::string name)
 {
-  Variable &variable = *allocator_.construct<Variable>().release();
-  variable.name_ = std::move(name);
-  variable.data_type_ = data_type;
-  variable.index_in_graph_ = variables_.size();
-  variables_.append(&variable);
-  return variable;
+  Var &var = *allocator_.construct<Var>().release();
+  var.name_ = std::move(name);
+  var.data_type_ = data_type;
+  var.index_in_graph_ = vars_.size();
+  var_.append(&var);
+  return var;
 }
 
-CallInstruction &Procedure::new_call_instruction(const MultiFunction &fn)
+CallInstruction &Proc::new_call_instruction(const MultiFn &fn)
 {
   CallInstruction &instruction = *allocator_.construct<CallInstruction>().release();
   instruction.type_ = InstructionType::Call;
   instruction.fn_ = &fn;
-  instruction.params_ = allocator_.allocate_array<Variable *>(fn.param_amount());
+  instruction.params_ = allocator_.allocate_array<Var *>(fn.param_amount());
   instruction.params_.fill(nullptr);
   call_instructions_.append(&instruction);
   return instruction;
 }
 
-BranchInstruction &Procedure::new_branch_instruction()
+BranchInstruction &Proc::new_branch_instruction()
 {
   BranchInstruction &instruction = *allocator_.construct<BranchInstruction>().release();
   instruction.type_ = InstructionType::Branch;
@@ -197,7 +197,7 @@ BranchInstruction &Procedure::new_branch_instruction()
   return instruction;
 }
 
-DestructInstruction &Procedure::new_destruct_instruction()
+DestructInstruction &Proc::new_destruct_instruction()
 {
   DestructInstruction &instruction = *allocator_.construct<DestructInstruction>().release();
   instruction.type_ = InstructionType::Destruct;
@@ -205,7 +205,7 @@ DestructInstruction &Procedure::new_destruct_instruction()
   return instruction;
 }
 
-DummyInstruction &Procedure::new_dummy_instruction()
+DummyInstruction &Proc::new_dummy_instruction()
 {
   DummyInstruction &instruction = *allocator_.construct<DummyInstruction>().release();
   instruction.type_ = InstructionType::Dummy;
@@ -213,7 +213,7 @@ DummyInstruction &Procedure::new_dummy_instruction()
   return instruction;
 }
 
-ReturnInstruction &Procedure::new_return_instruction()
+ReturnInstruction &Proc::new_return_instruction()
 {
   ReturnInstruction &instruction = *allocator_.construct<ReturnInstruction>().release();
   instruction.type_ = InstructionType::Return;
@@ -221,12 +221,12 @@ ReturnInstruction &Procedure::new_return_instruction()
   return instruction;
 }
 
-void Procedure::add_parameter(ParamType::InterfaceType interface_type, Variable &variable)
+void Proc::add_parameter(ParamType::InterfaceType interface_type, Variable &variable)
 {
   params_.append({interface_type, &variable});
 }
 
-void Procedure::set_entry(Instruction &entry)
+void Proc::set_entry(Instruction &entry)
 {
   if (entry_ != nullptr) {
     entry_->prev_.remove_first_occurrence_and_reorder(InstructionCursor::ForEntry());
@@ -235,7 +235,7 @@ void Procedure::set_entry(Instruction &entry)
   entry_->prev_.append(InstructionCursor::ForEntry());
 }
 
-Procedure::~Procedure()
+Proc::~Proc()
 {
   for (CallInstruction *instruction : call_instructions_) {
     instruction->~CallInstruction();
@@ -252,26 +252,26 @@ Procedure::~Procedure()
   for (ReturnInstruction *instruction : return_instructions_) {
     instruction->~ReturnInstruction();
   }
-  for (Variable *variable : variables_) {
-    variable->~Variable();
+  for (Var *var : vars_) {
+    var->~Var();
   }
 }
 
-bool Procedure::validate() const
+bool Proc::validate() const
 {
   if (entry_ == nullptr) {
     return false;
   }
-  if (!this->validate_all_instruction_pointers_set()) {
+  if (!this->validate_all_instruction_ptrs_set()) {
     return false;
   }
   if (!this->validate_all_params_provided()) {
     return false;
   }
-  if (!this->validate_same_variables_in_one_call()) {
+  if (!this->validate_same_vars_in_one_call()) {
     return false;
   }
-  if (!this->validate_parameters()) {
+  if (!this->validate_params()) {
     return false;
   }
   if (!this->validate_initialization()) {
@@ -280,7 +280,7 @@ bool Procedure::validate() const
   return true;
 }
 
-bool Procedure::validate_all_instruction_pointers_set() const
+bool Proc::validate_all_instruction_ptrs_set() const
 {
   for (const CallInstruction *instruction : call_instructions_) {
     if (instruction->next_ == nullptr) {
@@ -308,7 +308,7 @@ bool Procedure::validate_all_instruction_pointers_set() const
   return true;
 }
 
-bool Procedure::validate_all_params_provided() const
+bool Proc::validate_all_params_provided() const
 {
   for (const CallInstruction *instruction : call_instructions_) {
     const MultiFunction &fn = instruction->fn();
@@ -318,8 +318,8 @@ bool Procedure::validate_all_params_provided() const
         /* Single outputs are optional. */
         continue;
       }
-      const Variable *variable = instruction->params_[param_index];
-      if (variable == nullptr) {
+      const Var *var = instruction->params_[param_index];
+      if (var == nullptr) {
         return false;
       }
     }
@@ -330,17 +330,17 @@ bool Procedure::validate_all_params_provided() const
     }
   }
   for (const DestructInstruction *instruction : destruct_instructions_) {
-    if (instruction->variable_ == nullptr) {
+    if (instruction->var_ == nullptr) {
       return false;
     }
   }
   return true;
 }
 
-bool Procedure::validate_same_variables_in_one_call() const
+bool Proc::validate_same_vars_in_one_call() const
 {
   for (const CallInstruction *instruction : call_instructions_) {
-    const MultiFunction &fn = *instruction->fn_;
+    const MultiFn &fn = *instruction->fn_;
     for (const int param_index : fn.param_indices()) {
       const ParamType param_type = fn.param_type(param_index);
       const Variable *variable = instruction->params_[param_index];
@@ -351,16 +351,16 @@ bool Procedure::validate_same_variables_in_one_call() const
         if (other_param_index == param_index) {
           continue;
         }
-        const Variable *other_variable = instruction->params_[other_param_index];
-        if (other_variable != variable) {
+        const Var *other_var = instruction->params_[other_param_index];
+        if (other_var != var) {
           continue;
         }
         if (ELEM(param_type.interface_type(), ParamType::Mutable, ParamType::Output)) {
-          /* When a variable is used as mutable or output parameter, it can only be used once. */
+          /* When a var is used as mutable or output param, it can only be used once. */
           return false;
         }
         const ParamType other_param_type = fn.param_type(other_param_index);
-        /* A variable is allowed to be used as input more than once. */
+        /* A var is allowed to be used as input more than once. */
         if (other_param_type.interface_type() != ParamType::Input) {
           return false;
         }
@@ -370,19 +370,19 @@ bool Procedure::validate_same_variables_in_one_call() const
   return true;
 }
 
-bool Procedure::validate_parameters() const
+bool Proc::validate_params() const
 {
-  Set<const Variable *> variables;
-  for (const Parameter &param : params_) {
-    /* One variable cannot be used as multiple parameters. */
-    if (!variables.add(param.variable)) {
+  Set<const Var *> vars;
+  for (const Param &param : params_) {
+    /* One var cannot be used as multiple params. */
+    if (!vars.add(param.vars)) {
       return false;
     }
   }
   return true;
 }
 
-bool Procedure::validate_initialization() const
+bool Proc::validate_initialization() const
 {
   /* TODO: Issue warning when it maybe wrongly initialized. */
   for (const DestructInstruction *instruction : destruct_instructions_) {
