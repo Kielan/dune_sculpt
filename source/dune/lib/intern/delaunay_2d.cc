@@ -4,24 +4,23 @@
 #include <iostream>
 #include <sstream>
 
-#include "BLI_array.hh"
-#include "BLI_linklist.h"
-#include "BLI_math_boolean.hh"
-#include "BLI_math_mpq.hh"
-#include "BLI_math_vector_mpq_types.hh"
-#include "BLI_set.hh"
-#include "BLI_task.hh"
-#include "BLI_vector.hh"
+#include "lib_array.hh"
+#include "lib_linklist.h"
+#include "lib_math_bool.hh"
+#include "lib_math_mpq.hh"
+#include "lib_math_vector_mpq_types.hh"
+#include "lib_set.hh"
+#include "lib_task.hh"
+#include "lib_vector.hh"
 
-#include "BLI_delaunay_2d.hh"
+#include "lib_delaunay_2d.hh"
 
-namespace blender::meshintersect {
+namespace dune::meshintersect {
 
-using namespace blender::math;
+using namespace dune::math;
 
 /* Throughout this file, template argument T will be an
  * arithmetic-like type, like float, double, or mpq_class. */
-
 template<typename T> T math_abs(const T v)
 {
   return (v < 0) ? -v : v;
@@ -41,7 +40,7 @@ template<> double math_abs<double>(const double v)
 
 template<typename T> double math_to_double(const T /*v*/)
 {
-  BLI_assert(false); /* Need implementation for other type. */
+  lib_assert(false); /* Need implementation for other type. */
   return 0.0;
 }
 
@@ -57,52 +56,47 @@ template<> double math_to_double<double>(const double v)
   return v;
 }
 
-/**
- * Define a templated 2D arrangement of vertices, edges, and faces.
- * The #SymEdge data structure is the basis for a structure that allows
+ /* Define a templated 2D arrangement of verts, edges, and faces.
+ * The SymEdge data structure is the basis for a structure that allows
  * easy traversal to neighboring (by topology) geometric elements.
- * Each of #CDTVert, #CDTEdge, and #CDTFace have an input_id set,
- * which contain integers that keep track of which input verts, edges,
+ * Each of CDTVert, CDTEdge, and CDTFace have an input_id set,
+ * which contain ints that keep track of which input verts, edges,
  * and faces, respectively, that the element was derived from.
  *
  * While this could be cleaned up some, it is usable by other routines in Blender
- * that need to keep track of a 2D arrangement, with topology.
- */
+ * that need to keep track of a 2D arrangement, with topology. */
 template<typename Arith_t> struct CDTVert;
 template<typename Arith_t> struct CDTEdge;
 template<typename Arith_t> struct CDTFace;
 
 template<typename Arith_t> struct SymEdge {
-  /** Next #SymEdge in face, doing CCW traversal of face. */
+  /* Next SymEdge in face, doing CCW traversal of face. */
   SymEdge<Arith_t> *next{nullptr};
-  /** Next #SymEdge CCW around vert. */
+  /* Next SymEdge CCW around vert. */
   SymEdge<Arith_t> *rot{nullptr};
-  /** Vert at origin. */
+  /* Vert at origin. */
   CDTVert<Arith_t> *vert{nullptr};
-  /** Un-directed edge this is for. */
+  /* Un-directed edge this is for. */
   CDTEdge<Arith_t> *edge{nullptr};
-  /** Face on left side. */
+  /* Face on left side. */
   CDTFace<Arith_t> *face{nullptr};
 
   SymEdge() = default;
 };
 
-/**
- * Return other #SymEdge for same #CDTEdge as \a se.
- */
+/* Return other SymEdge for same CDTEdge as \a se. */
 template<typename T> inline SymEdge<T> *sym(const SymEdge<T> *se)
 {
   return se->next->rot;
 }
 
-/** Return #SymEdge whose next is \a se. */
+/* Return SymEdge whose next is se. */
 template<typename T> inline SymEdge<T> *prev(const SymEdge<T> *se)
 {
   return se->rot->next->rot;
 }
 
-/** A coordinate class with extra information for fast filtered orient tests. */
-
+/* A coord class with extra info for fast filtered orient tests. */
 template<typename T> struct FatCo {
   vec2<T> exact;
   vec2<double> approx;
@@ -175,17 +169,17 @@ template<typename T> std::ostream &operator<<(std::ostream &stream, const FatCo<
 }
 
 template<typename T> struct CDTVert {
-  /** Coordinate. */
+  /* Coord. */
   FatCo<T> co;
-  /** Some edge attached to it. */
+  /* Some edge attached to it. */
   SymEdge<T> *symedge{nullptr};
-  /** Set of corresponding vertex input ids. Not used if don't need_ids. */
+  /* Set of corresponding vertex input ids. Not used if don't need_ids. */
   blender::Set<int> input_ids;
-  /** Index into array that #CDTArrangement keeps. */
+  /* Index into array that #CDTArrangement keeps. */
   int index{-1};
-  /** Index of a CDTVert that this has merged to. -1 if no merge. */
+  /* Index of a CDTVert that this has merged to. -1 if no merge. */
   int merge_to_index{-1};
-  /** Used by algorithms operating on CDT structures. */
+  /* Used by algorithms operating on CDT structures. */
   int visit_index{0};
 
   CDTVert() = default;
@@ -193,111 +187,95 @@ template<typename T> struct CDTVert {
 };
 
 template<typename Arith_t> struct CDTEdge {
-  /** Set of input edge ids that this is part of.
+  /* Set of input edge ids that this is part of.
    * If don't need_ids, then should contain 0 if it is a constrained edge,
    * else empty. */
   blender::Set<int> input_ids;
-  /** The directed edges for this edge. */
+  /* The directed edges for this edge. */
   SymEdge<Arith_t> symedges[2]{SymEdge<Arith_t>(), SymEdge<Arith_t>()};
 
   CDTEdge() = default;
 };
 
 template<typename Arith_t> struct CDTFace {
-  /** A symedge in face; only used during output, so only valid then. */
+  /* A symedge in face; only used during output, so only valid then. */
   SymEdge<Arith_t> *symedge{nullptr};
-  /** Set of input face ids that this is part of.
+  /* Set of input face ids that this is part of.
    * If don't need_ids, then should contain 0 if it is part of a constrained face,
    * else empty. */
-  blender::Set<int> input_ids;
-  /** Used by algorithms operating on CDT structures. */
+  dune::Set<int> input_ids;
+  /* Used by algorithms operating on CDT structures. */
   int visit_index{0};
-  /** Marks this face no longer used. */
+  /* Marks this face no longer used. */
   bool deleted{false};
-  /** Marks this face as part of a hole. */
+  /* Marks this face as part of a hole. */
   bool hole{false};
 
   CDTFace() = default;
 };
 
 template<typename Arith_t> struct CDTArrangement {
-  /* The arrangement owns the memory pointed to by the pointers in these vectors.
-   * They are pointers instead of actual structures because these vectors may be resized and
-   * other elements refer to the elements by pointer. */
+  /* The arrangement owns the memory pointed to by the ptrs in these vectors.
+   * They are ptrs instead of actual structs bc these vectors may be resized and
+   * other elements refer to the elements by ptr. */
 
-  /** The verts. Some may be merged to others (see their merge_to_index). */
+  /* The verts. Some may be merged to others (see their merge_to_index). */
   Vector<CDTVert<Arith_t> *> verts;
-  /** The edges. Some may be deleted (SymEdge next and rot pointers are null). */
+  /* The edges. Some may be deleted (SymEdge next and rot ptrs are null). */
   Vector<CDTEdge<Arith_t> *> edges;
-  /** The faces. Some may be deleted (see their delete member). */
+  /* The faces. Some may be deleted (see their delete member). */
   Vector<CDTFace<Arith_t> *> faces;
-  /** Which CDTFace is the outer face. */
+  /* Which CDTFace is the outer face. */
   CDTFace<Arith_t> *outer_face{nullptr};
 
   CDTArrangement() = default;
   ~CDTArrangement();
 
-  /** Hint to how much space to reserve in the Vectors of the arrangement,
+  /* Hint to how much space to reserve in the Vectors of the arrangement,
    * based on these counts of input elements. */
   void reserve(int verts_num, int edges_num, int faces_num);
 
-  /**
-   * Add a new vertex to the arrangement, with the given 2D coordinate.
-   * It will not be connected to anything yet.
-   */
+  /* Add a new vert to the arrangement, with the given 2D coord.
+   * It will not be connected to anything yet. */
   CDTVert<Arith_t> *add_vert(const vec2<Arith_t> &pt);
 
-  /**
-   * Add an edge from v1 to v2. The edge will have a left face and a right face,
-   * specified by \a fleft and \a fright. The edge will not be connected to anything yet.
-   * If the vertices do not yet have a #SymEdge pointer,
-   * their pointer is set to the #SymEdge in this new edge.
-   */
+  /* Add an edge from v1 to v2. The edge will have a left face and a right face,
+   * specified by fleft and fright. The edge will not be connected to anything yet.
+   * If the verts do not yet have a SymEdge ptr,
+   * their ptr is set to the SymEdge in this new edge. */
   CDTEdge<Arith_t> *add_edge(CDTVert<Arith_t> *v1,
                              CDTVert<Arith_t> *v2,
                              CDTFace<Arith_t> *fleft,
                              CDTFace<Arith_t> *fright);
 
-  /**
-   * Add a new face. It is disconnected until an add_edge makes it the
-   * left or right face of an edge.
-   */
+  /* Add a new face. It is disconnected until an add_edge makes it the
+   * left or right face of an edge. */
   CDTFace<Arith_t> *add_face();
 
-  /** Make a new edge from v to se->vert, splicing it in. */
+  /* Make a new edge from v to se->vert, splicing it in. */
   CDTEdge<Arith_t> *add_vert_to_symedge_edge(CDTVert<Arith_t> *v, SymEdge<Arith_t> *se);
 
-  /**
-   * Assuming s1 and s2 are both #SymEdge's in a face with > 3 sides and one is not the next of the
+  /* Assuming s1 and s2 are both SymEdge's in a face with > 3 sides and one is not the next of the
    * other, Add an edge from `s1->v` to `s2->v`, splitting the face in two. The original face will
    * be the one that s1 has as left face, and a new face will be added and made s2 and its
-   * next-cycle's left face.
-   */
+   * next-cycle's left face. */
   CDTEdge<Arith_t> *add_diagonal(SymEdge<Arith_t> *s1, SymEdge<Arith_t> *s2);
 
-  /**
-   * Connect the verts of se1 and se2, assuming that currently those two #SymEdge's are on the
-   * outer boundary (have face == outer_face) of two components that are isolated from each other.
-   */
+  /* Connect the verts of se1 and se2, assuming that currently those two SymEdge's are on the
+   * outer boundary (have face == outer_face) of two components that are isolated from each other. */
   CDTEdge<Arith_t> *connect_separate_parts(SymEdge<Arith_t> *se1, SymEdge<Arith_t> *se2);
 
-  /**
-   * Split se at fraction lambda, and return the new #CDTEdge that is the new second half.
-   * Copy the edge input_ids into the new one.
-   */
+  /* Split se at fraction lambda, and return the new CDTEdge that is the new second half.
+   * Copy the edge input_ids into the new one. */
   CDTEdge<Arith_t> *split_edge(SymEdge<Arith_t> *se, Arith_t lambda);
 
-  /**
-   * Delete an edge. The new combined face on either side of the deleted edge will be the one that
+  /* Delete an edge. The new combined face on either side of the deleted edge will be the one that
    * was e's face. There will now be an unused face, which will be marked deleted, and an unused
-   * #CDTEdge, marked by setting the next and rot pointers of its #SymEdge's to #nullptr.
-   */
+   * CDTEdge, marked by setting the next and rot pointers of its SymEdge's to nullptr. */
   void delete_edge(SymEdge<Arith_t> *se);
 
-  /**
-   * If the vertex with index i in the vert array has not been merge, return it.
-   * Else return the one that it has merged to.
-   */
+  /* If the vert with index i in the vert array has not been merge, return it.
+   * Else return the one that it has merged to. */
   CDTVert<Arith_t> *get_vert_resolve_merge(int i)
   {
     CDTVert<Arith_t> *v = this->verts[i];
@@ -311,18 +289,16 @@ template<typename Arith_t> struct CDTArrangement {
 template<typename T> class CDT_state {
  public:
   CDTArrangement<T> cdt;
-  /** How many verts were in input (will be first in vert_array). */
+  /* How many verts were in input (will be first in vert_array). */
   int input_vert_num;
-  /** Used for visiting things without having to initialized their visit fields. */
+  /* Used for visiting things wo having to init their visit fields. */
   int visit_count;
-  /**
-   * Edge ids for face start with this, and each face gets this much index space
-   * to encode positions within the face.
-   */
+  /* Edge ids for face start with this, and each face gets this much index space
+   * to encode positions within the face. */
   int face_edge_offset;
-  /** How close before coords considered equal. */
+  /* How close before coords considered equal. */
   T epsilon;
-  /** Do we need to track ids? */
+  /* Do we need to track ids? */
   bool need_ids;
 
   explicit CDT_state(
@@ -353,7 +329,7 @@ template<typename T> CDTArrangement<T>::~CDTArrangement()
 
 #define DEBUG_CDT
 #ifdef DEBUG_CDT
-/* Some functions to aid in debugging. */
+/* Some fns to aid in debugging. */
 template<typename T> std::string vertname(const CDTVert<T> *v)
 {
   std::stringstream ss;
@@ -361,12 +337,12 @@ template<typename T> std::string vertname(const CDTVert<T> *v)
   return ss.str();
 }
 
-/* Abbreviated pointer value is easier to read in dumps. */
+/* Abbreviated ptr val is easier to read in dumps. */
 static std::string trunc_ptr(const void *p)
 {
   constexpr int TRUNC_PTR_MASK = 0xFFFF;
   std::stringstream ss;
-  ss << std::hex << (POINTER_AS_INT(p) & TRUNC_PTR_MASK);
+  ss << std::hex << (PTR_AS_INT(p) & TRUNC_PTR_MASK);
   return ss.str();
 }
 
@@ -466,27 +442,26 @@ template<typename T> std::ostream &operator<<(std::ostream &os, const CDT_state<
   return os;
 }
 
-template<typename T> void cdt_draw(const std::string &label, const CDTArrangement<T> &cdt)
+template<typename T> void cdt_drw(const std::string &label, const CDTArrangement<T> &cdt)
 {
   static bool append = false; /* Will be set to true after first call. */
 
-/* Would like to use #BKE_tempdir_base() here, but that brings in dependence on kernel library.
- * This is just for developer debugging anyway, and should never be called in production Blender.
- */
+/* Would like to use dune_tmpdir_base() here, but that brings in dependence on kernel lib.
+ * This is just for developer debugging anyway, and should never be called in production Dune. */
 #  ifdef _WIN32
   const char *drawfile = "./cdt_debug_draw.html";
 #  else
   const char *drawfile = "/tmp/cdt_debug_draw.html";
 #  endif
-  constexpr int max_draw_width = 1800;
-  constexpr int max_draw_height = 1600;
+  constexpr int max_drw_width = 1800;
+  constexpr int max_drw_height = 1600;
   constexpr double margin_expand = 0.05;
   constexpr int thin_line = 1;
   constexpr int thick_line = 4;
   constexpr int vert_radius = 3;
-  constexpr bool draw_vert_labels = true;
-  constexpr bool draw_edge_labels = false;
-  constexpr bool draw_face_labels = false;
+  constexpr bool drw_vert_labels = true;
+  constexpr bool drw_edge_labels = false;
+  constexpr bool drw_face_labels = false;
 
   if (cdt.verts.is_empty()) {
     return;
@@ -504,19 +479,19 @@ template<typename T> void cdt_draw(const std::string &label, const CDTArrangemen
       }
     }
   }
-  double draw_margin = ((vmax.x - vmin.x) + (vmax.y - vmin.y)) * margin_expand;
-  double minx = vmin.x - draw_margin;
-  double maxx = vmax.x + draw_margin;
-  double miny = vmin.y - draw_margin;
-  double maxy = vmax.y + draw_margin;
+  double drw_margin = ((vmax.x - vmin.x) + (vmax.y - vmin.y)) * margin_expand;
+  double minx = vmin.x - drw_margin;
+  double maxx = vmax.x + drw_margin;
+  double miny = vmin.y - drw_margin;
+  double maxy = vmax.y + drw_margin;
 
   double width = maxx - minx;
   double height = maxy - miny;
   double aspect = height / width;
-  int view_width = max_draw_width;
+  int view_width = max_drw_width;
   int view_height = int(view_width * aspect);
-  if (view_height > max_draw_height) {
-    view_height = max_draw_height;
+  if (view_height > max_drw_height) {
+    view_height = max_drw_height;
     view_width = int(view_height / aspect);
   }
   double scale = view_width / width;
@@ -526,13 +501,13 @@ template<typename T> void cdt_draw(const std::string &label, const CDTArrangemen
 
   std::ofstream f;
   if (append) {
-    f.open(drawfile, std::ios_base::app);
+    f.open(drwfile, std::ios_base::app);
   }
   else {
-    f.open(drawfile);
+    f.open(drwfile);
   }
   if (!f) {
-    std::cout << "Could not open file " << drawfile << "\n";
+    std::cout << "Could not open file " << drwfile << "\n";
     return;
   }
 
@@ -557,7 +532,7 @@ template<typename T> void cdt_draw(const std::string &label, const CDTArrangemen
       << SY(vco[1]) << "\">\n";
     f << "  <title>" << vertname(u) << vertname(v) << "</title>\n";
     f << "</line>\n";
-    if (draw_edge_labels) {
+    if (drw_edge_labels) {
       f << "<text x=\"" << SX((uco[0] + vco[0]) / 2) << "\" y=\"" << SY((uco[1] + vco[1]) / 2)
         << R"(" font-size="small">)";
       f << vertname(u) << vertname(v) << sename(&e->symedges[0]) << sename(&e->symedges[1])
@@ -571,14 +546,14 @@ template<typename T> void cdt_draw(const std::string &label, const CDTArrangemen
       << "\" r=\"" << vert_radius << "\">\n";
     f << "  <title>[" << i << "]" << v->co.approx << "</title>\n";
     f << "</circle>\n";
-    if (draw_vert_labels) {
+    if (drw_vert_labels) {
       f << "<text x=\"" << SX(v->co.approx[0]) + vert_radius << "\" y=\""
         << SY(v->co.approx[1]) - vert_radius << R"(" font-size="small">[)" << i << "]</text>\n";
     }
     ++i;
   }
 
-  if (draw_face_labels) {
+  if (drw_face_labels) {
     for (const CDTFace<T> *face : cdt.faces) {
       if (!face->deleted) {
         /* Since may not have prepared output yet, need a slow find of a SymEdge for this face. */
@@ -632,10 +607,8 @@ template<typename T> void cdt_draw(const std::string &label, const CDTArrangemen
 }
 #endif
 
-/**
- * A filtered version of orient2d, which will usually be much faster when using exact arithmetic.
- * See EXACT GEOMETRIC COMPUTATION USING CASCADING, by Burnikel, Funke, and Seel.
- */
+/* A filtered version of orient2d, which will usually be much faster when using exact arithmetic.
+ * See EXACT GEOMETRIC COMPUTATION USING CASCADING, by Burnikel, Funke, and Seel. */
 template<typename T>
 static int filtered_orient2d(const FatCo<T> &a, const FatCo<T> &b, const FatCo<T> &c);
 
@@ -666,9 +639,7 @@ int filtered_orient2d<double>(const FatCo<double> &a,
   return orient2d(a.approx, b.approx, c.approx);
 }
 
-/**
- * A filtered version of incircle.
- */
+/* A filtered version of incircle. */
 template<typename T>
 static int filtered_incircle(const FatCo<T> &a,
                              const FatCo<T> &b,
@@ -734,12 +705,10 @@ int filtered_incircle<double>(const FatCo<double> &a,
   return incircle(a.approx, b.approx, c.approx, d.approx);
 }
 
-/**
- * Return true if `a -- b -- c` are in that order, assuming they are on a straight line according
+/* Return true if `a -- b -- c` are in that order, assuming they are on a straight line according
  * to #orient2d and we know the order is either `abc` or `bac`.
  * This means `ab . ac` and `bc . ac` must both be non-negative.
- * Use filtering to speed this up when using exact arithmetic.
- */
+ * Use filtering to speed this up when using exact arithmetic. */
 template<typename T> static bool in_line(const FatCo<T> &a, const FatCo<T> &b, const FatCo<T> &c);
 
 #ifdef WITH_GMP
