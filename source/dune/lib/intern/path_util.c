@@ -437,10 +437,10 @@ void lib_path_normalize_unc_16(wchar_t *path_16)
 void lib_path_rel(char *file, const char *relfile)
 {
   const char *lslash;
-  char temp[FILE_MAX];
+  char tmp[FILE_MAX];
   char res[FILE_MAX];
 
-  /* if file is already relative, bail out */
+  /* if file is alrdy relative, bail out */
   if (lib_path_is_rel(file)) {
     return;
   }
@@ -456,21 +456,21 @@ void lib_path_rel(char *file, const char *relfile)
     /* fix missing volume name in relative base,
      * can happen with old recent-files.txt files */
     lib_windows_get_default_root_dir(temp);
-    ptemp = &temp[2];
+    ptemp = &tmp[2];
     if (!ELEM(relfile[0], '\\', '/')) {
       ptemp++;
     }
-    lib_strncpy(ptemp, relfile, FILE_MAX - 3);
+    lib_strncpy(ptmp, relfile, FILE_MAX - 3);
   }
   else {
-    lib_strncpy(temp, relfile, FILE_MAX);
+    lib_strncpy(tmp, relfile, FILE_MAX);
   }
 
   if (lib_strnlen(file, 3) > 2) {
     bool is_unc = lib_path_is_unc(file);
 
     /* Ensure paths are both UNC paths or are both drives */
-    if (lib_path_is_unc(temp) != is_unc) {
+    if (lib_path_is_unc(tmp) != is_unc) {
       return;
     }
 
@@ -478,17 +478,17 @@ void lib_path_rel(char *file, const char *relfile)
     if (is_unc) {
       int off;
       int slash = 0;
-      for (off = 0; temp[off] && slash < 4; off++) {
-        if (temp[off] != file[off]) {
+      for (off = 0; tmp[off] && slash < 4; off++) {
+        if (tmp[off] != file[off]) {
           return;
         }
 
-        if (temp[off] == '\\') {
+        if (tmp[off] == '\\') {
           slash++;
         }
       }
     }
-    else if ((temp[1] == ':' && file[1] == ':') && (tolower(temp[0]) != tolower(file[0]))) {
+    else if ((tmp[1] == ':' && file[1] == ':') && (tolower(temp[0]) != tolower(file[0]))) {
       return;
     }
   }
