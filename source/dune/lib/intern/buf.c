@@ -86,10 +86,10 @@ void lib_buf_reinit(LibBuf *buf, const size_t new_count)
     buf->data = buf_alloc(buf, buf->alloc_count);
   }
 
-  buffer->count = new_count;
+  buf->count = new_count;
 }
 
-void _bli_buf_append_array(LibBuf *buf, void *new_data, size_t count)
+void _lib_buf_append_array(LibBuf *buf, void *new_data, size_t count)
 {
   size_t size = buf->count;
   lib_buf_resize(buf, size + count);
@@ -98,7 +98,7 @@ void _bli_buf_append_array(LibBuf *buf, void *new_data, size_t count)
   memcpy(bytes + size * buf->elem_size, new_data, count * buf->elem_size);
 }
 
-void _bli_buf_free(LibBuf *buf)
+void _lib_buf_free(LibBuf *buf)
 {
   if ((buf->flag & LIB_BUF_USE_STATIC) == 0) {
     if (buf->data) {
