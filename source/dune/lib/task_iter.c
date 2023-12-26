@@ -1,65 +1,53 @@
-/** \file
- * \ingroup bli
- *
- * Parallel tasks over all elements in a container.
- */
+/* Parallel tasks over all elements in a container. */
 
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_listBase.h"
+#include "types_list.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math_base.h"
-#include "BLI_mempool.h"
-#include "BLI_mempool_private.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
+#include "lib_list.h"
+#include "lib_math_base.h"
+#include "lib_mempool.h"
+#include "lib_mempool_private.h"
+#include "lib_task.h"
+#include "lib_threads.h"
 
 #include "atomic_ops.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Macros
- * \{ */
-
+/* Macros */
 /* Allows to avoid using malloc for userdata_chunk in tasks, when small enough. */
-#define MALLOCA(_size) ((_size) <= 8192) ? alloca(_size) : MEM_mallocN((_size), __func__)
+#define MALLOCA(_size) ((_size) <= 8192) ? alloca(_size) : mem_malloc((_size), __func__)
 #define MALLOCA_FREE(_mem, _size) \
   if (((_mem) != NULL) && ((_size) > 8192)) { \
-    MEM_freeN(_mem); \
+    mem_free(_mem); \
   } \
   ((void)0)
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name MemPool Iteration
- * \{ */
-
+/* MemPool Iter */
 typedef struct ParallelMempoolState {
   void *userdata;
-  TaskParallelMempoolFunc func;
+  TaskParallelMempoolFn fn;
 } ParallelMempoolState;
 
-static void parallel_mempool_func(TaskPool *__restrict pool, void *taskdata)
+static void parallel_mempool_fn(TaskPool *__restrict pool, void *taskdata)
 {
-  ParallelMempoolState *__restrict state = BLI_task_pool_user_data(pool);
-  BLI_mempool_threadsafe_iter *iter = &((ParallelMempoolTaskData *)taskdata)->ts_iter;
+  ParallelMempoolState *__restrict state = lib_task_pool_user_data(pool);
+  lib_mempool_threadsafe_iter *iter = &((ParallelMempoolTaskData *)taskdata)->ts_iter;
   TaskParallelTLS *tls = &((ParallelMempoolTaskData *)taskdata)->tls;
 
   MempoolIterData *item;
   while ((item = mempool_iter_threadsafe_step(iter)) != NULL) {
-    state->func(state->userdata, item, tls);
+    state->fn(state->userdata, item, tls);
   }
 }
 
-void BLI_task_parallel_mempool(BLI_mempool *mempool,
+void lib_task_parallel_mempool(LibMempool *mempool,
                                void *userdata,
-                               TaskParallelMempoolFunc func,
+                               TaskParallelMempoolFn fn,
                                const TaskParallelSettings *settings)
 {
-  if (UNLIKELY(BLI_mempool_len(mempool) == 0)) {
+  if (UNLIKELY(lib_mempool_len(mempool) == 0)) {
     return;
   }
 
@@ -71,8 +59,8 @@ void BLI_task_parallel_mempool(BLI_mempool *mempool,
   if (!settings->use_threading) {
     TaskParallelTLS tls = {NULL};
     if (use_userdata_chunk) {
-      if (settings->func_init != NULL) {
-        settings->func_init(userdata, userdata_chunk);
+      if (settings->fn_init != NULL) {
+        settings->fn_init(userdata, userdata_chunk);
       }
       tls.userdata_chunk = userdata_chunk;
     }
@@ -147,7 +135,7 @@ void BLI_task_parallel_mempool(BLI_mempool *mempool,
     MALLOCA_FREE(userdata_chunk_array, userdata_chunk_size * tasks_num);
   }
 
-  mempool_iter_threadsafe_destroy(mempool_iterator_data);
+  mempool_iter_threadsafe_destroy(mempool_iter_data);
 }
 
 #undef MALLOCA
