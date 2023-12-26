@@ -9,12 +9,12 @@
  * Implementation based on Wikipedia A* page:
  * https://en.wikipedia.org/wiki/A*_search_algorithm
  *
- * That most mem handling here is done through two different MemArena's.
- * Those should also be used to allocate
+ * That most mem handling here is done through two diff MemArena's.
+ * Those should also be used to alloc
  * custom data needed to a specific use of A*.
- * The first one, owned by LibAStarGraph,
+ * 1st: owned by LibAStarGraph,
  * is for 'static' data that will live as long as the graph.
- * The second one, owned by LibAStarSolution, is for data used during a single path solve.
+ * 2nd: owned by LibAStarSolution, is for data used during a single path solve.
  * It will be cleared much more often than graph's one. */
 
 #include <limits.h>
@@ -74,7 +74,6 @@ void lib_astar_solution_init(LibAStarGraph *as_graph,
     as_solution->mem = mem;
   }
   /* else memarena should be cleared */
-
   as_solution->steps = 0;
   as_solution->prev_nodes = lib_memarena_alloc(mem, sizeof(*as_solution->prev_nodes) * node_num);
   as_solution->prev_links = lib_memarena_alloc(mem, sizeof(*as_solution->prev_links) * node_num);
@@ -120,7 +119,6 @@ void lib_astar_graph_init(LibAStarGraph *as_graph, const int node_num, void *cus
     as_graph->mem = mem;
   }
   /* else memarena should be cleared */
-
   as_graph->node_num = node_num;
   as_graph->nodes = lib_memarena_calloc(mem, sizeof(*as_graph->nodes) * (size_t)node_num);
 
