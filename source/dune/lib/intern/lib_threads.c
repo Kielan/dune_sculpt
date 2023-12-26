@@ -5,7 +5,7 @@
 #include "mem_guardedalloc.h"
 
 #include "lib_gsqueue.h"
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_system.h"
 #include "lib_task.h"
 #include "lib_threads.h"
@@ -36,14 +36,12 @@
 #endif
 
 #ifdef USE_APPLE_OMP_FIX
-/* ************** libgomp (Apple gcc 4.2.1) TLS bug workaround *************** */
+/* libgomp (Apple gcc 4.2.1) TLS bug workaround */
 extern pthread_key_t gomp_tls_key;
 static void *thread_tls_data;
 #endif
 
-/**
- * Basic Thread Control API
- * ========================
+/* Basic Thread Control API
  *
  * Many thread cases have an X amount of jobs, and only an Y amount of
  * threads are useful (typically amount of CPU's)
@@ -55,7 +53,7 @@ static void *thread_tls_data;
  *
  * code{.c}
  *
- *   ListBase lb;
+ *   List lb;
  *   int max_threads = 2;
  *   int cont = 1;
  *
@@ -87,11 +85,9 @@ static void *thread_tls_data;
  *     }
  *   }
  *
- *   lib_threadpool_end(&lb);
- *
- */
-static pthread_mutex_t _image_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t _image_draw_lock = PTHREAD_MUTEX_INITIALIZER;
+ *   lib_threadpool_end(&lb); */
+static pthread_mutex_t _img_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _img_drw_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _viewer_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _custom1_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _nodes_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -123,12 +119,12 @@ void lib_threadapi_exit()
 {
 }
 
-void lib_threadpool_init(ListBase *threadbase, void *(*do_thread)(void *), int tot)
+void lib_threadpool_init(List *threadbase, void *(*do_thread)(void *), int tot)
 {
   int a;
 
   if (threadbase != nullptr && tot > 0) {
-    lib_listbase_clear(threadbase);
+    lib_list_clear(threadbase);
 
     if (tot > RE_MAX_THREAD) {
       tot = RE_MAX_THREAD;
@@ -160,7 +156,7 @@ int lib_available_threads(ListBase *threadbase)
 {
   int counter = 0;
 
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail) {
       counter++;
     }
@@ -173,7 +169,7 @@ int lib_threadpool_available_thread_index(ListBase *threadbase)
 {
   int counter = 0;
 
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail) {
       return counter;
     }
@@ -201,9 +197,9 @@ int lib_thread_is_main()
   return pthread_equal(pthread_self(), mainid);
 }
 
-void lib_threadpool_insert(ListBase *threadbase, void *callerdata)
+void lib_threadpool_insert(List *threadbase, void *callerdata)
 {
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail) {
       tslot->avail = 0;
       tslot->callerdata = callerdata;
@@ -216,7 +212,7 @@ void lib_threadpool_insert(ListBase *threadbase, void *callerdata)
 
 void lib_threadpool_remove(ListBase *threadbase, void *callerdata)
 {
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->callerdata == callerdata) {
       pthread_join(tslot->pthread, nullptr);
       tslot->callerdata = nullptr;
@@ -229,7 +225,7 @@ void lib_threadpool_remove_index(ListBase *threadbase, int index)
 {
   int counter = 0;
 
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (counter == index && tslot->avail == 0) {
       pthread_join(tslot->pthread, nullptr);
       tslot->callerdata = nullptr;
@@ -242,7 +238,7 @@ void lib_threadpool_remove_index(ListBase *threadbase, int index)
 
 void lib_threadpool_clear(ListBase *threadbase)
 {
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail == 0) {
       pthread_join(tslot->pthread, nullptr);
       tslot->callerdata = nullptr;
@@ -256,11 +252,11 @@ void lib_threadpool_end(ListBase *threadbase)
 
   /* Only needed if there's actually some stuff to end
    * this way we don't end up decrementing thread_levels on an empty `threadbase`. */
-  if (threadbase == nullptr || BLI_listbase_is_empty(threadbase)) {
+  if (threadbase == nullptr || lib_list_is_empty(threadbase)) {
     return;
   }
 
-  LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
+  LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail == 0) {
       pthread_join(tslot->pthread, nullptr);
     }
@@ -268,8 +264,7 @@ void lib_threadpool_end(ListBase *threadbase)
   lib_freelistn(threadbase);
 }
 
-/* System Information */
-
+/* System Info */
 int lib_system_thread_count()
 {
   static int t = -1;
@@ -317,14 +312,13 @@ int lib_system_num_threads_override_get()
 }
 
 /* Global Mutex Locks */
-
 static ThreadMutex *global_mutex_from_type(const int type)
 {
   switch (type) {
-    case LOCK_IMAGE:
-      return &_image_lock;
-    case LOCK_DRAW_IMAGE:
-      return &_image_draw_lock;
+    case LOCK_IMG:
+      return &_img_lock;
+    case LOCK_DRW_IMG:
+      return &_img_drw_lock;
     case LOCK_VIEWER:
       return &_viewer_lock;
     case LOCK_CUSTOM1:
@@ -356,7 +350,6 @@ void lib_thread_unlock(int type)
 }
 
 /* Mutex Locks */
-
 void lib_mutex_init(ThreadMutex *mutex)
 {
   pthread_mutex_init(mutex, nullptr);
@@ -396,7 +389,6 @@ void lib_mutex_free(ThreadMutex *mutex)
 }
 
 /* Spin Locks */
-
 #ifdef WITH_TBB
 static tbb::spin_mutex *tbb_spin_mutex_cast(SpinLock *spin)
 {
@@ -408,13 +400,13 @@ static tbb::spin_mutex *tbb_spin_mutex_cast(SpinLock *spin)
 }
 #endif
 
-void LIB_spin_init(SpinLock *spin)
+void lib_spin_init(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   new (spin_mutex) tbb::spin_mutex();
 #elif defined(__APPLE__)
-  LIB_mutex_init(spin);
+  lib_mutex_init(spin);
 #elif defined(_MSC_VER)
   *spin = 0;
 #else
@@ -462,7 +454,7 @@ void lib_spin_end(SpinLock *spin)
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->~spin_mutex();
 #elif defined(__APPLE__)
-  LIB_mutex_end(spin);
+  lib_mutex_end(spin);
 #elif defined(_MSC_VER)
   /* Nothing to do, spin is a simple integer type. */
 #else
@@ -471,13 +463,12 @@ void lib_spin_end(SpinLock *spin)
 }
 
 /* Read/Write Mutex Lock */
-
-void LIB_rw_mutex_init(ThreadRWMutex *mutex)
+void lib_rw_mutex_init(ThreadRWMutex *mutex)
 {
   pthread_rwlock_init(mutex, nullptr);
 }
 
-void LIB_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
+void lib_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
 {
   if (mode == THREAD_LOCK_READ) {
     pthread_rwlock_rdlock(mutex);
@@ -487,42 +478,41 @@ void LIB_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
   }
 }
 
-void LIB_rw_mutex_unlock(ThreadRWMutex *mutex)
+void lib_rw_mutex_unlock(ThreadRWMutex *mutex)
 {
   pthread_rwlock_unlock(mutex);
 }
 
-void LIB_rw_mutex_end(ThreadRWMutex *mutex)
+void lib_rw_mutex_end(ThreadRWMutex *mutex)
 {
   pthread_rwlock_destroy(mutex);
 }
 
-ThreadRWMutex *LIB_rw_mutex_alloc()
+ThreadRWMutex *lib_rw_mutex_alloc()
 {
   ThreadRWMutex *mutex = static_cast<ThreadRWMutex *>(
-      MEM_callocN(sizeof(ThreadRWMutex), "ThreadRWMutex"));
-  LIB_rw_mutex_init(mutex);
+      mem_calloc(sizeof(ThreadRWMutex), "ThreadRWMutex"));
+  lib_rw_mutex_init(mutex);
   return mutex;
 }
 
-void LIB_rw_mutex_free(ThreadRWMutex *mutex)
+void lib_rw_mutex_free(ThreadRWMutex *mutex)
 {
-  LIB_rw_mutex_end(mutex);
-  MEM_freeN(mutex);
+  lib_rw_mutex_end(mutex);
+  mem_free(mutex);
 }
 
 /* Ticket Mutex Lock */
-
 struct TicketMutex {
   pthread_cond_t cond;
   pthread_mutex_t mutex;
   unsigned int queue_head, queue_tail;
 };
 
-TicketMutex *LIB_ticket_mutex_alloc()
+TicketMutex *lib_ticket_mutex_alloc()
 {
   TicketMutex *ticket = static_cast<TicketMutex *>(
-      MEM_callocN(sizeof(TicketMutex), "TicketMutex"));
+      mem_calloc(sizeof(TicketMutex), "TicketMutex"));
 
   pthread_cond_init(&ticket->cond, nullptr);
   pthread_mutex_init(&ticket->mutex, nullptr);
@@ -530,14 +520,14 @@ TicketMutex *LIB_ticket_mutex_alloc()
   return ticket;
 }
 
-void LIB_ticket_mutex_free(TicketMutex *ticket)
+void lib_ticket_mutex_free(TicketMutex *ticket)
 {
   pthread_mutex_destroy(&ticket->mutex);
   pthread_cond_destroy(&ticket->cond);
-  MEM_freeN(ticket);
+  mem_free(ticket);
 }
 
-void LIB_ticket_mutex_lock(TicketMutex *ticket)
+void lib_ticket_mutex_lock(TicketMutex *ticket)
 {
   unsigned int queue_me;
 
@@ -551,7 +541,7 @@ void LIB_ticket_mutex_lock(TicketMutex *ticket)
   pthread_mutex_unlock(&ticket->mutex);
 }
 
-void LIB_ticket_mutex_unlock(TicketMutex *ticket)
+void lib_ticket_mutex_unlock(TicketMutex *ticket)
 {
   pthread_mutex_lock(&ticket->mutex);
   ticket->queue_head++;
@@ -559,41 +549,36 @@ void LIB_ticket_mutex_unlock(TicketMutex *ticket)
   pthread_mutex_unlock(&ticket->mutex);
 }
 
-/* ************************************************ */
-
 /* Condition */
-
-void LIB_condition_init(ThreadCondition *cond)
+void lib_condition_init(ThreadCondition *cond)
 {
   pthread_cond_init(cond, nullptr);
 }
 
-void LIB_condition_wait(ThreadCondition *cond, ThreadMutex *mutex)
+void lib_condition_wait(ThreadCondition *cond, ThreadMutex *mutex)
 {
   pthread_cond_wait(cond, mutex);
 }
 
-void LIB_condition_wait_global_mutex(ThreadCondition *cond, const int type)
+void lib_condition_wait_global_mutex(ThreadCondition *cond, const int type)
 {
   pthread_cond_wait(cond, global_mutex_from_type(type));
 }
 
-void LIB_condition_notify_one(ThreadCondition *cond)
+void lib_condition_notify_one(ThreadCondition *cond)
 {
   pthread_cond_signal(cond);
 }
 
-void LIB_condition_notify_all(ThreadCondition *cond)
+void lib_condition_notify_all(ThreadCondition *cond)
 {
   pthread_cond_broadcast(cond);
 }
 
-void LIB_condition_end(ThreadCondition *cond)
+void lib_condition_end(ThreadCondition *cond)
 {
   pthread_cond_destroy(cond);
 }
-
-/* ************************************************ */
 
 struct ThreadQueue {
   GSQueue *queue;
@@ -604,12 +589,12 @@ struct ThreadQueue {
   volatile int canceled;
 };
 
-ThreadQueue *LIB_thread_queue_init()
+ThreadQueue *lib_thread_queue_init()
 {
   ThreadQueue *queue;
 
-  queue = static_cast<ThreadQueue *>(MEM_callocN(sizeof(ThreadQueue), "ThreadQueue"));
-  queue->queue = LIB_gsqueue_new(sizeof(void *));
+  queue = static_cast<ThreadQueue *>(mem_calloc(sizeof(ThreadQueue), "ThreadQueue"));
+  queue->queue = lib_gsqueue_new(sizeof(void *));
 
   pthread_mutex_init(&queue->mutex, nullptr);
   pthread_cond_init(&queue->push_cond, nullptr);
@@ -618,44 +603,44 @@ ThreadQueue *LIB_thread_queue_init()
   return queue;
 }
 
-void LIB_thread_queue_free(ThreadQueue *queue)
+void lib_thread_queue_free(ThreadQueue *queue)
 {
   /* destroy everything, assumes no one is using queue anymore */
   pthread_cond_destroy(&queue->finish_cond);
   pthread_cond_destroy(&queue->push_cond);
   pthread_mutex_destroy(&queue->mutex);
 
-  LIB_gsqueue_free(queue->queue);
+  lib_gsqueue_free(queue->queue);
 
-  MEM_freeN(queue);
+  mem_free(queue);
 }
 
-void LIB_thread_queue_push(ThreadQueue *queue, void *work)
+void lib_thread_queue_push(ThreadQueue *queue, void *work)
 {
   pthread_mutex_lock(&queue->mutex);
 
-  LIB_gsqueue_push(queue->queue, &work);
+  lib_gsqueue_push(queue->queue, &work);
 
   /* signal threads waiting to pop */
   pthread_cond_signal(&queue->push_cond);
   pthread_mutex_unlock(&queue->mutex);
 }
 
-void *LIB_thread_queue_pop(ThreadQueue *queue)
+void *lib_thread_queue_pop(ThreadQueue *queue)
 {
   void *work = nullptr;
 
   /* wait until there is work */
   pthread_mutex_lock(&queue->mutex);
-  while (LIB_gsqueue_is_empty(queue->queue) && !queue->nowait) {
+  while (lib_gsqueue_is_empty(queue->queue) && !queue->nowait) {
     pthread_cond_wait(&queue->push_cond, &queue->mutex);
   }
 
   /* if we have something, pop it */
-  if (!LIB_gsqueue_is_empty(queue->queue)) {
-    LIB_gsqueue_pop(queue->queue, &work);
+  if (!lib_gsqueue_is_empty(queue->queue)) {
+    lib_gsqueue_pop(queue->queue, &work);
 
-    if (LIB_gsqueue_is_empty(queue->queue)) {
+    if (lib_gsqueue_is_empty(queue->queue)) {
       pthread_cond_broadcast(&queue->finish_cond);
     }
   }
@@ -700,7 +685,7 @@ static void wait_timeout(struct timespec *timeout, int ms)
   timeout->tv_nsec = x * 1000;
 }
 
-void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
+void *lib_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
 {
   double t;
   void *work = nullptr;
@@ -711,7 +696,7 @@ void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
 
   /* wait until there is work */
   pthread_mutex_lock(&queue->mutex);
-  while (LIB_gsqueue_is_empty(queue->queue) && !queue->nowait) {
+  while (lib_gsqueue_is_empty(queue->queue) && !queue->nowait) {
     if (pthread_cond_timedwait(&queue->push_cond, &queue->mutex, &timeout) == ETIMEDOUT) {
       break;
     }
@@ -721,10 +706,10 @@ void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
   }
 
   /* if we have something, pop it */
-  if (!LIB_gsqueue_is_empty(queue->queue)) {
-    LIB_gsqueue_pop(queue->queue, &work);
+  if (!lib_gsqueue_is_empty(queue->queue)) {
+    lib_gsqueue_pop(queue->queue, &work);
 
-    if (LIB_gsqueue_is_empty(queue->queue)) {
+    if (lib_gsqueue_is_empty(queue->queue)) {
       pthread_cond_broadcast(&queue->finish_cond);
     }
   }
@@ -734,29 +719,29 @@ void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
   return work;
 }
 
-int LIB_thread_queue_len(ThreadQueue *queue)
+int lib_thread_queue_len(ThreadQueue *queue)
 {
   int size;
 
   pthread_mutex_lock(&queue->mutex);
-  size = LIB_gsqueue_len(queue->queue);
+  size = liv_gsqueue_len(queue->queue);
   pthread_mutex_unlock(&queue->mutex);
 
   return size;
 }
 
-bool LIB_thread_queue_is_empty(ThreadQueue *queue)
+bool lib_thread_queue_is_empty(ThreadQueue *queue)
 {
   bool is_empty;
 
   pthread_mutex_lock(&queue->mutex);
-  is_empty = LIB_gsqueue_is_empty(queue->queue);
+  is_empty = lib_gsqueue_is_empty(queue->queue);
   pthread_mutex_unlock(&queue->mutex);
 
   return is_empty;
 }
 
-void LIB_thread_queue_nowait(ThreadQueue *queue)
+void lib_thread_queue_nowait(ThreadQueue *queue)
 {
   pthread_mutex_lock(&queue->mutex);
 
@@ -767,12 +752,12 @@ void LIB_thread_queue_nowait(ThreadQueue *queue)
   pthread_mutex_unlock(&queue->mutex);
 }
 
-void LIB_thread_queue_wait_finish(ThreadQueue *queue)
+void lib_thread_queue_wait_finish(ThreadQueue *queue)
 {
   /* wait for finish condition */
   pthread_mutex_lock(&queue->mutex);
 
-  while (!LIB_gsqueue_is_empty(queue->queue)) {
+  while (!lib_gsqueue_is_empty(queue->queue)) {
     pthread_cond_wait(&queue->finish_cond, &queue->mutex);
   }
 
