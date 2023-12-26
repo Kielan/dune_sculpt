@@ -38,10 +38,10 @@ void ComputeCxt::print_stack(std::ostream &stream, StringRef name) const
   }
 }
 
-std::ostream &operator<<(std::ostream &stream, const ComputeContext &compute_context)
+std::ostream &operator<<(std::ostream &stream, const ComputeCxt &compute_cxt)
 {
-  compute_context.print_stack(stream, "");
+  compute_cxt.print_stack(stream, "");
   return stream;
 }
 
-}  // namespace blender
+}  // namespace dune
