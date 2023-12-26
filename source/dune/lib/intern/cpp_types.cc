@@ -22,7 +22,7 @@ static auto &get_vector_from_val_map()
 void VectorCPPType::register_self()
 {
   get_vector_from_self_map().add_new(&this->self, this);
-  get_vector_from_val_map().add_new(&this->value, this);
+  get_vector_from_val_map().add_new(&this->val, this);
 }
 
 const VectorCPPType *VectorCPPType::get_from_self(const CPPType &self)
