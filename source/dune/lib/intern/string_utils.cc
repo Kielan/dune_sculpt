@@ -110,7 +110,7 @@ size_t lib_string_replace_range(
   int dst_len = int(strlen(dst));
 
   if (src_len < dst_len) {
-    /* Grow, first handle special cases. */
+    /* Grow, 1st handle special cases. */
 
     /* Special case, the src_end is entirely clipped. */
     if (UNLIKELY(int(string_maxncpy) <= src_beg + dst_len)) {
@@ -275,7 +275,7 @@ size_t lib_string_flip_side_name(char *name_dst,
     return len;
   }
 
-  /* We first check the case with a .### extension, let's find the last period */
+  /* We first check the case with a .extension, let's find the last period */
   if (isdigit(name_dst[len - 1])) {
     index = strrchr(name_dst, '.');   /* Last occurrence. */
     if (index && isdigit(index[1])) { /* Doesn't handle case `bone.1abc2` correct..., whatever! */
@@ -289,7 +289,7 @@ size_t lib_string_flip_side_name(char *name_dst,
 
   lib_strncpy(prefix, name_dst, name_dst_maxncpy);
 
-  /* First case; separator (`.` or `_`) with extensions in `r R l L`. */
+  /* 1st case; separator (`.` or `_`) with extensions in `r R l L`. */
   if ((len > 1) && is_char_sep(name_dst[len - 2])) {
     is_set = true;
     switch (name_dst[len - 1]) {
@@ -407,9 +407,9 @@ void lib_uniquename_cb(UniquenameCheckCb unique_check,
         tmpname_buf = tmpname + lib_strncpy_utf8_rlen(tempname, left, name_maxncpy - numlen);
         memcpy(tmpname_buf, numstr, numlen + 1);
       }
-    } while (unique_check(arg, tempname));
+    } while (unique_check(arg, tmpname));
 
-    lib_strncpy(name, tempname, name_maxncpy);
+    lib_strncpy(name, tmpname, name_maxncpy);
   }
 }
 
@@ -465,7 +465,7 @@ static bool uniquename_find_dupe(List *list, void *vlink, const char *name, int 
 }
 
 struct UniqueNameCheckData {
-  List *lb;
+  List *list;
   void *vlink;
   int name_offset;
 };
@@ -625,7 +625,7 @@ char *lib_string_join_array_by_sep_char_with_tableN(char sep,
     for (uint i = 0; i < strings_num; i++) {
       const size_t string_len = strlen(strings[i]);
       memcpy(c, strings[i], string_len);
-      table[i] = c; /* <-- only difference to BLI_string_join_array_by_sep_charN. */
+      table[i] = c; /* <-- only difference to lib_string_join_array_by_sep_charN. */
       memcpy(c, strings[i], string_len);
       c += string_len;
       *c = sep;
