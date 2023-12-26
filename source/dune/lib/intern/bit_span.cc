@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-namespace dube::bits {
+namespace dune::bits {
 
 void MutableBitSpan::set_all()
 {
@@ -20,8 +20,8 @@ void MutableBitSpan::set_all()
   {
     BitInt *start = int_containing_bit(data_, ranges.aligned.start());
     const int64_t ints_to_fill = ranges.aligned.size() / BitsPerInt;
-    constexpr BitInt fill_value = BitInt(-1);
-    init_fill_n(start, ints_to_fill, fill_value);
+    constexpr BitInt fill_val = BitInt(-1);
+    init_fill_n(start, ints_to_fill, fill_val);
   }
   {
     BitInt &last_int = *int_containing_bit(data_, bit_range_.one_after_last() - 1);
@@ -45,8 +45,8 @@ void MutableBitSpan::reset_all()
   {
     BitInt *start = int_containing_bit(data_, ranges.aligned.start());
     const int64_t ints_to_fill = ranges.aligned.size() / BitsPerInt;
-    constexpr BitInt fill_value = 0;
-    initialized_fill_n(start, ints_to_fill, fill_value);
+    constexpr BitInt fill_val = 0;
+    initialized_fill_n(start, ints_to_fill, fill_val);
   }
   {
     BitInt &last_int = *int_containing_bit(data_, bit_range_.one_after_last() - 1);
@@ -94,4 +94,4 @@ std::ostream &operator<<(std::ostream &stream, const MutableBitSpan &span)
   return stream << BitSpan(span);
 }
 
-}  // namespace blender::bits
+}  // namespace dune::bits
