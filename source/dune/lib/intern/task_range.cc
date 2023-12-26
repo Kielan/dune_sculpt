@@ -172,4 +172,4 @@ void parallel_for_impl(const IndexRange range,
   fn(range);
 }
 
-}  // namespace blender::threading::detail
+}  // namespace dune::threading::detail
