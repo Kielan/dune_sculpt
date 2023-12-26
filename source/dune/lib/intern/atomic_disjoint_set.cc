@@ -4,7 +4,7 @@
 #include "lib_sort.hh"
 #include "lib_task.hh"
 
-namespace blender {
+namespace dune {
 
 AtomicDisjointSet::AtomicDisjointSet(const int size) : items_(size)
 {
@@ -103,4 +103,4 @@ int AtomicDisjointSet::count_sets() const
       [](const int a, const int b) { return a + b; });
 }
 
-}  // namespace blender
+}  // namespace dune
