@@ -15,7 +15,7 @@ void lib_bitmap_flip_all(LibBitmap *bitmap, size_t bits)
 {
   size_t blocks_num = _BITMAP_NUM_BLOCKS(bits);
   for (size_t i = 0; i < blocks_num; i++) {
-    bitmap[i] ^= ~(BLI_bitmap)0;
+    bitmap[i] ^= ~(lib_bitmap)0;
   }
 }
 
