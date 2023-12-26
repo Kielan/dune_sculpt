@@ -1,6 +1,5 @@
 /* Generic array manipulation API.
- *
-  Some array ops here are inherently inefficient,
+ * Some array ops here are inherently inefficient,
  * and only included for the cases where the performance is acceptable.
  * Use with care. */
 #include <stdlib.h>
@@ -16,7 +15,7 @@
 
 #include "lib_array_utils.h"
 
-void _bli_array_reverse(void *arr_v, uint arr_len, size_t arr_stride)
+void _lib_array_reverse(void *arr_v, uint arr_len, size_t arr_stride)
 {
   const uint arr_stride_uint = (uint)arr_stride;
   const uint arr_half_stride = (arr_len / 2) * arr_stride_uint;
@@ -33,7 +32,7 @@ void _bli_array_reverse(void *arr_v, uint arr_len, size_t arr_stride)
   }
 }
 
-void _bli_array_wrap(void *arr_v, uint arr_len, size_t arr_stride, int dir)
+void _lib_array_wrap(void *arr_v, uint arr_len, size_t arr_stride, int dir)
 {
   char *arr = arr_v;
   char *buf = lib_array_alloc(buf, arr_stride);
@@ -53,7 +52,7 @@ void _bli_array_wrap(void *arr_v, uint arr_len, size_t arr_stride, int dir)
   }
 }
 
-void _bli_array_permute(
+void _lib_array_permute(
     void *arr, const uint arr_len, const size_t arr_stride, const uint *order, void *arr_temp)
 {
   const size_t len = arr_len * arr_stride;
@@ -61,7 +60,7 @@ void _bli_array_permute(
   void *arr_orig;
   uint i;
 
-  if (arr_temp == NULL) {
+  if (arr_tmp == NULL) {
     arr_orig = mem_malloc(len, __func__);
   }
   else {
@@ -82,7 +81,7 @@ void _bli_array_permute(
   }
 }
 
-uint _bli_array_dedup_ordered(void *arr, uint arr_len, size_t arr_stride)
+uint _lib_array_dedup_ordered(void *arr, uint arr_len, size_t arr_stride)
 {
   if (UNLIKELY(arr_len <= 1)) {
     return arr_len;
@@ -105,7 +104,7 @@ uint _bli_array_dedup_ordered(void *arr, uint arr_len, size_t arr_stride)
   return j + 1;
 }
 
-int _bli_array_findindex(const void *arr, uint arr_len, size_t arr_stride, const void *p)
+int _lib_array_findindex(const void *arr, uint arr_len, size_t arr_stride, const void *p)
 {
   const char *arr_step = (const char *)arr;
   for (uint i = 0; i < arr_len; i++, arr_step += arr_stride) {
@@ -116,7 +115,7 @@ int _bli_array_findindex(const void *arr, uint arr_len, size_t arr_stride, const
   return -1;
 }
 
-int _bli_array_rfindindex(const void *arr, uint arr_len, size_t arr_stride, const void *p)
+int _lib_array_rfindindex(const void *arr, uint arr_len, size_t arr_stride, const void *p)
 {
   const char *arr_step = (const char *)arr + (arr_stride * arr_len);
   for (uint i = arr_len; i-- != 0;) {
@@ -128,7 +127,7 @@ int _bli_array_rfindindex(const void *arr, uint arr_len, size_t arr_stride, cons
   return -1;
 }
 
-void _bli_array_binary_and(
+void _lib_array_binary_and(
     void *arr, const void *arr_a, const void *arr_b, uint arr_len, size_t arr_stride)
 {
   char *dst = arr;
@@ -141,7 +140,7 @@ void _bli_array_binary_and(
   }
 }
 
-void _bli_array_binary_or(
+void _lib_array_binary_or(
     void *arr, const void *arr_a, const void *arr_b, uint arr_len, size_t arr_stride)
 {
   char *dst = arr;
@@ -154,7 +153,7 @@ void _bli_array_binary_or(
   }
 }
 
-bool _bli_array_iter_span(const void *arr,
+bool _lib_array_iter_span(const void *arr,
                           uint arr_len,
                           size_t arr_stride,
                           bool use_wrap,
@@ -263,7 +262,7 @@ bool _bli_array_iter_span(const void *arr,
   return false;
 }
 
-bool _bli_array_is_zeroed(const void *arr_v, uint arr_len, size_t arr_stride)
+bool _lib_array_is_zeroed(const void *arr_v, uint arr_len, size_t arr_stride)
 {
   const char *arr_step = (const char *)arr_v;
   size_t i = arr_stride * arr_len;
@@ -275,7 +274,7 @@ bool _bli_array_is_zeroed(const void *arr_v, uint arr_len, size_t arr_stride)
   return true;
 }
 
-bool _bli_array_iter_spiral_square(const void *arr_v,
+bool _lib_array_iter_spiral_square(const void *arr_v,
                                    const int arr_shape[2],
                                    size_t elem_size,
                                    const int center[2],
