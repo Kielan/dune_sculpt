@@ -1,5 +1,4 @@
 /* Parallel tasks over all elements in a container. */
-
 #include <stdlib.h>
 
 #include "mem_guardedalloc.h"
