@@ -189,7 +189,7 @@ static int box_areasort(const void *p1, const void *p2)
   return 0;
 }
 
-/* qsort vertex sorting function
+/* qsort vert sorting fn
  * sorts from lower left to top right It uses the current box's width and height
  * as offsets when sorting, this has the result of not placing boxes outside
  * the bounds of the existing backed area where possible */
@@ -198,14 +198,14 @@ struct VertSortCxt {
   float box_width, box_height;
 };
 
-static int vertex_sort(const void *p1, const void *p2, void *vs_ctx_p)
+static int vert_sort(const void *p1, const void *p2, void *vs_ctx_p)
 {
-  const struct VertSortCxt *vs_cxt = vs_ctx_p;
+  const struct VertSortCxt *vs_cxt = vs_cxt_p;
   const BoxVert *v1, *v2;
   float a1, a2;
 
-  v1 = &vs_ctx->vertarray[*((const uint *)p1)];
-  v2 = &vs_ctx->vertarray[*((const uint *)p2)];
+  v1 = &vs_cxt->vertarray[*((const uint *)p1)];
+  v2 = &vs_cxt->vertarray[*((const uint *)p2)];
 
 #ifdef USE_FREE_STRIP
   /* push free verts to the end so we can strip */
@@ -220,8 +220,8 @@ static int vertex_sort(const void *p1, const void *p2, void *vs_ctx_p)
   }
 #endif
 
-  a1 = max_ff(v1->x + vs_ctx->box_width, v1->y + vs_ctx->box_height);
-  a2 = max_ff(v2->x + vs_ctx->box_width, v2->y + vs_ctx->box_height);
+  a1 = max_ff(v1->x + vs_cxt->box_width, v1->y + vs_cxt->box_height);
+  a2 = max_ff(v2->x + vs_cxt->box_width, v2->y + vs_cxt->box_height);
 
 #ifdef USE_PACK_BIAS
   a1 += v1->bias;
@@ -249,7 +249,7 @@ void lib_box_pack_2d(
   BoxPack *box, *box_test; /* Current box and another for intersection tests. */
   BoxVert *vert;           /* The current vert. */
 
-  struct VertSortCxt vs_ctx;
+  struct VertSortCxt vs_cxt;
 
   if (!len) {
     *r_tot_x = tot_x;
@@ -265,9 +265,9 @@ void lib_box_pack_2d(
 
   /* Add verts to the boxes, these are only used internally. */
   vert = mem_malloc(sizeof(BoxVert[4]) * (size_t)len, "BoxPack Verts");
-  vertex_pack_indices = mem_malloc(sizeof(int[3]) * (size_t)len, "BoxPack Indices");
+  vert_pack_indices = mem_malloc(sizeof(int[3]) * (size_t)len, "BoxPack Indices");
 
-  vs_ctx.vertarray = vert;
+  vs_cxt.vertarray = vert;
 
   for (box = boxarray, box_index = 0, i = 0; box_index < len; box_index++, box++) {
 
@@ -307,7 +307,6 @@ void lib_box_pack_2d(
 
   /* Pack the First box!
    * then enter the main box-packing loop */
-
   box = boxarray; /* Get the first box. */
   /* First time, no boxes packed */
   box->v[BL]->free = 0; /* Can't use any if these */
@@ -317,7 +316,7 @@ void lib_box_pack_2d(
   tot_x = box->w;
   tot_y = box->h;
 
-  /* This sets all the vertex locations */
+  /* This sets all the vert locations */
   box_xmin_set(box, 0.0f);
   box_ymin_set(box, 0.0f);
   box->x = box->y = 0.0f;
@@ -340,15 +339,15 @@ void lib_box_pack_2d(
   for (box_index = 1; box_index < len; box_index++, box++) {
 
     /* These floats are used for sorting re-sorting */
-    vs_ctx.box_width = box->w;
-    vs_ctx.box_height = box->h;
+    vs_cxt.box_width = box->w;
+    vs_cxt.box_height = box->h;
 
-    qsort_r(vert_pack_indices, (size_t)verts_pack_len, sizeof(int), vertex_sort, &vs_ctx);
+    qsort_r(vert_pack_indices, (size_t)verts_pack_len, sizeof(int), vert_sort, &vs_cxt);
 
 #ifdef USE_FREE_STRIP
-    /* strip free vertices */
+    /* strip free verts */
     i = verts_pack_len - 1;
-    while ((i != 0) && vs_ctx.vertarray[vertex_pack_indices[i]].free == 0) {
+    while ((i != 0) && vs_cxt.vertarray[vert_pack_indices[i]].free == 0) {
       i--;
     }
     verts_pack_len = i + 1;
@@ -359,7 +358,7 @@ void lib_box_pack_2d(
     isect = true;
 
     for (i = 0; i < verts_pack_len && isect; i++) {
-      vert = &vs_ctx.vertarray[vertex_pack_indices[i]];
+      vert = &vs_cxt.vertarray[vert_pack_indices[i]];
       // printf("\ttesting vert %i %i %i %f %f\n", i,
       //        vert->free, verts_pack_len, vert->x, vert->y);
 
@@ -393,7 +392,7 @@ void lib_box_pack_2d(
            * Assume no intersection... */
           isect = false;
 
-          if (/* Constrain boxes to positive X/Y values */
+          if (/* Constrain boxes to positive X/Y vals */
               box_xmin_get(box) < 0.0f || box_ymin_get(box) < 0.0f ||
               /* check for last intersected */
               (vert->isect_cache[j] && box_isect(box, vert->isect_cache[j])))
@@ -407,7 +406,7 @@ void lib_box_pack_2d(
           }
           else {
             /* do a full search for colliding box
-             * this is really slow, some spatially divided
+             * is rly slow, some spatially divided
              * data-structure would be better */
             for (box_test = boxarray; box_test != box; box_test++) {
               if (box_isect(box, box_test)) {
@@ -463,8 +462,8 @@ void lib_box_pack_2d(
               box->v[BR]->free &= ~(BRF | BLF);
             }
 
-            /* The following block of code does a logical
-             * check with 2 adjacent boxes, its possible to
+            /* Following block of code does a logical
+             * check w 2 adjacent boxes, its possible to
              * flag verts on one or both of the boxes
              * as being used by checking the width or
              * height of both boxes */
@@ -607,8 +606,8 @@ void lib_box_pack_2d(
               }
             }
             /* The Box verts are only used internally
-             * Update the box x and y since that's what external
-             * functions will see */
+             * Update the box x and y; that's what external
+             * fns will see */
             box->x = box_xmin_get(box);
             box->y = box_ymin_get(box);
           }
@@ -627,7 +626,7 @@ void lib_box_pack_2d(
     box->v[0] = box->v[1] = box->v[2] = box->v[3] = NULL;
   }
   mem_free(vert_pack_indices);
-  mem_free(vs_ctx.vertarray);
+  mem_free(vs_cxt.vertarray);
 }
 
 void lib_box_pack_2d_fixedarea(List *boxes, int width, int height, List *packed)
@@ -676,7 +675,7 @@ void lib_box_pack_2d_fixedarea(List *boxes, int width, int height, List *packed)
         space->w -= box->w;
       }
       else {
-        /* Split the remaining L-shaped space into two spaces.
+        /* Split the remaining L-shaped space into 2 spaces.
          * There are two ways to do so, we pick the one that produces the biggest
          * remaining space:
          *
@@ -694,7 +693,7 @@ void lib_box_pack_2d_fixedarea(List *boxes, int width, int height, List *packed)
 
         /* Perform split. This space becomes the larger space,
          * while the new smaller space is inserted _before_ it. */
-        FixedSizeBoxPack *new_space = MEM_callocN(sizeof(FixedSizeBoxPack), __func__);
+        FixedSizeBoxPack *new_space = mem_calloc(sizeof(FixedSizeBoxPack), __func__);
         if (area_hsplit_large > area_vsplit_large) {
           new_space->x = space->x + box->w;
           new_space->y = space->y;
@@ -713,12 +712,12 @@ void lib_box_pack_2d_fixedarea(List *boxes, int width, int height, List *packed)
           space->x += box->w;
           space->w -= box->w;
         }
-        BLI_addhead(&spaces, new_space);
+        lib_addhead(&spaces, new_space);
       }
 
       break;
     }
   }
 
-  BLI_freelistN(&spaces);
+  lib_freelist(&spaces);
 }
