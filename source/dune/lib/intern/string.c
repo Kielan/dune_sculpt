@@ -43,7 +43,7 @@ char *lib_strdupcat(const char *__restrict str1, const char *__restrict str2)
   const size_t str2_len = strlen(str2) + 1;
   char *str, *s;
 
-  str = MEM_mallocN(str1_len + str2_len, "strdupcat");
+  str = mem_malloc(str1_len + str2_len, "strdupcat");
   s = str;
 
   memcpy(s, str1, str1_len); /* NOLINT: bugprone-not-null-terminated-result */
@@ -53,25 +53,25 @@ char *lib_strdupcat(const char *__restrict str1, const char *__restrict str2)
   return str;
 }
 
-char *BLI_strncpy(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
+char *lib_strncpy(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
-  BLI_assert(dst_maxncpy != 0);
-  size_t srclen = BLI_strnlen(src, dst_maxncpy - 1);
+  lib_assert(dst_maxncpy != 0);
+  size_t srclen = lib_strnlen(src, dst_maxncpy - 1);
 
   memcpy(dst, src, srclen);
   dst[srclen] = '\0';
   return dst;
 }
 
-char *BLI_strncpy_ensure_pad(char *__restrict dst,
+char *lib_strncpy_ensure_pad(char *__restrict dst,
                              const char *__restrict src,
                              const char pad,
                              size_t dst_maxncpy)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
-  BLI_assert(dst_maxncpy != 0);
+  lib_string_debug_size(dst, dst_maxncpy);
+  lib_assert(dst_maxncpy != 0);
 
   if (src[0] == '\0') {
     dst[0] = '\0';
@@ -87,7 +87,7 @@ char *BLI_strncpy_ensure_pad(char *__restrict dst,
     }
     dst_maxncpy--; /* trailing '\0' */
 
-    srclen = BLI_strnlen(src, dst_maxncpy);
+    srclen = lib_strnlen(src, dst_maxncpy);
     if ((src[srclen - 1] != pad) && (srclen == dst_maxncpy)) {
       srclen--;
     }
@@ -104,53 +104,43 @@ char *BLI_strncpy_ensure_pad(char *__restrict dst,
   return dst;
 }
 
-size_t BLI_strncpy_rlen(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
+size_t lib_strncpy_rlen(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
-  size_t srclen = BLI_strnlen(src, dst_maxncpy - 1);
-  BLI_assert(dst_maxncpy != 0);
+  size_t srclen = lib_strnlen(src, dst_maxncpy - 1);
+  lib_assert(dst_maxncpy != 0);
 
   memcpy(dst, src, srclen);
   dst[srclen] = '\0';
   return srclen;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name String Append
- * \{ */
-
-char *BLI_strncat(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
+/* String Append */
+char *lib_strncat(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
-  size_t len = BLI_strnlen(dst, dst_maxncpy);
+  size_t len = lib_strnlen(dst, dst_maxncpy);
   if (len < dst_maxncpy) {
-    BLI_strncpy(dst + len, src, dst_maxncpy - len);
+    lib_strncpy(dst + len, src, dst_maxncpy - len);
   }
   return dst;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name String Printing
- * \{ */
-
-size_t BLI_vsnprintf(char *__restrict dst,
+/* String Printing */
+size_t lib_vsnprintf(char *__restrict dst,
                      size_t dst_maxncpy,
                      const char *__restrict format,
                      va_list arg)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t n;
 
-  BLI_assert(dst != NULL);
-  BLI_assert(dst_maxncpy > 0);
-  BLI_assert(format != NULL);
+  lib_assert(dst != NULL);
+  lib_assert(dst_maxncpy > 0);
+  lib_assert(format != NULL);
 
   n = (size_t)vsnprintf(dst, dst_maxncpy, format, arg);
 
@@ -164,18 +154,18 @@ size_t BLI_vsnprintf(char *__restrict dst,
   return n;
 }
 
-size_t BLI_vsnprintf_rlen(char *__restrict dst,
+size_t lib_vsnprintf_rlen(char *__restrict dst,
                           size_t dst_maxncpy,
                           const char *__restrict format,
                           va_list arg)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t n;
 
-  BLI_assert(dst != NULL);
-  BLI_assert(dst_maxncpy > 0);
-  BLI_assert(format != NULL);
+  lib_assert(dst != NULL);
+  lib_assert(dst_maxncpy > 0);
+  lib_assert(format != NULL);
 
   n = (size_t)vsnprintf(dst, dst_maxncpy, format, arg);
 
@@ -190,38 +180,38 @@ size_t BLI_vsnprintf_rlen(char *__restrict dst,
   return n;
 }
 
-size_t BLI_snprintf(char *__restrict dst, size_t dst_maxncpy, const char *__restrict format, ...)
+size_t lib_snprintf(char *__restrict dst, size_t dst_maxncpy, const char *__restrict format, ...)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t n;
   va_list arg;
 
   va_start(arg, format);
-  n = BLI_vsnprintf(dst, dst_maxncpy, format, arg);
+  n = lib_vsnprintf(dst, dst_maxncpy, format, arg);
   va_end(arg);
 
   return n;
 }
 
-size_t BLI_snprintf_rlen(char *__restrict dst,
+size_t lib_snprintf_rlen(char *__restrict dst,
                          size_t dst_maxncpy,
                          const char *__restrict format,
                          ...)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t n;
   va_list arg;
 
   va_start(arg, format);
-  n = BLI_vsnprintf_rlen(dst, dst_maxncpy, format, arg);
+  n = lib_vsnprintf_rlen(dst, dst_maxncpy, format, arg);
   va_end(arg);
 
   return n;
 }
 
-char *BLI_sprintfN_with_buffer(
+char *lib_sprintfN_with_buf(
     char *fixed_buf, size_t fixed_buf_size, size_t *result_len, const char *__restrict format, ...)
 {
   va_list args;
@@ -232,7 +222,7 @@ char *BLI_sprintfN_with_buffer(
     /* Return an empty string as there was an error there is no valid output. */
     *result_len = 0;
     if (UNLIKELY(fixed_buf_size == 0)) {
-      return MEM_callocN(sizeof(char), __func__);
+      return mem_calloc(sizeof(char), __func__);
     }
     *fixed_buf = '\0';
     return fixed_buf;
@@ -244,15 +234,15 @@ char *BLI_sprintfN_with_buffer(
 
   /* `retval` doesn't include null terminator. */
   const size_t size = (size_t)retval + 1;
-  char *result = MEM_mallocN(sizeof(char) * size, __func__);
+  char *result = mem_malloc(sizeof(char) * size, __func__);
   va_start(args, format);
   retval = vsnprintf(result, size, format, args);
   va_end(args);
-  BLI_assert((size_t)(retval + 1) == size);
+  lib_assert((size_t)(retval + 1) == size);
   return result;
 }
 
-char *BLI_vsprintfN_with_buffer(char *fixed_buf,
+char *lib_vsprintfN_with_buf(char *fixed_buf,
                                 size_t fixed_buf_size,
                                 size_t *result_len,
                                 const char *__restrict format,
@@ -266,7 +256,7 @@ char *BLI_vsprintfN_with_buffer(char *fixed_buf,
     /* Return an empty string as there was an error there is no valid output. */
     *result_len = 0;
     if (UNLIKELY(fixed_buf_size == 0)) {
-      return MEM_callocN(sizeof(char), __func__);
+      return mem_calloc(sizeof(char), __func__);
     }
     *fixed_buf = '\0';
     return fixed_buf;
@@ -278,55 +268,50 @@ char *BLI_vsprintfN_with_buffer(char *fixed_buf,
 
   /* `retval` doesn't include null terminator. */
   const size_t size = (size_t)retval + 1;
-  char *result = MEM_mallocN(sizeof(char) * size, __func__);
+  char *result = mem_malloc(sizeof(char) * size, __func__);
   retval = vsnprintf(result, size, format, args);
-  BLI_assert((size_t)(retval + 1) == size);
+  lib_assert((size_t)(retval + 1) == size);
   return result;
 }
 
-char *BLI_sprintfN(const char *__restrict format, ...)
+char *lib_sprintf(const char *__restrict format, ...)
 {
   char fixed_buf[256];
   size_t result_len;
   va_list args;
   va_start(args, format);
-  char *result = BLI_vsprintfN_with_buffer(
+  char *result = lib_vsprintfN_with_buf(
       fixed_buf, sizeof(fixed_buf), &result_len, format, args);
   va_end(args);
   if (result != fixed_buf) {
     return result;
   }
   size_t size = result_len + 1;
-  result = MEM_mallocN(sizeof(char) * size, __func__);
+  result = mem_malloc(sizeof(char) * size, __func__);
   memcpy(result, fixed_buf, size);
   return result;
 }
 
-char *BLI_vsprintfN(const char *__restrict format, va_list args)
+char *lib_vsprintfN(const char *__restrict format, va_list args)
 {
   char fixed_buf[256];
   size_t result_len;
-  char *result = BLI_vsprintfN_with_buffer(
+  char *result = lib_vsprintf_with_buf(
       fixed_buf, sizeof(fixed_buf), &result_len, format, args);
   if (result != fixed_buf) {
     return result;
   }
   size_t size = result_len + 1;
-  result = MEM_mallocN(sizeof(char) * size, __func__);
+  result = mem_malloc(sizeof(char) * size, __func__);
   memcpy(result, fixed_buf, size);
   return result;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name String Escape/Un-Escape
- * \{ */
-
-size_t BLI_str_escape(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
+/* String Escape/Un-Escape */
+size_t lib_str_escape(char *__restrict dst, const char *__restrict src, const size_t dst_maxncpy)
 {
-  BLI_assert(dst_maxncpy != 0);
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_assert(dst_maxncpy != 0);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t len = 0;
   for (; (len < dst_maxncpy) && (*src != '\0'); dst++, src++, len++) {
@@ -353,11 +338,11 @@ size_t BLI_str_escape(char *__restrict dst, const char *__restrict src, const si
   return len;
 }
 
-BLI_INLINE bool str_unescape_pair(char c_next, char *r_out)
+LIB_INLINE bool str_unescape_pair(char c_next, char *r_out)
 {
-#define CASE_PAIR(value_src, value_dst) \
-  case value_src: { \
-    *r_out = value_dst; \
+#define CASE_PAIR(val_src, val_dst) \
+  case val_src: { \
+    *r_out = val_dst; \
     return true; \
   }
   switch (c_next) {
@@ -374,14 +359,14 @@ BLI_INLINE bool str_unescape_pair(char c_next, char *r_out)
   return false;
 }
 
-size_t BLI_str_unescape_ex(char *__restrict dst,
+size_t lib_str_unescape_ex(char *__restrict dst,
                            const char *__restrict src,
                            const size_t src_maxncpy,
-                           /* Additional arguments to #BLI_str_unescape */
+                           /* Additional args to lib_str_unescape */
                            const size_t dst_maxncpy,
                            bool *r_is_complete)
 {
-  BLI_string_debug_size(dst, dst_maxncpy);
+  lib_string_debug_size(dst, dst_maxncpy);
 
   size_t len = 0;
   bool is_complete = true;
@@ -402,9 +387,9 @@ size_t BLI_str_unescape_ex(char *__restrict dst,
   return len;
 }
 
-size_t BLI_str_unescape(char *__restrict dst, const char *__restrict src, const size_t src_maxncpy)
+size_t lib_str_unescape(char *__restrict dst, const char *__restrict src, const size_t src_maxncpy)
 {
-  BLI_string_debug_size(dst, src_maxncpy); /* `dst` must be at least as big as `src`. */
+  lib_string_debug_size(dst, src_maxncpy); /* `dst` must be at least as big as `src`. */
 
   size_t len = 0;
   for (const char *src_end = src + src_maxncpy; (src < src_end) && *src; src++) {
@@ -418,7 +403,7 @@ size_t BLI_str_unescape(char *__restrict dst, const char *__restrict src, const 
   return len;
 }
 
-const char *BLI_str_escape_find_quote(const char *str)
+const char *lib_str_escape_find_quote(const char *str)
 {
   bool escape = false;
   while (*str && (*str != '"' || escape)) {
@@ -430,13 +415,8 @@ const char *BLI_str_escape_find_quote(const char *str)
   return (*str == '"') ? str : NULL;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name String Quote/Un-Quote
- * \{ */
-
-bool BLI_str_quoted_substr_range(const char *__restrict str,
+/* String Quote/Un-Quote */
+bool lib_str_quoted_substr_range(const char *__restrict str,
                                  const char *__restrict prefix,
                                  int *__restrict r_start,
                                  int *__restrict r_end)
@@ -447,12 +427,12 @@ bool BLI_str_quoted_substr_range(const char *__restrict str,
   }
   const size_t prefix_len = strlen(prefix);
   if (UNLIKELY(prefix_len == 0)) {
-    BLI_assert_msg(0,
+    lib_assert_msg(0,
                    "Zero length prefix passed in, "
                    "caller must prevent this from happening!");
     return false;
   }
-  BLI_assert_msg(prefix[prefix_len - 1] != '"',
+  lib_assert_msg(prefix[prefix_len - 1] != '"',
                  "Prefix includes trailing quote, "
                  "caller must prevent this from happening!");
 
@@ -461,7 +441,7 @@ bool BLI_str_quoted_substr_range(const char *__restrict str,
     return false;
   }
   str_start += 1;
-  const char *str_end = BLI_str_escape_find_quote(str_start);
+  const char *str_end = lib_str_escape_find_quote(str_start);
   if (UNLIKELY(str_end == NULL)) {
     return false;
   }
@@ -471,68 +451,61 @@ bool BLI_str_quoted_substr_range(const char *__restrict str,
   return true;
 }
 
-/* NOTE(@ideasman42): in principal it should be possible to access a quoted string
- * with an arbitrary size, currently all callers for this functionality
- * happened to use a fixed size buffer, so only #BLI_str_quoted_substr is needed. */
+/* NOTE: in principal it should be possible to access a quoted string
+ * w an arbitrary size, currently all callers for this functionality
+ * happened to use a fixed size buf, so only lib_str_quoted_substr is needed. */
 #if 0
-/**
- * Makes a copy of the text within the "" that appear after the contents of \a prefix.
+/* Makes a copy of the text within the "" that appear after the contents of prefix.
  * i.e. for string `pose["apples"]` with prefix `pose[`, it will return `apples`.
  *
- * \param str: is the entire string to chop.
- * \param prefix: is the part of the string to step over.
+ * param str: is the entire string to chop.
+ * param prefix: is the part of the string to step over.
  *
  * Assume that the strings returned must be freed afterwards,
- * and that the inputs will contain data we want.
- */
-char *BLI_str_quoted_substrN(const char *__restrict str, const char *__restrict prefix)
+ * and that the inputs will contain data we want. */
+char *lib_str_quoted_substrN(const char *__restrict str, const char *__restrict prefix)
 {
   int start_match_ofs, end_match_ofs;
-  if (!BLI_str_quoted_substr_range(str, prefix, &start_match_ofs, &end_match_ofs)) {
+  if (!lib_str_quoted_substr_range(str, prefix, &start_match_ofs, &end_match_ofs)) {
     return NULL;
   }
   const size_t escaped_len = (size_t)(end_match_ofs - start_match_ofs);
-  char *result = MEM_mallocN(sizeof(char) * (escaped_len + 1), __func__);
-  const size_t unescaped_len = BLI_str_unescape(result, str + start_match_ofs, escaped_len);
+  char *result = mem_malloc(sizeof(char) * (escaped_len + 1), __func__);
+  const size_t unescaped_len = lib_str_unescape(result, str + start_match_ofs, escaped_len);
   if (unescaped_len != escaped_len) {
-    result = MEM_reallocN(result, sizeof(char) * (unescaped_len + 1));
+    result = mem_realloc(result, sizeof(char) * (unescaped_len + 1));
   }
   return result;
 }
 #endif
 
-bool BLI_str_quoted_substr(const char *__restrict str,
+bool lib_str_quoted_substr(const char *__restrict str,
                            const char *__restrict prefix,
                            char *result,
                            size_t result_maxncpy)
 {
-  BLI_string_debug_size(result, result_maxncpy);
+  lib_string_debug_size(result, result_maxncpy);
 
   int start_match_ofs, end_match_ofs;
-  if (!BLI_str_quoted_substr_range(str, prefix, &start_match_ofs, &end_match_ofs)) {
+  if (!lib_str_quoted_substr_range(str, prefix, &start_match_ofs, &end_match_ofs)) {
     return false;
   }
   const size_t escaped_len = (size_t)(end_match_ofs - start_match_ofs);
   bool is_complete;
-  BLI_str_unescape_ex(result, str + start_match_ofs, escaped_len, result_maxncpy, &is_complete);
+  lib_str_unescape_ex(result, str + start_match_ofs, escaped_len, result_maxncpy, &is_complete);
   if (is_complete == false) {
     *result = '\0';
   }
   return is_complete;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name String Comparison/Matching
- * \{ */
-
-int BLI_strcaseeq(const char *a, const char *b)
+/* String Comparison/Matching */
+int lib_strcaseeq(const char *a, const char *b)
 {
-  return (BLI_strcasecmp(a, b) == 0);
+  return (lib_strcasecmp(a, b) == 0);
 }
 
-char *BLI_strcasestr(const char *s, const char *find)
+char *lib_strcasestr(const char *s, const char *find)
 {
   char c, sc;
   size_t len;
@@ -547,37 +520,37 @@ char *BLI_strcasestr(const char *s, const char *find)
         }
         sc = (char)tolower(sc);
       } while (sc != c);
-    } while (BLI_strncasecmp(s, find, len) != 0);
+    } while (lib_strncasecmp(s, find, len) != 0);
     s--;
   }
   return ((char *)s);
 }
 
-int BLI_string_max_possible_word_count(const int str_len)
+int lib_string_max_possible_word_count(const int str_len)
 {
   return (str_len / 2) + 1;
 }
 
-bool BLI_string_has_word_prefix(const char *haystack, const char *needle, size_t needle_len)
+bool lib_string_has_word_prefix(const char *haystack, const char *needle, size_t needle_len)
 {
-  const char *match = BLI_strncasestr(haystack, needle, needle_len);
+  const char *match = lib_strncasestr(haystack, needle, needle_len);
   if (match) {
     if ((match == haystack) || (*(match - 1) == ' ') || ispunct(*(match - 1))) {
       return true;
     }
-    return BLI_string_has_word_prefix(match + 1, needle, needle_len);
+    return lib_string_has_word_prefix(match + 1, needle, needle_len);
   }
   return false;
 }
 
-bool BLI_string_all_words_matched(const char *name,
+bool lib_string_all_words_matched(const char *name,
                                   const char *str,
                                   int (*words)[2],
                                   const int words_len)
 {
   int index;
   for (index = 0; index < words_len; index++) {
-    if (!BLI_string_has_word_prefix(name, str + words[index][0], (size_t)words[index][1])) {
+    if (!lib_string_has_word_prefix(name, str + words[index][0], (size_t)words[index][1])) {
       break;
     }
   }
@@ -586,7 +559,7 @@ bool BLI_string_all_words_matched(const char *name,
   return all_words_matched;
 }
 
-char *BLI_strncasestr(const char *s, const char *find, size_t len)
+char *lib_strncasestr(const char *s, const char *find, size_t len)
 {
   char c, sc;
 
@@ -600,7 +573,7 @@ char *BLI_strncasestr(const char *s, const char *find, size_t len)
           }
           sc = (char)tolower(sc);
         } while (sc != c);
-      } while (BLI_strncasecmp(s, find, len - 1) != 0);
+      } while (lib_strncasecmp(s, find, len - 1) != 0);
     }
     else {
       {
@@ -731,7 +704,7 @@ int lib_strcasecmp_natural(const char *s1, const char *s2)
         return numcompare;
       }
 
-      /* Some wasted work here, left_number_strcmp already consumes at least some digits. */
+      /* Some wasted work here, left_number_strcmp alrdy consumes at least some digits. */
       d1++;
       while (isdigit(s1[d1])) {
         d1++;
@@ -775,7 +748,7 @@ int lib_strcasecmp_natural(const char *s1, const char *s2)
     return tiebreaker;
   }
 
-  /* we might still have a different string because of lower/upper case, in
+  /* we might still have a different string bc of lower/upper case, in
    * that case fall back to regular string comparison */
   return strcmp(s1, s2);
 }
@@ -1153,7 +1126,7 @@ void lib_str_format_byte_unit(char dst[LIB_STR_FORMAT_INT64_BYTE_UNIT_SIZE],
   lib_strncpy(dst + len, base_10 ? units_base_10[order] : units_base_2[order], dst_maxncpy - len);
 }
 
-void lib_str_format_byte_unit_compact(char dst[LIN_STR_FORMAT_INT64_BYTE_UNIT_COMPACT_SIZE],
+void lib_str_format_byte_unit_compact(char dst[LIB_STR_FORMAT_INT64_BYTE_UNIT_COMPACT_SIZE],
                                       long long int bytes,
                                       const bool base_10)
 {
@@ -1202,7 +1175,7 @@ void lib_str_format_decimal_unit(char dst[LIB_STR_FORMAT_INT32_DECIMAL_UNIT_SIZE
     order++;
   }
 
-  const size_t dst_maxncpy = BLI_STR_FORMAT_INT32_DECIMAL_UNIT_SIZE;
+  const size_t dst_maxncpy = LIB_STR_FORMAT_INT32_DECIMAL_UNIT_SIZE;
   int decimals = 0;
   if ((order > 0) && fabsf(number_to_format_converted) < 100.0f) {
     decimals = 1;
@@ -1210,10 +1183,10 @@ void lib_str_format_decimal_unit(char dst[LIB_STR_FORMAT_INT32_DECIMAL_UNIT_SIZE
   lib_snprintf(dst, dst_maxncpy, "%.*f%s", decimals, number_to_format_converted, units[order]);
 }
 
-void lib_str_format_integer_unit(char dst[BLI_STR_FORMAT_INT32_INTEGER_UNIT_SIZE],
+void lib_str_format_integer_unit(char dst[LIB_STR_FORMAT_INT32_INT_UNIT_SIZE],
                                  const int number_to_format)
 {
-  const size_t dst_maxncpy = BLI_STR_FORMAT_INT32_INTEGER_UNIT_SIZE;
+  const size_t dst_maxncpy = LIB_STR_FORMAT_INT32_INT_UNIT_SIZE;
   lib_string_debug_size(dst, dst_maxncpy);
 
   float number_to_format_converted = (float)number_to_format;
@@ -1243,17 +1216,15 @@ void lib_str_format_integer_unit(char dst[BLI_STR_FORMAT_INT32_INTEGER_UNIT_SIZE
                units[order]);
 }
 
-/** String Debugging */
+/* String Debugging */
 #ifdef WITH_STRSIZE_DEBUG
 void lib_string_debug_size_after_nil(char *str, size_t str_maxncpy)
 {
-  /* Step over the nil, into the character afterwards. */
-  size_t str_tail = BLI_strnlen(str, str_maxncpy) + 2;
+  /* Step over the nil, into the char afterwards. */
+  size_t str_tail = lib_strnlen(str, str_maxncpy) + 2;
   if (str_tail < str_maxncpy) {
-    BLI_string_debug_size(str + str_tail, str_maxncpy - str_tail);
+    lib_string_debug_size(str + str_tail, str_maxncpy - str_tail);
   }
 }
 
 #endif /* WITH_STRSIZE_DEBUG */
-
-/** \} */
