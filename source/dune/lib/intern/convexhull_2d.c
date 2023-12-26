@@ -255,9 +255,7 @@ float lib_convexhull_aabb_fit_points_2d(const float (*points)[2], int n)
     mem_free(points_hull);
   }
 
-  MEM_freeN(index_map);
+  mem_free(index_map);
 
   return angle;
 }
-
-/** \} */
