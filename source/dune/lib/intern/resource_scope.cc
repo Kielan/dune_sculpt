@@ -13,4 +13,4 @@ ResourceScope::~ResourceScope()
   }
 }
 
-}  // namespace blender
+}  // namespace dune
