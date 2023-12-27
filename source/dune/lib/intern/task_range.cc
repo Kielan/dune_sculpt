@@ -31,14 +31,14 @@ struct RangeTask {
 
   /* Root constructor. */
   RangeTask(TaskParallelRangeFn fn, void *userdata, const TaskParallelSettings *settings)
-      : func(fn), userdata(userdata), settings(settings)
+      : fn(fn), userdata(userdata), settings(settings)
   {
     init_chunk(settings->userdata_chunk);
   }
 
   /* Copy constructor. */
   RangeTask(const RangeTask &other)
-      : func(other.fn), userdata(other.userdata), settings(other.settings)
+      : fn(other.fn), userdata(other.userdata), settings(other.settings)
   {
     init_chunk(settings->userdata_chunk);
   }
