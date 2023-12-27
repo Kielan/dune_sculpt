@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bli
- *
- * A minimalist lib for functions doing stuff with rectangle structs.
- */
+/* A minimalist lib for fns doing stuff with rectangle structs. */
 
 #include <math.h>
 #include <stdio.h>
