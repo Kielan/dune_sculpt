@@ -1,7 +1,6 @@
-/* An ear clipping algorithm to triangulate single boundary polygons.
+/* An ear clipping algo to triangulate single boundary polygons.
  *
  * Details:
- *
  * - The algo guarantees all triangles are assigned (num of coords - 2)
  *   and that triangles will have non-overlapping indices (even for degenerate geometry).
  * - Self-intersections are considered degenerate (resulting triangles will overlap).
@@ -9,12 +8,9 @@
  *   (where the polygon doubles back on itself with *exactly* matching coords).
  *
  * Changes made for Dune.
- *
  * - loop the arr to clip last verts 1st (less arr resizing)
- *
  * - advance the ear to clip each iter
  *   to avoid fan-filling convex shapes (USE_CLIP_EVEN).
- *
  * - avoid intersection tests when there are no convex points (USE_CONVEX_SKIP).
  *
  * No globals - keep threadsafe. */
