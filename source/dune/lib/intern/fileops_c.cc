@@ -882,7 +882,7 @@ static int recursive_op(const char *startfrom,
    * as it's used to purge tmp files on when the processed is aborted,
    * in this case the `mem_*` state may have alrdy been freed (mem usage tracking for e.g.)
    * causing freed mem access, potentially crashing. This constraint doesn't apply to the
-   * callbacks themselves - unless they might also be called when aborting. */
+   * cbs themselves - unless they might also be called when aborting. */
   struct stat st;
   char *from = nullptr, *to = nullptr;
   char *from_path = nullptr, *to_path = nullptr;
@@ -903,7 +903,7 @@ static int recursive_op(const char *startfrom,
 
     ret = lstat(from, &st);
     if (ret < 0) {
-      /* src wasn't found, nothing to operate with */
+      /* src wasn't found, nothing to op with */
       break;
     }
 
@@ -969,7 +969,7 @@ static int recursive_op(const char *startfrom,
       if (is_dir) {
         /* Recurse into sub-dirs. */
         ret = recursive_op(
-            from_path, to_path, cb_dir_pre, callback_file, callback_dir_post);
+            from_path, to_path, cb_dir_pre, cb_file, cb_dir_post);
       }
       else if (cb_file != nullptr) {
         ret = cb_file(from_path, to_path);
@@ -1021,7 +1021,7 @@ static int del_cb_post(const char *from, const char * /*to*/)
   if (rmdir(from)) {
     perror("rmdir");
 
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   return RecursiveOpCb_OK;
@@ -1039,7 +1039,7 @@ static int del_single_file(const char *from, const char * /*to*/)
 }
 
 #  ifdef __APPLE__
-static int del_soft(const char *file, const char **error_message)
+static int del_soft(const char *file, const char **err_msg)
 {
   int ret = -1;
 
@@ -1070,7 +1070,7 @@ static int del_soft(const char *file, const char **error_message)
     ret = 0;
   }
   else {
-    *error_msg = "The Cocoa API call to delete file or directory failed";
+    *err_msg = "The Cocoa API call to delete file or directory failed";
   }
 
   SEL drainSel = sel_registerName("drain");
@@ -1079,7 +1079,7 @@ static int del_soft(const char *file, const char **error_message)
   return ret;
 }
 #  else
-static int del_soft(const char *file, const char **error_message)
+static int del_soft(const char *file, const char **err_msg)
 {
   const char *args[5];
   const char *process_failed;
@@ -1114,12 +1114,12 @@ static int del_soft(const char *file, const char **error_message)
     waitpid(pid, &wstatus, 0);
 
     if (!WIFEXITED(wstatus)) {
-      *error_msg =
+      *err_msg =
           "Dune may not support moving files or directories to trash on your system.";
       return -1;
     }
     if (WIFEXITED(wstatus) && WEXITSTATUS(wstatus)) {
-      *error_msg = process_failed;
+      *err_msg = process_failed;
       return -1;
     }
 
@@ -1174,11 +1174,11 @@ int lib_del(const char *path, bool dir, bool recursive)
   return remove(path);
 }
 
-int lib_del_soft(const char *file, const char **error_message)
+int lib_del_soft(const char *file, const char **err_msg)
 {
   lib_assert(!lib_path_is_rel(file));
 
-  return del_soft(file, error_msg);
+  return del_soft(file, err_msg);
 }
 
 /* Do the 2 paths denote the same file-sys ob? */
@@ -1221,12 +1221,12 @@ static int copy_cb_pre(const char *from, const char *to)
 
   if (check_the_same(from, to)) {
     fprintf(stderr, "%s: '%s' is the same as '%s'\n", __func__, from, to);
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   if (lstat(from, &st)) {
     perror("stat");
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   /* create a directory */
@@ -1238,7 +1238,7 @@ static int copy_cb_pre(const char *from, const char *to)
   /* set proper owner and group on new directory */
   if (chown(to, st.st_uid, st.st_gid)) {
     perror("chown");
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   return RecursiveOpCb_OK;
@@ -1285,7 +1285,7 @@ static int copy_single_file(const char *from, const char *to)
         mem_free(link_buf);
       }
 
-      return RecursiveOpCb_Error;
+      return RecursiveOpCb_Err;
     }
 
     link_buf[link_len] = '\0';
@@ -1344,7 +1344,7 @@ static int copy_single_file(const char *from, const char *to)
   fclose(from_stream);
 
   if (set_permissions(to, &st)) {
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   return RecursiveOpCb_OK;
@@ -1355,10 +1355,10 @@ static int move_cb_pre(const char *from, const char *to)
   int ret = rename(from, to);
 
   if (ret) {
-    return copy_callback_pre(from, to);
+    return copy_cb_pre(from, to);
   }
 
-  return RecursiveOp_Callback_StopRecurs;
+  return RecursiveOp_Cb_StopRecurs;
 }
 
 static int move_single_file(const char *from, const char *to)
@@ -1369,16 +1369,16 @@ static int move_single_file(const char *from, const char *to)
     return copy_single_file(from, to);
   }
 
-  return RecursiveOp_Callback_OK;
+  return RecursiveOp_Cb_OK;
 }
 
-int BLI_path_move(const char *path_src, const char *path_dst)
+int lib_path_move(const char *path_src, const char *path_dst)
 {
-  int ret = recursive_operation(path_src, path_dst, move_callback_pre, move_single_file, nullptr);
+  int ret = recursive_op(path_src, path_dst, move_cb_pre, move_single_file, nullptr);
 
   if (ret && ret != -1) {
-    return recursive_operation(
-        path_src, nullptr, nullptr, delete_single_file, delete_callback_post);
+    return recursive_op(
+        path_src, nullptr, nullptr, del_single_file, del_cb_post);
   }
 
   return ret;
@@ -1414,7 +1414,7 @@ int lib_copy(const char *path_src, const char *path_dst)
   int ret;
 
   ret = recursive_op(
-      path_src, path_dst_with_filename, copy_callback_pre, copy_single_file, nullptr);
+      path_src, path_dst_with_filename, copy_cb_pre, copy_single_file, nullptr);
 
   if (!ELEM(path_dst_with_filename, path_dst_buf, path_dst)) {
     mem_free((void *)path_dst_with_filename);
