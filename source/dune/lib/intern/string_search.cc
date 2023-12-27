@@ -60,7 +60,7 @@ int damerau_levenshtein_distance(StringRef a, StringRef b)
     for (const int j : IndexRange(size_b)) {
       const uint32_t unicode_b = lib_str_utf8_as_unicode_step_safe(b.data(), b.size(), &offset_b);
 
-      /* Check how costly the different ops would be and pick the cheapest - the one with
+      /* Check how costly the diff ops would be and pick the cheapest: the 1 w
        * minimal cost. */
       int new_cost = std::min({v1[j + 1] + del_cost,
                                v2[j] + insertion_cost,
@@ -75,7 +75,7 @@ int damerau_levenshtein_distance(StringRef a, StringRef b)
       prev_unicode_b = unicode_b;
     }
 
-    /* Swap the three rows, so that the next row can be computed. */
+    /* Swap the 3 rows, so that the next row can be computed. */
     std::tie(v0, v1, v2) = std::tuple<MutableSpan<int>, MutableSpan<int>, MutableSpan<int>>(
         v1, v2, v0);
     prev_unicode_a = unicode_a;
@@ -94,13 +94,13 @@ int get_fuzzy_match_errors(StringRef query, StringRef full)
   const int query_size = count_utf8_code_points(query);
   const int full_size = count_utf8_code_points(full);
 
-  /* If there is only a single character which is not in the full string, this is not a match. */
+  /* If there is only a single char which is not in the full string, this is not a match. */
   if (query_size == 1) {
     return -1;
   }
   lib_assert(query.size() >= 2);
 
-  /* Allow more errors when the size grows larger. */
+  /* Allow more errs when the size grows larger. */
   const int max_errors = query_size <= 1 ? 0 : query_size / 8 + 1;
 
   /* If the query is too large, this cannot be a match. */
@@ -108,8 +108,8 @@ int get_fuzzy_match_errors(StringRef query, StringRef full)
     return -1;
   }
 
-  const uint32_t query_first_unicode = BLI_str_utf8_as_unicode_safe(query.data());
-  const uint32_t query_second_unicode = BLI_str_utf8_as_unicode_safe(
+  const uint32_t query_first_unicode = lib_str_utf8_as_unicode_safe(query.data());
+  const uint32_t query_second_unicode = lib_str_utf8_as_unicode_safe(
       query.data() + lib_str_utf8_size_safe(query.data()));
 
   const char *full_begin = full.begin();
@@ -173,7 +173,7 @@ struct InitialsMatch {
   }
 };
 
-/** Takes a query and tries to match it with the first chars of some words. For example, "msfv"
+/* Takes a query and tries to match it w the 1st chars of some words. For example, "msfv"
  * matches "Mark Sharp from Verts". Multiple letters of the beginning of a word can be matched
  * as well. For example, "seboulo" matches "sel boundary loop". The order of words is important.
  * So "bose" does not match "sel boundary". However, individual words can be skipped. For
@@ -247,7 +247,7 @@ static std::optional<InitialsMatch> match_word_initials(StringRef query,
   return match;
 }
 
-/* The "best" is chosen with combination of word weights and word length. */
+/* The "best" is chosen w combination of word weights and word length. */
 static int get_best_word_index_that_startswith(StringRef query,
                                                const SearchItem &item,
                                                Span<int> word_match_map,
@@ -262,7 +262,7 @@ static int get_best_word_index_that_startswith(StringRef query,
    * That's bc the `T` would be matched with the `Test`, but then `Test` can't match `Test
    * anymore bc that's taken up already.
    *
-   * If we don't have to pick the shortest match for correctness, pick the one with the largest
+   * If we don't have to pick the shortest match for correctness, pick the 1 w the largest
    * weight instead.  */
   bool use_shortest_match = false;
   for (const StringRef other_word : remaining_query_words) {
@@ -327,11 +327,11 @@ static int get_word_index_that_fuzzy_matches(StringRef query,
 static std::optional<float> score_query_against_words(Span<StringRef> query_words,
                                                       const SearchItem &item)
 {
-  /* A mapping from result_words to #query_words. It's mainly used to determine if a word has been
+  /* A mapping from result_words to query_words. It's mainly used to determine if a word has been
    * matched alrdy to avoid matching it again. */
   Array<int, 64> word_match_map(item.normalized_words.size(), unused_word);
 
-  /* Start with some high score, because otherwise the final score might become negative. */
+  /* Start w some high score, because otherwise the final score might become negative. */
   float total_match_score = 1000;
 
   for (const int query_word_index : query_words.index_range()) {
@@ -374,7 +374,7 @@ static std::optional<float> score_query_against_words(Span<StringRef> query_word
       }
     }
 
-    /* Couldn't match query word with anything. */
+    /* Couldn't match query word w anything. */
     return std::nullopt;
   }
 
