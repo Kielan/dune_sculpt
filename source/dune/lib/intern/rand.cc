@@ -3,114 +3,112 @@
 #include <cstring>
 #include <ctime>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_math_vector.h"
-#include "BLI_rand.h"
-#include "BLI_rand.hh"
-#include "BLI_threads.h"
+#include "lib_bitmap.h"
+#include "lib_math_vector.h"
+#include "lib_rand.h"
+#include "lib_rand.hh"
+#include "lib_threads.h"
 
-/* defines BLI_INLINE */
-#include "BLI_compiler_compat.h"
+/* defines LIB_INLINE */
+#include "lib_compiler_compat.h"
 
-#include "BLI_strict_flags.h"
-#include "BLI_sys_types.h"
+#include "lib_strict_flags.h"
+#include "lib_sys_types.h"
 
-extern "C" uchar BLI_noise_hash_uchar_512[512]; /* `noise.cc` */
-#define hash BLI_noise_hash_uchar_512
+extern "C" uchar lib_noise_hash_uchar_512[512]; /* `noise.cc` */
+#define hash lib_noise_hash_uchar_512
 
-/**
- * Random Number Generator.
- */
+/* Random Num Generator */
 struct RNG {
-  blender::RandomNumberGenerator rng;
+  dune::RandomNumberGenerator rng;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("RNG")
+  MEM_CXX_CLASS_ALLOC_FNS("RNG")
 };
 
-RNG *BLI_rng_new(uint seed)
+RNG *lib_rng_new(uint seed)
 {
   RNG *rng = new RNG();
   rng->rng.seed(seed);
   return rng;
 }
 
-RNG *BLI_rng_new_srandom(uint seed)
+RNG *lib_rng_new_srandom(uint seed)
 {
   RNG *rng = new RNG();
   rng->rng.seed_random(seed);
   return rng;
 }
 
-RNG *BLI_rng_copy(RNG *rng)
+RNG *lib_rng_copy(RNG *rng)
 {
   return new RNG(*rng);
 }
 
-void BLI_rng_free(RNG *rng)
+void lib_rng_free(RNG *rng)
 {
   delete rng;
 }
 
-void BLI_rng_seed(RNG *rng, uint seed)
+void lib_rng_seed(RNG *rng, uint seed)
 {
   rng->rng.seed(seed);
 }
 
-void BLI_rng_srandom(RNG *rng, uint seed)
+void lib_rng_srandom(RNG *rng, uint seed)
 {
   rng->rng.seed_random(seed);
 }
 
-void BLI_rng_get_char_n(RNG *rng, char *bytes, size_t bytes_len)
+void lib_rng_get_char_n(RNG *rng, char *bytes, size_t bytes_len)
 {
-  rng->rng.get_bytes(blender::MutableSpan(bytes, int64_t(bytes_len)));
+  rng->rng.get_bytes(dune::MutableSpan(bytes, int64_t(bytes_len)));
 }
 
-int BLI_rng_get_int(RNG *rng)
+int lib_rng_get_int(RNG *rng)
 {
   return rng->rng.get_int32();
 }
 
-uint BLI_rng_get_uint(RNG *rng)
+uint lib_rng_get_uint(RNG *rng)
 {
   return rng->rng.get_uint32();
 }
 
-double BLI_rng_get_double(RNG *rng)
+double lib_rng_get_double(RNG *rng)
 {
   return rng->rng.get_double();
 }
 
-float BLI_rng_get_float(RNG *rng)
+float lib_rng_get_float(RNG *rng)
 {
   return rng->rng.get_float();
 }
 
-void BLI_rng_get_float_unit_v2(RNG *rng, float v[2])
+void lib_rng_get_float_unit_v2(RNG *rng, float v[2])
 {
   copy_v2_v2(v, rng->rng.get_unit_float2());
 }
 
-void BLI_rng_get_float_unit_v3(RNG *rng, float v[3])
+void lib_rng_get_float_unit_v3(RNG *rng, float v[3])
 {
   copy_v3_v3(v, rng->rng.get_unit_float3());
 }
 
-void BLI_rng_get_tri_sample_float_v2(
+void lib_rng_get_tri_sample_float_v2(
     RNG *rng, const float v1[2], const float v2[2], const float v3[2], float r_pt[2])
 {
   copy_v2_v2(r_pt, rng->rng.get_triangle_sample(v1, v2, v3));
 }
 
-void BLI_rng_get_tri_sample_float_v3(
+void lib_rng_get_tri_sample_float_v3(
     RNG *rng, const float v1[3], const float v2[3], const float v3[3], float r_pt[3])
 {
   copy_v3_v3(r_pt, rng->rng.get_triangle_sample_3d(v1, v2, v3));
 }
 
-void BLI_rng_shuffle_array(RNG *rng, void *data, uint elem_size_i, uint elem_num)
+void lib_rng_shuffle_array(RNG *rng, void *data, uint elem_size_i, uint elem_num)
 {
   if (elem_num <= 1) {
     return;
@@ -118,10 +116,10 @@ void BLI_rng_shuffle_array(RNG *rng, void *data, uint elem_size_i, uint elem_num
 
   const uint elem_size = elem_size_i;
   uint i = elem_num;
-  void *temp = malloc(elem_size);
+  void *tmp = malloc(elem_size);
 
   while (i--) {
-    const uint j = BLI_rng_get_uint(rng) % elem_num;
+    const uint j = lib_rng_get_uint(rng) % elem_num;
     if (i != j) {
       void *iElem = (uchar *)data + i * elem_size_i;
       void *jElem = (uchar *)data + j * elem_size_i;
@@ -131,10 +129,10 @@ void BLI_rng_shuffle_array(RNG *rng, void *data, uint elem_size_i, uint elem_num
     }
   }
 
-  free(temp);
+  free(tmp);
 }
 
-void BLI_rng_shuffle_bitmap(RNG *rng, BLI_bitmap *bitmap, uint bits_num)
+void lib_rng_shuffle_bitmap(RNG *rng, LibBitmap *bitmap, uint bits_num)
 {
   if (bits_num <= 1) {
     return;
@@ -142,10 +140,10 @@ void BLI_rng_shuffle_bitmap(RNG *rng, BLI_bitmap *bitmap, uint bits_num)
 
   uint i = bits_num;
   while (i--) {
-    const uint j = BLI_rng_get_uint(rng) % bits_num;
+    const uint j = lib_rng_get_uint(rng) % bits_num;
     if (i != j) {
-      const bool i_bit = BLI_BITMAP_TEST(bitmap, i);
-      const bool j_bit = BLI_BITMAP_TEST(bitmap, j);
+      const bool i_bit = LIB_BITMAP_TEST(bitmap, i);
+      const bool j_bit = LIB_BITMAP_TEST(bitmap, j);
       LIB_BITMAP_SET(bitmap, i, j_bit);
       LIB_BITMAP_SET(bitmap, j, i_bit);
     }
@@ -228,7 +226,7 @@ RNG_THREAD_ARRAY *lib_rng_threaded_new()
   RNG_THREAD_ARRAY *rngarr = (RNG_THREAD_ARRAY *)mem_malloc(sizeof(RNG_THREAD_ARRAY),
                                                              "random_array");
 
-  for (i = 0; i < BLENDER_MAX_THREADS; i++) {
+  for (i = 0; i < DUNE_MAX_THREADS; i++) {
     lib_rng_srandom(&rngarr->rng_tab[i], uint(clock()));
   }
 
@@ -246,7 +244,6 @@ int lib_rng_thread_rand(RNG_THREAD_ARRAY *rngarr, int thread)
 }
 
 /* Low-discrepancy seqs */
-
 /* incremental halton seq generator, from:
  * "Instant Radiosity", Keller A. */
 LIB_INLINE double halton_ex(double invprimes, double *offset)
@@ -363,7 +360,7 @@ void RandomNumberGenerator::seed_random(uint32_t seed)
 
 int RandomNumberGenerator::round_probabilistic(float x)
 {
-  /* Support for negative vals can be added when necessary. */
+  /* Support for neg vals can be added when necessary. */
   lib_assert(x >= 0.0f);
   const float round_up_probability = fractf(x);
   const bool round_up = round_up_probability > this->get_float();
@@ -466,4 +463,4 @@ void RandomNumberGenerator::get_bytes(MutableSpan<char> r_bytes)
   }
 }
 
-}  // namespace blender
+}  // namespace dune
