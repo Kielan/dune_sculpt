@@ -340,12 +340,12 @@ float lib_easing_sine_ease_in(float time, float begin, float change, float durat
   return -change * cosf(time / duration * (float)M_PI_2) + change + begin;
 }
 
-float BLI_easing_sine_ease_out(float time, float begin, float change, float duration)
+float lib_easing_sine_ease_out(float time, float begin, float change, float duration)
 {
   return change * sinf(time / duration * (float)M_PI_2) + begin;
 }
 
-float BLI_easing_sine_ease_in_out(float time, float begin, float change, float duration)
+float lib_easing_sine_ease_in_out(float time, float begin, float change, float duration)
 {
   return -change / 2 * (cosf((float)M_PI * time / duration) - 1) + begin;
 }
