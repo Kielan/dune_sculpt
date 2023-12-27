@@ -80,7 +80,6 @@ void Node::set_parent_cluster(Cluster *cluster)
 }
 
 /* Util methods */
-
 void Graph::set_random_cluster_bgcolors()
 {
   for (Cluster *cluster : top_level_clusters_) {
