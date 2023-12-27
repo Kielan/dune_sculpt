@@ -2,24 +2,20 @@
  *
  * Details:
  *
- * - The algorithm guarantees all triangles are assigned (number of coords - 2)
+ * - The algo guarantees all triangles are assigned (num of coords - 2)
  *   and that triangles will have non-overlapping indices (even for degenerate geometry).
  * - Self-intersections are considered degenerate (resulting triangles will overlap).
  * - While multiple polygons aren't supported, holes can still be defined using *key-holes*
  *   (where the polygon doubles back on itself with *exactly* matching coords).
  *
- * \note
- *
  * Changes made for Dune.
  *
- * - loop the array to clip last verts first (less array resizing)
+ * - loop the arr to clip last verts 1st (less arr resizing)
  *
- * - advance the ear to clip each iteration
+ * - advance the ear to clip each iter
  *   to avoid fan-filling convex shapes (USE_CLIP_EVEN).
  *
  * - avoid intersection tests when there are no convex points (USE_CONVEX_SKIP).
- *
- * \note
  *
  * No globals - keep threadsafe. */
 
@@ -57,12 +53,12 @@ typedef int8_t eSign;
 
 #ifdef USE_KDTREE
 /* Spatial optimization for point-in-triangle intersection checks.
- * The simple version of this algorithm is `O(n^2)` complexity
+ * The simple version of this algo is `O(n^2)` complexity
  * (every point needing to check the triangle defined by every other point),
  * Using a binary-tree reduces the complexity to `O(n log n)`
  * plus some overhead of creating the tree.
  *
- * This is a single purpose KDTree based on lib_kdtree with some modifications
+ * Single purpose KDTree based on lib_kdtree w some hanges
  * to better suit polyfill2d.
  * - KDTreeNode2D is kept small (only 16 bytes),
  *   by not storing coords in the nodes and using index vals rather than ptrs
@@ -76,10 +72,10 @@ typedef int8_t eSign;
 typedef bool axis_t;
 
 /* use for sorting */
-typedef struct KDTreeNode2D_head {
+typedef struct KDTreeNode2DHead {
   uint32_t neg, pos;
   uint32_t index;
-} KDTreeNode2D_head;
+} KDTreeNode2DHead;
 
 typedef struct KDTreeNode2D {
   uint32_t neg, pos;
@@ -161,7 +157,7 @@ LIB_INLINE eSign signum_enum(float a)
   return CONCAVE;
 }
 
-/* alternative version of area_tri_signed_v2
+/* alt version of area_tri_signed_v2
  * needed bc of float precision issues
  * removes / 2 since its not needed since we only need the sign. */
 LIB_INLINE float area_tri_signed_v2_alt_2x(const float v1[2], const float v2[2], const float v3[2])
@@ -193,9 +189,7 @@ static void kdtree2d_new(struct KDTree2D *tree, uint32_t tot, const float (*coor
   tree->node_num = tot;
 }
 
-/**
- * no need for kdtree2d_insert, since we know the coords array.
- */
+/* no need for kdtree2d_insert, since we know the coords array. */
 static void kdtree2d_init(struct KDTree2D *tree,
                           const uint32_t coords_num,
                           const PolyIndex *indices)
@@ -213,7 +207,7 @@ static void kdtree2d_init(struct KDTree2D *tree,
     }
   }
 
-  BLI_assert(tree->node_num == (uint32_t)(node - tree->nodes));
+  lib_assert(tree->node_num == (uint32_t)(node - tree->nodes));
 }
 
 static uint32_t kdtree2d_balance_recursive(KDTreeNode2D *nodes,
@@ -293,7 +287,7 @@ static void kdtree2d_init_mapping(struct KDTree2D *tree)
     }
 
     /* build map */
-    BLI_assert(tree->nodes_map[node->index] == KDNODE_UNSET);
+    lib_assert(tree->nodes_map[node->index] == KDNODE_UNSET);
     tree->nodes_map[node->index] = i;
   }
 
@@ -327,7 +321,7 @@ static void kdtree2d_node_remove(struct KDTree2D *tree, uint32_t index)
       node_parent->neg = KDNODE_UNSET;
     }
     else {
-      BLI_assert(node_parent->pos == node_index);
+      lib_assert(node_parent->pos == node_index);
       node_parent->pos = KDNODE_UNSET;
     }
 
@@ -495,12 +489,12 @@ static void pf_triangulate(PolyFill *pf)
 
     pf_ear_tip_cut(pf, pi_ear);
 
-    /* The type of the two vertices adjacent to the clipped vertex may have changed. */
+    /* The type of the 2 verts adjacent to the clipped vert may have changed. */
     sign_orig_prev = pi_prev->sign;
     sign_orig_next = pi_next->sign;
 
     /* check if any verts became convex the (else if)
-     * case is highly unlikely but may happen with degenerate polygons */
+     * case is highly unlikely but may happen w degenerate polygons */
     if (sign_orig_prev != CONVEX) {
       pf_coord_sign_calc(pf, pi_prev);
 #ifdef USE_CONVEX_SKIP
@@ -586,15 +580,15 @@ static PolyIndex *pf_ear_tip_find(PolyFill *pf
 
   uint32_t i;
 
-  /* Use two passes when looking for an ear.
+  /* Use 2 passes when looking for an ear.
    *
-   * - The first pass only picks *good* (concave) choices.
+   * - Pass 1: only picks *good* (concave) choices.
    *   For polygons which aren't degenerate this works well
    *   since it avoids creating any zero area faces.
    *
-   * - The second pass is only met if no concave choices are possible,
-   *   so the cost of a second pass is only incurred for degenerate polygons.
-   *   In this case accept zero area faces as better alternatives aren't available.
+   * - Pass 2: is only met if no concave choices are possible,
+   *   so the cost of a 2nd pass is only incurred for degenerate polygons.
+   *   In this case accept zero area faces as better alts aren't available.
    *
    * See: #103913 for ref.
    *
@@ -602,10 +596,10 @@ static PolyIndex *pf_ear_tip_find(PolyFill *pf
    * which is susceptible minor diffs in float precision
    * (since TANGENTIAL compares with 0.0f).
    *
-   * While it's possible to compute an error threshold and run a pass that picks
+   * While it's possible to compute an err threshold and run a pass that picks
    * ears which are more likely not to appear as zero area from a users perspective,
    * this API prioritizes performance (for real-time updates).
-   * Higher quality tessellation can always be achieved using #BLI_polyfill_beautify. */
+   * Higher quality tessellation can always be achieved using lib_polyfill_beautify. */
   for (eSign sign_accept = CONVEX; sign_accept >= TANGENTIAL; sign_accept--) {
 #ifdef USE_CLIP_EVEN
     pi_ear = pi_ear_init;
@@ -625,17 +619,16 @@ static PolyIndex *pf_ear_tip_find(PolyFill *pf
     }
   }
 
-  /* Desperate mode: if no vertex is an ear tip,
-   * we are dealing with a degenerate polygon (e.g. nearly collinear).
-   * Note that the input was not necessarily degenerate,
-   * but we could have made it so by clipping some valid ears.
+  /* Desperate mode: if no vert is an ear tip,
+   * we are dealing w a degenerate polygon (e.g. nearly collinear).
+   * The input was not necessarily degenerate.
+   * Could have made it so by clipping some valid ears.
    *
    * Idea taken from Martin Held, "FIST: Fast industrial-strength triangulation of polygons",
    * Algorithmica (1998),
    * http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.115.291
    *
    * Return a convex or tangential vertex if one exists. */
-
 #ifdef USE_CLIP_EVEN
   pi_ear = pi_ear_init;
 #else
@@ -650,7 +643,7 @@ static PolyIndex *pf_ear_tip_find(PolyFill *pf
     pi_ear = pi_ear->next;
   }
 
-  /* If all verts are concave, just return the last one. */
+  /* If all verts are concave, return the last one. */
   return pi_ear;
 }
 
@@ -708,7 +701,7 @@ static bool pf_ear_tip_check(PolyFill *pf, PolyIndex *pi_ear_tip, const eSign si
   v2 = coords[pi_ear_tip->index];
   v3 = coords[pi_ear_tip->next->index];
 
-  /* Check if any point is inside the triangle formed by previous, current and next vertices.
+  /* Check if any point is inside the triangle formed by prev, current and next verts.
    * Only consider verts that are not part of this triangle,
    * or else we'll always find one inside. */
   for (pi_curr = pi_ear_tip->next->next; pi_curr != pi_ear_tip->prev; pi_curr = pi_curr->next) {
@@ -754,7 +747,7 @@ static void pf_ear_tip_cut(PolyFill *pf, PolyIndex *pi_ear_tip)
   pf_coord_remove(pf, pi_ear_tip);
 }
 
-/* Inits the PolyFill struct before tessellating with polyfill_calc. */
+/* Inits the PolyFill struct before tessellating w polyfill_calc. */
 static void polyfill_prepare(PolyFill *pf,
                              const float (*coords)[2],
                              const uint32_t coords_num,
@@ -785,10 +778,10 @@ static void polyfill_prepare(PolyFill *pf,
 #ifdef USE_STRICT_ASSERT
 #  ifndef NDEBUG
     if (coords_sign == 1) {
-      BLI_assert(cross_poly_v2(coords, coords_num) >= 0.0f);
+      lib_assert(cross_poly_v2(coords, coords_num) >= 0.0f);
     }
     else {
-      BLI_assert(cross_poly_v2(coords, coords_num) <= 0.0f);
+      lib_assert(cross_poly_v2(coords, coords_num) <= 0.0f);
     }
 #  endif
 #endif
@@ -890,12 +883,12 @@ void lib_polyfill_calc(const float (*coords)[2],
                        const int coords_sign,
                        uint32_t (*r_tris)[3])
 {
-  /* Fallback to heap mem for large allocations.
-   * Avoid running out of stack mem on systems with 512kb stack (macOS).
-   * This happens at around 13,000 points, use a much lower value to be safe. */
+  /* Fallback to heap mem for large allocs.
+   * Avoid running out of stack mem on systems w 512kb stack (macOS).
+   * This happens at around 13,000 points, use a much lower val to be safe. */
   if (UNLIKELY(coords_num > 8192)) {
-    /* The buffer size only accounts for the index allocation,
-     * worst case we do two allocations when concave, while we should try to be efficient,
+    /* The buf size only accounts for the index alloc,
+     * worst case we do two allocs when concave, while we should try to be efficient,
      * any caller that relies on this frequently should use lib_polyfill_calc_arena directly. */
     MemArena *arena = lib_memarena_new(sizeof(PolyIndex) * coords_num, __func__);
     lib_polyfill_calc_arena(coords, coords_num, coords_sign, r_tris, arena);
@@ -910,18 +903,18 @@ void lib_polyfill_calc(const float (*coords)[2],
   TIMEIT_START(polyfill2d);
 #endif
 
-  polyfill_prepare(&pf,
-                   coords,
-                   coords_num,
-                   coords_sign,
-                   r_tris,
-                   /* cache */
-                   indices);
+  polyfill_prep(&pf,
+                coords,
+                coords_num,
+                coords_sign,
+                r_tris,
+                /* cache */
+                indices);
 
 #ifdef USE_KDTREE
   if (pf.coords_num_concave) {
-    pf.kdtree.nodes = lib_array_alloca(pf.kdtree.nodes, pf.coords_num_concave);
-    pf.kdtree.nodes_map = memset(lib_array_alloc(pf.kdtree.nodes_map, coords_num),
+    pf.kdtree.nodes = lib_arr_alloc(pf.kdtree.nodes, pf.coords_num_concave);
+    pf.kdtree.nodes_map = memset(lib_arr_alloc(pf.kdtree.nodes_map, coords_num),
                                  0xff,
                                  sizeof(*pf.kdtree.nodes_map) * coords_num);
   }
