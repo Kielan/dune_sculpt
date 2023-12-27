@@ -64,9 +64,9 @@ typedef struct ScanFillIsect {
 #endif
 
 #if 0
-void BLI_scanfill_obj_dump(ScanFillContext *sf_ctx)
+void lib_scanfill_ob_dump(ScanFillCxt *sf_cxt)
 {
-  FILE *f = fopen("test.obj", "w");
+  FILE *f = fopen("test.ob", "w");
   uint i = 1;
 
   ScanFillVert *eve;
@@ -83,28 +83,28 @@ void BLI_scanfill_obj_dump(ScanFillContext *sf_ctx)
 }
 #endif
 
-static ListBase *edge_isect_ls_ensure(GHash *isect_hash, ScanFillEdge *eed)
+static List *edge_isect_ls_ensure(GHash *isect_hash, ScanFillEdge *eed)
 {
-  ListBase *e_ls;
+  List *e_ls;
   void **val_p;
 
-  if (!BLI_ghash_ensure_p(isect_hash, eed, &val_p)) {
-    *val_p = MEM_callocN(sizeof(ListBase), __func__);
+  if (!lib_ghash_ensure_p(isect_hash, eed, &val_p)) {
+    *val_p = mem_calloc(sizeof(List), __func__);
   }
   e_ls = *val_p;
 
   return e_ls;
 }
 
-static ListBase *edge_isect_ls_add(GHash *isect_hash, ScanFillEdge *eed, ScanFillIsect *isect)
+static List *edge_isect_ls_add(GHash *isect_hash, ScanFillEdge *eed, ScanFillIsect *isect)
 {
-  ListBase *e_ls;
+  List *e_ls;
   LinkData *isect_link;
   e_ls = edge_isect_ls_ensure(isect_hash, eed);
-  isect_link = MEM_callocN(sizeof(*isect_link), __func__);
+  isect_link = mem_calloc(sizeof(*isect_link), __func__);
   isect_link->data = isect;
   EFLAG_SET(eed, E_ISISECT);
-  BLI_addtail(e_ls, isect_link);
+  lib_addtail(e_ls, isect_link);
   return e_ls;
 }
 
@@ -132,8 +132,8 @@ static ScanFillEdge *edge_step(PolyInfo *poly_info,
 {
   ScanFillEdge *eed;
 
-  BLI_assert(ELEM(v_prev, e_curr->v1, e_curr->v2));
-  BLI_assert(ELEM(v_curr, e_curr->v1, e_curr->v2));
+  lib_assert(ELEM(v_prev, e_curr->v1, e_curr->v2));
+  lib_assert(ELEM(v_curr, e_curr->v1, e_curr->v2));
 
   eed = (e_curr->next && e_curr != poly_info[poly_nr].edge_last) ? e_curr->next :
                                                                    poly_info[poly_nr].edge_first;
@@ -147,18 +147,18 @@ static ScanFillEdge *edge_step(PolyInfo *poly_info,
     return eed;
   }
 
-  BLI_assert(0);
+  lib_assert(0);
   return NULL;
 }
 
-static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
+static bool scanfill_preprocess_self_isect(ScanFillCxt *sf_cxt,
                                            PolyInfo *poly_info,
                                            const ushort poly_nr,
-                                           ListBase *filledgebase)
+                                           List *filledgebase)
 {
   PolyInfo *pi = &poly_info[poly_nr];
   GHash *isect_hash = NULL;
-  ListBase isect_lb = {NULL};
+  List isect_lb = {NULL};
 
   /* warning, O(n2) check here, should use spatial lookup */
   {
@@ -175,7 +175,7 @@ static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
         {
           /* check isect */
           float pt[2];
-          BLI_assert(eed != eed_other);
+          lib_assert(eed != eed_other);
 
           if (isect_seg_seg_v2_point(
                   eed->v1->co, eed->v2->co, eed_other->v1->co, eed_other->v2->co, pt) == 1)
@@ -183,18 +183,18 @@ static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
             ScanFillIsect *isect;
 
             if (UNLIKELY(isect_hash == NULL)) {
-              isect_hash = BLI_ghash_ptr_new(__func__);
+              isect_hash = lib_ghash_ptr_new(__func__);
             }
 
-            isect = MEM_mallocN(sizeof(ScanFillIsect), __func__);
+            isect = mem_malloc(sizeof(ScanFillIsect), __func__);
 
-            BLI_addtail(&isect_lb, isect);
+            lib_addtail(&isect_lb, isect);
 
             copy_v2_v2(isect->co, pt);
             isect->co[2] = eed->v1->co[2];
-            isect->v = BLI_scanfill_vert_add(sf_ctx, isect->co);
+            isect->v = lib_scanfill_vert_add(sf_cxt, isect->co);
 
-            /* NOTE: vert may belong to 2 polys now */
+            /* Vert may belong to 2 polys now */
             isect->v->poly_nr = eed->v1->poly_nr;
 
             VFLAG_SET(isect->v, V_ISISECT);
@@ -216,7 +216,7 @@ static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
 
     for (eed = pi->edge_first; eed; eed = (eed == pi->edge_last) ? NULL : eed->next) {
       if (eed->user_flag & E_ISISECT) {
-        ListBase *e_ls = BLI_ghash_lookup(isect_hash, eed);
+        List *e_ls = lib_ghash_lookup(isect_hash, eed);
 
         LinkData *isect_link;
 
@@ -231,17 +231,17 @@ static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
           pi->edge_last = NULL;
         }
 
-        if (BLI_listbase_is_single(e_ls) == false) {
-          BLI_listbase_sort_r(e_ls, edge_isect_ls_sort_cb, eed->v2->co);
+        if (lib_list_is_single(e_ls) == false) {
+          lib_list_sort_r(e_ls, edge_isect_ls_sort_cb, eed->v2->co);
         }
 
         /* move original edge to filledgebase and add replacement
          * (which gets subdivided next) */
         {
           ScanFillEdge *eed_tmp;
-          eed_tmp = BLI_scanfill_edge_add(sf_ctx, eed->v1, eed->v2);
+          eed_tmp = lib_scanfill_edge_add(sf_ctx, eed->v1, eed->v2);
           lib_remlink(&sf_cxt->filledgebase, eed_tmp);
-          lib_insertlinkafter(&sf_ctx->filledgebase, eed, eed_tmp);
+          lib_insertlinkafter(&sf_cxt->filledgebase, eed, eed_tmp);
           lib_remlink(&sf_cxt->filledgebase, eed);
           lib_addtail(filledgebase, eed);
           if (pi->edge_first == eed) {
@@ -254,7 +254,7 @@ static bool scanfill_preprocess_self_isect(ScanFillContext *sf_ctx,
           ScanFillIsect *isect = isect_link->data;
           ScanFillEdge *eed_subd;
 
-          eed_subd = lib_scanfill_edge_add(sf_ctx, isect->v, eed->v2);
+          eed_subd = lib_scanfill_edge_add(sf_cxt, isect->v, eed->v2);
           eed_subd->poly_nr = poly_nr;
           eed->v2 = isect->v;
 
@@ -371,8 +371,8 @@ bool lib_scanfill_calc_self_isect(ScanFillCxt *sf_cxt,
 
   /* get the polygon span */
   if (sf_cxt->poly_nr == 0) {
-    poly_info->edge_first = sf_ctx->filledgebase.first;
-    poly_info->edge_last = sf_ctx->filledgebase.last;
+    poly_info->edge_first = sf_cxt->filledgebase.first;
+    poly_info->edge_last = sf_cxt->filledgebase.last;
   }
   else {
     ushort poly_nr;
@@ -449,7 +449,7 @@ bool lib_scanfill_calc_self_isect(ScanFillCxt *sf_cxt,
     for (eve = sf_cxt->fillvertbase.first; eve; eve = eve_next) {
       eve_next = eve->next;
       if (eve->user_flag != 1) {
-        lib_remlink(&sf_ctx->fillvertbase, eve);
+        lib_remlink(&sf_cxt->fillvertbase, eve);
         lib_addtail(remvertbase, eve);
       }
       else {
@@ -460,11 +460,11 @@ bool lib_scanfill_calc_self_isect(ScanFillCxt *sf_cxt,
 
   /* polygon id's are no longer meaningful,
    * when removing self intersections we may have created new isolated polys */
-  sf_ctx->poly_nr = SF_POLY_UNSET;
+  sf_cxt->poly_nr = SF_POLY_UNSET;
 
 #if 0
-  BLI_scanfill_view3d_dump(sf_ctx);
-  BLI_scanfill_obj_dump(sf_ctx);
+  lib_scanfill_view3d_dump(sf_cxt);
+  lib_scanfill_ob_dump(sf_cxt);
 #endif
 
   return changed;
