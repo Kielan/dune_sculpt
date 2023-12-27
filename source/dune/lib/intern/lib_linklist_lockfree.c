@@ -11,7 +11,7 @@ void lib_linklist_lockfree_init(LockfreeLinkList *list)
   list->head = list->tail = &list->dummy_node;
 }
 
-void lib_linklist_lockfree_free(LockfreeLinkList *list, LockfreeeLinkNodeFreeFP free_func)
+void lib_linklist_lockfree_free(LockfreeLinkList *list, LockfreeeLinkNodeFreeFP free_fn)
 {
   if (free_fn != NULL) {
     /* We start from a first user-added node. */
@@ -24,9 +24,9 @@ void lib_linklist_lockfree_free(LockfreeLinkList *list, LockfreeeLinkNodeFreeFP 
   }
 }
 
-void BLI_linklist_lockfree_clear(LockfreeLinkList *list, LockfreeeLinkNodeFreeFP free_func)
+void lib_linklist_lockfree_clear(LockfreeLinkList *list, LockfreeeLinkNodeFreeFP free_fn)
 {
-  lib_linklist_lockfree_free(list, free_func);
+  lib_linklist_lockfree_free(list, free_fn);
   lib_linklist_lockfree_init(list);
 }
 
