@@ -1,14 +1,12 @@
 #include <iomanip>
 
-#include "BLI_dot_export.hh"
+#include "lib_dot_export.hh"
 
 #include <sstream>
 
-namespace blender::dot {
+namespace dune::dot {
 
-/* Graph Building
- ************************************************/
-
+/* Graph Building */
 Node &Graph::new_node(StringRef label)
 {
   Node *node = new Node(*this);
@@ -81,8 +79,7 @@ void Node::set_parent_cluster(Cluster *cluster)
   cluster_ = cluster;
 }
 
-/* Utility methods
- **********************************************/
+/* Util methods */
 
 void Graph::set_random_cluster_bgcolors()
 {
@@ -95,8 +92,8 @@ void Cluster::set_random_cluster_bgcolors()
 {
   float hue = rand() / float(RAND_MAX);
   float staturation = 0.3f;
-  float value = 0.8f;
-  this->attributes.set("bgcolor", color_attr_from_hsv(hue, staturation, value));
+  float val = 0.8f;
+  this->attributes.set("bgcolor", color_attr_from_hsv(hue, staturation, val));
 
   for (Cluster *cluster : children_) {
     cluster->set_random_cluster_bgcolors();
@@ -115,9 +112,7 @@ bool Cluster::contains(Node &node) const
   return false;
 }
 
-/* Dot Generation
- **********************************************/
-
+/* Dot Generation */
 std::string DirectedGraph::to_dot_string() const
 {
   std::stringstream ss;
@@ -205,14 +200,14 @@ void UndirectedEdge::export__as_edge_statement(std::stringstream &ss) const
 void Attributes::export__as_bracket_list(std::stringstream &ss) const
 {
   ss << "[";
-  attributes_.foreach_item([&](StringRef key, StringRef value) {
-    if (StringRef(value).startswith("<")) {
-      /* Don't draw the quotes, this is an HTML-like value. */
-      ss << key << "=" << value << ", ";
+  attributes_.foreach_item([&](StringRef key, StringRef val) {
+    if (StringRef(val).startswith("<")) {
+      /* Don't drw the quotes, this is an HTML-like val. */
+      ss << key << "=" << val << ", ";
     }
     else {
       ss << key << "=\"";
-      for (char c : value) {
+      for (char c : val) {
         if (c == '\"') {
           /* Escape double quotes. */
           ss << '\\';
@@ -241,10 +236,10 @@ void Node::export__as_declaration(std::stringstream &ss) const
 void NodePort::to_dot_string(std::stringstream &ss) const
 {
   node_->export__as_id(ss);
-  if (port_name_.has_value()) {
+  if (port_name_.has_val()) {
     ss << ":" << *port_name_;
   }
-  if (port_position_.has_value()) {
+  if (port_position_.has_val()) {
     ss << ":" << *port_position_;
   }
 }
@@ -311,4 +306,4 @@ NodeWithSocketsRef::NodeWithSocketsRef(Node &node, const NodeWithSockets &data) 
   node_->set_shape(Attr_shape::Rectangle);
 }
 
-}  // namespace blender::dot
+}  // namespace dune::dot
