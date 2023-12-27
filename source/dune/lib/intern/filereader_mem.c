@@ -1,36 +1,36 @@
 #include <string.h>
 
-#include "BLI_blenlib.h"
-#include "BLI_filereader.h"
-#include "BLI_mmap.h"
+#include "lib_dunelib.h"
+#include "lib_filereader.h"
+#include "lib_mmap.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-/* This file implements both memory-backed and memory-mapped-file-backed reading. */
+/* This file implements both mem-backed and mem-mapped-file-backed reading. */
 typedef struct {
   FileReader reader;
 
   const char *data;
-  BLI_mmap_file *mmap;
+  LibMmapFile *mmap;
   size_t length;
-} MemoryReader;
+} MemReader;
 
-static int64_t memory_read_raw(FileReader *reader, void *buffer, size_t size)
+static int64_t mem_read_raw(FileReader *reader, void *buf, size_t size)
 {
-  MemoryReader *mem = (MemoryReader *)reader;
+  MemReader *mem = (MemReader *)reader;
 
-  /* Don't read more bytes than there are available in the buffer. */
+  /* Don't read more bytes than there are available in the buf. */
   size_t readsize = MIN2(size, (size_t)(mem->length - mem->reader.offset));
 
-  memcpy(buffer, mem->data + mem->reader.offset, readsize);
+  memcpy(buf, mem->data + mem->reader.offset, readsize);
   mem->reader.offset += readsize;
 
   return readsize;
 }
 
-static off64_t memory_seek(FileReader *reader, off64_t offset, int whence)
+static off64_t mem_seek(FileReader *reader, off64_t offset, int whence)
 {
-  MemoryReader *mem = (MemoryReader *)reader;
+  MemReader *mem = (MemReader *)reader;
 
   off64_t new_pos;
   if (whence == SEEK_CUR) {
@@ -54,21 +54,21 @@ static off64_t memory_seek(FileReader *reader, off64_t offset, int whence)
   return mem->reader.offset;
 }
 
-static void memory_close_raw(FileReader *reader)
+static void mem_close_raw(FileReader *reader)
 {
-  MEM_freeN(reader);
+  mem_free(reader);
 }
 
-FileReader *BLI_filereader_new_memory(const void *data, size_t len)
+FileReader *lib_filereader_new_mem(const void *data, size_t len)
 {
-  MemoryReader *mem = MEM_callocN(sizeof(MemoryReader), __func__);
+  MemReader *mem = mem_calloc(sizeof(MemReader), __func__);
 
   mem->data = (const char *)data;
   mem->length = len;
 
-  mem->reader.read = memory_read_raw;
-  mem->reader.seek = memory_seek;
-  mem->reader.close = memory_close_raw;
+  mem->reader.read = mem_read_raw;
+  mem->reader.seek = mem_seek;
+  mem->reader.close = mem_close_raw;
 
   return (FileReader *)mem;
 }
