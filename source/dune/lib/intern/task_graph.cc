@@ -107,11 +107,11 @@ void lib_task_graph_work_and_wait(TaskGraph *task_graph)
 }
 
 TaskNode *lib_task_graph_node_create(TaskGraph *task_graph,
-                                     TaskGraphNodeRunFunction run,
+                                     TaskGraphNodeRunFn run,
                                      void *user_data,
-                                     TaskGraphNodeFreeFunction free_func)
+                                     TaskGraphNodeFreeFn free_fn)
 {
-  TaskNode *task_node = new TaskNode(task_graph, run, user_data, free_func);
+  TaskNode *task_node = new TaskNode(task_graph, run, user_data, free_f );
   task_graph->nodes.push_back(std::unique_ptr<TaskNode>(task_node));
   return task_node;
 }
