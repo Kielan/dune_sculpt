@@ -1,24 +1,21 @@
-/** \file
- * \ingroup bli
- * \brief Efficient memory allocation for many small chunks.
- * \section aboutmemarena Memory Arena
+/* Efficient mem alloc for many small chunks.
+ * About Mem Arena
  *
- * Memory arena's are commonly used when the program
- * needs to quickly allocate lots of little bits of data,
+ * Mem arena's are commonly used when the program
+ * needs to quickly alloc lots of little bits of data,
  * which are all freed at the same moment.
  *
- * \note Memory can't be freed during the arenas lifetime.
- */
+ * Mem can't be freed during the arenas lifetime. */
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_asan.h"
-#include "BLI_memarena.h"
-#include "BLI_strict_flags.h"
-#include "BLI_utildefines.h"
+#include "lib_asan.h"
+#include "lib_memarena.h"
+#include "lib_strict_flags.h"
+#include "lib_utildefines.h"
 
 #ifdef WITH_MEM_VALGRIND
 #  include "valgrind/memcheck.h"
@@ -50,17 +47,17 @@ static void memarena_buf_free_all(struct MemBuf *mb)
   while (mb != NULL) {
     struct MemBuf *mb_next = mb->next;
 
-    /* Unpoison memory because #MEM_freeN might overwrite it. */
-    BLI_asan_unpoison(mb, (uint)MEM_allocN_len(mb));
+    /* Unpoison mem bc mem_free might overwrite it. */
+    lib_asan_unpoison(mb, (uint)mem_alloc_len(mb));
 
-    MEM_freeN(mb);
+    mem_free(mb);
     mb = mb_next;
   }
 }
 
-MemArena *BLI_memarena_new(const size_t bufsize, const char *name)
+MemArena *lib_memarena_new(const size_t bufsize, const char *name)
 {
-  MemArena *ma = MEM_callocN(sizeof(*ma), "memarena");
+  MemArena *ma = mem_calloc(sizeof(*ma), "memarena");
   ma->bufsize = bufsize;
   ma->align = 8;
   ma->name = name;
@@ -70,37 +67,37 @@ MemArena *BLI_memarena_new(const size_t bufsize, const char *name)
   return ma;
 }
 
-void BLI_memarena_use_calloc(MemArena *ma)
+void lib_memarena_use_calloc(MemArena *ma)
 {
   ma->use_calloc = 1;
 }
 
-void BLI_memarena_use_malloc(MemArena *ma)
+void lib_memarena_use_malloc(MemArena *ma)
 {
   ma->use_calloc = 0;
 }
 
-void BLI_memarena_use_align(MemArena *ma, const size_t align)
+void lib_memarena_use_align(MemArena *ma, const size_t align)
 {
   /* Align must be a power of two. */
-  BLI_assert((align & (align - 1)) == 0);
+  lib_assert((align & (align - 1)) == 0);
 
   ma->align = align;
 }
 
-void BLI_memarena_free(MemArena *ma)
+void lib_memarena_free(MemArena *ma)
 {
   memarena_buf_free_all(ma->bufs);
 
   VALGRIND_DESTROY_MEMPOOL(ma);
 
-  MEM_freeN(ma);
+  mem_free(ma);
 }
 
-/** Pad num up by \a amt (must be power of two). */
+/* Pad num up by amt (must be power of two). */
 #define PADUP(num, amt) (((num) + ((amt)-1)) & ~((amt)-1))
 
-/** Align alloc'ed memory (needed if `align > 8`). */
+/* Align alloc'd mem (needed if `align > 8`). */
 static void memarena_curbuf_align(MemArena *ma)
 {
   uchar *tmp;
@@ -110,7 +107,7 @@ static void memarena_curbuf_align(MemArena *ma)
   ma->curbuf = tmp;
 }
 
-void *BLI_memarena_alloc(MemArena *ma, size_t size)
+void *lib_memarena_alloc(MemArena *ma, size_t size)
 {
   void *ptr;
 
@@ -131,7 +128,7 @@ void *BLI_memarena_alloc(MemArena *ma, size_t size)
     mb->next = ma->bufs;
     ma->bufs = mb;
 
-    BLI_asan_poison(ma->curbuf, ma->cursize);
+    lib_asan_poison(ma->curbuf, ma->cursize);
 
     memarena_curbuf_align(ma);
   }
@@ -142,46 +139,46 @@ void *BLI_memarena_alloc(MemArena *ma, size_t size)
 
   VALGRIND_MEMPOOL_ALLOC(ma, ptr, size);
 
-  BLI_asan_unpoison(ptr, size);
+  lib_asan_unpoison(ptr, size);
 
   return ptr;
 }
 
-void *BLI_memarena_calloc(MemArena *ma, size_t size)
+void *lib_memarena_calloc(MemArena *ma, size_t size)
 {
   void *ptr;
 
-  /* No need to use this function call if we're calloc'ing by default. */
-  BLI_assert(ma->use_calloc == false);
+  /* No need to use this fn call if we're calloc'ing by default. */
+  lib_assert(ma->use_calloc == false);
 
-  ptr = BLI_memarena_alloc(ma, size);
-  BLI_assert(ptr != NULL);
+  ptr = lib_memarena_alloc(ma, size);
+  lib_assert(ptr != NULL);
   memset(ptr, 0, size);
 
   return ptr;
 }
 
-void BLI_memarena_merge(MemArena *ma_dst, MemArena *ma_src)
+void lib_memarena_merge(MemArena *ma_dst, MemArena *ma_src)
 {
-  /* Memory arenas must be compatible. */
-  BLI_assert(ma_dst != ma_src);
-  BLI_assert(ma_dst->align == ma_src->align);
-  BLI_assert(ma_dst->use_calloc == ma_src->use_calloc);
-  BLI_assert(ma_dst->bufsize == ma_src->bufsize);
+  /* Mem arenas must be compatible. */
+  lib_assert(ma_dst != ma_src);
+  lib_assert(ma_dst->align == ma_src->align);
+  lib_assert(ma_dst->use_calloc == ma_src->use_calloc);
+  lib_assert(ma_dst->bufsize == ma_src->bufsize);
 
   if (ma_src->bufs == NULL) {
     return;
   }
 
   if (UNLIKELY(ma_dst->bufs == NULL)) {
-    BLI_assert(ma_dst->curbuf == NULL);
+    lib_assert(ma_dst->curbuf == NULL);
     ma_dst->bufs = ma_src->bufs;
     ma_dst->curbuf = ma_src->curbuf;
     ma_dst->cursize = ma_src->cursize;
   }
   else {
     /* Keep the 'ma_dst->curbuf' for simplicity.
-     * Insert buffers after the first. */
+     * Insert bufs after the first. */
     if (ma_dst->bufs->next != NULL) {
       /* Loop over `ma_src` instead of `ma_dst` since it's likely the destination is larger
        * when used for accumulating from multiple sources. */
@@ -203,7 +200,7 @@ void BLI_memarena_merge(MemArena *ma_dst, MemArena *ma_src)
   VALGRIND_CREATE_MEMPOOL(ma_src, 0, false);
 }
 
-void BLI_memarena_clear(MemArena *ma)
+void lib_memarena_clear(MemArena *ma)
 {
   if (ma->bufs) {
     uchar *curbuf_prev;
@@ -225,7 +222,7 @@ void BLI_memarena_clear(MemArena *ma)
     if (ma->use_calloc) {
       memset(ma->curbuf, 0, curbuf_used);
     }
-    BLI_asan_poison(ma->curbuf, ma->cursize);
+    lib_asan_poison(ma->curbuf, ma->cursize);
   }
 
   VALGRIND_DESTROY_MEMPOOL(ma);
