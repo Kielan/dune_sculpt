@@ -1,45 +1,38 @@
-/** \file
- * \ingroup bli
- *
- * Simple, fast memory allocator for allocating many small elements of different sizes
- * in fixed size memory chunks,
- * although allocations bigger than the chunk size are supported.
- * They will reduce the efficiency of this data-structure.
- * Elements are pointer aligned.
+/* Simple, fast mem allocator for alloc many small elements of diff sizes
+ * in fixed size mem chunks,
+ * although allocs bigger than the chunk size are supported.
+ * They will reduce the efficiency of this data-struct.
+ * Elements are ptr aligned.
  *
  * Supports:
- *
- * - Allocation of mixed sizes.
- * - Iterating over allocations in-order.
+ * - Alloc of mixed sizes.
+ * - Iter over allocs in-order.
  * - Clearing for re-use.
  *
  * Unsupported:
- *
  * - Freeing individual elements.
  *
- * \note We could inline iteration stepping,
- * but tests show this doesn't give noticeable speedup.
- */
+ * We could inline iter stepping,
+ * tests show this doesn't give noticeable speedup. */
 
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_asan.h"
-#include "BLI_utildefines.h"
+#include "lib_asan.h"
+#include "lib_utildefines.h"
 
-#include "BLI_memiter.h" /* own include */
+#include "lib_memiter.h" /* own include */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_strict_flags.h" /* keep last */
+#include "lib_strict_flags.h" /* keep last */
 
 /* TODO: Valgrind. */
-
 typedef uintptr_t data_t;
 typedef intptr_t offset_t;
 
 /* Write the chunk terminator on adding each element.
- * typically we rely on the 'count' to avoid iterating past the end. */
+ * typically we rely on the 'count' to avoid iter'ing past the end. */
 // #define USE_TERMINATE_PARANOID
 
 /* Currently totalloc isn't used. */
@@ -48,52 +41,49 @@ typedef intptr_t offset_t;
 /* pad must be power of two */
 #define PADUP(num, pad) (((num) + ((pad)-1)) & ~((pad)-1))
 
-typedef struct BLI_memiter_elem {
+typedef struct LibMemIterElem {
   offset_t size;
   data_t data[0];
-} BLI_memiter_elem;
+} LibMemIterElem;
 
-typedef struct BLI_memiter_chunk {
-  struct BLI_memiter_chunk *next;
-  /**
-   * internal format is:
-   * `[next_pointer, size:data, size:data, ..., negative_offset]`
-   *
-   * Where negative offset rewinds to the start.
-   */
+typedef struct LibMemIterChunk {
+  struct LibMemIterChunk *next;
+  /* internal format is:
+   * `[next_ptr, size:data, size:data, ..., negative_offset]`
+   * Where negative offset rewinds to the start */
   data_t data[0];
-} BLI_memiter_chunk;
+} LibMemIterChunk;
 
-typedef struct BLI_memiter {
-  /* A pointer to 'head' is needed so we can iterate in the order allocated. */
-  BLI_memiter_chunk *head, *tail;
+typedef struct LibMemIter {
+  /* A ptr to 'head' is needed so we can iterate in the order allocated. */
+  lib_memiter_chunk *head, *tail;
   data_t *data_curr;
   data_t *data_last;
-  /* Used unless a large element is requested.
+  /* Used unless a large elem is requested.
    * (which should be very rare!). */
   uint chunk_size_in_bytes_min;
   uint count;
 #ifdef USE_TOTALLOC
   uint totalloc;
 #endif
-} BLI_memiter;
+} LibMemIter;
 
-BLI_INLINE uint data_offset_from_size(uint size)
+LIB_INLINE uint data_offset_from_size(uint size)
 {
   return PADUP(size, (uint)sizeof(data_t)) / (uint)sizeof(data_t);
 }
 
-static void memiter_set_rewind_offset(BLI_memiter *mi)
+static void memiter_set_rewind_offset(LibMemIter *mi)
 {
-  BLI_memiter_elem *elem = (BLI_memiter_elem *)mi->data_curr;
+  LibMemIterElem *elem = (LibMemIterElem *)mi->data_curr;
 
-  BLI_asan_unpoison(elem, sizeof(BLI_memiter_elem));
+  lib_asan_unpoison(elem, sizeof(LibMemIterElem));
 
   elem->size = (offset_t)(((data_t *)mi->tail) - mi->data_curr);
-  BLI_assert(elem->size < 0);
+  lib_assert(elem->size < 0);
 }
 
-static void memiter_init(BLI_memiter *mi)
+static void memiter_init(LibMemIter *mi)
 {
   mi->head = NULL;
   mi->tail = NULL;
@@ -105,16 +95,13 @@ static void memiter_init(BLI_memiter *mi)
 #endif
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Public API's
- * \{ */
-
-BLI_memiter *BLI_memiter_create(uint chunk_size_min)
+/* Public API's */
+LibMemIter *lib_memiter_create(uint chunk_size_min)
 {
-  BLI_memiter *mi = MEM_mallocN(sizeof(BLI_memiter), "BLI_memiter");
+  LibMemIter *mi = mem_malloc(sizeof(LibMemIter), "lib_memiter");
   memiter_init(mi);
 
-  /* Small values are used for tests to check for correctness,
+  /* Small vals are used for tests to check for correctness,
    * but otherwise not that useful. */
   const uint slop_space = (sizeof(BLI_memiter_chunk) + MEM_SIZE_OVERHEAD);
   if (chunk_size_min >= 1024) {
@@ -126,7 +113,7 @@ BLI_memiter *BLI_memiter_create(uint chunk_size_min)
   return mi;
 }
 
-void *BLI_memiter_alloc(BLI_memiter *mi, uint elem_size)
+void *lib_memiter_alloc(LibMemIter *mi, uint elem_size)
 {
   const uint data_offset = data_offset_from_size(elem_size);
   data_t *data_curr_next = LIKELY(mi->data_curr) ? mi->data_curr + (1 + data_offset) : NULL;
@@ -144,11 +131,11 @@ void *BLI_memiter_alloc(BLI_memiter *mi, uint elem_size)
       chunk_size_in_bytes = elem_size + (uint)sizeof(data_t[2]);
     }
     uint chunk_size = data_offset_from_size(chunk_size_in_bytes);
-    BLI_memiter_chunk *chunk = MEM_mallocN(
-        sizeof(BLI_memiter_chunk) + (chunk_size * sizeof(data_t)), "BLI_memiter_chunk");
+    LibMemIterChunk *chunk = mem_malloc(
+        sizeof(LibMemIterChunk) + (chunk_size * sizeof(data_t)), "lib_memiter_chunk");
 
     if (mi->head == NULL) {
-      BLI_assert(mi->tail == NULL);
+      lib_assert(mi->tail == NULL);
       mi->head = chunk;
     }
     else {
@@ -161,14 +148,14 @@ void *BLI_memiter_alloc(BLI_memiter *mi, uint elem_size)
     mi->data_last = chunk->data + (chunk_size - 1);
     data_curr_next = mi->data_curr + (1 + data_offset);
 
-    BLI_asan_poison(chunk->data, chunk_size * sizeof(data_t));
+    lib_asan_poison(chunk->data, chunk_size * sizeof(data_t));
   }
 
-  BLI_assert(data_curr_next <= mi->data_last);
+  lib_assert(data_curr_next <= mi->data_last);
 
-  BLI_memiter_elem *elem = (BLI_memiter_elem *)mi->data_curr;
+  LibMemIterElem *elem = (LinMemIterElem *)mi->data_curr;
 
-  BLI_asan_unpoison(elem, sizeof(BLI_memiter_elem) + elem_size);
+  lib_asan_unpoison(elem, sizeof(lib_memiter_elem) + elem_size);
 
   elem->size = (offset_t)elem_size;
   mi->data_curr = data_curr_next;
@@ -186,67 +173,62 @@ void *BLI_memiter_alloc(BLI_memiter *mi, uint elem_size)
   return elem->data;
 }
 
-void *BLI_memiter_calloc(BLI_memiter *mi, uint elem_size)
+void *lib_memiter_calloc(LibMemIter *mi, uint elem_size)
 {
-  void *data = BLI_memiter_alloc(mi, elem_size);
+  void *data = lib_memiter_alloc(mi, elem_size);
   memset(data, 0, elem_size);
   return data;
 }
 
-void BLI_memiter_alloc_from(BLI_memiter *mi, uint elem_size, const void *data_from)
+void lib_memiter_alloc_from(LibMemIter *mi, uint elem_size, const void *data_from)
 {
-  void *data = BLI_memiter_alloc(mi, elem_size);
+  void *data = lib_memiter_alloc(mi, elem_size);
   memcpy(data, data_from, elem_size);
 }
 
-static void memiter_free_data(BLI_memiter *mi)
+static void memiter_free_data(LibMemIter *mi)
 {
-  BLI_memiter_chunk *chunk = mi->head;
+  LibMemIterChunk *chunk = mi->head;
   while (chunk) {
-    BLI_memiter_chunk *chunk_next = chunk->next;
+    LibMemIterChunk *chunk_next = chunk->next;
 
-    /* Unpoison memory because MEM_freeN might overwrite it. */
-    BLI_asan_unpoison(chunk, MEM_allocN_len(chunk));
+    /* Unpoison mem bc mem_free might overwrite it. */
+    lib_asan_unpoison(chunk, mem_alloc_len(chunk));
 
-    MEM_freeN(chunk);
+    mem_free(chunk);
     chunk = chunk_next;
   }
 }
 
-void BLI_memiter_destroy(BLI_memiter *mi)
+void lib_memiter_destroy(LibMemIter *mi)
 {
   memiter_free_data(mi);
-  MEM_freeN(mi);
+  mem_free(mi);
 }
 
-void BLI_memiter_clear(BLI_memiter *mi)
+void lib_memiter_clear(LibMemIter *mi)
 {
   memiter_free_data(mi);
   memiter_init(mi);
 }
 
-uint BLI_memiter_count(const BLI_memiter *mi)
+uint lib_memiter_count(const LibMemIter *mi)
 {
   return mi->count;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Helper API's
- * \{ */
-
-void *BLI_memiter_elem_first(BLI_memiter *mi)
+/* Helper API's */
+void *lib_memiter_elem_first(LibMemIter *mi)
 {
   if (mi->head != NULL) {
-    BLI_memiter_chunk *chunk = mi->head;
-    BLI_memiter_elem *elem = (BLI_memiter_elem *)chunk->data;
+    LinMemIterChunk *chunk = mi->head;
+    LibMemIterElem *elem = (LibMemIterElem *)chunk->data;
     return elem->data;
   }
   return NULL;
 }
 
-void *BLI_memiter_elem_first_size(BLI_memiter *mi, uint *r_size)
+void *lib_memiter_elem_first_size(LibMemIter *mi, uint *r_size)
 {
   if (mi->head != NULL) {
     BLI_memiter_chunk *chunk = mi->head;
