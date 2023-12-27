@@ -231,75 +231,69 @@ void *lib_memiter_elem_first(LibMemIter *mi)
 void *lib_memiter_elem_first_size(LibMemIter *mi, uint *r_size)
 {
   if (mi->head != NULL) {
-    BLI_memiter_chunk *chunk = mi->head;
-    BLI_memiter_elem *elem = (BLI_memiter_elem *)chunk->data;
+    LibMemIterChunk *chunk = mi->head;
+    LibMemIterElem *elem = (LibMemIterElem *)chunk->data;
     *r_size = (uint)elem->size;
     return elem->data;
   }
   return NULL;
 }
 
-/** \} */
+/* Iter API's
+ * We could loop over elems until a NULL chunk is found,
+ * however this means every alloc needs to preemptively run
+ * memiter_set_rewind_offset (see USE_TERMINATE_PARANOID).
+ * Unless we have a call to finalize alloc (which complicates usage).
+ * So use a counter instead. */
 
-/* -------------------------------------------------------------------- */
-/** \name Iterator API's
- *
- * \note We could loop over elements until a NULL chunk is found,
- * however this means every allocation needs to preemptively run
- * #memiter_set_rewind_offset (see #USE_TERMINATE_PARANOID).
- * Unless we have a call to finalize allocation (which complicates usage).
- * So use a counter instead.
- *
- * \{ */
-
-void BLI_memiter_iter_init(BLI_memiter *mi, BLI_memiter_handle *iter)
+void lib_memiter_iter_init(LibMemIter *mi, LibMemIterHandle *iter)
 {
-  iter->elem = mi->head ? (BLI_memiter_elem *)mi->head->data : NULL;
+  iter->elem = mi->head ? (LibMemIterElem *)mi->head->data : NULL;
   iter->elem_left = mi->count;
 }
 
-bool BLI_memiter_iter_done(const BLI_memiter_handle *iter)
+bool lib_memiter_iter_done(const LibMemIterHandle *iter)
 {
   return iter->elem_left != 0;
 }
 
-BLI_INLINE void memiter_chunk_step(BLI_memiter_handle *iter)
+LIB_INLINE void memiter_chunk_step(LibMemIterHandle *iter)
 {
-  BLI_assert(iter->elem->size < 0);
-  BLI_memiter_chunk *chunk = (BLI_memiter_chunk *)(((data_t *)iter->elem) + iter->elem->size);
+  lib_assert(iter->elem->size < 0);
+  LibMemIterChunk *chunk = (LibMemIterChunk *)(((data_t *)iter->elem) + iter->elem->size);
   chunk = chunk->next;
-  iter->elem = chunk ? (BLI_memiter_elem *)chunk->data : NULL;
-  BLI_assert(iter->elem == NULL || iter->elem->size >= 0);
+  iter->elem = chunk ? (LibMemIterElem *)chunk->data : NULL;
+  lib_assert(iter->elem == NULL || iter->elem->size >= 0);
 }
 
-void *BLI_memiter_iter_step_size(BLI_memiter_handle *iter, uint *r_size)
+void *lib_memiter_iter_step_size(LibMemIterHandle *iter, uint *r_size)
 {
   if (iter->elem_left != 0) {
     iter->elem_left -= 1;
     if (UNLIKELY(iter->elem->size < 0)) {
       memiter_chunk_step(iter);
     }
-    BLI_assert(iter->elem->size >= 0);
+    lib_assert(iter->elem->size >= 0);
     uint size = (uint)iter->elem->size;
-    *r_size = size; /* <-- only difference */
+    *r_size = size; /* <-- only diff */
     data_t *data = iter->elem->data;
-    iter->elem = (BLI_memiter_elem *)&data[data_offset_from_size(size)];
+    iter->elem = (LibMemIterElem *)&data[data_offset_from_size(size)];
     return (void *)data;
   }
   return NULL;
 }
 
-void *lib_memiter_iter_step(BLI_memiter_handle *iter)
+void *lib_memiter_iter_step(LibMemIterHandle *iter)
 {
   if (iter->elem_left != 0) {
     iter->elem_left -= 1;
     if (UNLIKELY(iter->elem->size < 0)) {
       memiter_chunk_step(iter);
     }
-    BLI_assert(iter->elem->size >= 0);
+    lib_assert(iter->elem->size >= 0);
     uint size = (uint)iter->elem->size;
     data_t *data = iter->elem->data;
-    iter->elem = (BLI_memiter_elem *)&data[data_offset_from_size(size)];
+    iter->elem = (LibMemIterElem *)&data[data_offset_from_size(size)];
     return (void *)data;
   }
   return NULL;
