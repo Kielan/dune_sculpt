@@ -57,13 +57,13 @@ template<> double math_to_double<double>(const double v)
 }
 
  /* Define a templated 2D arrangement of verts, edges, and faces.
- * The SymEdge data structure is the basis for a structure that allows
+ * The SymEdge data struct is the basis for a struct that allows
  * easy traversal to neighboring (by topology) geometric elements.
  * Each of CDTVert, CDTEdge, and CDTFace have an input_id set,
  * which contain ints that keep track of which input verts, edges,
  * and faces, respectively, that the element was derived from.
  *
- * While this could be cleaned up some, it is usable by other routines in Blender
+ * While this could be cleaned up some, it is usable by other routines in Dune
  * that need to keep track of a 2D arrangement, with topology. */
 template<typename Arith_t> struct CDTVert;
 template<typename Arith_t> struct CDTEdge;
@@ -84,7 +84,7 @@ template<typename Arith_t> struct SymEdge {
   SymEdge() = default;
 };
 
-/* Return other SymEdge for same CDTEdge as \a se. */
+/* Return other SymEdge for same CDTEdge as se. */
 template<typename T> inline SymEdge<T> *sym(const SymEdge<T> *se)
 {
   return se->next->rot;
@@ -173,13 +173,13 @@ template<typename T> struct CDTVert {
   FatCo<T> co;
   /* Some edge attached to it. */
   SymEdge<T> *symedge{nullptr};
-  /* Set of corresponding vertex input ids. Not used if don't need_ids. */
-  blender::Set<int> input_ids;
-  /* Index into array that #CDTArrangement keeps. */
+  /* Set of corresponding vert input ids. Not used if don't need_ids. */
+  dune::Set<int> input_ids;
+  /* Index into array that CDTArrangement keeps. */
   int index{-1};
   /* Index of a CDTVert that this has merged to. -1 if no merge. */
   int merge_to_index{-1};
-  /* Used by algorithms operating on CDT structures. */
+  /* Used by algorithms operating on CDT structs. */
   int visit_index{0};
 
   CDTVert() = default;
@@ -190,7 +190,7 @@ template<typename Arith_t> struct CDTEdge {
   /* Set of input edge ids that this is part of.
    * If don't need_ids, then should contain 0 if it is a constrained edge,
    * else empty. */
-  blender::Set<int> input_ids;
+  dune::Set<int> input_ids;
   /* The directed edges for this edge. */
   SymEdge<Arith_t> symedges[2]{SymEdge<Arith_t>(), SymEdge<Arith_t>()};
 
@@ -215,7 +215,7 @@ template<typename Arith_t> struct CDTFace {
 };
 
 template<typename Arith_t> struct CDTArrangement {
-  /* The arrangement owns the memory pointed to by the ptrs in these vectors.
+  /* The arrangement owns the mem pointed to by the ptrs in these vectors.
    * They are ptrs instead of actual structs bc these vectors may be resized and
    * other elements refer to the elements by ptr. */
 
@@ -271,7 +271,7 @@ template<typename Arith_t> struct CDTArrangement {
 
   /* Delete an edge. The new combined face on either side of the deleted edge will be the one that
    * was e's face. There will now be an unused face, which will be marked deleted, and an unused
-   * CDTEdge, marked by setting the next and rot pointers of its SymEdge's to nullptr. */
+   * CDTEdge, marked by setting the next and rot ptrs of its SymEdge's to nullptr. */
   void delete_edge(SymEdge<Arith_t> *se);
 
   /* If the vert with index i in the vert array has not been merge, return it.
@@ -449,9 +449,9 @@ template<typename T> void cdt_drw(const std::string &label, const CDTArrangement
 /* Would like to use dune_tmpdir_base() here, but that brings in dependence on kernel lib.
  * This is just for developer debugging anyway, and should never be called in production Dune. */
 #  ifdef _WIN32
-  const char *drawfile = "./cdt_debug_draw.html";
+  const char *drwfile = "./cdt_debug_draw.html";
 #  else
-  const char *drawfile = "/tmp/cdt_debug_draw.html";
+  const char *drwfile = "/tmp/cdt_debug_draw.html";
 #  endif
   constexpr int max_drw_width = 1800;
   constexpr int max_drw_height = 1600;
@@ -706,7 +706,7 @@ int filtered_incircle<double>(const FatCo<double> &a,
 }
 
 /* Return true if `a -- b -- c` are in that order, assuming they are on a straight line according
- * to #orient2d and we know the order is either `abc` or `bac`.
+ * to orient2d and we know the order is either `abc` or `bac`.
  * This means `ab . ac` and `bc . ac` must both be non-negative.
  * Use filtering to speed this up when using exact arithmetic. */
 template<typename T> static bool in_line(const FatCo<T> &a, const FatCo<T> &b, const FatCo<T> &c);
@@ -843,7 +843,7 @@ CDT_state<T>::CDT_state(
 }
 
 /* Is any id in (range_start, range_start+1, ... , range_end) in id_list? */
-static bool id_range_in_list(const blender::Set<int> &id_list, int range_start, int range_end)
+static bool id_range_in_list(const dune::Set<int> &id_list, int range_start, int range_end)
 {
   for (int id : id_list) {
     if (id >= range_start && id <= range_end) {
@@ -853,15 +853,15 @@ static bool id_range_in_list(const blender::Set<int> &id_list, int range_start, 
   return false;
 }
 
-static void add_to_input_ids(blender::Set<int> &dst, int input_id)
+static void add_to_input_ids(dune::Set<int> &dst, int input_id)
 {
   dst.add(input_id);
 }
 
-static void add_list_to_input_ids(blender::Set<int> &dst, const blender::Set<int> &src)
+static void add_list_to_input_ids(dune::Set<int> &dst, const dune::Set<int> &src)
 {
-  for (int value : src) {
-    dst.add(value);
+  for (int val : src) {
+    dst.add(val);
   }
 }
 
@@ -885,9 +885,7 @@ template<typename T> inline bool is_original_vert(const CDTVert<T> *v, CDT_state
   return (v->index < cdt->input_vert_num);
 }
 
-/**
- * Return the #SymEdge that goes from v1 to v2, if it exists, else return nullptr.
- */
+/* Return the #SymEdge that goes from v1 to v2, if it exists, else return nullptr. */
 template<typename T>
 SymEdge<T> *find_symedge_between_verts(const CDTVert<T> *v1, const CDTVert<T> *v2)
 {
@@ -901,9 +899,7 @@ SymEdge<T> *find_symedge_between_verts(const CDTVert<T> *v1, const CDTVert<T> *v
   return nullptr;
 }
 
-/**
- * Return the SymEdge attached to v that has face f, if it exists, else return nullptr.
- */
+/* Return the SymEdge attached to v that has face f, if it exists, else return nullptr. */
 template<typename T> SymEdge<T> *find_symedge_with_face(const CDTVert<T> *v, const CDTFace<T> *f)
 {
   SymEdge<T> *t = v->symedge;
@@ -916,17 +912,13 @@ template<typename T> SymEdge<T> *find_symedge_with_face(const CDTVert<T> *v, con
   return nullptr;
 }
 
-/**
- * Is there already an edge between a and b?
- */
+/** Is there alrdy an edge between a and b? */
 template<typename T> inline bool exists_edge(const CDTVert<T> *v1, const CDTVert<T> *v2)
 {
   return find_symedge_between_verts(v1, v2) != nullptr;
 }
 
-/**
- * Is the vertex v incident on face f?
- */
+/* Is the vert v incident on face f? */
 template<typename T> bool vert_touches_face(const CDTVert<T> *v, const CDTFace<T> *f)
 {
   SymEdge<T> *se = v->symedge;
@@ -938,14 +930,12 @@ template<typename T> bool vert_touches_face(const CDTVert<T> *v, const CDTFace<T
   return false;
 }
 
-/**
- * Assume s1 and s2 are both #SymEdges in a face with > 3 sides,
+/* Assume s1 and s2 are both SymEdges in a face with > 3 sides,
  * and one is not the next of the other.
  * Add an edge from `s1->v` to `s2->v`, splitting the face in two.
  * The original face will continue to be associated with the sub-face
  * that has s1, and a new face will be made for s2's new face.
- * Return the new diagonal's #CDTEdge pointer.
- */
+ * Return the new diagonal's CDTEdge ptr. */
 template<typename T> CDTEdge<T> *CDTArrangement<T>::add_diagonal(SymEdge<T> *s1, SymEdge<T> *s2)
 {
   CDTFace<T> *fold = s1->face;
@@ -990,15 +980,13 @@ CDTEdge<T> *CDTArrangement<T>::add_vert_to_symedge_edge(CDTVert<T> *v, SymEdge<T
   return e;
 }
 
-/**
- * Connect the verts of se1 and se2, assuming that currently those two #SymEdge's are on
+/* Connect the verts of se1 and se2, assuming that currently those two SymEdge's are on
  * the outer boundary (have face == outer_face) of two components that are isolated from
- * each other.
- */
+ * each other. */
 template<typename T>
 CDTEdge<T> *CDTArrangement<T>::connect_separate_parts(SymEdge<T> *se1, SymEdge<T> *se2)
 {
-  BLI_assert(se1->face == this->outer_face && se2->face == this->outer_face);
+  lib_assert(se1->face == this->outer_face && se2->face == this->outer_face);
   SymEdge<T> *se1_rot = se1->rot;
   SymEdge<T> *se1_rotsym = sym(se1_rot);
   SymEdge<T> *se2_rot = se2->rot;
@@ -1017,11 +1005,9 @@ CDTEdge<T> *CDTArrangement<T>::connect_separate_parts(SymEdge<T> *se1, SymEdge<T
   return e;
 }
 
-/**
- * Split se at fraction lambda,
- * and return the new #CDTEdge that is the new second half.
- * Copy the edge input_ids into the new one.
- */
+/* Split se at fraction lambda,
+ * and return the new CDTEdge that is the new second half.
+ * Copy the edge input_ids into the new one. */
 template<typename T> CDTEdge<T> *CDTArrangement<T>::split_edge(SymEdge<T> *se, T lambda)
 {
   /* Split e at lambda. */
@@ -1051,12 +1037,11 @@ template<typename T> CDTEdge<T> *CDTArrangement<T>::split_edge(SymEdge<T> *se, T
   return e;
 }
 
-/**
- * Delete an edge from the structure. The new combined face on either side of
+/* Delete an edge from the struct. The new combined face on either side of
  * the deleted edge will be the one that was e's face.
  * There will be now an unused face, marked by setting its deleted flag,
- * and an unused #CDTEdge, marked by setting the next and rot pointers of
- * its #SymEdges to #nullptr.
+ * and an unused CDTEdge, marked by setting the next and rot ptrs of
+ * its SymEdges to nullptr.
  * <pre>
  *        .  v2               .
  *       / \                 / \
@@ -1070,8 +1055,7 @@ template<typename T> CDTEdge<T> *CDTArrangement<T>::split_edge(SymEdge<T> *se, T
  *        .  v1               .
  * </pre>
  * Also handle variant cases where one or both ends
- * are attached only to e.
- */
+ * are attached only to e. */
 template<typename T> void CDTArrangement<T>::delete_edge(SymEdge<T> *se)
 {
   SymEdge<T> *sesym = sym(se);
@@ -1116,7 +1100,7 @@ template<typename T> void CDTArrangement<T>::delete_edge(SymEdge<T> *se)
     v2->symedge = f;
   }
 
-  /* Mark #SymEdge as deleted by setting all its pointers to null. */
+  /* Mark SymEdge as deleted by setting all its ptrs to null. */
   se->next = se->rot = nullptr;
   sesym->next = sesym->rot = nullptr;
   if (!v1_isolated && !v2_isolated && aface != bface) {
@@ -1133,9 +1117,7 @@ template<typename T> class SiteInfo {
   int orig_index;
 };
 
-/**
- * Compare function for lexicographic sort: x, then y, then index.
- */
+/* Compare fn for lexicographic sort: x, then y, then index. */
 template<typename T> bool site_lexicographic_sort(const SiteInfo<T> &a, const SiteInfo<T> &b)
 {
   const vec2<T> &co_a = a.v->co.exact;
@@ -1155,11 +1137,9 @@ template<typename T> bool site_lexicographic_sort(const SiteInfo<T> &a, const Si
   return a.orig_index < b.orig_index;
 }
 
-/**
- * Find series of equal vertices in the sorted sites array
- * and use the vertices merge_to_index to indicate that
- * all vertices after the first merge to the first.
- */
+/* Find series of equal verts in the sorted sites array
+ * and use the verts merge_to_index to indicate that
+ * all verts after the first merge to the first. */
 template<typename T> void find_site_merges(Array<SiteInfo<T>> &sites)
 {
   int n = sites.size();
@@ -1170,7 +1150,7 @@ template<typename T> void find_site_merges(Array<SiteInfo<T>> &sites)
       ++j;
     }
     if (j - i > 1) {
-      i = j - 1; /* j-1 because loop head will add another 1. */
+      i = j - 1; /* j-1 bc loop head will add another 1. */
     }
   }
 }
@@ -1192,12 +1172,10 @@ inline bool dc_tri_valid(SymEdge<T> *se, SymEdge<T> *basel, SymEdge<T> *basel_sy
   return filtered_orient2d(se->next->vert->co, basel_sym->vert->co, basel->vert->co) > 0;
 }
 
-/**
- * Delaunay triangulate sites[start} to sites[end-1].
- * Assume sites are lexicographically sorted by coordinate.
- * Return #SymEdge of CCW convex hull at left-most point in *r_le
- * and that of right-most point of cw convex null in *r_re.
- */
+/* Delaunay triangulate sites[start} to sites[end-1].
+ * Assume sites are lexicographically sorted by coord.
+ * Return SymEdge of CCW convex hull at left-most point in *r_le
+ * and that of right-most point of cw convex null in *r_re. */
 template<typename T>
 void dc_tri(CDTArrangement<T> *cdt,
             Array<SiteInfo<T>> &sites,
@@ -1253,7 +1231,7 @@ void dc_tri(CDTArrangement<T> *cdt,
   }
   /* Recursive case. Do left (L) and right (R) halves separately, then join. */
   int n2 = n / 2;
-  BLI_assert(n2 >= 2 && end - (start + n2) >= 2);
+  lib_assert(n2 >= 2 && end - (start + n2) >= 2);
   SymEdge<T> *ldo;
   SymEdge<T> *ldi;
   SymEdge<T> *rdi;
@@ -1269,7 +1247,7 @@ void dc_tri(CDTArrangement<T> *cdt,
     if (dbg_level > 1) {
       std::string lab = "dc_tri (" + std::to_string(start) + "," + std::to_string(start + n2) +
                         ")(" + std::to_string(start + n2) + "," + std::to_string(end) + ")";
-      cdt_draw(lab, *cdt);
+      cdt_drw(lab, *cdt);
     }
   }
   /* Find lower common tangent of L and R. */
@@ -1278,7 +1256,7 @@ void dc_tri(CDTArrangement<T> *cdt,
       ldi = ldi->next;
     }
     else if (vert_right_of_symedge(ldi->vert, rdi)) {
-      rdi = sym(rdi)->rot; /* Previous edge to rdi with same right face. */
+      rdi = sym(rdi)->rot; /* Prev edge to rdi with same right face. */
     }
     else {
       break;
@@ -1295,7 +1273,7 @@ void dc_tri(CDTArrangement<T> *cdt,
   SymEdge<T> *basel_sym = &ebasel->symedges[1];
   if (dbg_level > 1) {
     std::cout << "basel " << basel;
-    cdt_draw("after basel made", *cdt);
+    cdt_drw("after basel made", *cdt);
   }
   if (ldi->vert == ldo->vert) {
     ldo = basel_sym;
@@ -1368,7 +1346,7 @@ void dc_tri(CDTArrangement<T> *cdt,
       break;
     }
     /* The next cross edge to be connected is to either `lcand->next->vert` or `rcand->next->vert`;
-     * if both are valid, choose the appropriate one using the #incircle test. */
+     * if both are valid, choose the appropriate one using the incircle test. */
     if (!valid_lcand ||
         (valid_rcand &&
          filtered_incircle(
@@ -1391,14 +1369,14 @@ void dc_tri(CDTArrangement<T> *cdt,
     }
     basel = &ebasel->symedges[0];
     basel_sym = &ebasel->symedges[1];
-    BLI_assert(basel_sym->face == cdt->outer_face);
+    lib_assert(basel_sym->face == cdt->outer_face);
     if (dbg_level > 2) {
-      cdt_draw("after adding new crossedge", *cdt);
+      cdt_drw("after adding new crossedge", *cdt);
     }
   }
   *r_le = ldo;
   *r_re = rdo;
-  BLI_assert(sym(ldo)->face == cdt->outer_face && rdo->face == cdt->outer_face);
+  lib_assert(sym(ldo)->face == cdt->outer_face && rdo->face == cdt->outer_face);
 }
 
 /* Guibas-Stolfi Divide-and_Conquer algorithm. */
@@ -1424,8 +1402,7 @@ template<typename T> void dc_triangulate(CDTArrangement<T> *cdt, Array<SiteInfo<
   dc_tri(cdt, sites, 0, n, &le, &re);
 }
 
-/**
- * Do a Delaunay Triangulation of the points in cdt.verts.
+/* Do a Delaunay Triangulation of the points in cdt.verts.
  * This  is only a first step in the Constrained Delaunay triangulation,
  * because it doesn't yet deal with the segment constraints.
  * The algorithm used is the Divide & Conquer algorithm from the
@@ -1440,8 +1417,7 @@ template<typename T> void dc_triangulate(CDTArrangement<T> *cdt, Array<SiteInfo<
  * This is accomplished by lexicographically
  * sorting the coordinates first (which is needed anyway for the D&C algorithm).
  * The CDTVerts with merge_to_index not equal to -1 are after this regarded
- * as having been merged into the vertex with the corresponding index.
- */
+ * as having been merged into the vertex with the corresponding index. */
 template<typename T> void initial_triangulation(CDTArrangement<T> *cdt)
 {
   int n = cdt->verts.size();
@@ -1458,13 +1434,11 @@ template<typename T> void initial_triangulation(CDTArrangement<T> *cdt)
   dc_triangulate(cdt, sites);
 }
 
-/**
- * Re-triangulates, assuring constrained delaunay condition,
+/* Re-triangulates, assuring constrained delaunay condition,
  * the pseudo-polygon that cycles from se.
- * "pseudo" because a vertex may be repeated.
+ * "pseudo" because a vert may be repeated.
  * See Anglada paper, "An Improved incremental algorithm
- * for constructing restricted Delaunay triangulations".
- */
+ * for constructing restricted Delaunay triangulations". */
 template<typename T> static void re_delaunay_triangulate(CDTArrangement<T> *cdt, SymEdge<T> *se)
 {
   if (se->face == cdt->outer_face || sym(se)->face == cdt->outer_face) {
@@ -1478,10 +1452,10 @@ template<typename T> static void re_delaunay_triangulate(CDTArrangement<T> *cdt,
   if (count <= 3) {
     return;
   }
-  /* First and last are the SymEdges whose verts are first and last off of base,
+  /* 1st and last are the SymEdges whose verts are first and last off of base,
    * continuing from 'se'. */
   SymEdge<T> *first = se->next->next;
-  /* We want to make a triangle with 'se' as base and some other c as 3rd vertex. */
+  /* We want to make a triangle with 'se' as base and some other c as 3rd vert. */
   CDTVert<T> *a = se->vert;
   CDTVert<T> *b = se->next->vert;
   CDTVert<T> *c = first->vert;
@@ -1516,31 +1490,29 @@ template<typename T> inline int tri_orient(const SymEdge<T> *t)
   return filtered_orient2d(t->vert->co, t->next->vert->co, t->next->next->vert->co);
 }
 
-/**
- * The #CrossData class defines either an endpoint or an intermediate point
+/* The CrossData class defines either an endpoint or an intermediate point
  * in the path we will take to insert an edge constraint.
  * Each such point will either be
- * (a) a vertex or
- * (b) a fraction lambda (0 < lambda < 1) along some #SymEdge.]
+ * (a) a vert or
+ * (b) a fraction lambda (0 < lambda < 1) along some SymEdge.]
  *
  * In general, lambda=0 indicates case a and lambda != 0 indicates case be.
  * The 'in' edge gives the destination attachment point of a diagonal from the previous crossing,
  * and the 'out' edge gives the origin attachment point of a diagonal to the next crossing.
  * But in some cases, 'in' and 'out' are undefined or not needed, and will be null.
  *
- * For case (a), 'vert' will be the vertex, and lambda will be 0, and 'in' will be the #SymEdge
- * from 'vert' that has as face the one that you go through to get to this vertex. If you go
+ * For case (a), 'vert' will be the vert, and lambda will be 0, and 'in' will be the SymEdge
+ * from 'vert' that has as face the one that you go through to get to this vert. If you go
  * exactly along an edge then we set 'in' to null, since it won't be needed. The first crossing
- * will have 'in' = null. We set 'out' to the #SymEdge that has the face we go through to get to
+ * will have 'in' = null. We set 'out' to the SymEdge that has the face we go through to get to
  * the next crossing, or, if the next crossing is a case (a), then it is the edge that goes to that
- * next vertex. 'out' will be null for the last one.
+ * next vert. 'out' will be null for the last one.
  *
  * For case (b), vert will be null at first, and later filled in with the created split vertex,
- * and 'in' will be the #SymEdge that we go through, and lambda will be between 0 and 1,
- * the fraction from in's vert to in->next's vert to put the split vertex.
+ * and 'in' will be the SymEdge that we go through, and lambda will be between 0 and 1,
+ * the fraction from in's vert to in->next's vert to put the split vert.
  * 'out' is not needed in this case, since the attachment point will be the sym of the first
- * half of the split edge.
- */
+ * half of the split edge. */
 template<typename T> class CrossData {
  public:
   T lambda = T(0);
@@ -1590,13 +1562,11 @@ bool get_next_crossing_from_vert(CDT_state<T> *cdt_state,
                                  CrossData<T> *cd_next,
                                  const CDTVert<T> *v2);
 
-/**
- * As part of finding crossings, we found a case where the next crossing goes through vert v.
- * If it came from a previous vert in cd, then cd_out is the edge that leads from that to v.
- * Else cd_out can be null, because it won't be used.
+/* As part of finding crossings, we found a case where the next crossing goes through vert v.
+ * If it came from a prev vert in cd, then cd_out is the edge that leads from that to v.
+ * Else cd_out can be null, bc it won't be used.
  * Set *cd_next to indicate this. We can set 'in' but not 'out'.  We can set the 'out' of the
- * current cd.
- */
+ * current cd. */
 template<typename T>
 void fill_crossdata_for_through_vert(CDTVert<T> *v,
                                      SymEdge<T> *cd_out,
@@ -1621,24 +1591,22 @@ void fill_crossdata_for_through_vert(CDTVert<T> *v,
         se = se->next;
       }
     }
-    BLI_assert(se->vert == v);
+    lib_assert(se->vert == v);
     cd_next->in = se;
   }
 }
 
-/**
- * As part of finding crossings, we found a case where orient tests say that the next crossing
- * is on the #SymEdge t, while intersecting with the ray from \a curco to \a v2.
- * Find the intersection point and fill in the #CrossData for that point.
+/* As part of finding crossings, we found a case where orient tests say that the next crossing
+ * is on the SymEdge t, while intersecting with the ray from curco to v2.
+ * Find the intersection point and fill in the CrossData for that point.
  * It may turn out that when doing the intersection, we get an answer that says that
- * this case is better handled as through-vertex case instead, so we may do that.
+ * this case is better handled as through-vert case instead, so we may do that.
  * In the latter case, we want to avoid a situation where the current crossing is on an edge
  * and the next will be an endpoint of the same edge. When that happens, we "rewrite history"
  * and turn the current crossing into a vert one, and then extend from there.
  *
  * We cannot fill cd_next's 'out' edge yet, in the case that the next one ends up being a vert
- * case. We need to fill in cd's 'out' edge if it was a vert case.
- */
+ * case. We need to fill in cd's 'out' edge if it was a vert case. */
 template<typename T>
 void fill_crossdata_for_intersect(const FatCo<T> &curco,
                                   const CDTVert<T> *v2,
@@ -1652,15 +1620,15 @@ void fill_crossdata_for_intersect(const FatCo<T> &curco,
   CDTVert<T> *vc = t->next->next->vert;
   SymEdge<T> *se_vcvb = sym(t->next);
   SymEdge<T> *se_vcva = t->next->next;
-  BLI_assert(se_vcva->vert == vc && se_vcva->next->vert == va);
-  BLI_assert(se_vcvb->vert == vc && se_vcvb->next->vert == vb);
+  lib_assert(se_vcva->vert == vc && se_vcva->next->vert == va);
+  lib_assert(se_vcvb->vert == vc && se_vcvb->next->vert == vb);
   UNUSED_VARS_NDEBUG(vc);
   auto isect = isect_seg_seg(va->co.exact, vb->co.exact, curco.exact, v2->co.exact);
   T &lambda = isect.lambda;
   switch (isect.kind) {
     case isect_result<vec2<T>>::LINE_LINE_CROSS: {
 #ifdef WITH_GMP
-      if (!std::is_same<T, mpq_class>::value) {
+      if (!std::is_same<T, mpq_class>::val) {
 #else
       if (true) {
 #endif
@@ -1704,7 +1672,7 @@ void fill_crossdata_for_intersect(const FatCo<T> &curco,
     case isect_result<vec2<T>>::LINE_LINE_NONE: {
 #ifdef WITH_GMP
       if (std::is_same<T, mpq_class>::value) {
-        BLI_assert(false);
+        lib_assert(false);
       }
 #endif
       /* It should be very near one end or other of segment. */
@@ -1729,15 +1697,13 @@ void fill_crossdata_for_intersect(const FatCo<T> &curco,
       break;
     }
   }
-}  // namespace blender::meshintersect
+}  // namespace dune::meshintersect
 
-/**
- * As part of finding the crossings of a ray to v2, find the next crossing after 'cd', assuming
- * 'cd' represents a crossing that goes through a vertex.
+/* As part of finding the crossings of a ray to v2, find the next crossing after 'cd', assuming
+ * 'cd' represents a crossing that goes through a vert.
  *
- * We do a rotational scan around cd's vertex, looking for the triangle where the ray from cd->vert
- * to v2 goes between the two arms from cd->vert, or where it goes along one of the edges.
- */
+ * We do a rotational scan around cd's vert, looking for the triangle where the ray from cd->vert
+ * to v2 goes between the two arms from cd->vert, or where it goes along one of the edges. */
 template<typename T>
 bool get_next_crossing_from_vert(CDT_state<T> *cdt_state,
                                  CrossData<T> *cd,
@@ -1753,10 +1719,10 @@ bool get_next_crossing_from_vert(CDT_state<T> *cdt_state,
      * edges around `vcur` or exactly along them. This time through the
      * loop, check to see if the ray goes along `vcur-va`
      * or between `vcur-va` and `vcur-vb`, where va is the end of t
-     * and vb is the next vertex (on the next rot edge around vcur, but
+     * and vb is the next vert (on the next rot edge around vcur, but
      * should also be the next vert of triangle starting with `vcur-va`. */
     if (t->face != cdt_state->cdt.outer_face && tri_orient(t) < 0) {
-      BLI_assert(false); /* Shouldn't happen. */
+      lib_assert(false); /* Shouldn't happen. */
     }
     CDTVert<T> *va = t->next->vert;
     CDTVert<T> *vb = t->next->next->vert;
@@ -1781,14 +1747,12 @@ bool get_next_crossing_from_vert(CDT_state<T> *cdt_state,
   return ok;
 }
 
-/**
- * As part of finding the crossings of a ray to `v2`, find the next crossing after 'cd', assuming
+/* As part of finding the crossings of a ray to `v2`, find the next crossing after 'cd', assuming
  * 'cd' represents a crossing that goes through a an edge, not at either end of that edge.
  *
  * We have the triangle `vb-va-vc`, where `va` and vb are the split edge and `vc` is the third
- * vertex on that new side of the edge (should be closer to `v2`).
- * The next crossing should be through `vc` or intersecting `vb-vc` or `va-vc`.
- */
+ * vert on that new side of the edge (should be closer to `v2`).
+ * The next crossing should be through `vc` or intersecting `vb-vc` or `va-vc`. */
 template<typename T>
 void get_next_crossing_from_edge(CrossData<T> *cd,
                                  CrossData<T> *cd_next,
@@ -1835,17 +1799,15 @@ void dump_crossings(const Vector<CrossData<T>, inline_crossings_size> &crossings
   }
 }
 
-/**
- * Add a constrained edge between v1 and v2 to cdt structure.
- * This may result in a number of #CDTEdges created, due to intersections
- * and partial overlaps with existing cdt vertices and edges.
- * Each created #CDTEdge will have input_id added to its input_ids list.
+/* Add a constrained edge between v1 and v2 to cdt struct.
+ * This may result in a number of CDTEdges created, due to intersections
+ * and partial overlaps with existing cdt verts and edges.
+ * Each created CDTEdge will have input_id added to its input_ids list.
  *
- * If \a r_edges is not null, the #CDTEdges generated or found that go from
+ * If r_edges is not null, the CDTEdges generated or found that go from
  * v1 to v2 are put into that linked list, in order.
  *
- * Assumes that #blender_constrained_delaunay_get_output has not been called yet.
- */
+ * Assumes that dune_constrained_delaunay_get_output has not been called yet. */
 template<typename T>
 void add_edge_constraint(
     CDT_state<T> *cdt_state, CDTVert<T> *v1, CDTVert<T> *v2, int input_id, LinkNode **r_edges)
@@ -1860,39 +1822,35 @@ void add_edge_constraint(
     *r_edges = nullptr;
   }
 
-  /*
-   * Handle two special cases first:
+  /* Handle two special cases first:
    * 1) The two end vertices are the same (can happen because of merging).
-   * 2) There is already an edge between v1 and v2.
-   */
+   * 2) There is already an edge between v1 and v2. */
   if (v1 == v2) {
     return;
   }
   SymEdge<T> *t = find_symedge_between_verts(v1, v2);
   if (t != nullptr) {
-    /* Segment already there. */
+    /* Segment alrdy there. */
     add_to_input_ids(t->edge->input_ids, input_id);
     if (r_edges != nullptr) {
-      BLI_linklist_append(&edge_list, t->edge);
+      lib_linklist_append(&edge_list, t->edge);
       *r_edges = edge_list.list;
     }
     return;
   }
 
-  /*
-   * Fill crossings array with CrossData points for intersection path from v1 to v2.
+  /* Fill crossings array with CrossData points for intersection path from v1 to v2.
    *
    * At every point, the crossings array has the path so far, except that
    * the .out field of the last element of it may not be known yet -- if that
-   * last element is a vertex, then we won't know the output edge until we
+   * last element is a vert, then we won't know the output edge until we
    * find the next crossing.
    *
    * To protect against infinite loops, we keep track of which vertices
    * we have visited by setting their visit_index to a new visit epoch.
    *
-   * We check a special case first: where the segment is already there in
-   * one hop. Saves a bunch of orient2d tests in that common case.
-   */
+   * We check a special case first: where the segment is alrdy there in
+   * one hop. Saves a bunch of orient2d tests in that common case.  */
   int visit = ++cdt_state->visit_count;
   Vector<CrossData<T>, inline_crossings_size> crossings;
   crossings.append(CrossData<T>(T(0), v1, nullptr, nullptr));
@@ -1912,13 +1870,13 @@ void add_edge_constraint(
     constexpr int unreasonably_large_crossings = 100000;
     if (!ok || crossings.size() == unreasonably_large_crossings) {
       /* Shouldn't happen but if does, just bail out. */
-      BLI_assert(false);
+      lib_assert(false);
       return;
     }
     if (crossings[n].lambda == 0) {
       if (crossings[n].vert->visit_index == visit) {
         /* Shouldn't happen but if it does, just bail out. */
-        BLI_assert(false);
+        lib_assert(false);
         return;
       }
       crossings[n].vert->visit_index = visit;
@@ -1929,16 +1887,14 @@ void add_edge_constraint(
     dump_crossings(crossings);
   }
 
-  /*
-   * Post-process crossings.
+  /* Post-process crossings.
    * Some crossings may have an intersection crossing followed
-   * by a vertex crossing that is on the same edge that was just
-   * intersected. We prefer to go directly from the previous
+   * by a vert crossing that is on the same edge that was just
+   * intersected. We prefer to go directly from the prev
    * crossing directly to the vertex. This may chain backwards.
    *
    * This loop marks certain crossings as "deleted", by setting
-   * their lambdas to -1.0.
-   */
+   * their lambdas to -1.0. */
   int ncrossings = crossings.size();
   for (int i = 2; i < ncrossings; ++i) {
     CrossData<T> *cd = &crossings[i];
@@ -1978,9 +1934,7 @@ void add_edge_constraint(
     }
   }
 
-  /*
-   * Insert all intersection points on constrained edges.
-   */
+  /* Insert all intersection points on constrained edges. */
   for (int i = 0; i < ncrossings; ++i) {
     CrossData<T> *cd = &crossings[i];
     if (cd->lambda != 0.0 && cd->lambda != -1.0 && is_constrained_edge(cd->in->edge)) {
@@ -1989,9 +1943,7 @@ void add_edge_constraint(
     }
   }
 
-  /*
-   * Remove any crossed, non-intersected edges.
-   */
+  /* Remove any crossed, non-intersected edges. */
   for (int i = 0; i < ncrossings; ++i) {
     CrossData<T> *cd = &crossings[i];
     if (cd->lambda != 0.0 && cd->lambda != -1.0 && !is_constrained_edge(cd->in->edge)) {
@@ -1999,9 +1951,7 @@ void add_edge_constraint(
     }
   }
 
-  /*
-   * Insert segments for v1->v2.
-   */
+  /* Insert segments for v1->v2. */
   SymEdge<T> *tstart = crossings[0].out;
   for (int i = 1; i < ncrossings; i++) {
     CrossData<T> *cd = &crossings[i];
@@ -2021,7 +1971,7 @@ void add_edge_constraint(
       t = cd->in;
       tnext = cd->out;
       if (t == nullptr) {
-        /* Previous non-deleted crossing must also have been a vert, and segment should exist. */
+        /* Prev non-deleted crossing must also have been a vert, and segment should exist. */
         int j;
         CrossData<T> *cd_prev;
         for (j = i - 1; j >= 0; j--) {
@@ -2030,12 +1980,12 @@ void add_edge_constraint(
             break;
           }
         }
-        BLI_assert(cd_prev->lambda == 0.0);
-        BLI_assert(cd_prev->out->next->vert == cd->vert);
+        lib_assert(cd_prev->lambda == 0.0);
+        lib_assert(cd_prev->out->next->vert == cd->vert);
         edge = cd_prev->out->edge;
         add_to_input_ids(edge->input_ids, input_id);
         if (r_edges != nullptr) {
-          BLI_linklist_append(&edge_list, edge);
+          lib_linklist_append(&edge_list, edge);
         }
       }
     }
@@ -2048,7 +1998,7 @@ void add_edge_constraint(
       }
       add_to_input_ids(edge->input_ids, input_id);
       if (r_edges != nullptr) {
-        BLI_linklist_append(&edge_list, edge);
+        lib_linklist_append(&edge_list, edge);
       }
       /* Now retriangulate upper and lower gaps. */
       re_delaunay_triangulate(&cdt_state->cdt, &edge->symedges[0]);
@@ -2066,12 +2016,10 @@ void add_edge_constraint(
   }
 }
 
-/**
- * Incrementally add edge input edge as a constraint. This may cause the graph structure
+/* Incrementally add edge input edge as a constraint. This may cause the graph struct
  * to change, in cases where the constraints intersect existing edges.
- * The code will ensure that #CDTEdge's created will have ids that tie them back
- * to the original edge constraint index.
- */
+ * The code will ensure that CDTEdge's created will have ids that tie them back
+ * to the original edge constraint index. */
 template<typename T> void add_edge_constraints(CDT_state<T> *cdt_state, const CDT_input<T> &input)
 {
   int ne = input.edge.size();
@@ -2091,12 +2039,11 @@ template<typename T> void add_edge_constraints(CDT_state<T> *cdt_state, const CD
   cdt_state->face_edge_offset = ne;
 }
 
-/**
- * Add face_id to the input_ids lists of all #CDTFace's on the interior of the input face with that
+/* Add face_id to the input_ids lists of all CDTFace's on the interior of the input face with that
  * id. face_symedge is on edge of the boundary of the input face, with assumption that interior is
- * on the left of that #SymEdge.
+ * on the left of that SymEdge.
  *
- * The algorithm is: starting from the #CDTFace for face_symedge, add the face_id and then
+ * The algorithm is: starting from the CDTFace for face_symedge, add the face_id and then
  * process all adjacent faces where the adjacency isn't across an edge that was a constraint added
  * for the boundary of the input face.
  * fedge_start..fedge_end is the inclusive range of edge input ids that are for the given face.
@@ -2107,8 +2054,7 @@ template<typename T> void add_edge_constraints(CDT_state<T> *cdt_state, const CD
  * This may be a feature instead of a bug if the first contiguous section is most of the face and
  * the others are tiny self-crossing triangles at some parts of the boundary.
  * On the other hand, if decide we want to handle these in full generality, then will need a more
- * complicated algorithm (using "inside" tests and a parity rule) to decide on the interior.
- */
+ * complicated algorithm (using "inside" tests and a parity rule) to decide on the interior. */
 template<typename T>
 void add_face_ids(
     CDT_state<T> *cdt_state, SymEdge<T> *face_symedge, int face_id, int fedge_start, int fedge_end)
@@ -2146,23 +2092,21 @@ static int power_of_10_greater_equal_to(int x)
     return 1;
   }
   int ans = 1;
-  BLI_assert(x < INT_MAX / 10);
+  lib_assert(x < INT_MAX / 10);
   while (ans < x) {
     ans *= 10;
   }
   return ans;
 }
 
-/**
- * Incrementally each edge of each input face as an edge constraint.
- * The code will ensure that the #CDTEdge's created will have ids that tie them
+/* Incrementally each edge of each input face as an edge constraint.
+ * The code will ensure that the CDTEdge's created will have ids that tie them
  * back to the original face edge (using a numbering system for those edges
  * that starts with cdt->face_edge_offset, and continues with the edges in
  * order around each face in turn. And then the next face starts at
- * cdt->face_edge_offset beyond the start for the previous face.
+ * cdt->face_edge_offset beyond the start for the prev face.
  * Return the number of faces added, which may be less than input.face.size()
- * in the case that some faces have less than 3 sides.
- */
+ * in the case that some faces have less than 3 sides. */
 template<typename T>
 int add_face_constraints(CDT_state<T> *cdt_state,
                          const CDT_input<T> &input,
@@ -2181,15 +2125,14 @@ int add_face_constraints(CDT_state<T> *cdt_state,
   cdt_state->face_edge_offset = power_of_10_greater_equal_to(
       max_ii(maxflen, cdt_state->face_edge_offset));
   /* The original_edge encoding scheme doesn't work if the following is false.
-   * If we really have that many faces and that large a max face length that when multiplied
-   * together the are >= INT_MAX, then the Delaunay calculation will take unreasonably long anyway.
-   */
-  BLI_assert(INT_MAX / cdt_state->face_edge_offset > input_faces.size());
+   * If that many faces and that large a max face length that when multiplied
+   * together the are >= INT_MAX, then the Delaunay calc will take unreasonably long anyway. */
+  lib_assert(INT_MAX / cdt_state->face_edge_offset > input_faces.size());
   int faces_added = 0;
   for (const int f : input_faces.index_range()) {
     const Span<int> face = input_faces[f];
     if (face.size() <= 2) {
-      /* Ignore faces with fewer than 3 vertices. */
+      /* Ignore faces with fewer than 3 vertts. */
       continue;
     }
     int fedge_start = (f + 1) * cdt_state->face_edge_offset;
@@ -2198,7 +2141,7 @@ int add_face_constraints(CDT_state<T> *cdt_state,
       int iv1 = face[i];
       int iv2 = face[(i + 1) % face.size()];
       if (iv1 < 0 || iv1 >= nv || iv2 < 0 || iv2 >= nv) {
-        /* Ignore face edges with invalid vertices. */
+        /* Ignore face edges with invalid verts. */
         continue;
       }
       ++faces_added;
@@ -2208,28 +2151,28 @@ int add_face_constraints(CDT_state<T> *cdt_state,
       int id = cdt_state->need_ids ? face_edge_id : 0;
       add_edge_constraint(cdt_state, v1, v2, id, &edge_list);
       /* Set a new face_symedge0 each time since earlier ones may not
-       * survive later symedge splits. Really, just want the one when
+       * survive later symedge splits. Ry, just want the one when
        * `i == face.size() - 1`, but this code guards against that one somehow being null. */
       if (edge_list != nullptr) {
         CDTEdge<T> *face_edge = static_cast<CDTEdge<T> *>(edge_list->link);
         face_symedge0 = &face_edge->symedges[0];
         if (face_symedge0->vert != v1) {
           face_symedge0 = &face_edge->symedges[1];
-          BLI_assert(face_symedge0->vert == v1);
+          lib_assert(face_symedge0->vert == v1);
         }
       }
-      BLI_linklist_free(edge_list, nullptr);
+      lib_linklist_free(edge_list, nullptr);
     }
     int fedge_end = fedge_start + face.size() - 1;
     if (face_symedge0 != nullptr) {
       /* We need to propagate face ids to all faces that represent #f, if #need_ids.
        * Even if `need_ids == false`, we need to propagate at least the fact that
        * the face ids set would be non-empty if the output type is one of the ones
-       * making valid BMesh faces. */
+       * making valid Mesh faces. */
       int id = cdt_state->need_ids ? f : 0;
       add_face_ids(cdt_state, face_symedge0, id, fedge_start, fedge_end);
       if (cdt_state->need_ids ||
-          ELEM(output_type, CDT_CONSTRAINTS_VALID_BMESH, CDT_CONSTRAINTS_VALID_BMESH_WITH_HOLES))
+          ELEM(output_type, CDT_CONSTRAINTS_VALID_MESH, CDT_CONSTRAINTS_VALID_MESH_WITH_HOLES))
       {
         add_face_ids(cdt_state, face_symedge0, f, fedge_start, fedge_end);
       }
@@ -2269,22 +2212,19 @@ template<typename T> void dissolve_symedge(CDT_state<T> *cdt_state, SymEdge<T> *
   cdt->delete_edge(se);
 }
 
-/**
- * Remove all non-constraint edges.
- */
+/* Remove all non-constraint edges. */
 template<typename T> void remove_non_constraint_edges(CDT_state<T> *cdt_state)
 {
   for (CDTEdge<T> *e : cdt_state->cdt.edges) {
     SymEdge<T> *se = &e->symedges[0];
-    if (!is_deleted_edge(e) && !is_constrained_edge(e)) {
+    if (!is_del_edge(e) && !is_constrained_edge(e)) {
       dissolve_symedge(cdt_state, se);
     }
   }
 }
 
-/*
- * Remove the non-constraint edges, but leave enough of them so that all of the
- * faces that would be #BMesh faces (that is, the faces that have some input representative)
+/* Remove the non-constraint edges, but leave enough of them so that all of the
+ * faces that would be Mesh faces (that is, the faces that have some input representative)
  * are valid: they can't have holes, they can't have repeated vertices, and they can't have
  * repeated edges.
  *
@@ -2320,7 +2260,7 @@ template<typename T> struct EdgeToSort {
   }
 };
 
-template<typename T> void remove_non_constraint_edges_leave_valid_bmesh(CDT_state<T> *cdt_state)
+template<typename T> void remove_non_constraint_edges_leave_valid_mesh(CDT_state<T> *cdt_state)
 {
   CDTArrangement<T> *cdt = &cdt_state->cdt;
   size_t nedges = cdt->edges.size();
@@ -2331,7 +2271,7 @@ template<typename T> void remove_non_constraint_edges_leave_valid_bmesh(CDT_stat
   dissolvable_edges.reserve(cdt->edges.size());
   int i = 0;
   for (CDTEdge<T> *e : cdt->edges) {
-    if (!is_deleted_edge(e) && !is_constrained_edge(e)) {
+    if (!is_del_edge(e) && !is_constrained_edge(e)) {
       dissolvable_edges.append(EdgeToSort<T>());
       dissolvable_edges[i].e = e;
       const vec2<double> &co1 = e->symedges[0].vert->co.approx;
@@ -2354,8 +2294,8 @@ template<typename T> void remove_non_constraint_edges_leave_valid_bmesh(CDT_stat
     if (fleft != cdt->outer_face && fright != cdt->outer_face &&
         (fleft->input_ids.size() > 0 || fright->input_ids.size() > 0))
     {
-      /* Is there another #SymEdge with same left and right faces?
-       * Or is there a vertex not part of e touching the same left and right faces? */
+      /* Is there another SymEdge with same left and right faces?
+       * Or is there a vert not part of e touching the same left and right faces? */
       for (SymEdge<T> *se2 = se->next; dissolve && se2 != se; se2 = se2->next) {
         if (sym(se2)->face == fright ||
             (se2->vert != se->next->vert && vert_touches_face(se2->vert, fright)))
@@ -2413,7 +2353,7 @@ template<typename T> void remove_outer_edges_until_constraints(CDT_state<T> *cdt
       se = se->next;
     } while (se != se_start);
     while (to_dissolve != nullptr) {
-      se = static_cast<SymEdge<T> *>(BLI_linklist_pop(&to_dissolve));
+      se = static_cast<SymEdge<T> *>(lib_linklist_pop(&to_dissolve));
       if (se->next != nullptr) {
         dissolve_symedge(cdt_state, se);
       }
@@ -2436,8 +2376,7 @@ template<typename T> void remove_faces_in_holes(CDT_state<T> *cdt_state)
         se_next = se->next; /* In case we delete this edge. */
         if (se->edge && !is_constrained_edge(se->edge)) {
           /* Invalidate one half of this edge. The other has will be or has been
-           * handled with the adjacent triangle is processed: it should be part of the same hole.
-           */
+           * handled with the adjacent triangle is processed: it should be part of the same hole. */
           se->next = nullptr;
         }
         se = se_next;
@@ -2472,13 +2411,13 @@ template<typename T> void detect_holes(CDT_state<T> *cdt_state)
     if (!f->deleted && f->symedge && f->visit_index == -1) {
       fstack.append(f);
       ++cur_rgn;
-      region_rep_face.append(f);
+      rgn_rep_face.append(f);
       while (!fstack.is_empty()) {
         CDTFace<T> *f = fstack.pop_last();
         if (f->visit_index != -1) {
           continue;
         }
-        f->visit_index = cur_region;
+        f->visit_index = cur_rgn;
         SymEdge<T> *se_start = f->symedge;
         SymEdge<T> *se = se_start;
         do {
@@ -2493,15 +2432,15 @@ template<typename T> void detect_holes(CDT_state<T> *cdt_state)
       }
     }
   }
-  cdt_state->visit_count = ++cur_region; /* Good start for next use of visit_count. */
+  cdt_state->visit_count = ++cur_rgn; /* Good start for next use of visit_count. */
 
   /* Now get hole status for each rgn_rep_face. */
   /* Pick a ray end almost certain to be outside everything and in direction
    * that is unlikely to hit a vertex or overlap an edge exactly. */
   FatCo<T> ray_end;
   ray_end.exact = vec2<T>(123456, 654321);
-  for (int i : region_rep_face.index_range()) {
-    CDTFace<T> *f = region_rep_face[i];
+  for (int i : rgn_rep_face.index_range()) {
+    CDTFace<T> *f = rgn_rep_face[i];
     FatCo<T> mid;
     mid.exact[0] = (f->symedge->vert->co.exact[0] + f->symedge->next->vert->co.exact[0] +
                     f->symedge->next->next->vert->co.exact[0]) /
@@ -2538,14 +2477,14 @@ template<typename T> void detect_holes(CDT_state<T> *cdt_state)
     f->hole = (hits.load() % 2) == 0;
   }
 
-  /* Finally, propagate hole status to all holes of a region. */
+  /* Finally, propagate hole status to all holes of a rgn. */
   for (int i : cdt->faces.index_range()) {
     CDTFace<T> *f = cdt->faces[i];
     int rgm = f->visit_index;
     if (rgn < 0) {
       continue;
     }
-    CDTFace<T> *f_rgn_rep = region_rep_face[region];
+    CDTFace<T> *f_rgn_rep = region_rep_face[rgn];
     if (i >= 0) {
       f->hole = f_rgn_rep->hole;
     }
@@ -2575,7 +2514,7 @@ void prepare_cdt_for_output(CDT_state<T> *cdt_state, const CDT_output_type outpu
   }
 
   bool need_holes = output_type == CDT_INSIDE_WITH_HOLES ||
-                    output_type == CDT_CONSTRAINTS_VALID_BMESH_WITH_HOLES;
+                    output_type == CDT_CONSTRAINTS_VALID_MESH_WITH_HOLES;
 
   if (need_holes) {
     detect_holes(cdt_state);
@@ -2584,8 +2523,8 @@ void prepare_cdt_for_output(CDT_state<T> *cdt_state, const CDT_output_type outpu
   if (output_type == CDT_CONSTRAINTS) {
     remove_non_constraint_edges(cdt_state);
   }
-  else if (output_type == CDT_CONSTRAINTS_VALID_BMESH) {
-    remove_non_constraint_edges_leave_valid_bmesh(cdt_state);
+  else if (output_type == CDT_CONSTRAINTS_VALID_MESH) {
+    remove_non_constraint_edges_leave_valid_mesh(cdt_state);
   }
   else if (output_type == CDT_INSIDE) {
     remove_outer_edges_until_constraints(cdt_state);
@@ -2594,9 +2533,9 @@ void prepare_cdt_for_output(CDT_state<T> *cdt_state, const CDT_output_type outpu
     remove_outer_edges_until_constraints(cdt_state);
     remove_faces_in_holes(cdt_state);
   }
-  else if (output_type == CDT_CONSTRAINTS_VALID_BMESH_WITH_HOLES) {
+  else if (output_type == CDT_CONSTRAINTS_VALID_MESH_WITH_HOLES) {
     remove_outer_edges_until_constraints(cdt_state);
-    remove_non_constraint_edges_leave_valid_bmesh(cdt_state);
+    remove_non_constraint_edges_leave_valid_mesh(cdt_state);
     remove_faces_in_holes(cdt_state);
   }
 }
@@ -2746,17 +2685,17 @@ CDT_result<T> delaunay_calc(const CDT_input<T> &input, CDT_output_type output_ty
 }
 
 dune::meshintersect::CDT_result<double> delaunay_2d_calc(const CDT_input<double> &input,
-                                                            CDT_output_type output_type)
+                                                         CDT_output_type output_type)
 {
   return delaunay_calc(input, output_type);
 }
 
 #ifdef WITH_GMP
-blender::meshintersect::CDT_result<mpq_class> delaunay_2d_calc(const CDT_input<mpq_class> &input,
-                                                               CDT_output_type output_type)
+dune::meshintersect::CDT_result<mpq_class> delaunay_2d_calc(const CDT_input<mpq_class> &input,
+                                                            CDT_output_type output_type)
 {
   return delaunay_calc(input, output_type);
 }
 #endif
 
-} /* namespace blender::meshintersect */
+} /* namespace dune::meshintersect */
