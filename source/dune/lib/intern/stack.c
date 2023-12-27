@@ -124,21 +124,21 @@ void lib_stack_push(LibStack *stack, const void *src)
   memcpy(dst, src, stack->elem_size);
 }
 
-void lib_stack_pop(BLI_Stack *stack, void *dst)
+void lib_stack_pop(LibStack *stack, void *dst)
 {
-  BLI_assert(BLI_stack_is_empty(stack) == false);
+  lib_assert(lib_stack_is_empty(stack) == false);
 
   memcpy(dst, stack_get_last_elem(stack), stack->elem_size);
 
-  BLI_stack_discard(stack);
+  lib_stack_discard(stack);
 }
 
-void BLI_stack_pop_n(BLI_Stack *stack, void *dst, uint n)
+void lib_stack_pop_n(LibStack *stack, void *dst, uint n)
 {
-  BLI_assert(n <= BLI_stack_count(stack));
+  lib_assert(n <= lib_stack_count(stack));
 
   while (n--) {
-    BLI_stack_pop(stack, dst);
+    lib_stack_pop(stack, dst);
     dst = (void *)((char *)dst + stack->elem_size);
   }
 }
