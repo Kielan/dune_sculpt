@@ -1,12 +1,12 @@
-#include "DNA_vec_types.h"
+#include "types_vec.h"
 
-#include "BLI_math_base.h"
-#include "BLI_math_geom.h"
-#include "BLI_strict_flags.h"
+#include "lib_math_base.h"
+#include "lib_math_geom.h"
+#include "lib_strict_flags.h"
 
-#include "BLI_lasso_2d.h" /* own include */
+#include "lib_lasso_2d.h" /* own include */
 
-void BLI_lasso_boundbox(rcti *rect, const int mcoords[][2], const uint mcoords_len)
+void lib_lasso_boundbox(rcti *rect, const int mcoords[][2], const uint mcoords_len)
 {
   uint a;
 
@@ -49,25 +49,24 @@ bool lib_lasso_is_edge_inside(const int mcoords[][2],
                               int y0,
                               int x1,
                               int y1,
-                              const int error_value)
+                              const int error_val)
 {
 
-  if (x0 == err_val || x1 == error_value || mcoords_len == 0) {
+  if (x0 == err_val || x1 == error_val || mcoords_len == 0) {
     return false;
   }
 
   const int v1[2] = {x0, y0}, v2[2] = {x1, y1};
 
   /* check points in lasso */
-  if (lib_lasso_is_point_inside(mcoords, mcoords_len, v1[0], v1[1], error_value)) {
+  if (lib_lasso_is_point_inside(mcoords, mcoords_len, v1[0], v1[1], err_val)) {
     return true;
   }
-  if (lib_lasso_is_point_inside(mcoords, mcoords_len, v2[0], v2[1], error_value)) {
+  if (lib_lasso_is_point_inside(mcoords, mcoords_len, v2[0], v2[1], err_val)) {
     return true;
   }
 
   /* no points in lasso, so we have to intersect with lasso edge */
-
   if (isect_seg_seg_v2_int(mcoords[0], mcoords[mcoords_len - 1], v1, v2) > 0) {
     return true;
   }
