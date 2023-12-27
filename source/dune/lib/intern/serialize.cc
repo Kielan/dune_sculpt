@@ -5,7 +5,7 @@
 
 namespace dune::io::serialize {
 
-const StringVal *Value::as_string_val() const
+const StringVal *Val::as_string_val() const
 {
   if (type_ != eValType::String) {
     return nullptr;
@@ -29,7 +29,7 @@ const DoubleVal *Val::as_double_val() const
   return static_cast<const DoubleVal *>(this);
 }
 
-const BoolVal *Value::as_bool_val() const
+const BoolVal *Val::as_bool_val() const
 {
   if (type_ != eValType::Bool) {
     return nullptr;
@@ -139,8 +139,8 @@ static std::unique_ptr<Val> convert_from_json(const nlohmann::ordered_json &j);
 static std::unique_ptr<ArrayVal> convert_from_json_to_array(const nlohmann::ordered_json &j)
 {
   std::unique_ptr<ArrayVal> array = std::make_unique<ArrayVal>();
-  ArrayVal::Items &elements = array->elements();
-  for (auto element : j.items()) {
+  ArrayVal::Items &elems = array->elements();
+  for (auto elem : j.items()) {
     nlohmann::ordered_json element_json = element.val();
     std::unique_ptr<Val> val = convert_from_json(element_json);
     elements.append_as(val.release());
@@ -165,11 +165,11 @@ static std::unique_ptr<DictionaryVal> convert_from_json_to_ob(
 static std::unique_ptr<Val> convert_from_json(const nlohmann::ordered_json &j)
 {
   switch (j.type()) {
-    case nlohmann::json::value_t::array: {
+    case nlohmann::json::val_t::array: {
       return convert_from_json_to_array(j);
     }
 
-    case nlohmann::json::value_t::object: {
+    case nlohmann::json::val_t::object: {
       return convert_from_json_to_ob(j);
     }
 
@@ -214,7 +214,7 @@ void ArrayVal::append(std::shared_ptr<Val> val)
 
 void ArrayVal::append_bool(const bool val)
 {
-  this->append(std::make_shared<BooleanVal>(val));
+  this->append(std::make_shared<BoolVal>(val));
 }
 
 void ArrayVal::append_int(const int val)
@@ -383,4 +383,4 @@ std::shared_ptr<Val> read_json_file(const StringRef path)
   return formatter.deserialize(stream);
 }
 
-}  // namespace blender::io::serialize
+}  // namespace dune::io::serialize
