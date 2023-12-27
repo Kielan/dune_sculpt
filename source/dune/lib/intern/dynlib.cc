@@ -87,27 +87,27 @@ DynamicLib *lib_dynlib_open(const char *name)
     return nullptr;
   }
 
-  lib = mem_cnew<DynamicLib>("Dynamic Library");
+  lib = mem_cnew<DynamicLib>("Dynamic Lib");
   lib->handle = handle;
 
   return lib;
 }
 
-void *lib_dynlib_find_symbol(DynamicLibrary *lib, const char *symname)
+void *lib_dynlib_find_symbol(DynamicLib *lib, const char *symname)
 {
   return dlsym(lib->handle, symname);
 }
 
-char *lib_dynlib_get_error_as_string(DynamicLibrary *lib)
+char *lib_dynlib_get_error_as_string(DynamicLib *lib)
 {
   (void)lib; /* unused */
   return dlerror();
 }
 
-void lib_dynlib_close(DynamicLibrary *lib)
+void lib_dynlib_close(DynamicLib *lib)
 {
   dlclose(lib->handle);
-  MEM_freeN(lib);
+  mem_free(lib);
 }
 
 #endif
