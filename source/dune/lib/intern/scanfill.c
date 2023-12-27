@@ -95,7 +95,7 @@ ScanFillVert *lib_scanfill_vert_add(ScanFillCxt *sf_cxt, const float vec[3])
   /* just zero out the rest */
   zero_v2(sf_v->xy);
   sf_v->keyindex = 0;
-  sf_v->poly_nr = sf_ctx->poly_nr;
+  sf_v->poly_nr = sf_cxt->poly_nr;
   sf_v->edge_count = 0;
   sf_v->f = SF_VERT_NEW;
   sf_v->user_flag = 0;
@@ -114,7 +114,7 @@ ScanFillEdge *lib_scanfill_edge_add(ScanFillCxt *sf_cxt, ScanFillVert *v1, ScanF
   sf_ed->v2 = v2;
 
   /* just zero out the rest */
-  sf_ed->poly_nr = sf_ctx->poly_nr;
+  sf_ed->poly_nr = sf_cxt->poly_nr;
   sf_ed->f = SF_EDGE_NEW;
   sf_ed->user_flag = 0;
   sf_ed->tmp.c = 0;
@@ -130,8 +130,8 @@ static void addfillface(ScanFillCxt *sf_cxt,
   /* does not make edges */
   ScanFillFace *sf_tri;
 
-  sf_tri = lib_memarena_alloc(sf_ctx->arena, sizeof(ScanFillFace));
-  lib_addtail(&sf_ctx->fillfacebase, sf_tri);
+  sf_tri = lib_memarena_alloc(sf_cxt->arena, sizeof(ScanFillFace));
+  lib_addtail(&sf_cxt->fillfacebase, sf_tri);
 
   sf_tri->v1 = v1;
   sf_tri->v2 = v2;
@@ -191,13 +191,13 @@ static void mergepolysSimp(ScanFillCxt *sf_cxt, PolyFill *pf1, PolyFill *pf2)
   ScanFillEdge *eed;
 
   /* replace old poly numbers */
-  for (eve = sf_ctx->fillvertbase.first; eve; eve = eve->next) {
+  for (eve = sf_cxt->fillvertbase.first; eve; eve = eve->next) {
     if (eve->poly_nr == pf2->nr) {
       eve->poly_nr = pf1->nr;
     }
   }
 
-  for (eed = sf_ctx->filledgebase.first; eed; eed = eed->next) {
+  for (eed = sf_cxt->filledgebase.first; eed; eed = eed->next) {
     if (eed->poly_nr == pf2->nr) {
       eed->poly_nr = pf1->nr;
     }
@@ -384,7 +384,7 @@ static void testvertnearedge(ScanFillCxt *sf_cxt)
         ed1->v2 = eve;
       }
 
-      for (eed = sf_ctx->filledgebase.first; eed; eed = eed->next) {
+      for (eed = sf_cxt->filledgebase.first; eed; eed = eed->next) {
         if (eve != eed->v1 && eve != eed->v2 && eve->poly_nr == eed->poly_nr) {
           if (compare_v2v2(eve->xy, eed->v1->xy, SF_EPSILON)) {
             ed1->v2 = eed->v1;
@@ -500,7 +500,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
         eve->f = SF_VERT_NEW; /* Flag for connect edges later on. */
         sc->vert = eve;
         sc->edge_first = sc->edge_last = NULL;
-        /* NOTE: debug print only will work for curve poly-fill, union is in use for mesh. */
+        /* debug print only will work for curve poly-fill, union is in use for mesh. */
 #if 0
         if (even->tmp.v == NULL) {
           eve->tmp.u = verts;
@@ -554,7 +554,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
     }
   }
 #if 0
-  sc = sf_ctx->_scdata;
+  sc = sf_cxt->_scdata;
   for (a = 0; a < verts; a++) {
     printf("\nscvert: %x\n", sc->vert);
     for (eed = sc->edge_first; eed; eed = eed->next) {
@@ -569,7 +569,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
     twoconnected = true;
   }
 
-  /* (temporal) security: never much more faces than verts */
+  /* (tmp) security: never much more faces than verts */
   totface = 0;
   if (flag & LIB_SCANFILL_CALC_HOLES) {
     maxface = 2 * verts; /* 2*verts: based at a filled circle within a triangle */
@@ -662,7 +662,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
                   }
                   else {
                     /* Prevent angle calc for the simple cases
-                     * only 1 vertex is found. */
+                     * only 1 vert is found. */
                     if (firsttime == false) {
                       angle_best_cos = cos_v2v2v2(v2->xy, v1->xy, best_sc->vert->xy);
                       firsttime = true;
@@ -705,7 +705,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
           /* ed2 can be removed when it's a boundary edge */
           if (((ed2->f == SF_EDGE_NEW) && twoconnected) /* || (ed2->f == SF_EDGE_BOUNDARY) */) {
             lib_remlink((List *)&(sc->edge_first), ed2);
-            lib_addtail(&sf_ctx->filledgebase, ed2);
+            lib_addtail(&sf_cxt->filledgebase, ed2);
             ed2->v2->f = SF_VERT_NEW;
             ed2->v1->edge_count--;
             ed2->v2->edge_count--;
@@ -730,7 +730,7 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
               if ((ed3->v1 == v1 && ed3->v2 == v3) || (ed3->v1 == v3 && ed3->v2 == v1)) {
                 if (twoconnected /* || (ed3->f == SF_EDGE_BOUNDARY) */) {
                   lib_remlink((List *)&(sc1->edge_first), ed3);
-                  lib_addtail(&sf_ctx->filledgebase, ed3);
+                  lib_addtail(&sf_cxt->filledgebase, ed3);
                   ed3->v1->edge_count--;
                   ed3->v2->edge_count--;
                 }
@@ -770,16 +770,16 @@ static uint scanfill(ScanFillCxt *sf_cxt, PolyFill *pf, const int flag)
 
 void lib_scanfill_begin(ScanFillCxt *sf_cxt)
 {
-  memset(sf_cxt, 0, sizeof(*sf_ctx));
+  memset(sf_cxt, 0, sizeof(*sf_cxt));
   sf_cxt->poly_nr = SF_POLY_UNSET;
   sf_cxt->arena = lib_memarena_new(LIB_SCANFILL_ARENA_SIZE, __func__);
 }
 
 void lib_scanfill_begin_arena(ScanFillCxt *sf_cxt, MemArena *arena)
 {
-  memset(sf_ctx, 0, sizeof(*sf_cxt));
-  sf_ctx->poly_nr = SF_POLY_UNSET;
-  sf_ctx->arena = arena;
+  memset(sf_cxt, 0, sizeof(*sf_cxt));
+  sf_cxt->poly_nr = SF_POLY_UNSET;
+  sf_cxt->arena = arena;
 }
 
 void lib_scanfill_end(ScanFillCxt *sf_cxt)
@@ -802,7 +802,7 @@ void lib_scanfill_end_arena(ScanFillCxt *sf_cxt, MemArena *arena)
   lib_list_clear(&sf_cxt->fillfacebase);
 }
 
-uint lib_scanfill_calc_ex(ScanFillCxt *sf_ctx, const int flag, const float nor_proj[3])
+uint lib_scanfill_calc_ex(ScanFillCxt *sf_cxt, const int flag, const float nor_proj[3])
 {
   /* - fill works with its own lists, so create that first (no faces!)
    * - for verts, put in ->tmp.v the old ptr
@@ -840,7 +840,7 @@ uint lib_scanfill_calc_ex(ScanFillCxt *sf_ctx, const int flag, const float nor_p
     eed->v2->f = SF_VERT_AVAILABLE;
   }
 
-  for (eve = sf_ctx->fillvertbase.first; eve; eve = eve->next) {
+  for (eve = sf_cxt->fillvertbase.first; eve; eve = eve->next) {
     if (eve->f == SF_VERT_AVAILABLE) {
       break;
     }
@@ -885,7 +885,7 @@ uint lib_scanfill_calc_ex(ScanFillCxt *sf_ctx, const int flag, const float nor_p
 
   /* STEP 1: COUNT POLYS */
   if (sf_cxt->poly_nr != SF_POLY_UNSET) {
-    poly = (ushort)(sf_ctx->poly_nr + 1);
+    poly = (ushort)(sf_cxt->poly_nr + 1);
     sf_cxt->poly_nr = SF_POLY_UNSET;
   }
 
@@ -1036,11 +1036,11 @@ uint lib_scanfill_calc_ex(ScanFillCxt *sf_ctx, const int flag, const float nor_p
     pf->nr = a;
     pf++;
   }
-  for (eed = sf_ctx->filledgebase.first; eed; eed = eed->next) {
+  for (eed = sf_cxt->filledgebase.first; eed; eed = eed->next) {
     pflist[eed->poly_nr].edges++;
   }
 
-  for (eve = sf_ctx->fillvertbase.first; eve; eve = eve->next) {
+  for (eve = sf_cxt->fillvertbase.first; eve; eve = eve->next) {
     pflist[eve->poly_nr].verts++;
     min_xy_p = pflist[eve->poly_nr].min_xy;
     max_xy_p = pflist[eve->poly_nr].max_xy;
