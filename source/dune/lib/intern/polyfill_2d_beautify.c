@@ -1,33 +1,27 @@
-/** \file
- * \ingroup bli
- *
- * This function is to improve the tessellation resulting from polyfill2d,
+/* This fn is to improve the tessellation resulting from polyfill2d,
  * creating optimal topology.
  *
- * The functionality here matches #BM_mesh_beautify_fill,
- * but its far simpler to perform this operation in 2d,
+ * Functionality here matches mesh_beautify_fill,
+ * but far simpler to perform this op in 2d,
  * on a simple polygon representation where we _know_:
  *
- * - The polygon is primitive with no holes with a continuous boundary.
+ * - The polygon is primitive with no holes w a continuous boundary.
  * - Triangles have consistent winding.
  * - 2d (saves some hassles projecting face pairs on an axis for every edge-rotation)
- *   also saves us having to store all previous edge-states
- *   (see #EdRotState in `bmesh_beautify.cc`).
+ *   also saves us having to store all prev edge-states
+ *   (see EdRotState in `mesh_beautify.cc`)
  *
- * \note
- *
- * No globals - keep threadsafe.
- */
+ * No globals - keep threadsafe. */
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BLI_heap.h"
-#include "BLI_math_geom.h"
-#include "BLI_memarena.h"
+#include "lib_heap.h"
+#include "lib_math_geom.h"
+#include "lib_memarena.h"
 
-#include "BLI_polyfill_2d_beautify.h" /* own include */
+#include "lib_polyfill_2d_beautify.h" /* own include */
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 /* Used to find matching edges. */
 struct OrderEdge {
@@ -68,16 +62,16 @@ static int oedge_cmp(const void *a1, const void *a2)
     return -1;
   }
   /* Should never get here, no two edges should be the same. */
-  BLI_assert(false);
+  lib_assert(false);
   return 0;
 }
 
-BLI_INLINE bool is_boundary_edge(uint i_a, uint i_b, const uint coord_last)
+LIB_INLINE bool is_boundary_edge(uint i_a, uint i_b, const uint coord_last)
 {
-  BLI_assert(i_a < i_b);
+  LIB_assert(i_a < i_b);
   return ((i_a + 1 == i_b) || UNLIKELY((i_a == 0) && (i_b == coord_last)));
 }
-float BLI_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
+float lib_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
                                                 const float v2[2],
                                                 const float v3[2],
                                                 const float v4[2],
@@ -94,7 +88,7 @@ float BLI_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
     const float area_2x_123 = cross_tri_v2(v1, v2, v3);
     const float area_2x_134 = cross_tri_v2(v1, v3, v4);
 
-    BLI_assert((ELEM(v1, v2, v3, v4) == false) && (ELEM(v2, v1, v3, v4) == false) &&
+    lib_assert((ELEM(v1, v2, v3, v4) == false) && (ELEM(v2, v1, v3, v4) == false) &&
                (ELEM(v3, v1, v2, v4) == false) && (ELEM(v4, v1, v2, v3) == false));
 
     if (r_area) {
@@ -104,11 +98,9 @@ float BLI_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
                 8.0f;
     }
 
-    /*
-     * Test for unusable (1-3) state.
+    /* Test for unusable (1-3) state.
      * - Area sign flipping to check faces aren't going to point in opposite directions.
-     * - Area epsilon check that the one of the faces won't be zero area.
-     */
+     * - Area epsilon check that the one of the faces won't be zero area.   */
     if ((area_2x_123 >= 0.0f) != (area_2x_134 >= 0.0f)) {
       break;
     }
@@ -146,7 +138,7 @@ float BLI_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
       len_13 = len_v2v2(v1, v3);
       len_24 = len_v2v2(v2, v4);
 
-      /* NOTE: area is in fact (area * 2),
+      /* Area is in fact (area * 2),
        * but in this case its OK, since we're comparing ratios */
 
       /* edge (2-4), current state */
@@ -163,7 +155,7 @@ float BLI_polyfill_beautify_quad_rotate_calc_ex(const float v1[2],
       prim_b = len_34 + len_41 + len_13;
       fac_13 = (area_a / prim_a) + (area_b / prim_b);
 
-      /* negative number if (1-3) is an improved state */
+      /* negative num if (1-3) is an improved state */
       return fac_24 - fac_13;
     }
   } while (false);
@@ -188,7 +180,7 @@ static float polyedge_rotate_beauty_calc(const float (*coords)[2],
   v3 = coords[e_b_other->v];
   v4 = coords[e_b->v];
 
-  return BLI_polyfill_beautify_quad_rotate_calc_ex(v1, v2, v3, v4, false, r_area);
+  return lib_polyfill_beautify_quad_rotate_calc_ex(v1, v2, v3, v4, false, r_area);
 }
 
 static void polyedge_beauty_cost_update_single(const float (*coords)[2],
@@ -198,7 +190,7 @@ static void polyedge_beauty_cost_update_single(const float (*coords)[2],
                                                HeapNode **eheap_table)
 {
   const uint i = e->base_index;
-  /* recalculate edge */
+  /* recalc edge */
   float area;
   const float cost = polyedge_rotate_beauty_calc(coords, edges, e, &area);
   /* We can get cases where both choices generate very small negative costs,
@@ -211,11 +203,11 @@ static void polyedge_beauty_cost_update_single(const float (*coords)[2],
    * now the epsilon is scaled by the face area.
    * See #56532. */
   if (cost < -1e-6f * max_ff(area, 1.0f)) {
-    BLI_heap_insert_or_update(eheap, &eheap_table[i], cost, e);
+    lib_heap_insert_or_update(eheap, &eheap_table[i], cost, e);
   }
   else {
     if (eheap_table[i]) {
-      BLI_heap_remove(eheap, eheap_table[i]);
+      lib_heap_remove(eheap, eheap_table[i]);
       eheap_table[i] = NULL;
     }
   }
@@ -244,7 +236,7 @@ static void polyedge_beauty_cost_update(const float (*coords)[2],
 
 static void polyedge_rotate(struct HalfEdge *edges, const struct HalfEdge *e)
 {
-  /** CCW winding, rotate internal edge to new vertical state.
+  /* CCW winding, rotate internal edge to new vert state.
    *
    * \code{.unparsed}
    *   Before         After
@@ -287,7 +279,7 @@ static void polyedge_rotate(struct HalfEdge *edges, const struct HalfEdge *e)
   ed[3]->v = ed[2]->v;
 }
 
-void BLI_polyfill_beautify(const float (*coords)[2],
+void lib_polyfill_beautify(const float (*coords)[2],
                            const uint coords_num,
                            uint (*tris)[3],
 
@@ -303,8 +295,8 @@ void BLI_polyfill_beautify(const float (*coords)[2],
   HeapNode **eheap_table;
 
   const uint half_edges_len = 3 * tris_len;
-  struct HalfEdge *half_edges = BLI_memarena_alloc(arena, sizeof(*half_edges) * half_edges_len);
-  struct OrderEdge *order_edges = BLI_memarena_alloc(arena,
+  struct HalfEdge *half_edges = lib_memarena_alloc(arena, sizeof(*half_edges) * half_edges_len);
+  struct OrderEdge *order_edges = lib_memarena_alloc(arena,
                                                      sizeof(struct OrderEdge) * 2 * edges_len);
   uint order_edges_len = 0;
 
@@ -333,14 +325,14 @@ void BLI_polyfill_beautify(const float (*coords)[2],
       }
     }
   }
-  BLI_assert(edges_len * 2 == order_edges_len);
+  lib_assert(edges_len * 2 == order_edges_len);
 
   qsort(order_edges, order_edges_len, sizeof(struct OrderEdge), oedge_cmp);
 
   for (uint i = 0, base_index = 0; i < order_edges_len; base_index++) {
     const struct OrderEdge *oe_a = &order_edges[i++];
     const struct OrderEdge *oe_b = &order_edges[i++];
-    BLI_assert(oe_a->verts[0] == oe_b->verts[0] && oe_a->verts[1] == oe_b->verts[1]);
+    lib_assert(oe_a->verts[0] == oe_b->verts[0] && oe_a->verts[1] == oe_b->verts[1]);
     half_edges[oe_a->e_half].e_radial = oe_b->e_half;
     half_edges[oe_b->e_half].e_radial = oe_a->e_half;
     half_edges[oe_a->e_half].base_index = base_index;
@@ -348,9 +340,9 @@ void BLI_polyfill_beautify(const float (*coords)[2],
   }
   /* order_edges could be freed now. */
 
-  /* Now perform iterative rotations. */
+  /* Now perform iter rotations. */
 #if 0
-  eheap_table = BLI_memarena_alloc(arena, sizeof(HeapNode *) * (size_t)edges_len);
+  eheap_table = lib_memarena_alloc(arena, sizeof(HeapNode *) * (size_t)edges_len);
 #else
   /* We can re-use this since its big enough. */
   eheap_table = (void *)order_edges;
@@ -365,7 +357,7 @@ void BLI_polyfill_beautify(const float (*coords)[2],
       if (e->e_radial < i) {
         const float cost = polyedge_rotate_beauty_calc(coords, half_edges, e, NULL);
         if (cost < 0.0f) {
-          eheap_table[e->base_index] = BLI_heap_insert(eheap, cost, e);
+          eheap_table[e->base_index] = lib_heap_insert(eheap, cost, e);
         }
         else {
           eheap_table[e->base_index] = NULL;
@@ -374,20 +366,19 @@ void BLI_polyfill_beautify(const float (*coords)[2],
     }
   }
 
-  while (BLI_heap_is_empty(eheap) == false) {
-    struct HalfEdge *e = BLI_heap_pop_min(eheap);
+  while (lib_heap_is_empty(eheap) == false) {
+    struct HalfEdge *e = lib_heap_pop_min(eheap);
     eheap_table[e->base_index] = NULL;
 
     polyedge_rotate(half_edges, e);
 
-    /* recalculate faces connected on the heap */
+    /* recalc faces connected on the heap */
     polyedge_beauty_cost_update(coords, half_edges, e, eheap, eheap_table);
   }
 
-  BLI_heap_clear(eheap, NULL);
+  lib_heap_clear(eheap, NULL);
 
-  // MEM_freeN(eheap_table); /* arena */
-
+  // mem_free(eheap_table); /* arena */
   /* Get triangles from half edge. */
   uint tri_index = 0;
   for (uint i = 0; i < half_edges_len; i++) {
