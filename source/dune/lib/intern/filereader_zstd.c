@@ -13,8 +13,8 @@ typedef struct {
 
   FileReader *base;
 
-  ZSTD_DCtx *ctx;
-  ZSTD_inBuffer in_buf;
+  ZSTD_DCxt *cxt;
+  ZSTD_inBuf in_buf;
   size_t in_buf_max_size;
 
   struct {
@@ -33,7 +33,7 @@ static bool zstd_read_u32(FileReader *base, uint32_t *val)
     return false;
   }
 #ifdef __BIG_ENDIAN__
-  BLI_endian_switch_uint32(val);
+  lib_endian_switch_uint32(val);
 #endif
   return true;
 }
@@ -70,7 +70,7 @@ static bool zstd_read_seek_table(ZstdReader *zstd)
   /* Each frame has either 2 or 3 uint32_t, and after that we have
    * frames_num, flags and magic for another 9 bytes. */
   uint32_t expected_frame_length = frames_num * (has_checksums ? 12 : 8) + 9;
-  /* The frame starts with another magic number and its length, but these
+  /* The frame starts with another magic num and its length, but these
    * two fields are not included when counting length. */
   off64_t frame_start_ofs = 8 + expected_frame_length;
   /* Sanity check: Before the start of the seek table frame,
@@ -90,8 +90,8 @@ static bool zstd_read_seek_table(ZstdReader *zstd)
   }
 
   zstd->seek.frames_num = frames_num;
-  zstd->seek.compressed_ofs = MEM_malloc_arrayN(frames_num + 1, sizeof(size_t), __func__);
-  zstd->seek.uncompressed_ofs = MEM_malloc_arrayN(frames_num + 1, sizeof(size_t), __func__);
+  zstd->seek.compressed_ofs = mem_malloc_array(frames_num + 1, sizeof(size_t), __func__);
+  zstd->seek.uncompressed_ofs =wm_malloc_array(frames_num + 1, sizeof(size_t), __func__);
 
   size_t compressed_ofs = 0;
   size_t uncompressed_ofs = 0;
@@ -113,8 +113,8 @@ static bool zstd_read_seek_table(ZstdReader *zstd)
 
   /* Seek to the end of the previous frame for the following #BHead frame detection. */
   if (seek_frame_start != compressed_ofs || base->seek(base, seek_frame_start, SEEK_SET) < 0) {
-    MEM_freeN(zstd->seek.compressed_ofs);
-    MEM_freeN(zstd->seek.uncompressed_ofs);
+    mem_free(zstd->seek.compressed_ofs);
+    mem_free(zstd->seek.uncompressed_ofs);
     memset(&zstd->seek, 0, sizeof(zstd->seek));
     return false;
   }
@@ -162,21 +162,21 @@ static const char *zstd_ensure_cache(ZstdReader *zstd, int frame)
   size_t uncompressed_size = zstd->seek.uncompressed_ofs[frame + 1] -
                              zstd->seek.uncompressed_ofs[frame];
 
-  char *uncompressed_data = MEM_mallocN(uncompressed_size, __func__);
-  char *compressed_data = MEM_mallocN(compressed_size, __func__);
+  char *uncompressed_data = mem_malloc(uncompressed_size, __func__);
+  char *compressed_data = mem_malloc(compressed_size, __func__);
   if (zstd->base->seek(zstd->base, zstd->seek.compressed_ofs[frame], SEEK_SET) < 0 ||
       zstd->base->read(zstd->base, compressed_data, compressed_size) < compressed_size)
   {
-    MEM_freeN(compressed_data);
-    MEM_freeN(uncompressed_data);
+    mem_free(compressed_data);
+    mem_free(uncompressed_data);
     return NULL;
   }
 
-  size_t res = ZSTD_decompressDCtx(
-      zstd->ctx, uncompressed_data, uncompressed_size, compressed_data, compressed_size);
-  MEM_freeN(compressed_data);
+  size_t res = ZSTD_decompressDCxt(
+      zstd->cxt, uncompressed_data, uncompressed_size, compressed_data, compressed_size);
+  mem_free(compressed_data);
   if (ZSTD_isError(res) || res < uncompressed_size) {
-    MEM_freeN(uncompressed_data);
+    mem_free(uncompressed_data);
     return NULL;
   }
 
@@ -185,7 +185,7 @@ static const char *zstd_ensure_cache(ZstdReader *zstd, int frame)
   return uncompressed_data;
 }
 
-static int64_t zstd_read_seekable(FileReader *reader, void *buffer, size_t size)
+static int64_t zstd_read_seekable(FileReader *reader, void *buf, size_t size)
 {
   ZstdReader *zstd = (ZstdReader *)reader;
 
@@ -236,14 +236,14 @@ static off64_t zstd_seek(FileReader *reader, off64_t offset, int whence)
   return zstd->reader.offset;
 }
 
-static int64_t zstd_read(FileReader *reader, void *buffer, size_t size)
+static int64_t zstd_read(FileReader *reader, void *buf, size_t size)
 {
   ZstdReader *zstd = (ZstdReader *)reader;
-  ZSTD_outBuffer output = {buffer, size, 0};
+  ZSTD_outBuf output = {buf, size, 0};
 
   while (output.pos < output.size) {
     if (zstd->in_buf.pos == zstd->in_buf.size) {
-      /* Ran out of buffered input data, read some more. */
+      /* Ran out of buf input data, read some more. */
       zstd->in_buf.pos = 0;
       int64_t readsize = zstd->base->read(
           zstd->base, (char *)zstd->in_buf.src, zstd->in_buf_max_size);
@@ -271,28 +271,28 @@ static void zstd_close(FileReader *reader)
 {
   ZstdReader *zstd = (ZstdReader *)reader;
 
-  ZSTD_freeDCtx(zstd->ctx);
+  ZSTD_freeDCxt(zstd->cxt);
   if (zstd->reader.seek) {
-    MEM_freeN(zstd->seek.uncompressed_ofs);
-    MEM_freeN(zstd->seek.compressed_ofs);
+    mem_free(zstd->seek.uncompressed_ofs);
+    mem_free(zstd->seek.compressed_ofs);
     /* When an error has occurred this may be NULL, see: #99744. */
     if (zstd->seek.cached_content) {
-      MEM_freeN(zstd->seek.cached_content);
+      mem_free(zstd->seek.cached_content);
     }
   }
   else {
-    MEM_freeN((void *)zstd->in_buf.src);
+    mem_free((void *)zstd->in_buf.src);
   }
 
   zstd->base->close(zstd->base);
-  MEM_freeN(zstd);
+  mem_free(zstd);
 }
 
-FileReader *BLI_filereader_new_zstd(FileReader *base)
+FileReader *lib_filereader_new_zstd(FileReader *base)
 {
-  ZstdReader *zstd = MEM_callocN(sizeof(ZstdReader), __func__);
+  ZstdReader *zstd = mem_calloc(sizeof(ZstdReader), __func__);
 
-  zstd->ctx = ZSTD_createDCtx();
+  zstd->ctx = ZSTD_createDCxt();
   zstd->base = base;
 
   if (zstd_read_seek_table(zstd)) {
@@ -304,10 +304,10 @@ FileReader *BLI_filereader_new_zstd(FileReader *base)
     zstd->reader.seek = NULL;
 
     zstd->in_buf_max_size = ZSTD_DStreamInSize();
-    zstd->in_buf.src = MEM_mallocN(zstd->in_buf_max_size, "zstd in buf");
+    zstd->in_buf.src = mem_malloc(zstd->in_buf_max_size, "zstd in buf");
     zstd->in_buf.size = zstd->in_buf_max_size;
-    /* This signals that the buffer has run out,
-     * which will make the read function refill it on the first call. */
+    /* This signals that the buf has run out,
+     * which will make the read fn refill it on the first call. */
     zstd->in_buf.pos = zstd->in_buf_max_size;
   }
   zstd->reader.close = zstd_close;
