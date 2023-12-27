@@ -25,11 +25,11 @@ static int64_t gzip_read(FileReader *reader, void *buffer, size_t size)
 
   while (gzip->strm.avail_out > 0) {
     if (gzip->strm.avail_in == 0) {
-      /* Ran out of buffered input data, read some more. */
+      /* Ran out of buf'd input data, read some more. */
       size_t readsize = gzip->base->read(gzip->base, gzip->in_buf, gzip->in_size);
 
       if (readsize > 0) {
-        /* We got some data, so mark the buffer as refilled. */
+        /* Got data: mark buf as refilled. */
         gzip->strm.avail_in = readsize;
         gzip->strm.next_in = gzip->in_buf;
       }
@@ -56,7 +56,7 @@ static void gzip_close(FileReader *reader)
   GzipReader *gzip = (GzipReader *)reader;
 
   if (inflateEnd(&gzip->strm) != Z_OK) {
-    printf("close gzip stream error\n");
+    printf("close gzip stream err\n");
   }
   mem_free((void *)gzip->in_buf);
 
