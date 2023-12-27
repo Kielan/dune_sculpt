@@ -27,7 +27,7 @@ void lib_endian_switch_int32_array(int *val, const int size)
   if (size > 0) {
     int i = size;
     while (i--) {
-      BLI_endian_switch_int32(val++);
+      lib_endian_switch_int32(val++);
     }
   }
 }
@@ -72,12 +72,12 @@ void lib_endian_switch_uint64_array(uint64_t *val, const int size)
   }
 }
 
-void BLI_endian_switch_double_array(double *val, const int size)
+void lib_endian_switch_double_array(double *val, const int size)
 {
   if (size > 0) {
     int i = size;
     while (i--) {
-      BLI_endian_switch_double(val++);
+      lib_endian_switch_double(val++);
     }
   }
 }
