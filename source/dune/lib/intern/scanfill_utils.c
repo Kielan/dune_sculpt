@@ -4,17 +4,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math_geom.h"
-#include "BLI_math_vector.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_math_geom.h"
+#include "lib_math_vector.h"
+#include "lib_utildefines.h"
 
-#include "BLI_scanfill.h" /* own include */
+#include "lib_scanfill.h" /* own include */
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 typedef struct PolyInfo {
   ScanFillEdge *edge_first, *edge_last;
@@ -25,7 +25,7 @@ typedef struct ScanFillIsect {
   struct ScanFillIsect *next, *prev;
   float co[3];
 
-  /* newly created vertex */
+  /* newly created vert */
   ScanFillVert *v;
 } ScanFillIsect;
 
