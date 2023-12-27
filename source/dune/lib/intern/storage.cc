@@ -1,4 +1,4 @@
-/* Some really low-level file ops. */
+/* Some rly low-level file ops. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
