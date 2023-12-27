@@ -1,6 +1,5 @@
 /* A generic struct queue
  * (a queue for fixed length generally small) structs */
-
 #include <string.h>
 
 #include "mem_guardedalloc.h"
@@ -43,7 +42,7 @@ static void *queue_get_last_elem(GSQueue *queue)
 /* num of elements per chunk, optimized for slop-space. */
 static size_t queue_chunk_elem_max_calc(const size_t elem_size, size_t chunk_size)
 {
-  /* get at least this number of elems per chunk */
+  /* get at least this num of elems per chunk */
   const size_t elem_size_min = elem_size * CHUNK_ELEM_MIN;
 
   lib_assert((elem_size != 0) && (chunk_size != 0));
@@ -83,10 +82,10 @@ void lib_gsqueue_free(GSQueue *queue)
 {
   queue_free_chunk(queue->chunk_first);
   queue_free_chunk(queue->chunk_free);
-  MEM_freeN(queue);
+  mem_free(queue);
 }
 
-void BLI_gsqueue_push(GSQueue *queue, const void *item)
+void lib_gsqueue_push(GSQueue *queue, const void *item)
 {
   queue->chunk_last_index++;
   queue->elem_num++;
@@ -98,7 +97,7 @@ void BLI_gsqueue_push(GSQueue *queue, const void *item)
       queue->chunk_free = chunk->next;
     }
     else {
-      chunk = MEM_mallocN(sizeof(*chunk) + (queue->elem_size * queue->chunk_elem_max), __func__);
+      chunk = mem_malloc(sizeof(*chunk) + (queue->elem_size * queue->chunk_elem_max), __func__);
     }
 
     chunk->next = NULL;
@@ -114,15 +113,15 @@ void BLI_gsqueue_push(GSQueue *queue, const void *item)
     queue->chunk_last_index = 0;
   }
 
-  BLI_assert(queue->chunk_last_index < queue->chunk_elem_max);
+  lib_assert(queue->chunk_last_index < queue->chunk_elem_max);
 
   /* Return last of queue */
   memcpy(queue_get_last_elem(queue), item, queue->elem_size);
 }
 
-void BLI_gsqueue_pop(GSQueue *queue, void *r_item)
+void lib_gsqueue_pop(GSQueue *queue, void *r_item)
 {
-  BLI_assert(BLI_gsqueue_is_empty(queue) == false);
+  lib_assert(lib_gsqueue_is_empty(queue) == false);
 
   memcpy(r_item, queue_get_first_elem(queue), queue->elem_size);
   queue->chunk_first_index++;
@@ -143,12 +142,12 @@ void BLI_gsqueue_pop(GSQueue *queue, void *r_item)
   }
 }
 
-size_t BLI_gsqueue_len(const GSQueue *queue)
+size_t lib_gsqueue_len(const GSQueue *queue)
 {
   return queue->elem_num;
 }
 
-bool BLI_gsqueue_is_empty(const GSQueue *queue)
+bool lib_gsqueue_is_empty(const GSQueue *queue)
 {
   return (queue->chunk_first == NULL);
 }
