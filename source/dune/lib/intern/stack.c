@@ -1,12 +1,12 @@
 #include <stdlib.h> /* abort() */
 #include <string.h>
 
-#include "BLI_utildefines.h"
-#include "MEM_guardedalloc.h"
+#include "lib_utildefines.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_stack.h" /* own include */
+#include "lib_stack.h" /* own include */
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 #define USE_TOTELEM
 
@@ -21,31 +21,29 @@ struct StackChunk {
   char data[0];
 };
 
-struct BLI_Stack {
+struct LibStack {
   struct StackChunk *chunk_curr; /* currently active chunk */
   struct StackChunk *chunk_free; /* free chunks */
   size_t chunk_index;            /* index into 'chunk_curr' */
-  size_t chunk_elem_max;         /* number of elements per chunk */
+  size_t chunk_elem_max;         /* num of elems per chunk */
   size_t elem_size;
 #ifdef USE_TOTELEM
   size_t elem_num;
 #endif
 };
 
-static void *stack_get_last_elem(BLI_Stack *stack)
+static void *stack_get_last_elem(LibStack *stack)
 {
   return ((char *)(stack)->chunk_curr->data) + ((stack)->elem_size * (stack)->chunk_index);
 }
 
-/**
- * \return number of elements per chunk, optimized for slop-space.
- */
+/* return num of elems per chunk, optimized for slop-space. */
 static size_t stack_chunk_elem_max_calc(const size_t elem_size, size_t chunk_size)
 {
-  /* get at least this number of elems per chunk */
+  /* get at least this num of elems per chunk */
   const size_t elem_size_min = elem_size * CHUNK_ELEM_MIN;
 
-  BLI_assert((elem_size != 0) && (chunk_size != 0));
+  lib_assert((elem_size != 0) && (chunk_size != 0));
 
   while (UNLIKELY(chunk_size <= elem_size_min)) {
     chunk_size <<= 1;
@@ -57,11 +55,11 @@ static size_t stack_chunk_elem_max_calc(const size_t elem_size, size_t chunk_siz
   return chunk_size / elem_size;
 }
 
-BLI_Stack *BLI_stack_new_ex(const size_t elem_size,
+LibStack *lib_stack_new_ex(const size_t elem_size,
                             const char *description,
                             const size_t chunk_size)
 {
-  BLI_Stack *stack = MEM_callocN(sizeof(*stack), description);
+  LibStack *stack = mem_calloc(sizeof(*stack), description);
 
   stack->chunk_elem_max = stack_chunk_elem_max_calc(elem_size, chunk_size);
   stack->elem_size = elem_size;
@@ -71,28 +69,28 @@ BLI_Stack *BLI_stack_new_ex(const size_t elem_size,
   return stack;
 }
 
-BLI_Stack *BLI_stack_new(const size_t elem_size, const char *description)
+LibStack *lib_stack_new(const size_t elem_size, const char *description)
 {
-  return BLI_stack_new_ex(elem_size, description, CHUNK_SIZE_DEFAULT);
+  return lib_stack_new_ex(elem_size, description, CHUNK_SIZE_DEFAULT);
 }
 
 static void stack_free_chunks(struct StackChunk *data)
 {
   while (data) {
     struct StackChunk *data_next = data->next;
-    MEM_freeN(data);
+    mem_free(data);
     data = data_next;
   }
 }
 
-void BLI_stack_free(BLI_Stack *stack)
+void lib_stack_free(LibStack *stack)
 {
   stack_free_chunks(stack->chunk_curr);
   stack_free_chunks(stack->chunk_free);
-  MEM_freeN(stack);
+  mem_free(stack);
 }
 
-void *BLI_stack_push_r(BLI_Stack *stack)
+void *lib_stack_push_r(LibStack *stack)
 {
   stack->chunk_index++;
 
@@ -103,14 +101,14 @@ void *BLI_stack_push_r(BLI_Stack *stack)
       stack->chunk_free = chunk->next;
     }
     else {
-      chunk = MEM_mallocN(sizeof(*chunk) + (stack->elem_size * stack->chunk_elem_max), __func__);
+      chunk = mem_malloc(sizeof(*chunk) + (stack->elem_size * stack->chunk_elem_max), __func__);
     }
     chunk->next = stack->chunk_curr;
     stack->chunk_curr = chunk;
     stack->chunk_index = 0;
   }
 
-  BLI_assert(stack->chunk_index < stack->chunk_elem_max);
+  lib_assert(stack->chunk_index < stack->chunk_elem_max);
 
 #ifdef USE_TOTELEM
   stack->elem_num++;
@@ -120,13 +118,13 @@ void *BLI_stack_push_r(BLI_Stack *stack)
   return stack_get_last_elem(stack);
 }
 
-void BLI_stack_push(BLI_Stack *stack, const void *src)
+void lib_stack_push(LibStack *stack, const void *src)
 {
-  void *dst = BLI_stack_push_r(stack);
+  void *dst = lib_stack_push_r(stack);
   memcpy(dst, src, stack->elem_size);
 }
 
-void BLI_stack_pop(BLI_Stack *stack, void *dst)
+void lib_stack_pop(BLI_Stack *stack, void *dst)
 {
   BLI_assert(BLI_stack_is_empty(stack) == false);
 
