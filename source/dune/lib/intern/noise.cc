@@ -2,25 +2,21 @@
 #include <cmath>
 #include <cstdint>
 
-#include "BLI_math_base_safe.h"
-#include "BLI_math_vector.hh"
-#include "BLI_noise.hh"
-#include "BLI_utildefines.h"
+#include "lib_math_base_safe.h"
+#include "lib_math_vector.hh"
+#include "lib_noise.hh"
+#include "lib_utildefines.h"
 
-namespace blender::noise {
+namespace dune::noise {
 
-/* -------------------------------------------------------------------- */
-/** \name Jenkins Lookup3 Hash Functions
- *
- * https://burtleburtle.net/bob/c/lookup3.c
- * \{ */
-
-BLI_INLINE uint32_t hash_bit_rotate(uint32_t x, uint32_t k)
+/* Jenkins Lookup3 Hash Fns
+ * https://burtleburtle.net/bob/c/lookup3.c */
+LIB_INLINE uint32_t hash_bit_rotate(uint32_t x, uint32_t k)
 {
   return (x << k) | (x >> (32 - k));
 }
 
-BLI_INLINE void hash_bit_mix(uint32_t &a, uint32_t &b, uint32_t &c)
+LIB_INLINE void hash_bit_mix(uint32_t &a, uint32_t &b, uint32_t &c)
 {
   a -= c;
   a ^= hash_bit_rotate(c, 4);
@@ -42,7 +38,7 @@ BLI_INLINE void hash_bit_mix(uint32_t &a, uint32_t &b, uint32_t &c)
   b += a;
 }
 
-BLI_INLINE void hash_bit_final(uint32_t &a, uint32_t &b, uint32_t &c)
+LIB_INLINE void hash_bit_final(uint32_t &a, uint32_t &b, uint32_t &c)
 {
   c ^= b;
   c -= hash_bit_rotate(b, 14);
@@ -112,7 +108,7 @@ uint32_t hash(uint32_t kx, uint32_t ky, uint32_t kz, uint32_t kw)
   return c;
 }
 
-BLI_INLINE uint32_t float_as_uint(float f)
+LIB_INLINE uint32_t float_as_uint(float f)
 {
   union {
     uint32_t i;
@@ -142,9 +138,8 @@ uint32_t hash_float(float4 k)
   return hash(float_as_uint(k.x), float_as_uint(k.y), float_as_uint(k.z), float_as_uint(k.w));
 }
 
-/* Hashing a number of uint32_t into a float in the range [0, 1]. */
-
-BLI_INLINE float uint_to_float_01(uint32_t k)
+/* Hashing a num of uint32_t into a float in the range [0, 1]. */
+LIB_INLINE float uint_to_float_01(uint32_t k)
 {
   return float(k) / float(0xFFFFFFFFu);
 }
@@ -169,8 +164,7 @@ float hash_to_float(uint32_t kx, uint32_t ky, uint32_t kz, uint32_t kw)
   return uint_to_float_01(hash(kx, ky, kz, kw));
 }
 
-/* Hashing a number of floats into a float in the range [0, 1]. */
-
+/* Hashing a num of floats into a float in the range [0, 1]. */
 float hash_float_to_float(float k)
 {
   return uint_to_float_01(hash_float(k));
@@ -232,17 +226,12 @@ float4 hash_float_to_float4(float4 k)
                 hash_float_to_float(float4(k.y, k.z, k.w, k.x)));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Perlin Noise
- *
+/* Perlin Noise
  * Perlin, Ken. "Improving noise." Proceedings of the 29th annual conference on Computer graphics
  * and interactive techniques. 2002.
  *
  * This implementation is functionally identical to the implementations in EEVEE, OSL, and SVM. So
- * any changes should be applied in all relevant implementations.
- * \{ */
+ * any changes should be applied in all relevant implementations. */
 
 /* Linear Interpolation. */
 template<typename T> T static mix(T v0, T v1, float x)
@@ -258,9 +247,8 @@ template<typename T> T static mix(T v0, T v1, float x)
  *  +         +       |
  *  +         +       |
  *  @ + + + + @       @------> x
- * v0          v1
- */
-BLI_INLINE float mix(float v0, float v1, float v2, float v3, float x, float y)
+ * v0          v1 */
+LIB_INLINE float mix(float v0, float v1, float v2, float v3, float x, float y)
 {
   float x1 = 1.0 - x;
   return (1.0 - y) * (v0 * x1 + v1 * x) + y * (v2 * x1 + v3 * x);
@@ -284,7 +272,7 @@ BLI_INLINE float mix(float v0, float v1, float v2, float v3, float x, float y)
  *          @ + + + + + + @
  *        v0               v1
  */
-BLI_INLINE float mix(float v0,
+LIB_INLINE float mix(float v0,
                      float v1,
                      float v2,
                      float v3,
@@ -304,7 +292,7 @@ BLI_INLINE float mix(float v0,
 }
 
 /* Quadrilinear Interpolation. */
-BLI_INLINE float mix(float v0,
+LIB_INLINE float mix(float v0,
                      float v1,
                      float v2,
                      float v3,
@@ -330,24 +318,24 @@ BLI_INLINE float mix(float v0,
              w);
 }
 
-BLI_INLINE float fade(float t)
+LIB_INLINE float fade(float t)
 {
   return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
 }
 
-BLI_INLINE float negate_if(float value, uint32_t condition)
+LIB_INLINE float negate_if(float value, uint32_t condition)
 {
   return (condition != 0u) ? -value : value;
 }
 
-BLI_INLINE float noise_grad(uint32_t hash, float x)
+LIB_INLINE float noise_grad(uint32_t hash, float x)
 {
   uint32_t h = hash & 15u;
   float g = 1u + (h & 7u);
   return negate_if(g, h & 8u) * x;
 }
 
-BLI_INLINE float noise_grad(uint32_t hash, float x, float y)
+LIB_INLINE float noise_grad(uint32_t hash, float x, float y)
 {
   uint32_t h = hash & 7u;
   float u = h < 4u ? x : y;
@@ -355,7 +343,7 @@ BLI_INLINE float noise_grad(uint32_t hash, float x, float y)
   return negate_if(u, h & 1u) + negate_if(v, h & 2u);
 }
 
-BLI_INLINE float noise_grad(uint32_t hash, float x, float y, float z)
+LIB_INLINE float noise_grad(uint32_t hash, float x, float y, float z)
 {
   uint32_t h = hash & 15u;
   float u = h < 8u ? x : y;
@@ -364,7 +352,7 @@ BLI_INLINE float noise_grad(uint32_t hash, float x, float y, float z)
   return negate_if(u, h & 1u) + negate_if(v, h & 2u);
 }
 
-BLI_INLINE float noise_grad(uint32_t hash, float x, float y, float z, float w)
+LIB_INLINE float noise_grad(uint32_t hash, float x, float y, float z, float w)
 {
   uint32_t h = hash & 31u;
   float u = h < 24u ? x : y;
@@ -373,14 +361,14 @@ BLI_INLINE float noise_grad(uint32_t hash, float x, float y, float z, float w)
   return negate_if(u, h & 1u) + negate_if(v, h & 2u) + negate_if(s, h & 4u);
 }
 
-BLI_INLINE float floor_fraction(float x, int &i)
+LIB_INLINE float floor_fraction(float x, int &i)
 {
   float x_floor = math::floor(x);
   i = int(x_floor);
   return x - x_floor;
 }
 
-BLI_INLINE float perlin_noise(float position)
+LIB_INLINE float perlin_noise(float position)
 {
   int X;
 
@@ -393,7 +381,7 @@ BLI_INLINE float perlin_noise(float position)
   return r;
 }
 
-BLI_INLINE float perlin_noise(float2 position)
+LIB_INLINE float perlin_noise(float2 position)
 {
   int X, Y;
 
@@ -413,7 +401,7 @@ BLI_INLINE float perlin_noise(float2 position)
   return r;
 }
 
-BLI_INLINE float perlin_noise(float3 position)
+LIB_INLINE float perlin_noise(float3 position)
 {
   int X, Y, Z;
 
@@ -440,7 +428,7 @@ BLI_INLINE float perlin_noise(float3 position)
   return r;
 }
 
-BLI_INLINE float perlin_noise(float4 position)
+LIB_INLINE float perlin_noise(float4 position)
 {
   int X, Y, Z, W;
 
@@ -479,9 +467,8 @@ BLI_INLINE float perlin_noise(float4 position)
   return r;
 }
 
-/* Signed versions of perlin noise in the range [-1, 1]. The scale values were computed
- * experimentally by the OSL developers to remap the noise output to the correct range. */
-
+/* Signed versions of perlin noise in the range [-1, 1]. The scale vals were computed
+ * experimentally by the OSL devs to remap the noise output to the correct range. */
 float perlin_signed(float position)
 {
   return perlin_noise(position) * 0.2500f;
@@ -503,7 +490,6 @@ float perlin_signed(float4 position)
 }
 
 /* Positive versions of perlin noise in the range [0, 1]. */
-
 float perlin(float position)
 {
   return perlin_signed(position) / 2.0f + 0.5f;
@@ -525,7 +511,6 @@ float perlin(float4 position)
 }
 
 /* Fractal perlin noise. */
-
 /* fBM = Fractal Brownian Motion */
 template<typename T>
 float perlin_fbm(
@@ -565,21 +550,21 @@ template float perlin_fbm<float3>(float3 p,
 template<typename T>
 float perlin_multi_fractal(T p, const float detail, const float roughness, const float lacunarity)
 {
-  float value = 1.0f;
+  float val = 1.0f;
   float pwr = 1.0f;
 
   for (int i = 0; i <= int(detail); i++) {
-    value *= (pwr * perlin_signed(p) + 1.0f);
+    val *= (pwr * perlin_signed(p) + 1.0f);
     pwr *= roughness;
     p *= lacunarity;
   }
 
   const float rmd = detail - floorf(detail);
   if (rmd != 0.0f) {
-    value *= (rmd * pwr * perlin_signed(p) + 1.0f); /* correct? */
+    val *= (rmd * pwr * perlin_signed(p) + 1.0f); /* correct? */
   }
 
-  return value;
+  return val;
 }
 
 template<typename T>
@@ -588,24 +573,24 @@ float perlin_hetero_terrain(
 {
   float pwr = roughness;
 
-  /* First unscaled octave of function; later octaves are scaled. */
-  float value = offset + perlin_signed(p);
+  /* 1st unscaled octave of fn; later octaves are scaled. */
+  float val = offset + perlin_signed(p);
   p *= lacunarity;
 
   for (int i = 1; i <= int(detail); i++) {
     float increment = (perlin_signed(p) + offset) * pwr * value;
-    value += increment;
+    val += increment;
     pwr *= roughness;
     p *= lacunarity;
   }
 
   const float rmd = detail - floorf(detail);
   if (rmd != 0.0f) {
-    float increment = (perlin_signed(p) + offset) * pwr * value;
-    value += rmd * increment;
+    float increment = (perlin_signed(p) + offset) * pwr * val;
+    val += rmd * increment;
   }
 
-  return value;
+  return val;
 }
 
 template<typename T>
@@ -617,7 +602,7 @@ float perlin_hybrid_multi_fractal(T p,
                                   const float gain)
 {
   float pwr = 1.0f;
-  float value = 0.0f;
+  float val = 0.0f;
   float weight = 1.0f;
 
   for (int i = 0; (weight > 0.001f) && (i <= int(detail)); i++) {
@@ -627,7 +612,7 @@ float perlin_hybrid_multi_fractal(T p,
 
     float signal = (perlin_signed(p) + offset) * pwr;
     pwr *= roughness;
-    value += weight * signal;
+    val += weight * signal;
     weight *= gain * signal;
     p *= lacunarity;
   }
@@ -638,10 +623,10 @@ float perlin_hybrid_multi_fractal(T p,
       weight = 1.0f;
     }
     float signal = (perlin_signed(p) + offset) * pwr;
-    value += rmd * weight * signal;
+    val += rmd * weight * signal;
   }
 
-  return value;
+  return val;
 }
 
 template<typename T>
@@ -656,7 +641,7 @@ float perlin_ridged_multi_fractal(T p,
 
   float signal = offset - std::abs(perlin_signed(p));
   signal *= signal;
-  float value = signal;
+  float val = signal;
   float weight = 1.0f;
 
   for (int i = 1; i <= int(detail); i++) {
@@ -665,11 +650,11 @@ float perlin_ridged_multi_fractal(T p,
     signal = offset - std::abs(perlin_signed(p));
     signal *= signal;
     signal *= weight;
-    value += signal * pwr;
+    val += signal * pwr;
     pwr *= roughness;
   }
 
-  return value;
+  return val;
 }
 
 enum {
@@ -712,32 +697,31 @@ float perlin_select(T p,
   }
 }
 
-/* The following offset functions generate random offsets to be added to
- * positions to act as a seed since the noise functions don't have seed values.
+/* Offset fns generate random offsets to be added to
+ * positions to act as a seed since the noise fns don't have seed vals.
  * The offset's components are in the range [100, 200], not too high to cause
- * bad precision and not too small to be noticeable. We use float seed because
- * OSL only supports float hashes and we need to maintain compatibility with it.
- */
+ * bad precision and not too small to be noticeable. We use float seed bc
+ * OSL only supports float hashes and we need to maintain compatibility with it. */
 
-BLI_INLINE float random_float_offset(float seed)
+LIB_INLINE float random_float_offset(float seed)
 {
   return 100.0f + hash_float_to_float(seed) * 100.0f;
 }
 
-BLI_INLINE float2 random_float2_offset(float seed)
+LIB_INLINE float2 random_float2_offset(float seed)
 {
   return float2(100.0f + hash_float_to_float(float2(seed, 0.0f)) * 100.0f,
                 100.0f + hash_float_to_float(float2(seed, 1.0f)) * 100.0f);
 }
 
-BLI_INLINE float3 random_float3_offset(float seed)
+LIB_INLINE float3 random_float3_offset(float seed)
 {
   return float3(100.0f + hash_float_to_float(float2(seed, 0.0f)) * 100.0f,
                 100.0f + hash_float_to_float(float2(seed, 1.0f)) * 100.0f,
                 100.0f + hash_float_to_float(float2(seed, 2.0f)) * 100.0f);
 }
 
-BLI_INLINE float4 random_float4_offset(float seed)
+LIB_INLINE float4 random_float4_offset(float seed)
 {
   return float4(100.0f + hash_float_to_float(float2(seed, 0.0f)) * 100.0f,
                 100.0f + hash_float_to_float(float2(seed, 1.0f)) * 100.0f,
@@ -746,26 +730,25 @@ BLI_INLINE float4 random_float4_offset(float seed)
 }
 
 /* Perlin noises to be added to the position to distort other noises. */
-
-BLI_INLINE float perlin_distortion(float position, float strength)
+LIB_INLINE float perlin_distortion(float position, float strength)
 {
   return perlin_signed(position + random_float_offset(0.0)) * strength;
 }
 
-BLI_INLINE float2 perlin_distortion(float2 position, float strength)
+LIB_INLINE float2 perlin_distortion(float2 position, float strength)
 {
   return float2(perlin_signed(position + random_float2_offset(0.0f)) * strength,
                 perlin_signed(position + random_float2_offset(1.0f)) * strength);
 }
 
-BLI_INLINE float3 perlin_distortion(float3 position, float strength)
+LIB_INLINE float3 perlin_distortion(float3 position, float strength)
 {
   return float3(perlin_signed(position + random_float3_offset(0.0f)) * strength,
                 perlin_signed(position + random_float3_offset(1.0f)) * strength,
                 perlin_signed(position + random_float3_offset(2.0f)) * strength);
 }
 
-BLI_INLINE float4 perlin_distortion(float4 position, float strength)
+LIB_INLINE float4 perlin_distortion(float4 position, float strength)
 {
   return float4(perlin_signed(position + random_float4_offset(0.0f)) * strength,
                 perlin_signed(position + random_float4_offset(1.0f)) * strength,
@@ -774,7 +757,6 @@ BLI_INLINE float4 perlin_distortion(float4 position, float strength)
 }
 
 /* Distorted fractal perlin noise. */
-
 template<typename T>
 float perlin_fractal_distorted(T position,
                                float detail,
@@ -828,8 +810,7 @@ template float perlin_fractal_distorted<float4>(float4 position,
                                                 bool normalize);
 
 /* Distorted fractal perlin noise that outputs a float3. The arbitrary seeds are for
- * compatibility with shading functions. */
-
+ * compatibility with shading fns. */
 float3 perlin_float3_fractal_distorted(float position,
                                        float detail,
                                        float roughness,
@@ -954,17 +935,12 @@ float3 perlin_float3_fractal_distorted(float4 position,
                                       normalize));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Voronoi Noise
- *
- * \note Ported from Cycles code.
+/* Voronoi Noise
+ * Ported from Cycles code.
  *
  * Original code is under the MIT License, Copyright (c) 2013 Inigo Quilez.
  *
  * Smooth Voronoi:
- *
  * - https://wiki.blender.org/wiki/User:OmarSquircleArt/GSoC2019/Documentation/Smooth_Voronoi
  *
  * Distance To Edge based on:
@@ -973,10 +949,9 @@ float3 perlin_float3_fractal_distorted(float4 position,
  * - https://www.shadertoy.com/view/ldl3W8
  *
  * With optimization to change -2..2 scan window to -1..1 for better performance,
- * as explained in https://www.shadertoy.com/view/llG3zy.
- * \{ */
+ * as explained in https://www.shadertoy.com/view/llG3zy. */
 
-/* Ensure to align with DNA. */
+/* Ensure to align with Types. */
 enum {
   NOISE_SHD_VORONOI_EUCLIDEAN = 0,
   NOISE_SHD_VORONOI_MANHATTAN = 1,
@@ -1063,8 +1038,7 @@ float voronoi_distance(const float4 a, const float4 b, const VoronoiParams &para
   return 0.0f;
 }
 
-/* **** 1D Voronoi **** */
-
+/* 1D Voronoi */
 float4 voronoi_position(const float coord)
 {
   return {0.0f, 0.0f, 0.0f, coord};
@@ -1870,8 +1844,7 @@ float voronoi_n_sphere_radius(const VoronoiParams &params, const float4 coord)
 }
 
 /* Fractal Voronoi l */
-
-/* The fractalization logic is the same as for fBM Noise, except that some additions are replaced
+/* Fractalization logic is the same as for fBM Noise, except some additions are replaced
  * by lerps. */
 template<typename T>
 VoronoiOutput fractal_voronoi_x_fx(const VoronoiParams &params,
@@ -1974,8 +1947,7 @@ float fractal_voronoi_distance_to_edge(const VoronoiParams &params, const T coor
   return distance;
 }
 
-/* Explicit function template instantiation */
-
+/* Explicit fn template instantiation */
 template VoronoiOutput fractal_voronoi_x_fx<float>(const VoronoiParams &params,
                                                    const float coord,
                                                    const bool calc_color);
@@ -1997,6 +1969,5 @@ template float fractal_voronoi_distance_to_edge<float3>(const VoronoiParams &par
                                                         const float3 coord);
 template float fractal_voronoi_distance_to_edge<float4>(const VoronoiParams &params,
                                                         const float4 coord);
-/** \} */
 
-}  // namespace blender::noise
+}  // namespace dune::noise
