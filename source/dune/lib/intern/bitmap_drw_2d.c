@@ -12,10 +12,10 @@
 #include "lib_strict_flags.h"
 
 /* Drw Line */
-void lib_bitmap_draw_2d_line_v2v2i(const int p1[2],
-                                   const int p2[2],
-                                   bool (*cb)(int, int, void *),
-                                   void *user_data)
+void lib_bitmap_drw_2d_line_v2v2i(const int p1[2],
+                                  const int p2[2],
+                                  bool (*cb)(int, int, void *),
+                                  void *user_data)
 {
   /* Bresenham's line algorithm. */
   int x1 = p1[0];
@@ -84,7 +84,6 @@ void lib_bitmap_draw_2d_line_v2v2i(const int p1[2],
 }
 
 /* Drw Filled Triangle */
-
 /* Fill a triangle
  * Standard algorithm,
  * See: http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
@@ -97,7 +96,6 @@ void lib_bitmap_draw_2d_line_v2v2i(const int p1[2],
  * - 1-pixel offsets are applied so adjacent triangles don't overlap.
  *
  * This is not clipped, a clipped version can be added if needed. */
-
 /* Macros could be moved to a shared location. */
 #define ORDERED_SWAP(ty, a, b) \
   if (a > b) { \
@@ -296,7 +294,6 @@ void lib_bitmap_drw_2d_poly_v2i_n(const int xmin,
 {
   /* Originally by Darel Rex Finley, 2007.
    * Optimized by Campbell Barton, 2016 to track sorted intersections. */
-
   int(*span_y)[2] = mem_malloc(sizeof(*span_y) * (size_t)verts_len, __func__);
   int span_y_len = 0;
 
