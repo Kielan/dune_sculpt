@@ -1,4 +1,4 @@
-/* The #blender::meshintersect API needs GMP. */
+/* The dune::meshintersect API needs GMP. */
 #ifdef WITH_GMP
 
 #  include <algorithm>
@@ -6,37 +6,37 @@
 #  include <iostream>
 #  include <memory>
 
-#  include "BLI_allocator.hh"
-#  include "BLI_array.hh"
-#  include "BLI_assert.h"
-#  include "BLI_delaunay_2d.hh"
-#  include "BLI_hash.hh"
-#  include "BLI_kdopbvh.h"
-#  include "BLI_map.hh"
-#  include "BLI_math_boolean.hh"
-#  include "BLI_math_geom.h"
-#  include "BLI_math_matrix.h"
-#  include "BLI_math_mpq.hh"
-#  include "BLI_math_vector.h"
-#  include "BLI_math_vector_mpq_types.hh"
-#  include "BLI_math_vector_types.hh"
-#  include "BLI_polyfill_2d.h"
-#  include "BLI_set.hh"
-#  include "BLI_sort.hh"
-#  include "BLI_span.hh"
-#  include "BLI_task.h"
-#  include "BLI_task.hh"
-#  include "BLI_threads.h"
-#  include "BLI_vector.hh"
-#  include "BLI_vector_set.hh"
+#  include "lib_allocator.hh"
+#  include "lib_array.hh"
+#  include "lib_assert.h"
+#  include "lib_delaunay_2d.hh"
+#  include "lib_hash.hh"
+#  include "llb_kdopbvh.h"
+#  include "lib_map.hh"
+#  include "lib_math_bool.hh"
+#  include "lib_math_geom.h"
+#  include "lib_math_matrix.h"
+#  include "lib_math_mpq.hh"
+#  include "lib_math_vector.h"
+#  include "lib_math_vector_mpq_types.hh"
+#  include "lib_math_vector_types.hh"
+#  include "lib_polyfill_2d.h"
+#  include "lib_set.hh"
+#  include "lib_sort.hh"
+#  include "lib_span.hh"
+#  include "lib_task.h"
+#  include "lib_task.hh"
+#  include "lib_threads.h"
+#  include "lib_vector.hh"
+#  include "lib_vector_set.hh"
 
 #  include "PIL_time.h"
 
-#  include "BLI_mesh_intersect.hh"
+#  include "lib_mesh_intersect.hh"
 
 // #  define PERFDEBUG
 
-namespace blender::meshintersect {
+namespace dune::meshintersect {
 
 #  ifdef PERFDEBUG
 static void perfdata_init();
@@ -46,7 +46,7 @@ static void doperfmax(int maxnum, int val);
 static void dump_perfdata();
 #  endif
 
-/** For debugging, can disable threading in intersect code with this static constant. */
+/* For debug, can disable threading in intersect code with this static constant. */
 static constexpr bool intersect_use_threading = true;
 
 Vert::Vert(const mpq3 &mco, const double3 &dco, int id, int orig)
@@ -214,8 +214,8 @@ bool Face::operator==(const Face &other) const
     return false;
   }
   for (FacePos i : index_range()) {
-    /* Can test pointer equality since we will have
-     * unique vert pointers for unique co_equal's. */
+    /* Can test ptr equality since we will have
+     * unique vert ptrs for unique co_equal's. */
     if (this->vert[i] != other.vert[i]) {
       return false;
     }
@@ -274,28 +274,22 @@ std::ostream &operator<<(std::ostream &os, const Face *f)
   return os;
 }
 
-/**
- * Un-comment the following to try using a spin-lock instead of
- * a mutex in the arena allocation routines.
- * Initial tests showed that it doesn't seem to help very much,
- * if at all, to use a spin-lock.
- */
+/* Un-comment the following to try using a spin-lock instead of
+ * a mutex in the arena alloc routines.
+ * Init tests showed that it doesn't seem to help very much,
+ * if at all, to use a spin-lock. */
 // #define USE_SPINLOCK
 
-/**
- * #IMeshArena is the owner of the Vert and Face resources used
- * during a run of one of the mesh-intersect main functions.
+/* IMeshArena is the owner of the Vert and Face resources used
+ * during a run of one of the mesh-intersect main fns.
  * It also keeps has a hash table of all Verts created so that it can
  * ensure that only one instance of a Vert with a given co_exact will
- * exist. I.e., it de-duplicates the vertices.
- */
+ * exist. I.e., it de-duplicates the verts. */
 class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
 
-  /**
-   * Don't use Vert itself as key since resizing may move
-   * pointers to the Vert around, and we need to have those pointers
-   * stay the same throughout the lifetime of the #IMeshArena.
-   */
+  /* Don't use Vert itself as key since resizing may move
+   * ptrs to the Vert around, and we need to have those ptrs
+   * stay the same throughout the lifetime of the IMeshArena. */
   struct VSetKey {
     Vert *vert;
 
@@ -314,15 +308,12 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
 
   Set<VSetKey> vset_;
 
-  /**
-   * Ownership of the Vert memory is here, so destroying this reclaims that memory.
-   *
-   * TODO: replace these with pooled allocation, and just destroy the pools at the end.
-   */
+  /* Ownership of the Vert mem is here, so destroying this reclaims that mem.
+   * TODO: replace these with pooled alloc, and just destroy the pools at the end. */
   Vector<std::unique_ptr<Vert>> allocated_verts_;
   Vector<std::unique_ptr<Face>> allocated_faces_;
 
-  /* Use these to allocate ids when Verts and Faces are allocated. */
+  /* Use these to alloc ids when Verts and Faces are alloc'd. */
   int next_vert_id_ = 0;
   int next_face_id_ = 0;
 
@@ -338,9 +329,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
   {
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_init(&lock_);
+      lib_spin_init(&lock_);
 #  else
-      mutex_ = BLI_mutex_alloc();
+      mutex_ = lib_mutex_alloc();
 #  endif
     }
   }
@@ -348,9 +339,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
   {
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_end(&lock_);
+      lib_spin_end(&lock_);
 #  else
-      BLI_mutex_free(mutex_);
+      lib_mutex_free(mutex_);
 #  endif
     }
   }
@@ -394,7 +385,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     Face *f = new Face(verts, next_face_id_++, orig, edge_origs, is_intersect);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_lock(&lock_);
+      lib_spin_lock(&lock_);
 #  else
       BLI_mutex_lock(mutex_);
 #  endif
@@ -402,9 +393,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     allocated_faces_.append(std::unique_ptr<Face>(f));
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_unlock(&lock_);
+      lib_spin_unlock(&lock_);
 #  else
-      BLI_mutex_unlock(mutex_);
+      lib_mutex_unlock(mutex_);
 #  endif
     }
     return f;
@@ -429,17 +420,17 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     VSetKey vskey(&vtry);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_lock(&lock_);
+      lib_spin_lock(&lock_);
 #  else
-      BLI_mutex_lock(mutex_);
+      lib_mutex_lock(mutex_);
 #  endif
     }
     const VSetKey *lookup = vset_.lookup_key_ptr(vskey);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_unlock(&lock_);
+      lib_spin_unlock(&lock_);
 #  else
-      BLI_mutex_unlock(mutex_);
+      lib_mutex_unlock(mutex_);
 #  endif
     }
     if (!lookup) {
@@ -448,11 +439,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     return lookup->vert;
   }
 
-  /**
-   * This is slow. Only used for unit tests right now.
+  /* This is slow. Only used for unit tests right now.
    * Since it is only used for that purpose, access is not lock-protected.
-   * The argument vs can be a cyclic shift of the actual stored Face.
-   */
+   * The arg vs can be a cyclic shift of the actual stored Face. */
   const Face *find_face(Span<const Vert *> vs)
   {
     Array<int> eorig(vs.size(), NO_INDEX);
@@ -474,9 +463,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     VSetKey vskey(vtry);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_lock(&lock_);
+      lib_spin_lock(&lock_);
 #  else
-      BLI_mutex_lock(mutex_);
+      lib_mutex_lock(mutex_);
 #  endif
     }
     const VSetKey *lookup = vset_.lookup_key_ptr(vskey);
@@ -489,9 +478,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
       ans = vskey.vert;
     }
     else {
-      /* It was a duplicate, so return the existing one.
-       * Note that the returned Vert may have a different orig.
-       * This is the intended semantics: if the Vert already
+      /* Was a dupl, return the existing one.
+       * Returned Vert may have a diff orig.
+       * This is the intended semantics: if the Vert alrdy
        * exists then we are merging verts and using the first-seen
        * one as the canonical one. */
       delete vtry;
@@ -499,9 +488,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     }
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_unlock(&lock_);
+      lib_spin_unlock(&lock_);
 #  else
-      BLI_mutex_unlock(mutex_);
+      lib_mutex_unlock(mutex_);
 #  endif
     }
     return ans;
@@ -513,9 +502,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     VSetKey vskey(vtry);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_lock(&lock_);
+      lib_spin_lock(&lock_);
 #  else
-      BLI_mutex_lock(mutex_);
+      lib_mutex_lock(mutex_);
 #  endif
     }
     const VSetKey *lookup = vset_.lookup_key_ptr(vskey);
@@ -527,9 +516,9 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
       ans = vskey.vert;
     }
     else {
-      /* It was a duplicate, so return the existing one.
-       * Note that the returned Vert may have a different orig.
-       * This is the intended semantics: if the Vert already
+      /* Was a dupl, return the existing one.
+       * Returned Vert may have a diff orig.
+       * This is the intended semantics: if the Vert alrdy
        * exists then we are merging verts and using the first-seen
        * one as the canonical one. */
       delete vtry;
@@ -537,7 +526,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     }
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
-      BLI_spin_unlock(&lock_);
+      lib_spin_unlock(&lock_);
 #  else
       BLI_mutex_unlock(mutex_);
 #  endif
