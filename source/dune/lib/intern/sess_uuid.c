@@ -7,11 +7,11 @@
 /* Special val which indicates the UUID has not been assigned yet. */
 #define lib_SESS_UUID_NONE 0
 
-static const SessionUUID global_session_uuid_none = {LIB_SESS_UUID_NONE};
+static const SessUUID global_sess_uuid_none = {LIB_SESS_UUID_NONE};
 
 /* Denotes last used UUID.
  * It might eventually overflow, and easiest is to add more bits to it. */
-static SessionUUID global_session_uuid = {LIB_SESS_UUID_NONE};
+static SessUUID global_sess_uuid = {LIB_SESS_UUID_NONE};
 
 SessnUUID lib_sess_uuid_generate(void)
 {
@@ -27,30 +27,30 @@ SessnUUID lib_sess_uuid_generate(void)
   return result;
 }
 
-bool lib_sess_uuid_is_generated(const SessionUUID *uuid)
+bool lib_sess_uuid_is_generated(const SessUUID *uuid)
 {
-  return !lib_sess_uuid_is_equal(uuid, &global_session_uuid_none);
+  return !lib_sess_uuid_is_equal(uuid, &global_sess_uuid_none);
 }
 
-bool lib_sess_uuid_is_equal(const SessionUUID *lhs, const SessionUUID *rhs)
+bool lib_sess_uuid_is_equal(const SessUUID *lhs, const SessUUID *rhs)
 {
   return lhs->uuid_ == rhs->uuid_;
 }
 
-uint64_t lib_sess_uuid_hash_uint64(const SessionUUID *uuid)
+uint64_t lib_sess_uuid_hash_uint64(const SessUUID *uuid)
 {
   return uuid->uuid_;
 }
 
 uint lib_sess_uuid_ghash_hash(const void *uuid_v)
 {
-  const SessionUUID *uuid = (const SessionUUID *)uuid_v;
+  const SessUUID *uuid = (const SessUUID *)uuid_v;
   return uuid->uuid_ & 0xffffffff;
 }
 
 bool lib_sess_uuid_ghash_compare(const void *lhs_v, const void *rhs_v)
 {
-  const SessionUUID *lhs = (const SessionUUID *)lhs_v;
-  const SessionUUID *rhs = (const SessionUUID *)rhs_v;
+  const SessUUID *lhs = (const SessUUID *)lhs_v;
+  const SessUUID *rhs = (const SessUUID *)rhs_v;
   return !lib_sess_uuid_is_equal(lhs, rhs);
 }
