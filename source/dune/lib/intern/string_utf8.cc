@@ -7,7 +7,7 @@
 
 #include "lib_utildefines.h"
 
-#include "lib_string.h"      /* #BLI_string_debug_size. */
+#include "lib_string.h"      /* lib_string_debug_size. */
 #include "lib_string_utf8.h" /* own include */
 #ifdef WIN32
 #  include "utfconv.hh"
@@ -274,7 +274,7 @@ int lib_str_utf8_invalid_strip(char *str, size_t length)
     length -= size_t(bad_char + 1);
 
     if (length == 0) {
-      /* last character bad, strip it */
+      /* last charr bad, strip it */
       *str = '\0';
       tot++;
       break;
@@ -480,7 +480,7 @@ char32_t lib_str_utf32_char_to_upper(const char32_t wc)
 {
   if (wc < U'\xFF') { /* Latin. */
     if ((wc <= U'z' && wc >= U'a') || (wc <= U'\xF6' && wc >= U'\xE0') ||
-        /* Correct but the first case is know, only check the second */
+        /* Correct but the 1st case is know, only check the second */
         // (wc <= U'\xFE' && wc >= U'\xF8')
         (wc >= U'\xF8'))
     {
@@ -504,7 +504,7 @@ char32_t lib_str_utf32_char_to_upper(const char32_t wc)
     return wc - 32;
   }
 
-  /* There are only three remaining ranges that contain capitalization. */
+  /* There are only 3 remaining ranges that contain capitalization. */
   if (!(wc <= U'\x0292' && wc >= U'\x00FF') && !(wc <= U'\x04F9' && wc >= U'\x03AC') &&
       !(wc <= U'\x1FE1' && wc >= U'\x1E01'))
   {
@@ -990,7 +990,6 @@ size_t lib_str_partition_ex_utf8(const char *str,
 }
 
 /* Offset Conversion in Strings
- *
  * Regarding the assertion: `lib_assert(offset <= offset_target)`
  * The `offset_target` is likely in the middle of a UTF8 byte-sequence.
  * Most likely the offset passed in is incorrect, although it may be impractical to
@@ -1092,5 +1091,3 @@ int lib_str_utf8_offset_from_column_with_tabs(const char *str,
   }
   return int(offset);
 }
-
-/** \} */
