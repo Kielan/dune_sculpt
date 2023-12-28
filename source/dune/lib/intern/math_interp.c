@@ -1,7 +1,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "lob_math_base.h"
+#include "lib_math_base.h"
 #include "lib_math_interp.h"
 #include "lib_math_vector.h"
 #include "lib_simd.h"
@@ -14,11 +14,9 @@
 /* INTERPOLATIONS
  * Ref and docs:
  * http://wiki.blender.org/index.php/User:Damiles#Interpolations_Algorithms */
-
 /* BICUBIC Interpolation fns
  * More info: http://wiki.blender.org/index.php/User:Damiles#Bicubic_pixel_interpolation
- * function assumes out to be zero'ed, only does RGBA */
-
+ * fn assumes out to be zero'ed, only does RGBA */
 static float P(float k)
 {
   float p1, p2, p3, p4;
@@ -31,7 +29,7 @@ static float P(float k)
 }
 
 #if 0
-/* older, slower function, works the same as above */
+/* older, slower fn, works the same as above */
 static float P(float k)
 {
   return (float)(1.0f / 6.0f) *
@@ -85,7 +83,7 @@ LIB_INLINE void bicubic_interpolation(const uchar *byte_buf,
   int i, j, n, m, x1, y1;
   float a, b, w, wx, wy[4], out[4];
 
-  /* sample area entirely outside image? */
+  /* sample area entirely outside img? */
   if (ceil(u) < 0 || floor(u) > width - 1 || ceil(v) < 0 || floor(v) > height - 1) {
     if (float_output) {
       copy_vn_fl(float_output, components, 0.0f);
@@ -104,7 +102,6 @@ LIB_INLINE void bicubic_interpolation(const uchar *byte_buf,
   zero_v4(out);
 
   /* Optimized and not so easy to read */
-
   /* avoid calling multiple times */
   wy[0] = P(b - (-1));
   wy[1] = P(b - 0);
@@ -153,9 +150,8 @@ LIB_INLINE void bicubic_interpolation(const uchar *byte_buf,
       }
     }
   }
-
   /* Done with optimized part */
-
+  
 #if 0
   /* older, slower fn, works the same as above */
   for (n = -1; n <= 2; n++) {
@@ -357,16 +353,16 @@ LIB_INLINE void bilinear_interpolation_fl(const float *float_buf,
 }
 
 void lib_bilinear_interpolation_char(
-    const uchar *buffer, uchar *output, int width, int height, float u, float v)
+    const uchar *buf, uchar *output, int width, int height, float u, float v)
 {
-#if BLI_HAVE_SSE2
-  /* Bilinear interpolation needs to read and blend four image pixels, while
-   * also handling conditions of sample coordinate being outside of the
-   * image, in which case black (all zeroes) should be used as the sample
+#if LIB_HAVE_SSE2
+  /* Bilinear interpolation needs to read and blend four img pixels, while
+   * also handling conditions of sample coord being outside of the
+   * img, in which case black (all zeroes) should be used as the sample
    * contribution.
    *
-   * Code below does all that without any branches, by making outside the
-   * image sample locations still read the first pixel of the image, but
+   * Code below does all that wo any branches, by making outside the
+   * img sample locations still read the 1st pixel of the img, but
    * later making sure that the result is set to zero for that sample. */
 
   __m128 uvuv = _mm_set_ps(v, u, v, u);
@@ -385,7 +381,7 @@ void lib_bilinear_interpolation_char(
 
   /* x1, y1, x2, y2 */
   __m128i xy12 = _mm_add_epi32(_mm_cvttps_epi32(uvuv_floor), _mm_set_epi32(1, 1, 0, 0));
-  /* Check whether any of the coordinates are outside of the image. */
+  /* Check whether any of the coords are outside of the img. */
   __m128i size_minus_1 = _mm_sub_epi32(_mm_set_epi32(height, width, height, width),
                                        _mm_set1_epi32(1));
   __m128i too_lo_xy12 = _mm_cmplt_epi32(xy12, _mm_setzero_si128());
@@ -401,8 +397,8 @@ void lib_bilinear_interpolation_char(
   x1234 = _mm_andnot_si128(invalid_1234, x1234);
   y1234 = _mm_andnot_si128(invalid_1234, y1234);
 
-  /* Read the four sample values. Do address calculations in C, since SSE
-   * before 4.1 makes it very cumbersome to do full integer multiplies. */
+  /* Read the four sample vals. Do address calcs in C, since SSE
+   * before 4.1 makes it very cumbersome to do full int multiplies. */
   int xcoord[4];
   int ycoord[4];
   _mm_storeu_ps((float *)xcoord, _mm_castsi128_ps(x1234));
@@ -416,7 +412,7 @@ void lib_bilinear_interpolation_char(
   samples1234 = _mm_andnot_si128(invalid_1234, samples1234);
 
   /* Expand samples from packed 8-bit RGBA to full floats:
-   * spread to 16 bit values. */
+   * spread to 16 bit vals. */
   __m128i rgba16_12 = _mm_unpacklo_epi8(samples1234, _mm_setzero_si128());
   __m128i rgba16_34 = _mm_unpackhi_epi8(samples1234, _mm_setzero_si128());
   /* Spread to 32 bit values and convert to float. */
@@ -465,7 +461,7 @@ void lib_bilinear_interpolation_char(
   const uchar *row1, *row2, *row3, *row4;
   uchar empty[4] = {0, 0, 0, 0};
 
-  /* completely outside of the image? */
+  /* completely outside of the img? */
   if (x2 < 0 || x1 >= width) {
     copy_vn_uchar(output, 4, 0);
     return;
@@ -502,7 +498,7 @@ void lib_bilinear_interpolation_char(
     row4 = empty;
   }
   else {
-    row4 = buffer + width * y2 * 4 + 4 * x2;
+    row4 = buf + width * y2 * 4 + 4 * x2;
   }
 
   a = u - uf;
@@ -520,7 +516,7 @@ void lib_bilinear_interpolation_char(
 }
 
 void lib_bilinear_interpolation_fl(
-    const float *buffer, float *output, int width, int height, int components, float u, float v)
+    const float *buf, float *output, int width, int height, int components, float u, float v)
 {
   bilinear_interpolation_fl(buf, output, width, height, components, u, v, false, false);
 }
@@ -540,8 +536,8 @@ void lib_bilinear_interpolation_wrap_fl(const float *buffer,
 
 /* Filtering method based on
  * "Creating raster omnimax imgs from multiple perspective views
- * using the elliptical weighted average filter"
- * by Ned Greene and Paul S. Heckbert (1986) ******/
+ * using the elliptical weighted avg filter"
+ * by Ned Greene and Paul S. Heckbert (1986) */
 
 /* Table of `(exp(ar) - exp(a)) / (1 - exp(a))` for `r` in range [0, 1] and `a = -2`.
  * used instead of actual gaussian,
@@ -602,7 +598,6 @@ void lib_ewa_imp2radangle(
     float A, float B, float C, float F, float *a, float *b, float *th, float *ecc)
 {
   /* All tests here are done to make sure possible overflows are hopefully minimized. */
-
   if (F <= 1e-5f) { /* use arbitrary major radius, zero minor, infinite eccentricity */
     *a = sqrtf(A > C ? A : C);
     *b = 0.0f;
@@ -639,7 +634,7 @@ void lib_ewa_filter(const int width,
                     void *userdata,
                     float result[4])
 {
-  /* scaling dxt/dyt by full resolution can cause overflow because of huge A/B/C and esp. F values,
+  /* scaling dxt/dyt by full resolution can cause overflow bc of huge A/B/C and esp. F vals,
    * scaling by aspect ratio alone does the opposite, so try something in between instead... */
   const float ff2 = (float)width, ff = sqrtf(ff2), q = (float)height / ff;
   const float Ux = du[0] * ff, Vx = du[1] * q, Uy = dv[0] * ff, Vy = dv[1] * q;
@@ -654,10 +649,10 @@ void lib_ewa_filter(const int width,
    * so the ellipse always covers at least some texels. But since the filter is now always larger,
    * it also means that everywhere else it's also more blurry then ideally should be the case.
    * So instead here the ellipse radii are modified instead whenever either is too low.
-   * Use a different radius based on interpolation switch,
+   * Use a diff radius based on interpolation switch,
    * just enough to anti-alias when interpolation is off,
    * and slightly larger to make result a bit smoother than bilinear interpolation when
-   * interpolation is on (minimum values: `const float rmin = intpol ? 1.0f : 0.5f;`) */
+   * interpolation is on (min vals: `const float rmin = intpol ? 1.0f : 0.5f;`) */
   const float rmin = (intpol ? 1.5625f : 0.765625f) / ff2;
   lib_ewa_imp2radangle(A, B, C, F, &a, &b, &th, &ecc);
   if ((b2 = b * b) < rmin) {
@@ -687,9 +682,8 @@ void lib_ewa_filter(const int width,
   v2 = (int)ceilf(V0 + ve);
 
   /* sane clamping to avoid unnecessarily huge loops */
-  /* NOTE: if eccentricity gets clamped (see above),
-   * the ue/ve limits can also be lowered accordingly
-   */
+  /* If eccentricity gets clamped (see above),
+   * the ue/ve limits can also be lowered accordingly */
   if (U0 - (float)u1 > EWA_MAXIDX) {
     u1 = (int)U0 - EWA_MAXIDX;
   }
@@ -703,7 +697,7 @@ void lib_ewa_filter(const int width,
     v2 = (int)V0 + EWA_MAXIDX;
   }
 
-  /* Early output check for cases the whole region is outside of the buffer. */
+  /* Early output check for cases the whole rgn is outside of the buffer. */
   if ((u2 < 0 || u1 >= width) || (v2 < 0 || v1 >= height)) {
     zero_v4(result);
     return;
