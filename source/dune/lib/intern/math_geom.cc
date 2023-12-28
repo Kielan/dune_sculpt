@@ -1804,7 +1804,7 @@ bool isect_ray_tri_watertight_v3(const float ray_origin[3],
   const float b_kx = b[kx], b_ky = b[ky], b_kz = b[kz];
   const float c_kx = c[kx], c_ky = c[ky], c_kz = c[kz];
 
-  /* Perform shear and scale of vertices. */
+  /* Perform shear and scale of verts. */
   const float ax = a_kx - sx * a_kz;
   const float ay = a_ky - sy * a_kz;
   const float bx = b_kx - sx * b_kz;
@@ -1812,7 +1812,7 @@ bool isect_ray_tri_watertight_v3(const float ray_origin[3],
   const float cx = c_kx - sx * c_kz;
   const float cy = c_ky - sy * c_kz;
 
-  /* Calc scaled barycentric coordinates. */
+  /* Calc scaled barycentric coords. */
   const float u = cx * by - cy * bx;
   const float v = ax * cy - ay * cx;
   const float w = bx * ay - by * ax;
@@ -3072,7 +3072,7 @@ bool isect_ray_aabb_v3(const IsectRayAABBPrecalc *data,
     tmin = tzmin;
   }
 
-  /* NOTE: tmax does not need to be updated since we don't use it
+  /* tmax does not need to be updated since we don't use it
    * keeping this here for future ref. */
   // if (tzmax < tmax) tmax = tzmax;
   if (tmin_out) {
@@ -3512,20 +3512,17 @@ void axis_dominant_v3_to_m3_negate(float r_mat[3][3], const float normal[3])
   transpose_m3(r_mat);
   
   lib_assert(!is_negative_m3(r_mat));
-  lib_assert((dot_m3_v3_row_z(r_mat, normal) < BLI_ASSERT_UNIT_EPSILON) || is_zero_v3(normal));
+  lib_assert((dot_m3_v3_row_z(r_mat, normal) < LIB_ASSERT_UNIT_EPSILON) || is_zero_v3(normal));
 }
 
-/****************************** Interpolation ********************************/
-
+/* Interpolation ********************************/
 static float tri_signed_area(
     const float v1[3], const float v2[3], const float v3[3], const int i, const int j)
 {
   return 0.5f * ((v1[i] - v2[i]) * (v2[j] - v3[j]) + (v1[j] - v2[j]) * (v3[i] - v2[i]));
 }
 
-/**
- * \return false when degenerate.
- */
+/* return false when degenerate. */
 static bool barycentric_weights(const float v1[3],
                                 const float v2[3],
                                 const float v3[3],
@@ -3578,7 +3575,7 @@ void interp_weights_quad_v3(float w[4],
 
   zero_v4(w);
 
-  /* first check for exact match */
+  /* 1st check for exact match */
   if (equals_v3v3(co, v1)) {
     w[0] = 1.0f;
   }
@@ -3675,7 +3672,7 @@ void barycentric_weights_v2(
       return;
     }
   }
-  /* Dummy values for zero area face. */
+  /* Dummy vals for zero area face. */
   copy_v3_fl(w, 1.0f / 3.0f);
 }
 
@@ -3698,7 +3695,7 @@ void barycentric_weights_v2_clamped(
       return;
     }
   }
-  /* Dummy values for zero area face. */
+  /* Dummy vals for zero area face. */
   copy_v3_fl(w, 1.0f / 3.0f);
 }
 
@@ -3721,7 +3718,7 @@ void barycentric_weights_v2_persp(
       return;
     }
   }
-  /* Dummy values for zero area face. */
+  /* Dummy vals for zero area face. */
   copy_v3_fl(w, 1.0f / 3.0f);
 }
 
@@ -3732,12 +3729,12 @@ void barycentric_weights_v2_quad(const float v1[2],
                                  const float co[2],
                                  float w[4])
 {
-  /* NOTE(@ideasman42): fabsf() here is not needed for convex quads
-   * (and not used in #interp_weights_poly_v2).
+  /* NOTE: fabsf() here is not needed for convex quads
+   * (and not used in interp_weights_poly_v2).
    * But in the case of concave/bow-tie quads for the mask rasterizer it
    * gives unreliable results without adding `absf()`. If this becomes an issue for more general
-   * usage we could have this optional or use a different function. */
-#define MEAN_VALUE_HALF_TAN_V2(_area, i1, i2) \
+   * usage we could have this optional or use a diff fn. */
+#define MEAN_VAL_HALF_TAN_V2(_area, i1, i2) \
   ((_area = cross_v2v2(dirs[i1], dirs[i2])) != 0.0f ? \
        fabsf(((lens[i1] * lens[i2]) - dot_v2v2(dirs[i1], dirs[i2])) / _area) : \
        0.0f)
@@ -3776,26 +3773,26 @@ void barycentric_weights_v2_quad(const float v1[2],
   else {
     float wtot, area;
 
-    /* variable 'area' is just for storage,
-     * the order its initialized doesn't matter */
+    /* var 'area' is just for storage,
+     * the order its init doesn't matter */
 #ifdef __clang__
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wunsequenced"
 #endif
 
-    /* inline mean_value_half_tan four times here */
+    /* inline mean_val_half_tan four times here */
     const float t[4] = {
-        MEAN_VALUE_HALF_TAN_V2(area, 0, 1),
-        MEAN_VALUE_HALF_TAN_V2(area, 1, 2),
-        MEAN_VALUE_HALF_TAN_V2(area, 2, 3),
-        MEAN_VALUE_HALF_TAN_V2(area, 3, 0),
+        MEAN_VAL_HALF_TAN_V2(area, 0, 1),
+        MEAN_VAL_HALF_TAN_V2(area, 1, 2),
+        MEAN_VAL_HALF_TAN_V2(area, 2, 3),
+        MEAN_VAL_HALF_TAN_V2(area, 3, 0),
     };
 
 #ifdef __clang__
 #  pragma clang diagnostic pop
 #endif
 
-#undef MEAN_VALUE_HALF_TAN_V2
+#undef MEAN_VAL_HALF_TAN_V2
 
     w[0] = (t[3] + t[0]) / lens[0];
     w[1] = (t[0] + t[1]) / lens[1];
@@ -3813,7 +3810,7 @@ void barycentric_weights_v2_quad(const float v1[2],
         return;
       }
     }
-    /* Dummy values for zero area face. */
+    /* Dummy vals for zero area face. */
     copy_v4_fl(w, 1.0f / 4.0f);
   }
 }
@@ -3828,7 +3825,7 @@ void transform_point_by_tri_v3(float pt_tar[3],
                                const float tri_src_p3[3])
 {
   /* this works by moving the source triangle so its normal is pointing on the Z
-   * axis where its barycentric weights can be calculated in 2D and its Z offset can
+   * axis where its barycentric weights can be calc in 2D and its Z offset can
    * be re-applied. The weights are applied directly to the targets 3D points and the
    * z-depth is used to scale the targets normal as an offset.
    * This saves transforming the target into its Z-Up orientation and back
@@ -3899,11 +3896,11 @@ int interp_sparse_array(float *array, const int list_size, const float skipval)
   float valid_last = skipval;
   int valid_ofs = 0;
 
-  blender::Array<float> array_up(list_size);
-  blender::Array<float> array_down(list_size);
+  dune::Array<float> array_up(list_size);
+  dune::Array<float> array_down(list_size);
 
-  blender::Array<int> ofs_tot_up(list_size);
-  blender::Array<int> ofs_tot_down(list_size);
+  dune::Array<int> ofs_tot_up(list_size);
+  dune::Array<int> ofs_tot_down(list_size);
 
   for (i = 0; i < list_size; i++) {
     if (array[i] == skipval) {
@@ -3950,10 +3947,7 @@ int interp_sparse_array(float *array, const int list_size, const float skipval)
   return 1;
 }
 
-/* -------------------------------------------------------------------- */
-/** \name interp_weights_poly_v2, v3
- * \{ */
-
+/* interp_weights_poly_v2, v */
 #define IS_POINT_IX (1 << 0)
 #define IS_SEGMENT_IX (1 << 1)
 
@@ -3979,9 +3973,9 @@ struct Double2_Len {
   double dir[2], len;
 };
 
-/* Mean value weights - smooth interpolation weights for polygons with
- * more than 3 vertices */
-static float mean_value_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *d_next)
+/* Mean val weights - smooth interpolation weights for polygons with
+ * more than 3 verts */
+static float mean_val_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *d_next)
 {
   float cross[3];
   cross_v3_v3v3(cross, d_curr->dir, d_next->dir);
@@ -3998,18 +3992,16 @@ static float mean_value_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *
   return 0.0f;
 }
 
-/**
- * Mean value weights - same as #mean_value_half_tan_v3 but for 2D vectors.
+/* Mean val weights same as mean_val_half_tan_v3 but for 2D vectors.
  *
- * \note When interpolating a 2D polygon, a point can be considered "outside"
+ * When interpolating a 2D polygon, a point can be considered "outside"
  * the polygon's bounds. Thus, when the point is very distant and the vectors
- * have relatively close values, the precision problems are evident since they
+ * have relatively close vals, the precision problems are evident since they
  * do not indicate a point "inside" the polygon.
- * To resolve this, doubles are used.
- */
-static double mean_value_half_tan_v2_db(const Double2_Len *d_curr, const Double2_Len *d_next)
+ * To resolve this, doubles are used. */
+static double mean_val_half_tan_v2_db(const Double2_Len *d_curr, const Double2_Len *d_next)
 {
-  /* Different from the 3d version but still correct. */
+  /* Diff from the 3d version but still correct. */
   const double area = cross_v2v2_db(d_curr->dir, d_next->dir);
   /* Compare against zero since 'FLT_EPSILON' can be too large, see: #73348. */
   if (LIKELY(area != 0.0)) {
@@ -4025,17 +4017,17 @@ static double mean_value_half_tan_v2_db(const Double2_Len *d_curr, const Double2
 
 void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[3])
 {
-  /* Before starting to calculate the weight, we need to figure out the floating point precision we
+  /* Before starting to calc the weight, we need to figure out the floating point precision we
    * can expect from the supplied data. */
-  float max_value = 0;
+  float max_val = 0;
 
   for (int i = 0; i < n; i++) {
-    max_value = max_ff(max_value, fabsf(v[i][0] - co[0]));
-    max_value = max_ff(max_value, fabsf(v[i][1] - co[1]));
-    max_value = max_ff(max_value, fabsf(v[i][2] - co[2]));
+    max_val = max_ff(max_val, fabsf(v[i][0] - co[0]));
+    max_val = max_ff(max_val, fabsf(v[i][1] - co[1]));
+    max_val = max_ff(max_val, fabsf(v[i][2] - co[2]));
   }
 
-  /* These to values we derived by empirically testing different values that works for the test
+  /* These to vals we derived by empirically testing different values that works for the test
    * files in D7772. */
   const float eps = 16.0f * FLT_EPSILON * max_value;
   const float eps_sq = eps * eps;
@@ -4055,7 +4047,7 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 
   DIR_V3_SET(&d_curr, v_curr - 3 /* v[n - 2] */, co);
   DIR_V3_SET(&d_next, v_curr /* v[n - 1] */, co);
-  ht_prev = mean_value_half_tan_v3(&d_curr, &d_next);
+  ht_prev = mean_val_half_tan_v3(&d_curr, &d_next);
 
   while (i_next < n) {
     /* Mark Mayer et al algorithm that is used here does not operate well if vertex is close
@@ -4074,7 +4066,7 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 
     d_curr = d_next;
     DIR_V3_SET(&d_next, v_next, co);
-    ht = mean_value_half_tan_v3(&d_curr, &d_next);
+    ht = mean_val_half_tan_v3(&d_curr, &d_next);
     w[i_curr] = (ht_prev + ht) / d_curr.len;
     totweight += w[i_curr];
 
@@ -4110,7 +4102,7 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 
 void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[2])
 {
-  /* Before starting to calculate the weight, we need to figure out the floating point precision we
+  /* Before starting to calc the weight, we need to figure out the floating point precision we
    * can expect from the supplied data. */
   float max_value = 0;
 
@@ -4119,7 +4111,7 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
     max_value = max_ff(max_value, fabsf(v[i][1] - co[1]));
   }
 
-  /* These to values we derived by empirically testing different values that works for the test
+  /* These to vals we derived by empirically testing diff val that works for the test
    * files in D7772. */
   const float eps = 16.0f * FLT_EPSILON * max_value;
   const float eps_sq = eps * eps;
@@ -4140,12 +4132,12 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
 
   DIR_V2_SET(&d_curr, v_curr - 2 /* v[n - 2] */, co);
   DIR_V2_SET(&d_next, v_curr /* v[n - 1] */, co);
-  ht_prev = mean_value_half_tan_v2_db(&d_curr, &d_next);
+  ht_prev = mean_val_half_tan_v2_db(&d_curr, &d_next);
 
   while (i_next < n) {
-    /* Mark Mayer et al algorithm that is used here does not operate well if vertex is close
+    /* Mark Mayer et al algo that is used here does not op well if vertex is close
      * to borders of face. In that case,
-     * do simple linear interpolation between the two edge vertices */
+     * do simple linear interpolation between the two edge verts */
 
     /* 'd_next.len' is in fact 'd_curr.len', just avoid copy to begin with */
     if (UNLIKELY(d_next.len < eps)) {
@@ -4159,7 +4151,7 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
 
     d_curr = d_next;
     DIR_V2_SET(&d_next, v_next, co);
-    ht = mean_value_half_tan_v2_db(&d_curr, &d_next);
+    ht = mean_val_half_tan_v2_db(&d_curr, &d_next);
     w[i_curr] = (d_curr.len == 0.0) ? 0.0f : float((ht_prev + ht) / d_curr.len);
     totweight += w[i_curr];
 
@@ -4199,8 +4191,6 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
 #undef DIR_V3_SET
 #undef DIR_V2_SET
 
-/** \} */
-
 void interp_cubic_v3(float x[3],
                      float v[3],
                      const float x1[3],
@@ -4231,9 +4221,8 @@ void interp_cubic_v3(float x[3],
   v[2] = 3 * a[2] * t2 + 2 * b[2] * t + v1[2];
 }
 
-/* unfortunately internal calculations have to be done at double precision
+/* unfortunately internal calcs have to be done at double precision
  * to achieve correct/stable results. */
-
 #define IS_ZERO(x) ((x > (-DBL_EPSILON) && x < DBL_EPSILON) ? 1 : 0)
 
 void resolve_tri_uv_v2(
@@ -4276,7 +4265,7 @@ void resolve_tri_uv_v3(
 
   det = d00 * d11 - d01 * d01;
 
-  /* det should never be zero since the determinant is the signed ST area of the triangle. */
+  /* det should never be zero bc the determinant is the signed ST area of the triangle. */
   if (IS_ZERO(det) == 0) {
     float w;
 
@@ -4460,8 +4449,7 @@ void interp_barycentric_tri_v3(float data[3][3], float u, float v, float res[3])
   add_v3_v3(res, vec);
 }
 
-/***************************** View & Projection *****************************/
-
+/* View & Projection */
 void orthographic_m4(float matrix[4][4],
                      const float left,
                      const float right,
@@ -4569,10 +4557,8 @@ void planes_from_projmat(const float mat[4][4],
                          float far[4])
 {
   /* References:
-   *
    * https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
-   * http://www8.cs.umu.se/kurser/5DV051/HT12/lab/plane_extraction.pdf
-   */
+   * http://www8.cs.umu.se/kurser/5DV051/HT12/lab/plane_extraction.pdf */
 
   int i;
 
@@ -4672,7 +4658,7 @@ void projmat_dimensions_db(const float winmat_fl[4][4],
   }
 }
 
-void projmat_from_subregion(const float projmat[4][4],
+void projmat_from_subrgn(const float projmat[4][4],
                             const int win_size[2],
                             const int x_min,
                             const int x_max,
@@ -4714,7 +4700,7 @@ static void i_multmatrix(const float icand[4][4], float mat[4][4])
                         icand[row][2] * mat[2][col] + icand[row][3] * mat[3][col]);
     }
   }
-  copy_m4_m4(mat, temp);
+  copy_m4_m4(mat, tmp);
 }
 
 void polarview_m4(float mat[4][4], float dist, float azimuth, float incidence, float twist)
@@ -4860,21 +4846,20 @@ void box_minmax_bounds_m4(float min[3], float max[3], float boundbox[2][3], floa
   copy_v3_v3(max, mx);
 }
 
-/********************************** Mapping **********************************/
-
-static float snap_coordinate(float u)
+/* Mapping **********************************/
+static float snap_coord(float u)
 {
-  /* Adjust a coordinate value `u` to obtain a value inside the (closed) unit interval.
-   *   i.e. 0.0 <= snap_coordinate(u) <= 1.0.
-   * Due to round-off errors, it is possible that the value of `u` may be close to the boundary of
-   * the unit interval, but not exactly on it. In order to handle these cases, `snap_coordinate`
-   * checks whether `u` is within `epsilon` of the boundary, and if so, it snaps the return value
+  /* Adjust a coord val `u` to obtain a value inside the (closed) unit interval.
+   *   i.e. 0.0 <= snap_coord(u) <= 1.0.
+   * Due to round-off err, it is possible that the val of `u` may be close to the boundary of
+   * the unit interval, but not exactly on it. In order to handle these cases, `snap_coord`
+   * checks whether `u` is within `epsilon` of the boundary, and if so, it snaps the return val
    * to the boundary. */
   if (u < 0.0f) {
     u += 1.0f; /* Get back into the unit interval. */
   }
-  BLI_assert(0.0f <= u);
-  BLI_assert(u <= 1.0f);
+  lib_assert(0.0f <= u);
+  lib_assert(u <= 1.0f);
   const float epsilon = 0.25f / 65536.0f; /* i.e. Quarter of a texel on a 65536 x 65536 texture. */
   if (u < epsilon) {
     return 0.0f; /* `u` is close to 0, just return 0. */
@@ -4910,10 +4895,10 @@ bool map_to_sphere(float *r_u, float *r_v, const float x, const float y, const f
     *r_u = 0.5f;
   }
   else {
-    /* The "Regular" case, just compute the coordinate. */
-    *r_u = snap_coordinate(atan2f(x, -y) / float(2.0f * M_PI));
+    /* The "Regular" case, just compute the coord. */
+    *r_u = snap_coord(atan2f(x, -y) / float(2.0f * M_PI));
   }
-  *r_v = snap_coordinate(atan2f(len_xy, -z) / float(M_PI));
+  *r_v = snap_coord(atan2f(len_xy, -z) / float(M_PI));
   return regular;
 }
 
@@ -4940,9 +4925,8 @@ void map_to_plane_axis_angle_v2_v3v3fl(float r_co[2],
   copy_v2_v2(r_co, tmp);
 }
 
-/********************************* Normals **********************************/
-
-void accumulate_vertex_normals_tri_v3(float n1[3],
+/* Normals */
+void accumulate_ver_normals_tri_v3(float n1[3],
                                       float n2[3],
                                       float n3[3],
                                       const float f_no[3],
@@ -4970,7 +4954,7 @@ void accumulate_vertex_normals_tri_v3(float n1[3],
 
     for (i = 0; i < nverts; i++) {
       const float *cur_edge = vdiffs[i];
-      const float fac = blender::math::safe_acos_approx(-dot_v3v3(cur_edge, prev_edge));
+      const float fac = dune::math::safe_acos_approx(-dot_v3v3(cur_edge, prev_edge));
 
       /* accumulate */
       madd_v3_v3fl(vn[i], f_no, fac);
@@ -4979,7 +4963,7 @@ void accumulate_vertex_normals_tri_v3(float n1[3],
   }
 }
 
-void accumulate_vertex_normals_v3(float n1[3],
+void accumulate_vert_normals_v3(float n1[3],
                                   float n2[3],
                                   float n3[3],
                                   float n4[3],
@@ -5026,7 +5010,7 @@ void accumulate_vertex_normals_v3(float n1[3],
   }
 }
 
-void accumulate_vertex_normals_poly_v3(float **vertnos,
+void accumulate_vert_normals_poly_v3(float **vertnos,
                                        const float polyno[3],
                                        const float **vertcos,
                                        float vdiffs[][3],
@@ -5034,7 +5018,7 @@ void accumulate_vertex_normals_poly_v3(float **vertnos,
 {
   int i;
 
-  /* calculate normalized edge directions for each edge in the poly */
+  /* calc normalized edge directions for each edge in the poly */
   for (i = 0; i < nverts; i++) {
     sub_v3_v3v3(vdiffs[i], vertcos[(i + 1) % nverts], vertcos[i]);
     normalize_v3(vdiffs[i]);
@@ -5047,9 +5031,9 @@ void accumulate_vertex_normals_poly_v3(float **vertnos,
     for (i = 0; i < nverts; i++) {
       const float *cur_edge = vdiffs[i];
 
-      /* calculate angle between the two poly edges incident on
+      /* calc angle between the two poly edges incident on
        * this vertex */
-      const float fac = blender::math::safe_acos_approx(-dot_v3v3(cur_edge, prev_edge));
+      const float fac = dune::math::safe_acos_approx(-dot_v3v3(cur_edge, prev_edge));
 
       /* accumulate */
       madd_v3_v3fl(vertnos[i], polyno, fac);
@@ -5059,7 +5043,6 @@ void accumulate_vertex_normals_poly_v3(float **vertnos,
 }
 
 /********************************* Tangents **********************************/
-
 void tangent_from_uv_v3(const float uv1[2],
                         const float uv2[2],
                         const float uv3[2],
@@ -5102,10 +5085,8 @@ void tangent_from_uv_v3(const float uv1[2],
   }
 }
 
-/****************************** Vector Clouds ********************************/
-
+/** Vector Clouds ********************************/
 /* vector clouds */
-
 void vcloud_estimate_transform_v3(const int list_size,
                                   const float (*pos)[3],
                                   const float *weight,
@@ -5201,7 +5182,7 @@ void vcloud_estimate_transform_v3(const int list_size,
         m[2][1] += va[2] * vb[1];
         m[2][2] += va[2] * vb[2];
 
-        /* building the reference matrix on the fly
+        /* building the ref matrix on the fly
          * needed to scale properly later */
 
         mr[0][0] += va[0] * va[0];
@@ -5273,14 +5254,12 @@ bool is_edge_convex_v3(const float v1[3],
 
 bool is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3])
 {
-  /**
-   * Method projects points onto a plane and checks its convex using following method:
+  /* Method projects points onto a plane and checks its convex using following method:
    *
    * - Create a plane from the cross-product of both diagonal vectors.
    * - Project all points onto the plane.
    * - Subtract for direction vectors.
-   * - Return true if all corners cross-products point the direction of the plane.
-   */
+   * - Return true if all corners cross-products point the direction of the plane.  */
 
   /* non-unit length normal, used as a projection plane */
   float plane[3];
@@ -5408,15 +5387,15 @@ bool is_quad_flip_v3_first_third_fast(const float v1[3],
 
 float cubic_tangent_factor_circle_v3(const float tan_l[3], const float tan_r[3])
 {
-  BLI_ASSERT_UNIT_V3(tan_l);
-  BLI_ASSERT_UNIT_V3(tan_r);
+  LIB_ASSERT_UNIT_V3(tan_l);
+  LIB_ASSERT_UNIT_V3(tan_r);
 
   /* -7f causes instability/glitches with Bendy Bones + Custom Refs. */
   const float eps = 1e-5f;
 
   const float tan_dot = dot_v3v3(tan_l, tan_r);
   if (tan_dot > 1.0f - eps) {
-    /* no angle difference (use fallback, length won't make any difference) */
+    /* no angle diff (use fallback, length won't make any difference) */
     return (1.0f / 3.0f) * 0.75f;
   }
   if (tan_dot < -1.0f + eps) {
@@ -5424,7 +5403,7 @@ float cubic_tangent_factor_circle_v3(const float tan_l[3], const float tan_r[3])
     return (1.0f / 2.0f);
   }
 
-  /* non-aligned tangents, calculate handle length */
+  /* non-aligned tangents, calc handle length */
   const float angle = acosf(tan_dot) / 2.0f;
 
   /* could also use 'angle_sin = len_vnvn(tan_l, tan_r, dims) / 2.0' */
@@ -5442,7 +5421,7 @@ float geodesic_distance_propagate_across_triangle(
   sub_v3_v3v3(v12, v2, v1);
 
   if (dist1 != 0.0f && dist2 != 0.0f) {
-    /* Local coordinate system in the triangle plane. */
+    /* Local coord system in the triangle plane. */
     float u[3], v[3], n[3];
     const float d12 = normalize_v3_v3(u, v12);
 
@@ -5451,10 +5430,10 @@ float geodesic_distance_propagate_across_triangle(
       normalize_v3(n);
       cross_v3_v3v3(v, n, u);
 
-      /* v0 in local coordinates */
+      /* v0 in local coords */
       const float v0_[2] = {dot_v3v3(v10, u), fabsf(dot_v3v3(v10, v))};
 
-      /* Compute virtual source point in local coordinates, that we estimate the geodesic
+      /* Compute virtual source point in local coords, that we estimate the geodesic
        * distance is being computed from. See figure 9 in the paper for the derivation. */
       const float a = 0.5f * (1.0f + (dist1 * dist1 - dist2 * dist2) / (d12 * d12));
       const float hh = dist1 * dist1 - a * a * d12 * d12;
