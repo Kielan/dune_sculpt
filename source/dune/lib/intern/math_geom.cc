@@ -202,7 +202,7 @@ float cotangent_tri_weight_v3(const float v1[3], const float v2[3], const float 
   return 0.0f;
 }
 
-/********************************* Planes **********************************/
+/* Planes */
 
 void plane_from_point_normal_v3(float r_plane[4], const float plane_co[3], const float plane_no[3])
 {
@@ -224,8 +224,7 @@ void plane_to_point_vector_v3_normalized(const float plane[4],
   mul_v3_v3fl(r_plane_co, r_plane_no, (-plane[3] / length));
 }
 
-/********************************* Volume **********************************/
-
+/* Volume */
 float volume_tetrahedron_v3(const float v1[3],
                             const float v2[3],
                             const float v3[3],
@@ -263,8 +262,7 @@ float volume_tri_tetrahedron_signed_v3(const float v1[3], const float v2[3], con
   return volume_tri_tetrahedron_signed_v3_6x(v1, v2, v3) / 6.0f;
 }
 
-/********************************* Distance **********************************/
-
+/* Distance */
 float dist_squared_to_line_v2(const float p[2], const float l1[2], const float l2[2])
 {
   float closest[2];
@@ -343,7 +341,7 @@ float closest_seg_seg_v2(float r_closest_a[2],
     *r_lambda_b = 0.0f;
   }
   else {
-    BLI_assert(min_dist_sq == dist_sq4);
+    lib_assert(min_dist_sq == dist_sq4);
     copy_v2_v2(r_closest_a, p4);
     copy_v2_v2(r_closest_b, b2);
     *r_lambda_a = lambda4;
@@ -406,7 +404,7 @@ void closest_to_plane_v3(float r_close[3], const float plane[4], const float pt[
 void closest_to_plane_normalized_v3(float r_close[3], const float plane[4], const float pt[3])
 {
   const float side = plane_point_side_v3(plane, pt);
-  BLI_ASSERT_UNIT_V3(plane);
+  LIB_ASSERT_UNIT_V3(plane);
   madd_v3_v3v3fl(r_close, pt, plane, -side);
 }
 
@@ -420,7 +418,7 @@ void closest_to_plane3_v3(float r_close[3], const float plane[3], const float pt
 void closest_to_plane3_normalized_v3(float r_close[3], const float plane[3], const float pt[3])
 {
   const float side = dot_v3v3(plane, pt);
-  BLI_ASSERT_UNIT_V3(plane);
+  LIB_ASSERT_UNIT_V3(plane);
   madd_v3_v3v3fl(r_close, pt, plane, -side);
 }
 
@@ -436,23 +434,23 @@ float dist_squared_to_plane_v3(const float pt[3], const float plane[4])
   const float len_sq = len_squared_v3(plane);
   const float side = plane_point_side_v3(plane, pt);
   const float fac = side / len_sq;
-  /* only difference to code above - no 'copysignf' */
+  /* only diff to code above - no 'copysignf' */
   return len_sq * (fac * fac);
 }
 
 float dist_signed_squared_to_plane3_v3(const float pt[3], const float plane[3])
 {
   const float len_sq = len_squared_v3(plane);
-  const float side = dot_v3v3(plane, pt); /* only difference with 'plane[4]' version */
+  const float side = dot_v3v3(plane, pt); /* only diff w 'plane[4]' version */
   const float fac = side / len_sq;
   return copysignf(len_sq * (fac * fac), side);
 }
 float dist_squared_to_plane3_v3(const float pt[3], const float plane[3])
 {
   const float len_sq = len_squared_v3(plane);
-  const float side = dot_v3v3(plane, pt); /* only difference with 'plane[4]' version */
+  const float side = dot_v3v3(plane, pt); /* only diff w 'plane[4]' version */
   const float fac = side / len_sq;
-  /* only difference to code above - no 'copysignf' */
+  /* only diff to code above - no 'copysignf' */
   return len_sq * (fac * fac);
 }
 
@@ -544,7 +542,7 @@ float dist_signed_squared_to_corner_v3v3v3(const float p[3],
   dist_a = dist_signed_squared_to_plane_v3(p, plane_a);
   dist_b = dist_signed_squared_to_plane_v3(p, plane_b);
 #else
-  /* calculate without the planes 4th component to avoid float precision issues */
+  /* calc wo the planes 4th component to avoid float precision issues */
   sub_v3_v3v3(s_p_v2, p, v2);
 
   dist_a = dist_signed_squared_to_plane3_v3(s_p_v2, plane_a);
@@ -595,7 +593,7 @@ float dist_squared_ray_to_seg_v3(const float ray_origin[3],
   }
   else {
     /* has no nearest point, only distance squared. */
-    /* Calculate the distance to the point v0 then */
+    /* Calc the distance to the point v0 then */
     copy_v3_v3(r_point, v0);
   }
 
@@ -642,9 +640,7 @@ void aabb_get_near_far_from_plane(const float plane_no[3],
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** \name dist_squared_to_ray_to_aabb and helpers
- * \{ */
+/* dist_squared_to_ray_to_aabb and helpers */
 
 void dist_squared_ray_to_aabb_v3_precalc(DistRayAABB_Precalc *neasrest_precalc,
                                          const float ray_origin[3],
@@ -680,9 +676,9 @@ float dist_squared_ray_to_aabb_v3(const DistRayAABB_Precalc *data,
       (local_bvmax[1] - data->ray_origin[1]) * data->ray_inv_dir[1],
       (local_bvmax[2] - data->ray_origin[2]) * data->ray_inv_dir[2],
   };
-  /* `va` and `vb` are the coordinates of the AABB edge closest to the ray */
+  /* `va` and `vb` are the coords of the AABB edge closest to the ray */
   float va[3], vb[3];
-  /* `rtmin` and `rtmax` are the minimum and maximum distances of the ray hits on the AABB */
+  /* `rtmin` and `rtmax` are the min and max distances of the ray hits on the AABB */
   float rtmin, rtmax;
   int main_axis;
 
@@ -761,12 +757,7 @@ float dist_squared_ray_to_aabb_v3_simple(const float ray_origin[3],
   return dist_squared_ray_to_aabb_v3(&data, bb_min, bb_max, r_point, r_depth);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name dist_squared_to_projected_aabb and helpers
- * \{ */
-
+/* dist_squared_to_projected_aabb and helpers */
 void dist_squared_to_projected_aabb_precalc(DistProjectedAABBPrecalc *precalc,
                                             const float projmat[4][4],
                                             const float winsize[2],
@@ -837,9 +828,9 @@ float dist_squared_to_projected_aabb(DistProjectedAABBPrecalc *data,
       (local_bvmax[1] - data->ray_origin[1]) * data->ray_inv_dir[1],
       (local_bvmax[2] - data->ray_origin[2]) * data->ray_inv_dir[2],
   };
-  /* `va` and `vb` are the coordinates of the AABB edge closest to the ray */
+  /* `va` and `vb` are the coords of the AABB edge closest to the ray */
   float va[3], vb[3];
-  /* `rtmin` and `rtmax` are the minimum and maximum distances of the ray hits on the AABB */
+  /* `rtmin` and `rtmax` are the min and max distances of the ray hits on the AABB */
   float rtmin, rtmax;
   int main_axis;
 
@@ -962,8 +953,6 @@ float dist_squared_to_projected_aabb_simple(const float projmat[4][4],
   return dist_squared_to_projected_aabb(&data, bbmin, bbmax, dummy);
 }
 
-/** \} */
-
 float dist_seg_seg_v2(const float a1[3], const float a2[3], const float b1[3], const float b2[3])
 {
   if (isect_seg_seg_v2_simple(a1, a2, b1, b2)) {
@@ -981,12 +970,11 @@ void closest_on_tri_to_point_v3(
 {
   /* Adapted from "Real-Time Collision Detection" by Christer Ericson,
    * published by Morgan Kaufmann Publishers, copyright 2005 Elsevier Inc. */
-
   float ab[3], ac[3], ap[3], d1, d2;
   float bp[3], d3, d4, vc, cp[3], d5, d6, vb, va;
   float denom, v, w;
 
-  /* Check if P in vertex region outside A */
+  /* Check if P in vert rgn outside A */
   sub_v3_v3v3(ab, v2, v1);
   sub_v3_v3v3(ac, v3, v1);
   sub_v3_v3v3(ap, p, v1);
