@@ -1,13 +1,13 @@
-#include "BLI_math_base.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_matrix.hh"
-#include "BLI_math_rotation.h"
-#include "BLI_math_rotation.hh"
-#include "BLI_math_rotation_legacy.hh"
-#include "BLI_math_vector.h"
-#include "BLI_math_vector.hh"
+#include "lib_math_base.h"
+#include "lib_math_matrix.h"
+#include "lib_math_matrix.hh"
+#include "lib_math_rotation.h"
+#include "lib_math_rotation.hh"
+#include "lib_math_rotation_legacy.hh"
+#include "lib_math_vector.h"
+#include "lib_math_vector.hh"
 
-namespace blender::math {
+namespace dune::math {
 
 template EulerXYZ to_euler(const AxisAngle &);
 template EulerXYZ to_euler(const AxisAngleCartesian &);
@@ -39,7 +39,7 @@ void generate_axes_to_quaternion_switch_cases()
       if (Axis(forward) == Axis(up)) {
         continue;
       }
-      /* Filter the identity case. Fall inside the default case. */
+      /* Filter the id case. Fall inside the default case. */
       if (forward == AxisSigned::Y_POS && up == AxisSigned::Z_POS) {
         continue;
       }
@@ -52,20 +52,20 @@ void generate_axes_to_quaternion_switch_cases()
       mat.z_axis() = float3(axes.z);
 
       math::Quaternion q = to_quaternion(mat);
-      /* Create a integer value out of the 4 possible component values (+sign). */
+      /* Create a int val out of the 4 possible component vals (+sign). */
       int4 p = int4(round(sign(float4(q)) * min(pow(float4(q), 2.0f), float4(0.75)) * 4.0));
 
       auto format_component = [](int value) {
-        switch (abs(value)) {
+        switch (abs(val)) {
           default:
           case 0:
             return "T(0)";
           case 1:
-            return (value > 0) ? "T(0.5)" : "T(-0.5)";
+            return (val > 0) ? "T(0.5)" : "T(-0.5)";
           case 2:
-            return (value > 0) ? "T(M_SQRT1_2)" : "T(-M_SQRT1_2)";
+            return (val > 0) ? "T(M_SQRT1_2)" : "T(-M_SQRT1_2)";
           case 3:
-            return (value > 0) ? "T(1)" : "T(-1)";
+            return (val > 0) ? "T(1)" : "T(-1)";
         }
       };
       auto format_axis = [](AxisSigned axis) {
@@ -85,7 +85,7 @@ void generate_axes_to_quaternion_switch_cases()
             return "AxisSigned::Z_NEG";
         }
       };
-      /* Use same code function as in the switch case. */
+      /* Use same code fn as in the switch case. */
       std::cout << "case ";
       std::cout << format_axis(axes.x) << " << 16 | ";
       std::cout << format_axis(axes.y) << " << 8 | ";
@@ -103,8 +103,8 @@ void generate_axes_to_quaternion_switch_cases()
 
 float3 rotate_direction_around_axis(const float3 &direction, const float3 &axis, const float angle)
 {
-  BLI_ASSERT_UNIT_V3(direction);
-  BLI_ASSERT_UNIT_V3(axis);
+  LIB_ASSERT_UNIT_V3(direction);
+  LIB_ASSERT_UNIT_V3(axis);
 
   const float3 axis_scaled = axis * math::dot(direction, axis);
   const float3 diff = direction - axis_scaled;
@@ -145,4 +145,4 @@ std::ostream &operator<<(std::ostream &stream, EulerOrder order)
   }
 }
 
-}  // namespace blender::math
+}  // namespace dune::math
