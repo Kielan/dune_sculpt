@@ -1,9 +1,9 @@
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_solvers.h"
-#include "BLI_math_vector.h"
-#include "BLI_simd.h"
-#include "BLI_strict_flags.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_solvers.h"
+#include "lib_math_vector.h"
+#include "lib_simd.h"
+#include "lib_strict_flags.h"
 
 #ifndef MATH_STANDALONE
 #  include "eigen_capi.h"
@@ -11,8 +11,7 @@
 
 #include <string.h>
 
-/********************************* Init **************************************/
-
+/* Init */
 void zero_m2(float m[2][2])
 {
   memset(m, 0, sizeof(float[2][2]));
@@ -199,7 +198,7 @@ void copy_m4d_m4(double m1[4][4], const float m2[4][4])
 
 void copy_m3_m3d(float m1[3][3], const double m2[3][3])
 {
-  /* Keep it stupid simple for better data flow in CPU. */
+  /* Simple for better data flow in CPU. */
   m1[0][0] = (float)m2[0][0];
   m1[0][1] = (float)m2[0][1];
   m1[0][2] = (float)m2[0][2];
@@ -251,8 +250,7 @@ void shuffle_m4(float R[4][4], const int index[4])
   }
 }
 
-/******************************** Arithmetic *********************************/
-
+/* Arithmetic */
 void mul_m4_m4m4(float R[4][4], const float A[4][4], const float B[4][4])
 {
   if (ELEM(R, A, B)) {
@@ -263,7 +261,7 @@ void mul_m4_m4m4(float R[4][4], const float A[4][4], const float B[4][4])
   }
 
   /* Matrix product: `R[j][k] = B[j][i] . A[i][k]`. */
-#if BLI_HAVE_SSE2
+#if LIB_HAVE_SSE2
   __m128 A0 = _mm_loadu_ps(A[0]);
   __m128 A1 = _mm_loadu_ps(A[1]);
   __m128 A2 = _mm_loadu_ps(A[2]);
@@ -313,7 +311,6 @@ void mul_m4db_m4db_m4fl(double R[4][4], const double A[4][4], const float B[4][4
   }
 
   /* Matrix product: `R[j][k] = B[j][i] . A[i][k]`. */
-
   R[0][0] = B[0][0] * A[0][0] + B[0][1] * A[1][0] + B[0][2] * A[2][0] + B[0][3] * A[3][0];
   R[0][1] = B[0][0] * A[0][1] + B[0][1] * A[1][1] + B[0][2] * A[2][1] + B[0][3] * A[3][1];
   R[0][2] = B[0][0] * A[0][2] + B[0][1] * A[1][2] + B[0][2] * A[2][2] + B[0][3] * A[3][2];
@@ -383,7 +380,7 @@ void mul_m4_m4m3(float R[4][4], const float A[4][4], const float B[3][3])
     /* The mul_m4_m4m3 only writes to the upper-left 3x3 block, so make it so the rest of the
      * matrix is copied from the input to the output.
      *
-     * TODO(sergey): It does sound a bit redundant from the number of copy operations, so there is
+     * TODO: It does sound a bit redundant from the num of copy ops, so there is
      * a potential for optimization. */
     copy_m4_m4(T, A);
     mul_m4_m4m3(T, A, B);
@@ -412,7 +409,6 @@ void mul_m3_m3m4(float R[3][3], const float A[3][3], const float B[4][4])
   }
 
   /* Matrix product: `R[j][k] = B[j][i] . A[i][k]`. */
-
   R[0][0] = B[0][0] * A[0][0] + B[0][1] * A[1][0] + B[0][2] * A[2][0];
   R[0][1] = B[0][0] * A[0][1] + B[0][1] * A[1][1] + B[0][2] * A[2][1];
   R[0][2] = B[0][0] * A[0][2] + B[0][1] * A[1][2] + B[0][2] * A[2][2];
@@ -436,7 +432,6 @@ void mul_m3_m4m3(float R[3][3], const float A[4][4], const float B[3][3])
   }
 
   /* Matrix product: `R[j][k] = B[j][i] . A[i][k]`. */
-
   R[0][0] = B[0][0] * A[0][0] + B[0][1] * A[1][0] + B[0][2] * A[2][0];
   R[0][1] = B[0][0] * A[0][1] + B[0][1] * A[1][1] + B[0][2] * A[2][1];
   R[0][2] = B[0][0] * A[0][2] + B[0][1] * A[1][2] + B[0][2] * A[2][2];
@@ -457,7 +452,7 @@ void mul_m4_m3m4(float R[4][4], const float A[3][3], const float B[4][4])
     /* The mul_m4_m4m3 only writes to the upper-left 3x3 block, so make it so the rest of the
      * matrix is copied from the input to the output.
      *
-     * TODO(sergey): It does sound a bit redundant from the number of copy operations, so there is
+     * TODO: It does sound a bit redundant from the num of copy ops, so there is
      * a potential for optimization. */
     copy_m4_m4(T, B);
     mul_m4_m3m4(T, A, B);
@@ -489,10 +484,7 @@ void mul_m3_m4m4(float R[3][3], const float A[4][4], const float B[4][4])
   R[2][2] = B[2][0] * A[0][2] + B[2][1] * A[1][2] + B[2][2] * A[2][2];
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Macro helpers for: mul_m3_series
- * \{ */
-
+/* Macro helpers for: mul_m3_series */
 void _va_mul_m3_series_3(float r[3][3], const float m1[3][3], const float m2[3][3])
 {
   mul_m3_m3m3(r, m1, m2);
@@ -587,12 +579,7 @@ void _va_mul_m3_series_9(float r[3][3],
   mul_m3_m3m3(r, t, m8);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Macro helpers for: mul_m4_series
- * \{ */
-
+/* Macro helpers for: mul_m4_series */
 void _va_mul_m4_series_3(float r[4][4], const float m1[4][4], const float m2[4][4])
 {
   mul_m4_m4m4(r, m1, m2);
@@ -687,16 +674,14 @@ void _va_mul_m4_series_9(float r[4][4],
   mul_m4_m4m4(r, t, m8);
 }
 
-/** \} */
-
 void mul_v2_m3v2(float r[2], const float m[3][3], const float v[2])
 {
-  float temp[3], warped[3];
+  float tmp[3], warped[3];
 
-  copy_v2_v2(temp, v);
-  temp[2] = 1.0f;
+  copy_v2_v2(tmp, v);
+  tmp[2] = 1.0f;
 
-  mul_v3_m3v3(warped, m, temp);
+  mul_v3_m3v3(warped, m, tmp);
 
   r[0] = warped[0] / warped[2];
   r[1] = warped[1] / warped[2];
@@ -800,7 +785,7 @@ void mul_v3_mat3_m4v3_db(double r[3], const double mat[4][4], const double vec[3
 
 void mul_project_m4_v3(const float mat[4][4], float vec[3])
 {
-  /* absolute value to not flip the frustum upside down behind the camera */
+  /* absolute val to not flip the frustum upside down behind the camera */
   const float w = fabsf(mul_project_m4_v3_zfac(mat, vec));
   mul_m4_v3(mat, vec);
 
@@ -1128,7 +1113,7 @@ bool invert_m3_m3_ex(float inverse[3][3], const float mat[3][3], const float eps
   int a, b;
   bool success;
 
-  BLI_assert(epsilon >= 0.0f);
+  lib_assert(epsilon >= 0.0f);
 
   /* calc adjoint */
   adjoint_m3_m3(inverse, mat);
@@ -1202,14 +1187,14 @@ bool invert_m4_m4_fallback(float inverse[4][4], const float mat[4][4])
 #endif
 
   int i, j, k;
-  double temp;
-  float tempmat[4][4];
+  double tmp;
+  float tmpmat[4][4];
   float max;
   int maxj;
 
-  BLI_assert(inverse != mat);
+  lib_assert(inverse != mat);
 
-  /* Set inverse to identity */
+  /* Set inverse to id */
   for (i = 0; i < 4; i++) {
     for (j = 0; j < 4; j++) {
       inverse[i][j] = 0;
@@ -1222,39 +1207,39 @@ bool invert_m4_m4_fallback(float inverse[4][4], const float mat[4][4])
   /* Copy original matrix so we don't mess it up */
   for (i = 0; i < 4; i++) {
     for (j = 0; j < 4; j++) {
-      tempmat[i][j] = mat[i][j];
+      tmpmat[i][j] = mat[i][j];
     }
   }
 
   for (i = 0; i < 4; i++) {
-    /* Look for row with max pivot */
-    max = fabsf(tempmat[i][i]);
+    /* Look for row w max pivot */
+    max = fabsf(tmpmat[i][i]);
     maxj = i;
     for (j = i + 1; j < 4; j++) {
-      if (fabsf(tempmat[j][i]) > max) {
-        max = fabsf(tempmat[j][i]);
+      if (fabsf(tmpmat[j][i]) > max) {
+        max = fabsf(tmpmat[j][i]);
         maxj = j;
       }
     }
     /* Swap rows if necessary */
     if (maxj != i) {
       for (k = 0; k < 4; k++) {
-        SWAP(float, tempmat[i][k], tempmat[maxj][k]);
+        SWAP(float, tmpmat[i][k], tmpmat[maxj][k]);
         SWAP(float, inverse[i][k], inverse[maxj][k]);
       }
     }
 
-    if (UNLIKELY(tempmat[i][i] == 0.0f)) {
+    if (UNLIKELY(tmpmat[i][i] == 0.0f)) {
       return false; /* No non-zero pivot */
     }
-    temp = (double)tempmat[i][i];
+    tmp = (double)tmpmat[i][i];
     for (k = 0; k < 4; k++) {
-      tempmat[i][k] = (float)((double)tempmat[i][k] / temp);
+      tmpmat[i][k] = (float)((double)tempmat[i][k] / temp);
       inverse[i][k] = (float)((double)inverse[i][k] / temp);
     }
     for (j = 0; j < 4; j++) {
       if (j != i) {
-        temp = tempmat[j][i];
+        tmp = tmpmat[j][i];
         for (k = 0; k < 4; k++) {
           tempmat[j][k] -= (float)((double)tempmat[i][k] * temp);
           inverse[j][k] -= (float)((double)inverse[i][k] * temp);
@@ -1268,8 +1253,8 @@ bool invert_m4_m4_fallback(float inverse[4][4], const float mat[4][4])
 bool invert_m4_m4(float inverse[4][4], const float mat[4][4])
 {
 #ifndef MATH_STANDALONE
-  /* Use optimized matrix inverse from Eigen, since performance
-   * impact of this function is significant in complex rigs. */
+  /* Use optimized matrix inverse from Eigen, bc perf
+   * impact of this fn is significant in complex rigs. */
   return EIG_invert_m4_m4(inverse, mat);
 #else
   return invert_m4_m4_fallback(inverse, mat);
@@ -1308,8 +1293,7 @@ void mul_m4_m4m4_split_channels(float R[4][4], const float A[4][4], const float 
   loc_rot_size_to_mat4(R, loc_r, rot_r, size_r);
 }
 
-/****************************** Linear Algebra *******************************/
-
+/* Linear Algebra */
 void transpose_m3(float R[3][3])
 {
   float t;
@@ -1327,7 +1311,7 @@ void transpose_m3(float R[3][3])
 
 void transpose_m3_m3(float R[3][3], const float M[3][3])
 {
-  BLI_assert(R != M);
+  lib_assert(R != M);
 
   R[0][0] = M[0][0];
   R[0][1] = M[1][0];
@@ -1342,7 +1326,7 @@ void transpose_m3_m3(float R[3][3], const float M[3][3])
 
 void transpose_m3_m4(float R[3][3], const float M[4][4])
 {
-  BLI_assert(&R[0][0] != &M[0][0]);
+  lib_assert(&R[0][0] != &M[0][0]);
 
   R[0][0] = M[0][0];
   R[0][1] = M[1][0];
@@ -1383,7 +1367,7 @@ void transpose_m4(float R[4][4])
 
 void transpose_m4_m4(float R[4][4], const float M[4][4])
 {
-  BLI_assert(R != M);
+  lib_assert(R != M);
 
   R[0][0] = M[0][0];
   R[0][1] = M[1][0];
@@ -1493,7 +1477,7 @@ void orthogonalize_m3(float R[3][3], int axis)
       }
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
   mul_v3_fl(R[0], size[0]);
@@ -1577,7 +1561,7 @@ void orthogonalize_m4(float R[4][4], int axis)
       }
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
   mul_v3_fl(R[0], size[0]);
@@ -1585,7 +1569,7 @@ void orthogonalize_m4(float R[4][4], int axis)
   mul_v3_fl(R[2], size[2]);
 }
 
-/** Make an orthonormal basis around v1 in a way that is stable and symmetric. */
+/* Make an orthonormal basis around v1 in a way that is stable and symmetric. */
 static void orthogonalize_stable(float v1[3], float v2[3], float v3[3], bool normalize)
 {
   /* Make secondary axis vectors orthogonal to the primary via
@@ -1651,7 +1635,7 @@ void orthogonalize_m3_stable(float R[3][3], int axis, bool normalize)
       orthogonalize_stable(R[2], R[0], R[1], normalize);
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
 }
@@ -1669,26 +1653,19 @@ void orthogonalize_m4_stable(float R[4][4], int axis, bool normalize)
       orthogonalize_stable(R[2], R[0], R[1], normalize);
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Orthogonalize Matrix Zeroed Axes
- *
+/* Orthogonalize Matrix Zeroed Axes
  * Set any zeroed axes to an orthogonal vector in relation to the other axes.
- *
  * Typically used so matrix inversion can be performed.
- *
- * \note If an object has a zero scaled axis, this function can be used to "clean" the matrix
+ * If an ob has a zero scaled axis, this fn can be used to "clean" the matrix
  * to behave as if the scale on that axis was `unit_length`. So it can be inverted
- * or used in matrix multiply without creating degenerate matrices, see: #50103
- * \{ */
+ * or used in matrix multiply wo creating degenerate matrices, see: #50103 */
 
-/**
- * \return true if any axis needed to be modified.
- */
+/* return true if any axis needed to be modified */
 static bool orthogonalize_m3_zero_axes_impl(float *mat[3], const float unit_length)
 {
   enum { X = 1 << 0, Y = 1 << 1, Z = 1 << 2 };
@@ -1731,7 +1708,7 @@ static bool orthogonalize_m3_zero_axes_impl(float *mat[3], const float unit_leng
       break;
     }
     default: {
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
     }
   }
 
@@ -1754,8 +1731,6 @@ bool orthogonalize_m4_zero_axes(float m[4][4], const float unit_length)
 {
   return orthogonalize_m3_zero_axes_impl((float *[3]){UNPACK3(m)}, unit_length);
 }
-
-/** \} */
 
 bool is_orthogonal_m3(const float m[3][3])
 {
@@ -1969,7 +1944,7 @@ void adjoint_m2_m2(float R[2][2], const float M[2][2])
 
 void adjoint_m3_m3(float R[3][3], const float M[3][3])
 {
-  BLI_assert(R != M);
+  lib_assert(R != M);
   R[0][0] = M[1][1] * M[2][2] - M[1][2] * M[2][1];
   R[0][1] = -M[0][1] * M[2][2] + M[0][2] * M[2][1];
   R[0][2] = M[0][1] * M[1][2] - M[0][2] * M[1][1];
@@ -2078,8 +2053,7 @@ float determinant_m4(const float m[4][4])
   return ans;
 }
 
-/****************************** Transformations ******************************/
-
+/* Transforms */
 void size_to_mat3(float R[3][3], const float size[3])
 {
   R[0][0] = size[0];
@@ -2242,26 +2216,21 @@ void mat4_decompose(float loc[3], float quat[4], float size[3], const float wmat
   mat3_normalized_to_quat_fast(quat, rot);
 }
 
-/**
- * Right polar decomposition:
+/* Right polar decomposition:
  *     M = UP
- *
  * U is the 'rotation'-like component, the closest orthogonal matrix to M.
  * P is the 'scaling'-like component, defined in U space.
- *
- * See https://en.wikipedia.org/wiki/Polar_decomposition for more.
- */
+ * See https://en.wikipedia.org/wiki/Polar_decomposition for more. */
 #ifndef MATH_STANDALONE
 void mat3_polar_decompose(const float mat3[3][3], float r_U[3][3], float r_P[3][3])
 {
   /* From svd decomposition (M = WSV*), we have:
    *     U = WV*
-   *     P = VSV*
-   */
+   *     P = VSV* */
   float W[3][3], S[3][3], V[3][3], Vt[3][3];
   float sval[3];
 
-  BLI_svd_m3(mat3, W, sval, V);
+  lib_svd_m3(mat3, W, sval, V);
 
   size_to_mat3(S, sval);
 
@@ -2312,40 +2281,39 @@ void rotate_m4(float mat[4][4], const char axis, const float angle)
   const float angle_cos = cosf(angle);
   const float angle_sin = sinf(angle);
 
-  BLI_assert(axis >= 'X' && axis <= 'Z');
+  lib_assert(axis >= 'X' && axis <= 'Z');
 
   switch (axis) {
     case 'X':
       for (int col = 0; col < 4; col++) {
-        float temp = angle_cos * mat[1][col] + angle_sin * mat[2][col];
+        float tmp = angle_cos * mat[1][col] + angle_sin * mat[2][col];
         mat[2][col] = -angle_sin * mat[1][col] + angle_cos * mat[2][col];
-        mat[1][col] = temp;
+        mat[1][col] = tmp;
       }
       break;
 
     case 'Y':
       for (int col = 0; col < 4; col++) {
-        float temp = angle_cos * mat[0][col] - angle_sin * mat[2][col];
+        float tmp = angle_cos * mat[0][col] - angle_sin * mat[2][col];
         mat[2][col] = angle_sin * mat[0][col] + angle_cos * mat[2][col];
-        mat[0][col] = temp;
+        mat[0][col] = tmp;
       }
       break;
 
     case 'Z':
       for (int col = 0; col < 4; col++) {
-        float temp = angle_cos * mat[0][col] + angle_sin * mat[1][col];
+        float tmp = angle_cos * mat[0][col] + angle_sin * mat[1][col];
         mat[1][col] = -angle_sin * mat[0][col] + angle_cos * mat[1][col];
-        mat[0][col] = temp;
+        mat[0][col] = tmp;
       }
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
 }
 
-void rescale_m4(float mat[4][4], const float scale[3])
-{
+void rescale_m4(float mat[4][4], const float scale[3]) {
   mul_v3_fl(mat[0], scale[0]);
   mul_v3_fl(mat[1], scale[1]);
   mul_v3_fl(mat[2], scale[2]);
@@ -2416,7 +2384,7 @@ void blend_m4_m4m4(float out[4][4],
   loc_quat_size_to_mat4(out, floc, fquat, fsize);
 }
 
-/* for builds without Eigen */
+/* for builds wo Eigen */
 #ifndef MATH_STANDALONE
 void interp_m3_m3m3(float R[3][3], const float A[3][3], const float B[3][3], const float t)
 {
@@ -2435,11 +2403,11 @@ void interp_m3_m3m3(float R[3][3], const float A[3][3], const float B[3][3], con
   mat3_polar_decompose(B, U_B, P_B);
 
   /* Quaternions cannot represent an axis flip. If such a singularity is detected, choose a
-   * different decomposition of the matrix that still satisfies A = U_A * P_A but which has a
+   * diff decomposition of the matrix that still satisfies A = U_A * P_A but which has a
    * positive determinant and thus no axis flips. This resolves #77154.
    *
-   * Note that a flip of two axes is just a rotation of 180 degrees around the third axis, and
-   * three flipped axes are just an 180 degree rotation + a single axis flip. It is thus sufficient
+   * A flip of 2 axes is a rotation of 180 degrees around the third axis, and
+   * 3 flipped axes are just an 180 degree rotation + a single axis flip. It is thus sufficient
    * to solve this problem for single axis flips. */
   if (is_negative_m3(U_A)) {
     mul_m3_fl(U_A, -1.0f);
@@ -2491,8 +2459,8 @@ bool is_negative_m3(const float mat[3][3])
 
 bool is_negative_m4(const float mat[4][4])
 {
-  /* Don't use #determinant_m4 as only the 3x3 components are needed
-   * when the matrix is used as a transformation to represent location/scale/rotation. */
+  /* Don't use determinant_m4 as only the 3x3 components are needed
+   * when the matrix is used as a transform to represent location/scale/rotation. */
   return determinant_m4_mat3_array(mat) < 0.0f;
 }
 
@@ -2534,7 +2502,7 @@ void loc_eul_size_to_mat4(float R[4][4],
 {
   float rmat[3][3], smat[3][3], tmat[3][3];
 
-  /* initialize new matrix */
+  /* init new matrix */
   unit_m4(R);
 
   /* make rotation + scaling part */
@@ -2556,7 +2524,7 @@ void loc_eulO_size_to_mat4(
 {
   float rmat[3][3], smat[3][3], tmat[3][3];
 
-  /* Initialize new matrix. */
+  /* Init new matrix. */
   unit_m4(R);
 
   /* Make rotation + scaling part. */
@@ -2580,7 +2548,7 @@ void loc_quat_size_to_mat4(float R[4][4],
 {
   float rmat[3][3], smat[3][3], tmat[3][3];
 
-  /* initialize new matrix */
+  /* init new matrix */
   unit_m4(R);
 
   /* make rotation + scaling part */
@@ -2605,7 +2573,7 @@ void loc_axisangle_size_to_mat4(
   loc_quat_size_to_mat4(R, loc, q, size);
 }
 
-/*********************************** Other ***********************************/
+/* Other */
 
 void print_m3(const char *str, const float m[3][3])
 {
@@ -2628,7 +2596,7 @@ void print_m4(const char *str, const float m[4][4])
 
 void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
 {
-  /* NOTE: originally from TNT (template numeric toolkit) matrix library.
+  /* Originally from TNT (template numeric toolkit) matrix library.
    * https://math.nist.gov/tnt */
 
   float A[4][4];
@@ -2644,9 +2612,8 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
 
   int i = 0, j = 0, k = 0, p, pp, iter;
 
-  /* Reduce A to bidiagonal form, storing the diagonal elements
-   * in s and the super-diagonal elements in e. */
-
+  /* Reduce A to bidiagonal form, storing the diagonal elems
+   * in s and the super-diagonal elems in e. */
   int nct = min_ii(m - 1, n);
   int nrt = max_ii(0, min_ii(n - 2, m));
 
@@ -2680,8 +2647,7 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
     for (j = k + 1; j < n; j++) {
       if ((k < nct) && (s[k] != 0.0f)) {
 
-        /* Apply the transformation. */
-
+        /* Apply the transform. */
         float t = 0;
         for (i = k; i < m; i++) {
           t += A[i][k] * A[i][j];
@@ -2693,13 +2659,13 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
       }
 
       /* Place the k-th row of A into e for the */
-      /* subsequent calculation of the row transformation. */
+      /* subsequent calc of the row transform. */
 
       e[j] = A[k][j];
     }
     if (k < nct) {
 
-      /* Place the transformation in U for subsequent back
+      /* Place the transform in U for subsequent back
        * multiplication. */
 
       for (i = k; i < m; i++) {
@@ -2710,7 +2676,7 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
 
       /* Compute the k-th row transformation and place the
        * k-th super-diagonal in e[k].
-       * Compute 2-norm without under/overflow. */
+       * Compute 2-norm wo under/overflow. */
       e[k] = 0;
       for (i = k + 1; i < n; i++) {
         e[k] = hypotf(e[k], e[i]);
@@ -2730,8 +2696,7 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
       if ((k + 1 < m) && (e[k] != 0.0f)) {
         float invek1;
 
-        /* Apply the transformation. */
-
+        /* Apply the transform. */
         for (i = k + 1; i < m; i++) {
           work[i] = 0.0f;
         }
@@ -2749,9 +2714,8 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
         }
       }
 
-      /* Place the transformation in V for subsequent
+      /* Place the transform in V for subsequent
        * back multiplication. */
-
       for (i = k + 1; i < n; i++) {
         V[i][k] = e[i];
       }
@@ -2759,7 +2723,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
   }
 
   /* Set up the final bidiagonal matrix or order p. */
-
   p = min_ii(n, m + 1);
   if (nct < n) {
     s[nct] = A[nct][nct];
@@ -2773,7 +2736,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
   e[p - 1] = 0.0f;
 
   /* If required, generate U. */
-
   for (j = nct; j < nu; j++) {
     for (i = 0; i < m; i++) {
       U[i][j] = 0.0f;
@@ -2809,7 +2771,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
   }
 
   /* If required, generate V. */
-
   for (k = n - 1; k >= 0; k--) {
     if ((k < nrt) && (e[k] != 0.0f)) {
       for (j = k + 1; j < nu; j++) {
@@ -2829,23 +2790,22 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
     V[k][k] = 1.0f;
   }
 
-  /* Main iteration loop for the singular values. */
-
+  /* Main iter loop for the singular vals. */
   pp = p - 1;
   iter = 0;
   eps = powf(2.0f, -52.0f);
   while (p > 0) {
     int kase = 0;
 
-    /* Test for maximum iterations to avoid infinite loop */
+    /* Test for max iters to avoid infinite loop */
     if (maxiter == 0) {
       break;
     }
     maxiter--;
 
     /* This section of the program inspects for
-     * negligible elements in the s and e arrays.  On
-     * completion the variables kase and k are set as follows.
+     * negligible elems in the s and e arrays.  On
+     * completion the vars kase and k are set as follows.
      *
      * kase = 1: if s(p) and e[k - 1] are negligible and k<p
      * kase = 2: if s(k) is negligible and k<p
@@ -2892,11 +2852,9 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
     k++;
 
     /* Perform the task indicated by kase. */
-
     switch (kase) {
 
         /* Deflate negligible s(p). */
-
       case 1: {
         float f = e[p - 2];
         e[p - 2] = 0.0f;
@@ -2921,7 +2879,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
       }
 
         /* Split at negligible s(k). */
-
       case 2: {
         float f = e[k - 1];
         e[k - 1] = 0.0f;
@@ -2944,11 +2901,9 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
       }
 
         /* Perform one qr step. */
-
       case 3: {
 
-        /* Calculate the shift. */
-
+        /* Calc the shift. */
         float scale = max_ff(
             max_ff(max_ff(max_ff(fabsf(s[p - 1]), fabsf(s[p - 2])), fabsf(e[p - 2])), fabsf(s[k])),
             fabsf(e[k]));
@@ -2973,7 +2928,6 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
         g = sk * ek;
 
         /* Chase zeros. */
-
         for (j = k; j < p - 1; j++) {
           float t = hypotf(f, g);
           /* division by zero checks added to avoid NaN (brecht) */
@@ -3015,11 +2969,9 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
         break;
       }
         /* Convergence. */
-
       case 4: {
 
-        /* Make the singular values positive. */
-
+        /* Make the singular vals positive. */
         if (s[k] <= 0.0f) {
           s[k] = (s[k] < 0.0f ? -s[k] : 0.0f);
 
@@ -3028,8 +2980,7 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
           }
         }
 
-        /* Order the singular values. */
-
+        /* Order the singular vals. */
         while (k < pp) {
           float t;
           if (s[k] >= s[k + 1]) {
@@ -3064,7 +3015,7 @@ void svd_m4(float U[4][4], float s[4], float V[4][4], float A_[4][4])
 
 void pseudoinverse_m4_m4(float inverse[4][4], const float mat[4][4], float epsilon)
 {
-  /* compute Moore-Penrose pseudo inverse of matrix, singular values
+  /* compute Moore-Penrose pseudo inverse of matrix, singular vals
    * below epsilon are ignored for stability (truncated SVD) */
   float A[4][4], V[4][4], W[4], Wm[4][4], U[4][4];
   int i;
@@ -3138,8 +3089,7 @@ void invert_m4_m4_safe(float inverse[4][4], const float mat[4][4])
     copy_m4_m4(mat_tmp, mat);
 
     /* Matrix is degenerate (e.g. 0 scale on some axis), ideally we should
-     * never be in this situation, but try to invert it anyway with tweak.
-     */
+     * never be in this situation, but try to invert it anyway with tweak. */
     mat_tmp[0][0] += 1e-8f;
     mat_tmp[1][1] += 1e-8f;
     mat_tmp[2][2] += 1e-8f;
@@ -3150,21 +3100,15 @@ void invert_m4_m4_safe(float inverse[4][4], const float mat[4][4])
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Invert (Safe Orthographic)
- *
+/* Invert (Safe Orthographic)
  * Invert the matrix, filling in zeroed axes using the valid ones where possible.
- *
- * Unlike #invert_m4_m4_safe set degenerate axis unit length instead of adding a small value,
+ * Unlike invert_m4_m4_safe set degenerate axis unit length instead of adding a small val.
  * which has the results in:
- *
- * - Scaling by a large value on the resulting matrix.
+ * - Scaling by a large val on the resulting matrix.
  * - Changing axis which aren't degenerate.
  *
- * \note We could support passing in a length value if there is a good use-case
- * where we want to specify the length of the degenerate axes.
- * \{ */
-
+ * We could support passing in a length val if there is a good use-case
+ * where we want to specify the length of the degenerate axes. */
 void invert_m4_m4_safe_ortho(float inverse[4][4], const float mat[4][4])
 {
   if (UNLIKELY(!invert_m4_m4(inverse, mat))) {
@@ -3187,9 +3131,7 @@ void invert_m3_m3_safe_ortho(float inverse[3][3], const float mat[3][3])
   }
 }
 
-/** \} */
-
-void BLI_space_transform_from_matrices(SpaceTransform *data,
+void lib_space_transform_from_matrices(SpaceTransform *data,
                                        const float local[4][4],
                                        const float target[4][4])
 {
@@ -3219,13 +3161,13 @@ void lib_space_transform_invert(const SpaceTransform *data, float co[3])
   mul_v3_m4v3(co, ((SpaceTransform *)data)->target2local, co);
 }
 
-void BLI_space_transform_apply_normal(const SpaceTransform *data, float no[3])
+void lib_space_transform_apply_normal(const SpaceTransform *data, float no[3])
 {
   mul_mat3_m4_v3(((SpaceTransform *)data)->local2target, no);
   normalize_v3(no);
 }
 
-void BLI_space_transform_invert_normal(const SpaceTransform *data, float no[3])
+void lib_space_transform_invert_normal(const SpaceTransform *data, float no[3])
 {
   mul_mat3_m4_v3(((SpaceTransform *)data)->target2local, no);
   normalize_v3(no);
