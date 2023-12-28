@@ -613,12 +613,10 @@ MINLINE void mul_v4_v4fl(float r[4], const float a[4], float f)
 }
 
 /* Avoid doing:
- *
  * angle = atan2f(dvec[0], dvec[1]);
  * angle_to_mat2(mat, angle);
  *
  * instead use a vector as a matrix. */
-
 MINLINE void mul_v2_v2_cw(float r[2], const float mat[2], const float vec[2])
 {
   lib_assert(r != vec);
@@ -1142,7 +1140,7 @@ MINLINE float normalize_v2_v2_length(float r[2], const float a[2], const float u
     mul_v2_v2fl(r, a, unit_length / d);
   }
   else {
-    /* Either the vector is small or one of it's values contained `nan`. */
+    /* Either the vector is small or one of it's vals contained `nan`. */
     zero_v2(r);
     d = 0.0f;
   }
@@ -1190,7 +1188,7 @@ MINLINE double normalize_v3_v3_length_db(double r[3], const double a[3], double 
 {
   double d = dot_v3v3_db(a, a);
 
-  /* a larger val causes normalize errors in a
+  /* a larger val causes normalize errs in a
    * scaled down models with camera extreme close */
   if (d > 1.0e-70) {
     d = sqrt(d);
@@ -1212,7 +1210,7 @@ MINLINE double normalize_v3_length_db(double n[3], const double unit_length)
 {
   double d = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
 
-  /* a larger val causes normalize errors in a
+  /* a larger val causes normalize errs in a
    * scaled down models with camera extreme close */
   if (d > 1.0e-35) {
     double mul;
@@ -1274,7 +1272,7 @@ MINLINE void normal_float_to_short_v4(short out[4], const float in[4])
   out[3] = (short)(in[3] * 32767.0f);
 }
 
-/********************************* Comparison ********************************/
+/* Comparison */
 MINLINE bool is_zero_v2(const float v[2])
 {
   return (v[0] == 0.0f && v[1] == 0.0f);
@@ -1310,10 +1308,8 @@ MINLINE bool is_one_v3(const float v[3])
   return (v[0] == 1.0f && v[1] == 1.0f && v[2] == 1.0f);
 }
 
-/* -------------------------------------------------------------------- */
 /* Vector Comparison
- *
- * \note use `value <= limit`, so a limit of zero doesn't fail on an exact match. */
+ * use `val <= limit`, so a limit of zero doesn't fail on an exact match. */
 MINLINE bool equals_v2v2(const float v1[2], const float v2[2])
 {
   return ((v1[0] == v2[0]) && (v1[1] == v2[1]));
@@ -1458,8 +1454,6 @@ MINLINE void clamp_v4_v4v4(float vec[4], const float min[4], const float max[4])
   CLAMP(vec[2], min[2], max[2]);
   CLAMP(vec[3], min[3], max[3]);
 }
-
-/** \} */
 
 MINLINE float line_point_side_v2(const float l1[2], const float l2[2], const float pt[2])
 {
