@@ -203,7 +203,6 @@ float cotangent_tri_weight_v3(const float v1[3], const float v2[3], const float 
 }
 
 /* Planes */
-
 void plane_from_point_normal_v3(float r_plane[4], const float plane_co[3], const float plane_no[3])
 {
   copy_v3_v3(r_plane, plane_no);
@@ -641,8 +640,7 @@ void aabb_get_near_far_from_plane(const float plane_no[3],
 }
 
 /* dist_squared_to_ray_to_aabb and helpers */
-
-void dist_squared_ray_to_aabb_v3_precalc(DistRayAABB_Precalc *neasrest_precalc,
+void dist_squared_ray_to_aabb_v3_precalc(DistRayAABBPrecalc *neasrest_precalc,
                                          const float ray_origin[3],
                                          const float ray_direction[3])
 {
@@ -656,7 +654,7 @@ void dist_squared_ray_to_aabb_v3_precalc(DistRayAABB_Precalc *neasrest_precalc,
   }
 }
 
-float dist_squared_ray_to_aabb_v3(const DistRayAABB_Precalc *data,
+float dist_squared_ray_to_aabb_v3(const DistRayAABBPrecalc *data,
                                   const float bb_min[3],
                                   const float bb_max[3],
                                   float r_point[3],
@@ -752,7 +750,7 @@ float dist_squared_ray_to_aabb_v3_simple(const float ray_origin[3],
                                          float r_point[3],
                                          float *r_depth)
 {
-  DistRayAABB_Precalc data;
+  DistRayAABBPrecalc data;
   dist_squared_ray_to_aabb_v3_precalc(&data, ray_origin, ray_direction);
   return dist_squared_ray_to_aabb_v3(&data, bb_min, bb_max, r_point, r_depth);
 }
@@ -981,42 +979,42 @@ void closest_on_tri_to_point_v3(
   d1 = dot_v3v3(ab, ap);
   d2 = dot_v3v3(ac, ap);
   if (d1 <= 0.0f && d2 <= 0.0f) {
-    /* barycentric coordinates (1,0,0) */
+    /* barycentric coords (1,0,0) */
     copy_v3_v3(r, v1);
     return;
   }
 
-  /* Check if P in vertex region outside B */
+  /* Check if P in vert rgn outside B */
   sub_v3_v3v3(bp, p, v2);
   d3 = dot_v3v3(ab, bp);
   d4 = dot_v3v3(ac, bp);
   if (d3 >= 0.0f && d4 <= d3) {
-    /* barycentric coordinates (0,1,0) */
+    /* barycentric coords (0,1,0) */
     copy_v3_v3(r, v2);
     return;
   }
-  /* Check if P in edge region of AB, if so return projection of P onto AB */
+  /* Check if P in edge rgn of AB, if so return projection of P onto AB */
   vc = d1 * d4 - d3 * d2;
   if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
     v = d1 / (d1 - d3);
-    /* barycentric coordinates (1-v,v,0) */
+    /* barycentric coords (1-v,v,0) */
     madd_v3_v3v3fl(r, v1, ab, v);
     return;
   }
-  /* Check if P in vertex region outside C */
+  /* Check if P in vert rgn outside C */
   sub_v3_v3v3(cp, p, v3);
   d5 = dot_v3v3(ab, cp);
   d6 = dot_v3v3(ac, cp);
   if (d6 >= 0.0f && d5 <= d6) {
-    /* barycentric coordinates (0,0,1) */
+    /* barycentric coords (0,0,1) */
     copy_v3_v3(r, v3);
     return;
   }
-  /* Check if P in edge region of AC, if so return projection of P onto AC */
+  /* Check if P in edge rgn of AC, if so return projection of P onto AC */
   vb = d5 * d2 - d1 * d6;
   if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
     w = d2 / (d2 - d6);
-    /* barycentric coordinates (1-w,0,w) */
+    /* barycentric coords (1-w,0,w) */
     madd_v3_v3v3fl(r, v1, ac, w);
     return;
   }
