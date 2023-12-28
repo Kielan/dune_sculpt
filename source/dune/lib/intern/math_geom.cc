@@ -1,19 +1,18 @@
-#include "BLI_array.hh"
-#include "BLI_math_base.h"
-#include "BLI_math_base.hh"
-#include "BLI_math_geom.h"
+#include "lib_array.hh"
+#include "lib_math_base.h"
+#include "lib_math_base.hh"
+#include "lib_math_geom.h"
 
-#include "BLI_math_base_safe.h"
-#include "BLI_math_bits.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
-#include "BLI_utildefines.h"
+#include "lib_math_base_safe.h"
+#include "lib_math_bits.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
+#include "lib_utildefines.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
-/********************************** Polygons *********************************/
-
+/* Polygons */
 void cross_tri_v3(float n[3], const float v1[3], const float v2[3], const float v3[3])
 {
   float n1[3], n2[3];
