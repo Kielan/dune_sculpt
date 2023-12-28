@@ -1266,7 +1266,7 @@ int isect_seg_seg_v2_point_ex(const float v0[2],
       return -1;
     }
     if (max_ff(0.0f, u_a) == min_ff(1.0f, u_b)) {
-      /* one common point: can return result */
+      /* 1 common point: can return result */
       madd_v2_v2v2fl(r_vi, v0, s10, max_ff(0, u_a));
       return 1;
     }
@@ -1396,7 +1396,6 @@ int isect_line_sphere_v2(const float l1[2],
                          float r_p2[2])
 {
   /* Keep in sync w isect_line_sphere_v3. */
-
   const float ldir[2] = {l2[0] - l1[0], l2[1] - l1[1]};
 
   const float a = dot_v2v2(ldir, ldir);
@@ -2307,7 +2306,7 @@ bool isect_tri_tri_v3_ex(const float tri_a[3][3],
 
   if ((range[0].max > range[1].min) && (range[0].min < range[1].max)) {
     /* The triangles intersect bc they overlap on the intersection line.
-     * Now identify the two points of intersection that are in the middle to get the actual
+     * Now identify the 2 points of intersection that are in the middle to get the actual
      * intersection between the triangles. (B--C from A--B--C--D) */
     if (range[0].min >= range[1].min) {
       copy_v3_v3(r_i1, range[0].loc[0]);
@@ -2358,11 +2357,9 @@ bool isect_tri_tri_v3(const float t_a0[3],
 }
 
 /* Tri-Tri Intersect 2D
- *
  * "Fast and Robust Triangle-Triangle Overlap Test
  * Using Orientation Predicates" P. Guigue - O. Devillers
  * Journal of Graphics Tools, 8(1), 2003. */
-
 static bool isect_tri_tri_v2_impl_vert(const float t_a0[2],
                                        const float t_a1[2],
                                        const float t_a2[2],
@@ -2675,9 +2672,9 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
   a = dot_v3v3(vel, vel);
 
   /*v0*/
-  sub_v3_v3v3(temp, p1, v0);
-  b = 2.0f * dot_v3v3(vel, temp);
-  c = dot_v3v3(temp, temp) - radius2;
+  sub_v3_v3v3(tmp, p1, v0);
+  b = 2.0f * dot_v3v3(vel, tmp);
+  c = dot_v3v3(tmp, tmp) - radius2;
 
   if (getLowestRoot(a, b, c, *r_lambda, r_lambda)) {
     copy_v3_v3(ipoint, v0);
@@ -2685,9 +2682,9 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
   }
 
   /*v1*/
-  sub_v3_v3v3(temp, p1, v1);
-  b = 2.0f * dot_v3v3(vel, temp);
-  c = dot_v3v3(temp, temp) - radius2;
+  sub_v3_v3v3(tmp, p1, v1);
+  b = 2.0f * dot_v3v3(vel, tmp);
+  c = dot_v3v3(tmp, tmp) - radius2;
 
   if (getLowestRoot(a, b, c, *r_lambda, r_lambda)) {
     copy_v3_v3(ipoint, v1);
@@ -2695,17 +2692,17 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
   }
 
   /*v2*/
-  sub_v3_v3v3(temp, p1, v2);
-  b = 2.0f * dot_v3v3(vel, temp);
-  c = dot_v3v3(temp, temp) - radius2;
+  sub_v3_v3v3(tmp, p1, v2);
+  b = 2.0f * dot_v3v3(vel, tmp);
+  c = dot_v3v3(tmp, tmp) - radius2;
 
   if (getLowestRoot(a, b, c, *r_lambda, r_lambda)) {
     copy_v3_v3(ipoint, v2);
     found_by_sweep = true;
   }
 
-  /*---test edges---*/
-  sub_v3_v3v3(e3, v2, v1); /* wasn't yet calculated */
+  /*test edges*/
+  sub_v3_v3v3(e3, v2, v1); /* wasn't yet calcd */
 
   /* `e1` */
   sub_v3_v3v3(bv, v0, p1);
@@ -2858,7 +2855,7 @@ int isect_line_line_epsilon_v3(const float v1[3],
   if (UNLIKELY(div == 0.0f)) {
     return 0;
   }
-  /* test if the two lines are coplanar */
+  /* test if the 2 lines are coplanar */
   if (UNLIKELY(fabsf(d) <= epsilon)) {
     cross_v3_v3v3(cb, c, b);
 
@@ -2878,7 +2875,7 @@ int isect_line_line_epsilon_v3(const float v1[3],
   cross_v3_v3v3(n, a, b);
   project_v3_v3v3(t, t, n);
 
-  /* for the first line, offset the second line until it is coplanar */
+  /* for the 1st line, offset the 2nd line until it is coplanar */
   add_v3_v3v3(v3t, v3, t);
   add_v3_v3v3(v4t, v4, t);
 
@@ -2892,10 +2889,10 @@ int isect_line_line_epsilon_v3(const float v1[3],
   mul_v3_fl(a, dot_v3v3(cb, ab) / dot_v3v3(ab, ab));
   add_v3_v3v3(r_i1, v1, a);
 
-  /* for the second line, just subtract the offset from the first intersection point */
+  /* for the 2nd line, subtract the offset from the 1st intersection point */
   sub_v3_v3v3(r_i2, r_i1, t);
 
-  return 2; /* two nearest points */
+  return 2; /* 2 nearest points */
 }
 
 int isect_line_line_v3(const float v1[3],
@@ -2933,7 +2930,7 @@ bool isect_line_line_strict_v3(const float v1[3],
   if (UNLIKELY(div == 0.0f)) {
     return false;
   }
-  /* test if the two lines are coplanar */
+  /* test if the 2 lines are coplanar */
   if (UNLIKELY(fabsf(d) < epsilon)) {
     return false;
   }
@@ -2967,7 +2964,7 @@ bool isect_ray_ray_epsilon_v3(const float ray_origin_a[3],
                               float *r_lambda_a,
                               float *r_lambda_b)
 {
-  BLI_assert(r_lambda_a || r_lambda_b);
+  lib_assert(r_lambda_a || r_lambda_b);
   float n[3];
   cross_v3_v3v3(n, ray_direction_b, ray_direction_a);
   const float nlen = len_squared_v3(n);
@@ -3020,7 +3017,7 @@ bool isect_aabb_aabb_v3(const float min1[3],
           min2[1] < max1[1] && min2[2] < max1[2]);
 }
 
-void isect_ray_aabb_v3_precalc(IsectRayAABB_Precalc *data,
+void isect_ray_aabb_v3_precalc(IsectRayAABBPrecalc *data,
                                const float ray_origin[3],
                                const float ray_direction[3])
 {
@@ -3035,13 +3032,12 @@ void isect_ray_aabb_v3_precalc(IsectRayAABB_Precalc *data,
   data->sign[2] = data->ray_inv_dir[2] < 0.0f;
 }
 
-bool isect_ray_aabb_v3(const IsectRayAABB_Precalc *data,
+bool isect_ray_aabb_v3(const IsectRayAABBPrecalc *data,
                        const float bb_min[3],
                        const float bb_max[3],
                        float *tmin_out)
 {
   /* Adapted from http://www.gamedev.net/community/forums/topic.asp?topic_id=459973 */
-
   float bbox[2][3];
 
   copy_v3_v3(bbox[0], bb_min);
@@ -3076,10 +3072,9 @@ bool isect_ray_aabb_v3(const IsectRayAABB_Precalc *data,
     tmin = tzmin;
   }
 
-  /* NOTE(jwilkins): tmax does not need to be updated since we don't use it
-   * keeping this here for future reference. */
+  /* NOTE: tmax does not need to be updated since we don't use it
+   * keeping this here for future ref. */
   // if (tzmax < tmax) tmax = tzmax;
-
   if (tmin_out) {
     (*tmin_out) = tmin;
   }
@@ -3314,8 +3309,8 @@ static bool point_in_slice(const float p[3],
 
   sub_v3_v3v3(rp, p, v1);
   h = dot_v3v3(q, rp) / dot_v3v3(q, q);
-  /* NOTE: when 'h' is nan/-nan, this check returns false
-   * without explicit check - covering the degenerate case */
+  /* When 'h' is nan/-nan, this check returns false
+   * wo explicit check - covering the degenerate case */
   return (h >= 0.0f && h <= 1.0f);
 }
 
@@ -3367,7 +3362,7 @@ bool isect_point_tri_v3(
 
     /* Could use normal_tri_v3, but doesn't have to be unit-length */
     cross_tri_v3(no, v1, v2, v3);
-    BLI_assert(len_squared_v3(no) != 0.0f);
+    lib_assert(len_squared_v3(no) != 0.0f);
 
     plane_from_point_normal_v3(plane, v1, no);
     closest_to_plane_v3(r_isect_co, plane, p);
@@ -3418,7 +3413,7 @@ bool clip_segment_v3_plane(
     }
   }
 
-  /* In case input/output values match (above also). */
+  /* In case input/output vals match (above also). */
   const float p1_copy[3] = {UNPACK3(p1)};
   copy_v3_v3(r_p2, p2);
   copy_v3_v3(r_p1, p1_copy);
@@ -3477,7 +3472,7 @@ bool clip_segment_v3_plane_n(const float p1[3],
     }
   }
 
-  /* In case input/output values match. */
+  /* In case input/output vals match. */
   const float p1_copy[3] = {UNPACK3(p1)};
 
   madd_v3_v3v3fl(r_p1, p1_copy, dp, p1_fac);
@@ -3486,39 +3481,38 @@ bool clip_segment_v3_plane_n(const float p1[3],
   return true;
 }
 
-/****************************** Axis Utils ********************************/
-
+/* Axis Utils */
 void axis_dominant_v3_to_m3(float r_mat[3][3], const float normal[3])
 {
-  BLI_ASSERT_UNIT_V3(normal);
+  LIB_ASSERT_UNIT_V3(normal);
 
   copy_v3_v3(r_mat[2], normal);
   ortho_basis_v3v3_v3(r_mat[0], r_mat[1], r_mat[2]);
 
-  BLI_ASSERT_UNIT_V3(r_mat[0]);
-  BLI_ASSERT_UNIT_V3(r_mat[1]);
+  LIB_ASSERT_UNIT_V3(r_mat[0]);
+  LIB_ASSERT_UNIT_V3(r_mat[1]);
 
   transpose_m3(r_mat);
 
-  BLI_assert(!is_negative_m3(r_mat));
-  BLI_assert((fabsf(dot_m3_v3_row_z(r_mat, normal) - 1.0f) < BLI_ASSERT_UNIT_EPSILON) ||
+  lib_assert(!is_negative_m3(r_mat));
+  lib_assert((fabsf(dot_m3_v3_row_z(r_mat, normal) - 1.0f) < LIB_ASSERT_UNIT_EPSILON) ||
              is_zero_v3(normal));
 }
 
 void axis_dominant_v3_to_m3_negate(float r_mat[3][3], const float normal[3])
 {
-  BLI_ASSERT_UNIT_V3(normal);
+  LIB_ASSERT_UNIT_V3(normal);
 
   negate_v3_v3(r_mat[2], normal);
   ortho_basis_v3v3_v3(r_mat[0], r_mat[1], r_mat[2]);
 
-  BLI_ASSERT_UNIT_V3(r_mat[0]);
-  BLI_ASSERT_UNIT_V3(r_mat[1]);
+  LIB_ASSERT_UNIT_V3(r_mat[0]);
+  LIB_ASSERT_UNIT_V3(r_mat[1]);
 
   transpose_m3(r_mat);
-
-  BLI_assert(!is_negative_m3(r_mat));
-  BLI_assert((dot_m3_v3_row_z(r_mat, normal) < BLI_ASSERT_UNIT_EPSILON) || is_zero_v3(normal));
+  
+  lib_assert(!is_negative_m3(r_mat));
+  lib_assert((dot_m3_v3_row_z(r_mat, normal) < BLI_ASSERT_UNIT_EPSILON) || is_zero_v3(normal));
 }
 
 /****************************** Interpolation ********************************/
