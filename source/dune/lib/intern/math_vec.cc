@@ -108,4 +108,4 @@ uint64_t hash_mpq_class(const mpq_class &val)
 
 #endif
 
-}  // namespace blender::math
+}  // namespace dune::math
