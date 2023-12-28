@@ -1210,7 +1210,6 @@ int isect_seg_seg_v2_point_ex(const float v0[2],
       /* When 'd' approaches zero, float precision lets non-overlapping co-linear segments
        * detect as an intersection. So re-calc 'v' to ensure the point overlaps both.
        * see #45123 */
-
       /* inline since we have most vars alrdy */
 #if 0
       v = line_point_factor_v2(ix_test, v2, v3);
@@ -1345,7 +1344,6 @@ int isect_line_sphere_v3(const float l1[3],
    * sphere_line_intersection fn adapted from:
    * http://astronomy.swin.edu.au/pbourke/geometry/sphereline
    * `Paul Bourke <pbourke@swin.edu.au>`. */
-
   const float ldir[3] = {
       l2[0] - l1[0],
       l2[1] - l1[1],
@@ -1416,7 +1414,7 @@ int isect_line_sphere_v2(const float l1[2],
     return 0;
   }
   if (i == 0.0f) {
-    /* one intersection */
+    /* 1 intersection */
     mu = -b / (2.0f * a);
     madd_v2_v2v2fl(r_p1, l1, ldir, mu);
     return 1;
@@ -1872,7 +1870,7 @@ bool isect_ray_tri_watertight_v3_simple(const float ray_origin[3],
 }
 
 #if 0 /* UNUSED */
-/* A version of isect_ray_tri_v3 which takes a threshold argul
+/* A version of isect_ray_tri_v3 which takes a threshold argu
  * so rays slightly outside the triangle to be considered as intersecting. */
 bool isect_ray_tri_threshold_v3(const float ray_origin[3],
                                 const float ray_direction[3],
@@ -2143,7 +2141,7 @@ bool isect_planes_v3_fn(
     const int planes_len,
     const float eps_coplanar,
     const float eps_isect,
-    void (*callback_fn)(const float co[3], int i, int j, int k, void *user_data),
+    void (*cb_fn)(const float co[3], int i, int j, int k, void *user_data),
     void *user_data)
 {
   bool found = false;
@@ -2182,7 +2180,7 @@ bool isect_planes_v3_fn(
         for (i_test = 0; i_test < planes_len; i_test++) {
           const float *np_test = planes[i_test];
           if ((dot_v3v3(np_test, co_test) + np_test[3]) > eps_isect) {
-            /* For low epsilon values the point could intersect its own plane. */
+            /* For low epsilon vals the point could intersect its own plane. */
             if (!ELEM(i_test, i, j, k)) {
               break;
             }
