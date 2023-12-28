@@ -1,15 +1,14 @@
-#include "BLI_math_base.h"
-#include "BLI_math_statistics.h"
-#include "BLI_math_vector.h"
-#include "MEM_guardedalloc.h"
+#include "lib_math_base.h"
+#include "lib_math_statistics.h"
+#include "lib_math_vector.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
-/********************************** Covariance Matrices *********************************/
-
+/* Covariance Matrices */
 typedef struct CovarianceData {
   const float *cos_vn;
   const float *center;
@@ -33,16 +32,15 @@ static void covariance_m_vn_ex_task_cb(void *__restrict userdata,
   int k;
 
   /* Covariance matrices are always symmetrical, so we can compute only one half of it,
-   * and mirror it to the other half (at the end of the func).
+   * and mirror it to the other half (at the end of the fn).
    *
-   * This allows using a flat loop of n*n with same results as imbricated one over half the matrix:
+   * This allows using a flat loop of n*n w same results as imbricated one over half the matrix:
    *
    *     for (i = 0; i < n; i++) {
    *         for (j = i; j < n; j++) {
    *             ...
    *         }
-   *      }
-   */
+   *      } */
   const int i = a / n;
   const int j = a % n;
   if (j < i) {
@@ -66,16 +64,15 @@ static void covariance_m_vn_ex_task_cb(void *__restrict userdata,
   }
 }
 
-void BLI_covariance_m_vn_ex(const int n,
+void lib_covariance_m_vn_ex(const int n,
                             const float *cos_vn,
                             const int cos_vn_num,
                             const float *center,
                             const bool use_sample_correction,
                             float *r_covmat)
 {
-  /* Note about that division: see https://en.wikipedia.org/wiki/Bessel%27s_correction.
-   * In a nutshell, it must be 1 / (n - 1) for 'sample data', and 1 / n for 'population data'...
-   */
+  /* About that division: see https://en.wikipedia.org/wiki/Bessel%27s_correction.
+   * In a nutshell, it must be 1 / (n - 1) for 'sample data', and 1 / n for 'population data'... */
   const float covfac = 1.0f / (float)(use_sample_correction ? cos_vn_num - 1 : cos_vn_num);
 
   memset(r_covmat, 0, sizeof(*r_covmat) * (size_t)(n * n));
@@ -90,12 +87,12 @@ void BLI_covariance_m_vn_ex(const int n,
   };
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
   settings.use_threading = ((cos_vn_num * n * n) >= 10000);
-  BLI_task_parallel_range(0, n * n, &data, covariance_m_vn_ex_task_cb, &settings);
+  lib_task_parallel_range(0, n * n, &data, covariance_m_vn_ex_task_cb, &settings);
 }
 
-void BLI_covariance_m3_v3n(const float (*cos_v3)[3],
+void lib_covariance_m3_v3n(const float (*cos_v3)[3],
                            const int cos_v3_num,
                            const bool use_sample_correction,
                            float r_covmat[3][3],
@@ -115,6 +112,6 @@ void BLI_covariance_m3_v3n(const float (*cos_v3)[3],
     copy_v3_v3(r_center, center);
   }
 
-  BLI_covariance_m_vn_ex(
+  lib_covariance_m_vn_ex(
       3, (const float *)cos_v3, cos_v3_num, center, use_sample_correction, (float *)r_covmat);
 }
