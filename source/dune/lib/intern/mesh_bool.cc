@@ -5,28 +5,28 @@
 #  include <fstream>
 #  include <iostream>
 
-#  include "BLI_array.hh"
-#  include "BLI_assert.h"
-#  include "BLI_delaunay_2d.hh"
-#  include "BLI_hash.hh"
-#  include "BLI_kdopbvh.h"
-#  include "BLI_map.hh"
-#  include "BLI_math_boolean.hh"
-#  include "BLI_math_geom.h"
-#  include "BLI_math_mpq.hh"
-#  include "BLI_math_vector.hh"
-#  include "BLI_math_vector_mpq_types.hh"
-#  include "BLI_mesh_intersect.hh"
-#  include "BLI_set.hh"
-#  include "BLI_span.hh"
-#  include "BLI_stack.hh"
-#  include "BLI_task.hh"
-#  include "BLI_vector.hh"
-#  include "BLI_vector_set.hh"
+#  include "lib_array.hh"
+#  include "lib_assert.h"
+#  include "lib_delaunay_2d.hh"
+#  include "lib_hash.hh"
+#  include "lib_kdopbvh.h"
+#  include "lib_map.hh"
+#  include "lib_math_bool.hh"
+#  include "lib_math_geom.h"
+#  include "lib_math_mpq.hh"
+#  include "lib_math_vector.hh"
+#  include "lib_math_vector_mpq_types.hh"
+#  include "lib_mesh_intersect.hh"
+#  include "lib_set.hh"
+#  include "lib_span.hh"
+#  include "lib_stack.hh"
+#  include "lib_task.hh"
+#  include "lib_vector.hh"
+#  include "lib_vector_set.hh"
 
 #  include "PIL_time.h"
 
-#  include "BLI_mesh_boolean.hh"
+#  include "lib_mesh_bool.hh"
 
 #  ifdef WITH_TBB
 #    include <tbb/parallel_reduce.h>
@@ -35,13 +35,11 @@
 
 // #  define PERFDEBUG
 
-namespace blender::meshintersect {
+namespace dune::meshintersect {
 
-/**
- * Edge as two `const` Vert *'s, in a canonical order (lower vert id first).
- * We use the Vert id field for hashing to get algorithms
- * that yield predictable results from run-to-run and machine-to-machine.
- */
+/* Edge as 2 `const` Vert *'s, in a canonical order (lower vert id 1st).
+ * We use the Vert id field for hashing to get algos
+ * that yield predictable results from run-to-run and machine-to-machine. */
 class Edge {
   const Vert *v_[2] = {nullptr, nullptr};
 
@@ -88,7 +86,7 @@ class Edge {
 static std::ostream &operator<<(std::ostream &os, const Edge &e)
 {
   if (e.v0() == nullptr) {
-    BLI_assert(e.v1() == nullptr);
+    lib_assert(e.v1() == nullptr);
     os << "(null,null)";
   }
   else {
@@ -114,11 +112,11 @@ static std::ostream &operator<<(std::ostream &os, const Array<int> &iarr)
   return os;
 }
 
-/** Holds information about topology of an #IMesh that is all triangles. */
+/* Holds info about topology of an #IMesh that is all triangles. */
 class TriMeshTopology : NonCopyable {
-  /** Triangles that contain a given Edge (either order). */
+  /* Triangles that contain a given Edge (either order). */
   Map<Edge, Vector<int> *> edge_tri_;
-  /** Edges incident on each vertex. */
+  /* Edges incident on each vert. */
   Map<const Vert *, Vector<Edge>> vert_edges_;
 
  public:
@@ -142,14 +140,14 @@ class TriMeshTopology : NonCopyable {
     return edge_tri_.lookup_default(e, nullptr);
   }
 
-  /* Which edges are incident on the given vertex?
+  /* Which edges are incident on the given vert?
    * We assume v has some incident edges. */
   const Vector<Edge> &vert_edges(const Vert *v) const
   {
     return vert_edges_.lookup(v);
   }
 
-  Map<Edge, Vector<int> *>::ItemIterator edge_tri_map_items() const
+  Map<Edge, Vector<int> *>::ItemIter edge_tri_map_items() const
   {
     return edge_tri_.items();
   }
@@ -169,7 +167,7 @@ TriMeshTopology::TriMeshTopology(const IMesh &tm)
   vert_edges_.reserve(estimate_verts_num);
   for (int t : tm.face_index_range()) {
     const Face &tri = *tm.face(t);
-    BLI_assert(tri.is_tri());
+    lib_assert(tri.is_tri());
     for (int i = 0; i < 3; ++i) {
       const Vert *v = tri[i];
       const Vert *vnext = tri[(i + 1) % 3];
@@ -178,16 +176,16 @@ TriMeshTopology::TriMeshTopology(const IMesh &tm)
       if (edges == nullptr) {
         vert_edges_.add_new(v, Vector<Edge>());
         edges = vert_edges_.lookup_ptr(v);
-        BLI_assert(edges != nullptr);
+        lib_assert(edges != nullptr);
       }
-      edges->append_non_duplicates(e);
+      edges->append_non_dups(e);
 
       auto *p = edge_tri_.lookup_ptr(Edge(v, vnext));
       if (p == nullptr) {
         edge_tri_.add_new(e, new Vector<int>{t});
       }
       else {
-        (*p)->append_non_duplicates(t);
+        (*p)->append_non_dups(t);
       }
     }
   }
@@ -203,7 +201,7 @@ TriMeshTopology::TriMeshTopology(const IMesh &tm)
     }
     for (auto item : vert_edges_.items()) {
       std::cout << "edges for vert " << item.key << ":\n";
-      for (const Edge &e : item.value) {
+      for (const Edge &e : item.val) {
         std::cout << "  " << e << "\n";
       }
       std::cout << "\n";
@@ -213,21 +211,21 @@ TriMeshTopology::TriMeshTopology(const IMesh &tm)
 
 TriMeshTopology::~TriMeshTopology()
 {
-  Vector<Vector<int> *> values;
+  Vector<Vector<int> *> vals;
 
   /* Deconstructing is faster in parallel, so it is worth building an array of things to delete. */
-  for (auto *item : edge_tri_.values()) {
-    values.append(item);
+  for (auto *item : edge_tri_.vals()) {
+    vals.append(item);
   }
 
-  threading::parallel_for(values.index_range(), 256, [&](IndexRange range) {
+  threading::parallel_for(vals.index_range(), 256, [&](IndexRange range) {
     for (int i : range) {
-      delete values[i];
+      delete vals[i];
     }
   });
 }
 
-/** A Patch is a maximal set of triangles that share manifold edges only. */
+/* A Patch is a maximal set of triangles that share manifold edges only. */
 class Patch {
   Vector<int> tri_; /* Indices of triangles in the Patch. */
 
@@ -283,11 +281,11 @@ static std::ostream &operator<<(std::ostream &os, const Patch &patch)
 }
 
 class PatchesInfo {
-  /** All of the Patches for a #IMesh. */
+  /* All of the Patches for a IMesh. */
   Vector<Patch> patch_;
-  /** Patch index for corresponding triangle. */
+  /* Patch index for corresponding triangle. */
   Array<int> tri_patch_;
-  /** Shared edge for incident patches; (-1, -1) if none. */
+  /* Shared edge for incident patches; (-1, -1) if none. */
   Map<std::pair<int, int>, Edge> pp_edge_;
 
  public:
@@ -379,11 +377,9 @@ class PatchesInfo {
 
 static bool apply_bool_op(BoolOpType bool_optype, const Array<int> &winding);
 
-/**
- * A Cell is a volume of 3-space, surrounded by patches.
- * We will partition all 3-space into Cells.
- * One cell, the Ambient cell, contains all other cells.
- */
+/* Cell is a volume of 3-space, surrounded by patches.
+ * Will partition all 3-space into Cells.
+ * One cell, the Ambient cell, contains all other cells. */
 class Cell {
   Set<int> patches_;
   Array<int> winding_;
@@ -409,7 +405,7 @@ class Cell {
     return patches_;
   }
 
-  /** In a set of 2, which is patch that is not p? */
+  /* In a set of 2, which is patch that is not p? */
   int patch_other(int p) const
   {
     if (patches_.size() != 2) {
@@ -477,10 +473,8 @@ class Cell {
     merged_to_ = c;
   }
 
-  /**
-   * Call this when it is possible that this Cell has zero volume,
-   * and if it does, set zero_volume_ to true.
-   */
+  /* Call this when it is possible that this Cell has 0 volume.
+   * and if it does, set zero_volume_ to true. */
   void check_for_zero_volume(const PatchesInfo &pinfo, const IMesh &mesh);
 };
 
@@ -503,7 +497,7 @@ static bool tris_have_same_verts(const IMesh &mesh, int t1, int t2)
 {
   const Face &tri1 = *mesh.face(t1);
   const Face &tri2 = *mesh.face(t2);
-  BLI_assert(tri1.size() == 3 && tri2.size() == 3);
+  lib_assert(tri1.size() == 3 && tri2.size() == 3);
   if (tri1.vert[0] == tri2.vert[0]) {
     return ((tri1.vert[1] == tri2.vert[1] && tri1.vert[2] == tri2.vert[2]) ||
             (tri1.vert[1] == tri2.vert[2] && tri1.vert[2] == tri2.vert[1]));
@@ -519,11 +513,9 @@ static bool tris_have_same_verts(const IMesh &mesh, int t1, int t2)
   return false;
 }
 
-/**
- * A Cell will have zero volume if it is bounded by exactly two patches and those
+/* Cell will have zero volume if it is bounded by exactly 2 patches and those
  * patches are geometrically identical triangles (perhaps flipped versions of each other).
- * If this Cell has zero volume, set its zero_volume_ member to true.
- */
+ * If this Cell has zero volume, set its zero_volume_ member to */
 void Cell::check_for_zero_volume(const PatchesInfo &pinfo, const IMesh &mesh)
 {
   if (patches_.size() == 2) {
@@ -537,7 +529,7 @@ void Cell::check_for_zero_volume(const PatchesInfo &pinfo, const IMesh &mesh)
         p2_index = p;
       }
     }
-    BLI_assert(p1_index != NO_INDEX && p2_index != NO_INDEX);
+    lib_assert(p1_index != NO_INDEX && p2_index != NO_INDEX);
     const Patch &p1 = pinfo.patch(p1_index);
     const Patch &p2 = pinfo.patch(p2_index);
     if (p1.tot_tri() == 1 && p2.tot_tri() == 1) {
@@ -548,7 +540,7 @@ void Cell::check_for_zero_volume(const PatchesInfo &pinfo, const IMesh &mesh)
   }
 }
 
-/* Information about all the Cells. */
+/* Info about all the Cells. */
 class CellsInfo {
   Vector<Cell> cell_;
 
@@ -609,25 +601,23 @@ class CellsInfo {
   }
 };
 
-/**
- * For Debugging: write a .obj file showing the patch/cell structure or just the cells.
- */
-static void write_obj_cell_patch(const IMesh &m,
+/* For Debugging: write a .obj file showing the patch/cell struct or just the cells. */
+static void write_ob_cell_patch(const IMesh &m,
                                  const CellsInfo &cinfo,
                                  const PatchesInfo &pinfo,
                                  bool cells_only,
                                  const std::string &name)
 {
-  /* Would like to use #BKE_tempdir_base() here, but that brings in dependence on kernel library.
-   * This is just for developer debugging anyway,
-   * and should never be called in production Blender. */
+  /* Would like to use dune_tmpdir_base() here, but that brings in dependence on kernel library.
+   * This is just for dev debugging anyway,
+   * and should never be called in production dune. */
 #  ifdef _WIN_32
-  const char *objdir = BLI_getenv("HOME");
+  const char *obdir = lib_getenv("HOME");
 #  else
-  const char *objdir = "/tmp/";
+  const char *obdir = "/tmp/";
 #  endif
 
-  std::string fname = std::string(objdir) + name + std::string("_cellpatch.obj");
+  std::string fname = std::string(obdir) + name + std::string("_cellpatch.obj");
   std::ofstream f;
   f.open(fname);
   if (!f) {
@@ -700,9 +690,7 @@ static void merge_cells(int merge_to, int merge_from, CellsInfo &cinfo, PatchesI
   merge_from_cell.set_merged_to(final_merge_to);
 }
 
-/**
- * Partition the triangles of \a tm into Patches.
- */
+/* Partition the triangles of \a tm into Patches. */
 static PatchesInfo find_patches(const IMesh &tm, const TriMeshTopology &tmtopo)
 {
   const int dbg_level = 0;
@@ -711,7 +699,7 @@ static PatchesInfo find_patches(const IMesh &tm, const TriMeshTopology &tmtopo)
   }
   int ntri = tm.face_size();
   PatchesInfo pinfo(ntri);
-  /* Algorithm: Grow patches across manifold edges as long as there are unassigned triangles. */
+  /* Algo: Grow patches across manifold edges as long as there are unassigned triangles. */
   Stack<int> cur_patch_grow;
 
   /* Create an Array containing indices of adjacent faces. */
@@ -810,12 +798,10 @@ static PatchesInfo find_patches(const IMesh &tm, const TriMeshTopology &tmtopo)
   return pinfo;
 }
 
-/**
- * If e is an edge in tri, return the vertex that isn't part of tri,
- * the "flap" vertex, or nullptr if e is not part of tri.
+/* If e is an edge in tri, return the vertex that isn't part of tri,
+ * the "flap" vert, or nullptr if e is not part of tri.
  * Also, e may be reversed in tri.
- * Set *r_rev to true if it is reversed, else false.
- */
+ * Set *r_rev to true if it is reversed, else false. */
 static const Vert *find_flap_vert(const Face &tri, const Edge e, bool *r_rev)
 {
   *r_rev = false;
@@ -865,20 +851,18 @@ static const Vert *find_flap_vert(const Face &tri, const Edge e, bool *r_rev)
   return flapv;
 }
 
-/**
- * Triangle \a tri and tri0 share edge e.
- * Classify \a tri with respect to tri0 as described in
- * sort_tris_around_edge, and return 1, 2, 3, or 4 as \a tri is:
+/* Triangle tri and tri0 share edge e.
+ * Classify tri with respect to tri0 as described in
+ * sort_tris_around_edge, and return 1, 2, 3, or 4 as tri is:
  * (1) co-planar with tri0 and on same side of e
  * (2) co-planar with tri0 and on opposite side of e
  * (3) below plane of tri0
  * (4) above plane of tri0
  * For "above" and "below", we use the orientation of non-reversed
  * orientation of tri0.
- * Because of the way the intersect mesh was made, we can assume
+ * Bc of the way the intersect mesh was made, we can assume
  * that if a triangle is in class 1 then it is has the same flap vert
- * as tri0.
- */
+ * as tri0. */
 static int sort_tris_class(const Face &tri, const Face &tri0, const Edge e)
 {
   const int dbg_level = 0;
@@ -898,7 +882,7 @@ static int sort_tris_class(const Face &tri, const Face &tri0, const Edge e)
     std::cout << " t = " << tri[0] << " " << tri[1] << " " << tri[2];
     std::cout << " rev = " << rev << " flapv = " << flapv << "\n";
   }
-  BLI_assert(flapv != nullptr && flapv0 != nullptr);
+  lib_assert(flapv != nullptr && flapv0 != nullptr);
   const mpq3 flap = flapv->co_exact;
   /* orient will be positive if flap is below oriented plane of a0,a1,a2. */
   int orient = orient3d(a0, a1, a2, flap);
@@ -920,12 +904,10 @@ static int sort_tris_class(const Face &tri, const Face &tri0, const Edge e)
 
 constexpr int EXTRA_TRI_INDEX = INT_MAX;
 
-/**
- * To ensure consistent ordering of co-planar triangles if they happen to be sorted around
- * more than one edge, sort the triangle indices in g (in place) by their index -- but also apply
+/* To ensure consistent ordering of co-planar triangles if they happen to be sorted around
+ * more than one edge, sort the triangle indices in g (in place) by their index, but also apply
  * a sign to the index: positive if the triangle has edge e in the same orientation,
- * otherwise negative.
- */
+ * otherwise negative. */
 static void sort_by_signed_triangle_index(Vector<int> &g,
                                           const Edge e,
                                           const IMesh &tm,
@@ -945,20 +927,18 @@ static void sort_by_signed_triangle_index(Vector<int> &g,
   }
 }
 
-/**
- * Sort the triangles \a tris, which all share edge e, as they appear
+/* Sort the triangles tris, which all share edge e, they appear
  * geometrically clockwise when looking down edge e.
- * Triangle t0 is the first triangle in the top-level call
+ * Triangle t0 is the 1st triangle in the top-level call
  * to this recursive routine. The merge step below differs
  * for the top level call and all the rest, so this distinguishes those cases.
- * Care is taken in the case of duplicate triangles to have
- * an ordering that is consistent with that which would happen
+ * Care is taken in the case of dup triangles to have
+ * an ordering that is consistent w that which would happen
  * if another edge of the triangle were sorted around.
  *
- * We sometimes need to do this with an extra triangle that is not part of tm.
+ * Sometimes need to do this w an extra triangle that is not part of tm.
  * To accommodate this:
- * If extra_tri is non-null, then an index of EXTRA_TRI_INDEX should use it for the triangle.
- */
+ * If extra_tri is non-null, then an index of EXTRA_TRI_INDEX should use it for the triangle. */
 static Array<int> sort_tris_around_edge(
     const IMesh &tm, const Edge e, const Span<int> tris, const int t0, const Face *extra_tri)
 {
@@ -969,7 +949,7 @@ static Array<int> sort_tris_around_edge(
    * (3) below plane of t0
    * (4) above plane of t0
    * Each group is sorted and then the sorts are merged to give the answer.
-   * We don't expect the input array to be very large - should typically
+   * We don't expect the input array to be very large, should typically
    * be only 3 or 4 - so OK to make copies of arrays instead of swapping
    * around in a single array. */
   const int dbg_level = 0;
@@ -995,7 +975,7 @@ static Array<int> sort_tris_around_edge(
       continue;
     }
     int t = tris[i];
-    BLI_assert(t < tm.face_size() || (t == EXTRA_TRI_INDEX && extra_tri != nullptr));
+    lib_assert(t < tm.face_size() || (t == EXTRA_TRI_INDEX && extra_tri != nullptr));
     const Face &tri = (t == EXTRA_TRI_INDEX) ? *extra_tri : *tm.face(t);
     if (dbg_level > 2) {
       std::cout << "classifying tri " << t << " with respect to " << tris[0] << "\n";
@@ -1059,12 +1039,10 @@ static Array<int> sort_tris_around_edge(
   return ans;
 }
 
-/**
- * Find the Cells around edge e.
- * This possibly makes new cells in \a cinfo, and sets up the
+/* Find Cells around edge e.
+ * This possibly makes new cells in cinfo, and sets up the
  * bipartite graph edges between cells and patches.
- * Will modify \a pinfo and \a cinfo and the patches and cells they contain.
- */
+ * Will modify pinfo and cinfo and the patches and cells they contain. */
 static void find_cells_from_edge(const IMesh &tm,
                                  const TriMeshTopology &tmtopo,
                                  PatchesInfo &pinfo,
@@ -1076,7 +1054,7 @@ static void find_cells_from_edge(const IMesh &tm,
     std::cout << "FIND_CELLS_FROM_EDGE " << e << "\n";
   }
   const Vector<int> *edge_tris = tmtopo.edge_tris(e);
-  BLI_assert(edge_tris != nullptr);
+  lib_assert(edge_tris != nullptr);
   Array<int> sorted_tris = sort_tris_around_edge(
       tm, e, Span<int>(*edge_tris), (*edge_tris)[0], nullptr);
 
@@ -1170,10 +1148,8 @@ static void find_cells_from_edge(const IMesh &tm,
   }
 }
 
-/**
- * Find the partition of 3-space into Cells.
- * This assigns the cell_above and cell_below for each Patch.
- */
+/* Find the partition of 3-space into Cells.
+ * This assigns the cell_above and cell_below for each Patch. */
 static CellsInfo find_cells(const IMesh &tm, const TriMeshTopology &tmtopo, PatchesInfo &pinfo)
 {
   const int dbg_level = 0;
@@ -1187,7 +1163,7 @@ static CellsInfo find_cells(const IMesh &tm, const TriMeshTopology &tmtopo, Patc
     int p = item.key.first;
     int q = item.key.second;
     if (p < q) {
-      const Edge &e = item.value;
+      const Edge &e = item.val;
       if (!processed_edges.contains(e)) {
         processed_edges.add_new(e);
         find_cells_from_edge(tm, tmtopo, pinfo, cinfo, e);
@@ -1224,17 +1200,15 @@ static CellsInfo find_cells(const IMesh &tm, const TriMeshTopology &tmtopo, Patc
       std::cout << i << ": " << pinfo.patch(i) << "\n";
     }
     if (dbg_level > 1) {
-      write_obj_cell_patch(tm, cinfo, pinfo, false, "postfindcells");
+      write_ob_cell_patch(tm, cinfo, pinfo, false, "postfindcells");
     }
   }
   return cinfo;
 }
 
-/**
- * Find the connected patch components (connects are via intermediate cells), and put
- * component numbers in each patch.
- * Return a Vector of components - each a Vector of the patch ids in the component.
- */
+/* Find the connected patch components (connects are via intermediate cells), and put
+ * component nums in each patch.
+ * Return a Vector of components - each a Vector of the patch ids in the component. */
 static Vector<Vector<int>> find_patch_components(const CellsInfo &cinfo, PatchesInfo &pinfo)
 {
   constexpr int dbg_level = 0;
@@ -1260,7 +1234,7 @@ static Vector<Vector<int>> find_patch_components(const CellsInfo &cinfo, Patches
     while (!stack.is_empty()) {
       int p = stack.pop();
       Patch &patch = pinfo.patch(p);
-      BLI_assert(patch.component == current_component);
+      lib_assert(patch.component == current_component);
       for (int c : {patch.cell_above, patch.cell_below}) {
         if (cell_processed[c]) {
           continue;
@@ -1287,10 +1261,8 @@ static Vector<Vector<int>> find_patch_components(const CellsInfo &cinfo, Patches
   return ans;
 }
 
-/**
- * Do all patches have cell_above and cell_below set?
- * Is the bipartite graph connected?
- */
+/* Do all patches have cell_above and cell_below set?
+ * Is the bipartite graph connected? */
 static bool patch_cell_graph_ok(const CellsInfo &cinfo, const PatchesInfo &pinfo)
 {
   for (int c : cinfo.index_range()) {
@@ -1324,19 +1296,17 @@ static bool patch_cell_graph_ok(const CellsInfo &cinfo, const PatchesInfo &pinfo
   return true;
 }
 
-/**
- * Is trimesh tm PWN ("Piece-wise constant Winding Number")?
+/* Is trimesh tm PWN ("Piece-wise constant Winding Number")?
  * See Zhou et al. paper for exact definition, but roughly
  * means that the faces connect so as to form closed volumes.
- * The actual definition says that if you calculate the
- * generalized winding number of every point not exactly on
- * the mesh, it will always be an integer.
+ * The actual definition says that if you calc the
+ * generalized winding num of every point not exactly on
+ * the mesh, it will always be an int.
  * Necessary (but not sufficient) conditions that a mesh be PWN:
- *    No edges with a non-zero sum of incident face directions.
+ * No edges w a non-zero sum of incident face directions.
  * I think that cases like Klein bottles are likely to satisfy
- * this without being PWN. So this routine will be only
- * approximately right.
- */
+ * this wo being PWN. So this routine will be only
+ * approx right. */
 static bool is_pwn(const IMesh &tm, const TriMeshTopology &tmtopo)
 {
   constexpr int dbg_level = 0;
@@ -1349,7 +1319,7 @@ static bool is_pwn(const IMesh &tm, const TriMeshTopology &tmtopo)
 
   threading::parallel_for(tris.index_range(), 2048, [&](IndexRange range) {
     if (!is_pwn.load()) {
-      /* Early out if mesh is already determined to be non-pwn. */
+      /* Early out if mesh is alrdy determined to be non-pwn. */
       return;
     }
 
@@ -1360,14 +1330,14 @@ static bool is_pwn(const IMesh &tm, const TriMeshTopology &tmtopo)
        * is positively in t, and -1 if negatively in t. */
       for (int t : *tris[j].second) {
         const Face &face = *tm.face(t);
-        BLI_assert(face.size() == 3);
+        lib_assert(face.size() == 3);
         for (int i : face.index_range()) {
           if (face[i] == edge.v0()) {
             if (face[(i + 1) % 3] == edge.v1()) {
               ++tot_orient;
             }
             else {
-              BLI_assert(face[(i + 3 - 1) % 3] == edge.v1());
+              lib_assert(face[(i + 3 - 1) % 3] == edge.v1());
               --tot_orient;
             }
           }
@@ -1385,13 +1355,11 @@ static bool is_pwn(const IMesh &tm, const TriMeshTopology &tmtopo)
   return is_pwn.load();
 }
 
-/**
- * Find which of the cells around edge e contains point p.
+/* Find which of the cells around edge e contains point p.
  * Do this by inserting a dummy triangle containing v and sorting the
  * triangles around the edge to find out where in the sort order
  * the dummy triangle lies, then finding which cell is between
- * the two triangles on either side of the dummy.
- */
+ * the two triangles on either side of the dummy. */
 static int find_cell_for_point_near_edge(mpq3 p,
                                          const Edge &e,
                                          const IMesh &tm,
@@ -1409,7 +1377,7 @@ static int find_cell_for_point_near_edge(mpq3 p,
                                           NO_INDEX,
                                           {NO_INDEX, NO_INDEX, NO_INDEX},
                                           {false, false, false});
-  BLI_assert(etris != nullptr);
+  lib_assert(etris != nullptr);
   Array<int> edge_tris(etris->size() + 1);
   std::copy(etris->begin(), etris->end(), edge_tris.begin());
   edge_tris[edge_tris.size() - 1] = EXTRA_TRI_INDEX;
@@ -1418,7 +1386,7 @@ static int find_cell_for_point_near_edge(mpq3 p,
     std::cout << "sorted tris = " << sorted_tris << "\n";
   }
   int *p_sorted_dummy = std::find(sorted_tris.begin(), sorted_tris.end(), EXTRA_TRI_INDEX);
-  BLI_assert(p_sorted_dummy != sorted_tris.end());
+  lib_assert(p_sorted_dummy != sorted_tris.end());
   int dummy_index = p_sorted_dummy - sorted_tris.begin();
   int prev_tri = (dummy_index == 0) ? sorted_tris[sorted_tris.size() - 1] :
                                       sorted_tris[dummy_index - 1];
@@ -1441,20 +1409,17 @@ static int find_cell_for_point_near_edge(mpq3 p,
   return c;
 }
 
-/**
- * Find the ambient cell -- that is, the cell that is outside
+/* Find the ambient cell: the cell that is outside
  * all other cells.
  * If component_patches != nullptr, restrict consideration to patches
  * in that vector.
- *
  * The method is to find an edge known to be on the convex hull
  * of the mesh, then insert a dummy triangle that has that edge
  * and a point known to be outside the whole mesh. Then sorting
  * the triangles around the edge will reveal where the dummy triangle
- * fits in that sorting order, and hence, the two adjacent patches
- * to the dummy triangle - thus revealing the cell that the point
- * known to be outside the whole mesh is in.
- */
+ * fits in that sorting order, hence, the 2 adjacent patches
+ * to the dummy triangle, revealing the cell that the point
+ * known to be outside the whole mesh is in. */
 static int find_ambient_cell(const IMesh &tm,
                              const Vector<int> *component_patches,
                              const TriMeshTopology &tmtopo,
@@ -1465,7 +1430,7 @@ static int find_ambient_cell(const IMesh &tm,
   if (dbg_level > 0) {
     std::cout << "FIND_AMBIENT_CELL\n";
   }
-  /* First find a vertex with the maximum x value. */
+  /* 1: find a very w the max x val. */
   /* Prefer not to populate the verts in the #IMesh just for this. */
   const Vert *v_extreme;
   auto max_x_vert = [](const Vert *a, const Vert *b) {
@@ -1569,15 +1534,13 @@ static int find_ambient_cell(const IMesh &tm,
   return c_ambient;
 }
 
-/**
- * We need an edge on the convex hull of the edges incident on \a closestp
- * in order to sort around, including a dummy triangle that has \a testp and
- * the sorting edge vertices. So we don't want an edge that is co-linear
- * with the line through \a testp and \a closestp.
+/* Need an edge on the convex hull of the edges incident on closestp
+ * in order to sort around, including a dummy triangle that has testp and
+ * the sorting edge verts. So we don't want an edge that is co-linear
+ * w the line through testp and closestp.
  * The method is to project onto a plane that contains `testp-closestp`,
- * and then choose the edge that, when projected, has the maximum absolute
- * slope (regarding the line `testp-closestp` as the x-axis for slope computation).
- */
+ * and then choose the edge that, when projected, has the max absolute
+ * slope (regarding the line `testp-closestp` as the x-axis for slope computation). */
 static Edge find_good_sorting_edge(const Vert *testp,
                                    const Vert *closestp,
                                    const TriMeshTopology &tmtopo)
@@ -1586,15 +1549,15 @@ static Edge find_good_sorting_edge(const Vert *testp,
   if (dbg_level > 0) {
     std::cout << "FIND_GOOD_SORTING_EDGE testp = " << testp << ", closestp = " << closestp << "\n";
   }
-  /* We want to project the edges incident to closestp onto a plane
+  /* Want to project the edges incident to closestp onto a plane
    * whose ordinate direction will be regarded as going from closestp to testp,
    * and whose abscissa direction is some perpendicular to that.
-   * A perpendicular direction can be found by swapping two coordinates
+   * A perpendicular direction can be found by swapping two coords
    * and negating one, and zeroing out the third, being careful that one
    * of the swapped vertices is non-zero. */
   const mpq3 &co_closest = closestp->co_exact;
   const mpq3 &co_test = testp->co_exact;
-  BLI_assert(co_test != co_closest);
+  lib_assert(co_test != co_closest);
   mpq3 abscissa = co_test - co_closest;
   /* Find a non-zero-component axis of abscissa. */
   int axis;
@@ -1603,7 +1566,7 @@ static Edge find_good_sorting_edge(const Vert *testp,
       break;
     }
   }
-  BLI_assert(axis < 3);
+  lib_assert(axis < 3);
   int axis_next = (axis + 1) % 3;
   int axis_next_next = (axis_next + 1) % 3;
   mpq3 ordinate;
@@ -1627,7 +1590,7 @@ static Edge find_good_sorting_edge(const Vert *testp,
     mpq3 evec = co_other - co_closest;
     /* Get projection of evec onto plane of abscissa and ordinate. */
     mpq3 proj_evec = evec - (math::dot(evec, normal) / nlen2) * normal;
-    /* The projection calculations along the abscissa and ordinate should
+    /* The projection calcs along the abscissa and ordinate should
      * be scaled by 1/abscissa and 1/ordinate respectively,
      * but we can skip: it won't affect which `evec` has the maximum slope. */
     mpq_class evec_a = math::dot(proj_evec, abscissa);
@@ -1658,18 +1621,16 @@ static Edge find_good_sorting_edge(const Vert *testp,
   return esort;
 }
 
-/**
- * Find the cell that contains v. Consider the cells adjacent to triangle t.
- * The close_edge and close_vert values are what were returned by
- * #closest_on_tri_to_point when determining that v was close to t.
+/* Find cell that contains v. Consider the cells adjacent to triangle t.
+ * The close_edge and close_vert vals are what were returned by
+ * closest_on_tri_to_point when determining that v was close to t.
  * They will indicate whether the point of closest approach to t is to
- * an edge of t, a vertex of t, or somewhere inside t.
+ * an edge of t, a vertof t, or somewhere inside t.
  *
- * The algorithm is similar to the one for find_ambient_cell, except that
+ * Algo is similar to the one for find_ambient_cell, except that
  * instead of an arbitrary point known to be outside the whole mesh, we
  * have a particular point (v) and we just want to determine the patches
- * that point is between in sorting-around-an-edge order.
- */
+ * that point is between in sorting-around-an-edge order. */
 static int find_containing_cell(const Vert *v,
                                 int t,
                                 int close_edge,
@@ -1714,7 +1675,7 @@ static int find_containing_cell(const Vert *v,
     if (vert_cv == v) {
       /* Need to use another one to find sorting edge. */
       vert_cv = tri[(cv + 1) % 3];
-      BLI_assert(vert_cv != v);
+      lib_assert(vert_cv != v);
     }
     etest = find_good_sorting_edge(v, vert_cv, tmtopo);
   }
