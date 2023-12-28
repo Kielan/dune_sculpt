@@ -270,7 +270,7 @@ void mid_v3_v3_array(float r[3], const float (*vec_arr)[3], const uint vec_arr_n
 void mid_v3_v3v3_angle_weighted(float r[3], const float a[3], const float b[3])
 {
   /* trick, we want the middle of 2 normals as well as the angle between them
-   * avoid multiple calcs by */
+   * avoid multi calcs by */
   float angle;
 
   /* double check they are normalized */
@@ -429,8 +429,8 @@ float angle_signed_v2v2(const float v1[2], const float v2[2])
 float angle_normalized_v3v3(const float v1[3], const float v2[3])
 {
   /* double check they are normalized */
-  BLI_ASSERT_UNIT_V3(v1);
-  BLI_ASSERT_UNIT_V3(v2);
+  LIB_ASSERT_UNIT_V3(v1);
+  LIB_ASSERT_UNIT_V3(v2);
 
   /* this is the same as acos(dot_v3v3(v1, v2)), but more accurate */
   if (dot_v3v3(v1, v2) >= 0.0f) {
