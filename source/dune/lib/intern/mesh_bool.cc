@@ -702,7 +702,7 @@ static PatchesInfo find_patches(const IMesh &tm, const TriMeshTopology &tmtopo)
   /* Algo: Grow patches across manifold edges as long as there are unassigned triangles. */
   Stack<int> cur_patch_grow;
 
-  /* Create an Array containing indices of adjacent faces. */
+  /* Create Array containing indices of adjacent faces. */
   Array<std::array<int, 3>> t_others(tm.face_size());
   threading::parallel_for(tm.face_index_range(), 2048, [&](IndexRange range) {
     for (int t : range) {
@@ -798,7 +798,7 @@ static PatchesInfo find_patches(const IMesh &tm, const TriMeshTopology &tmtopo)
   return pinfo;
 }
 
-/* If e is an edge in tri, return the vertex that isn't part of tri,
+/* If e is an edge in tri, return the vert that isn't part of tri,
  * the "flap" vert, or nullptr if e is not part of tri.
  * Also, e may be reversed in tri.
  * Set *r_rev to true if it is reversed, else false. */
@@ -936,8 +936,8 @@ static void sort_by_signed_triangle_index(Vector<int> &g,
  * an ordering that is consistent w that which would happen
  * if another edge of the triangle were sorted around.
  *
- * Sometimes need to do this w an extra triangle that is not part of tm.
- * To accommodate this:
+ * Sometimes must do this w an extra triangle that is not part of tm.
+ * To accommodate:
  * If extra_tri is non-null, then an index of EXTRA_TRI_INDEX should use it for the triangle. */
 static Array<int> sort_tris_around_edge(
     const IMesh &tm, const Edge e, const Span<int> tris, const int t0, const Face *extra_tri)
@@ -1413,7 +1413,7 @@ static int find_cell_for_point_near_edge(mpq3 p,
  * all other cells.
  * If component_patches != nullptr, restrict consideration to patches
  * in that vector.
- * The method is to find an edge known to be on the convex hull
+ * Method is to find an edge known to be on the convex hull
  * of the mesh, then insert a dummy triangle that has that edge
  * and a point known to be outside the whole mesh. Then sorting
  * the triangles around the edge will reveal where the dummy triangle
@@ -1497,7 +1497,7 @@ static int find_ambient_cell(const IMesh &tm,
   if (dbg_level > 0) {
     std::cout << "v_extreme = " << v_extreme << "\n";
   }
-  /* Find edge attached to v_extreme with max absolute slope
+  /* Find edge attached to v_extreme w max absolute slope
    * when projected onto the XY plane. That edge is guaranteed to
    * be on the convex hull of the mesh. */
   const Vector<Edge> &edges = tmtopo.vert_edges(v_extreme);
@@ -1510,7 +1510,7 @@ static int find_ambient_cell(const IMesh &tm,
     const mpq3 &co_other = v_other->co_exact;
     mpq_class delta_x = co_other.x - extreme_x;
     if (delta_x == 0) {
-      /* Vertical slope. */
+      /* Vert slope. */
       ehull = e;
       break;
     }
@@ -1679,7 +1679,7 @@ static int find_containing_cell(const Vert *v,
     }
     etest = find_good_sorting_edge(v, vert_cv, tmtopo);
   }
-  BLI_assert(etest.v0() != nullptr);
+  lib_assert(etest.v0() != nullptr);
   if (dbg_level > 0) {
     std::cout << "etest = " << etest << "\n";
   }
@@ -1690,19 +1690,17 @@ static int find_containing_cell(const Vert *v,
   return c;
 }
 
-/**
- * Find the closest point in triangle (a, b, c) to point p.
+/* Find the closest point in triangle (a, b, c) to point p.
  * Return the distance squared to that point.
- * Also, if the closest point in the triangle is on a vertex,
+ * If closest point in the triangle is on a vert,
  * return 0, 1, or 2 for a, b, c in *r_vert; else -1.
- * If the closest point is on an edge, return 0, 1, or 2
+ * If closest point is on an edge, return 0, 1, or 2
  * for edges ab, bc, or ca in *r_edge; else -1.
- * (Adapted from #closest_on_tri_to_point_v3()).
- * The arguments ab, ac, ..., r are used as temporaries
+ * (Adapted from closest_on_tri_to_point_v3()).
+ * Args ab, ac, ..., r are used as tmps
  * in this routine. Passing them in from the caller can
- * avoid many allocations and frees of temporary mpq3 values
- * and the mpq_class values within them.
- */
+ * avoid many allocs and frees of tmp mpq3 vals
+ * and the mpq_class vals within them. */
 static mpq_class closest_on_tri_to_point(const mpq3 &p,
                                          const mpq3 &a,
                                          const mpq3 &b,
@@ -1722,7 +1720,7 @@ static mpq_class closest_on_tri_to_point(const mpq3 &p,
     std::cout << "CLOSEST_ON_TRI_TO_POINT p = " << p << "\n";
     std::cout << " a = " << a << ", b = " << b << ", c = " << c << "\n";
   }
-  /* Check if p in vertex region outside a. */
+  /* Check if p in vert rgn outside a. */
   ab = b;
   ab -= a;
   ac = c;
@@ -1730,36 +1728,36 @@ static mpq_class closest_on_tri_to_point(const mpq3 &p,
   ap = p;
   ap -= a;
 
-  mpq_class d1 = math::dot_with_buffer(ab, ap, m);
-  mpq_class d2 = math::dot_with_buffer(ac, ap, m);
+  mpq_class d1 = math::dot_with_buf(ab, ap, m);
+  mpq_class d2 = math::dot_with_buf(ac, ap, m);
   if (d1 <= 0 && d2 <= 0) {
-    /* Barycentric coordinates (1,0,0). */
+    /* Barycentric coords (1,0,0). */
     *r_edge = -1;
     *r_vert = 0;
     if (dbg_level > 0) {
       std::cout << "  answer = a\n";
     }
-    return math::distance_squared_with_buffer(p, a, m);
+    return math::distance_squared_with_buf(p, a, m);
   }
-  /* Check if p in vertex region outside b. */
+  /* Check if p in vert rgn outside b. */
   bp = p;
   bp -= b;
-  mpq_class d3 = math::dot_with_buffer(ab, bp, m);
-  mpq_class d4 = math::dot_with_buffer(ac, bp, m);
+  mpq_class d3 = math::dot_with_buf(ab, bp, m);
+  mpq_class d4 = math::dot_with_buf(ac, bp, m);
   if (d3 >= 0 && d4 <= d3) {
-    /* Barycentric coordinates (0,1,0). */
+    /* Barycentric coords (0,1,0). */
     *r_edge = -1;
     *r_vert = 1;
     if (dbg_level > 0) {
       std::cout << "  answer = b\n";
     }
-    return math::distance_squared_with_buffer(p, b, m);
+    return math::distance_squared_with_buf(p, b, m);
   }
-  /* Check if p in region of ab. */
+  /* Check if p in rgn of ab. */
   mpq_class vc = d1 * d4 - d3 * d2;
   if (vc <= 0 && d1 >= 0 && d3 <= 0) {
     mpq_class v = d1 / (d1 - d3);
-    /* Barycentric coordinates (1-v,v,0). */
+    /* Barycentric coords (1-v,v,0). */
     r = ab;
     r *= v;
     r += a;
@@ -1768,13 +1766,13 @@ static mpq_class closest_on_tri_to_point(const mpq3 &p,
     if (dbg_level > 0) {
       std::cout << "  answer = on ab at " << r << "\n";
     }
-    return math::distance_squared_with_buffer(p, r, m);
+    return math::distance_squared_with_buf(p, r, m);
   }
-  /* Check if p in vertex region outside c. */
+  /* Check if p in vert rgn outside c. */
   cp = p;
   cp -= c;
-  mpq_class d5 = math::dot_with_buffer(ab, cp, m);
-  mpq_class d6 = math::dot_with_buffer(ac, cp, m);
+  mpq_class d5 = math::dot_with_buf(ab, cp, m);
+  mpq_class d6 = math::dot_with_buf(ac, cp, m);
   if (d6 >= 0 && d5 <= d6) {
     /* Barycentric coordinates (0,0,1). */
     *r_edge = -1;
