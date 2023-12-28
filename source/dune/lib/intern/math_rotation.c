@@ -7,7 +7,6 @@
 #include "lib_strict_flags.h"
 
 /* Quaternions */
-
 /* used to test is a quat is not normalized (only used for debug prints) */
 #ifndef NDEBUG
 #  define QUAT_EPSILON 0.0001
