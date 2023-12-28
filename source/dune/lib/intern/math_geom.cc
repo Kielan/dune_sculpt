@@ -468,7 +468,7 @@ float dist_to_plane_v3(const float pt[3], const float plane[4])
 float dist_signed_to_plane3_v3(const float pt[3], const float plane[3])
 {
   const float len_sq = len_squared_v3(plane);
-  const float side = dot_v3v3(plane, pt); /* only difference with 'plane[4]' version */
+  const float side = dot_v3v3(plane, pt); /* only diff w 'plane[4]' version */
   const float fac = side / len_sq;
   return sqrtf(len_sq) * fac;
 }
@@ -793,7 +793,7 @@ void dist_squared_to_projected_aabb_precalc(DistProjectedAABBPrecalc *precalc,
   }
 #else
   if (!isect_plane_plane_v3(px, py, precalc->ray_origin, precalc->ray_direction)) {
-    /* Matrix with weird co-planar planes. Undetermined origin. */
+    /* Matrix w weird co-planar planes. Undetermined origin. */
     zero_v3(precalc->ray_origin);
     precalc->ray_direction[0] = precalc->pmat[0][3];
     precalc->ray_direction[1] = precalc->pmat[1][3];
@@ -1018,18 +1018,18 @@ void closest_on_tri_to_point_v3(
     madd_v3_v3v3fl(r, v1, ac, w);
     return;
   }
-  /* Check if P in edge region of BC, if so return projection of P onto BC */
+  /* Check if P in edge rgn of BC, if so return projection of P onto BC */
   va = d3 * d6 - d5 * d4;
   if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
     w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-    /* barycentric coordinates (0,1-w,w) */
+    /* barycentric coords (0,1-w,w) */
     sub_v3_v3v3(r, v3, v2);
     mul_v3_fl(r, w);
     add_v3_v3(r, v2);
     return;
   }
 
-  /* P inside face region. Compute Q through its barycentric coordinates (u,v,w) */
+  /* P inside face rgn. Compute Q through its barycentric coords (u,v,w) */
   denom = 1.0f / (va + vb + vc);
   v = vb * denom;
   w = vc * denom;
@@ -1043,8 +1043,7 @@ void closest_on_tri_to_point_v3(
   add_v3_v3(r, ac);
 }
 
-/******************************* Intersection ********************************/
-
+/* Intersection */
 int isect_seg_seg_v2_int(const int v1[2], const int v2[2], const int v3[2], const int v4[2])
 {
   float div, lambda, mu;
@@ -1209,10 +1208,10 @@ int isect_seg_seg_v2_point_ex(const float v0[2],
       madd_v2_v2v2fl(vi_test, v0, s10, u);
 
       /* When 'd' approaches zero, float precision lets non-overlapping co-linear segments
-       * detect as an intersection. So re-calculate 'v' to ensure the point overlaps both.
+       * detect as an intersection. So re-calc 'v' to ensure the point overlaps both.
        * see #45123 */
 
-      /* inline since we have most vars already */
+      /* inline since we have most vars alrdy */
 #if 0
       v = line_point_factor_v2(ix_test, v2, v3);
 #else
@@ -1249,7 +1248,7 @@ int isect_seg_seg_v2_point_ex(const float v0[2],
           return 1;
         }
 
-        /* two different points */
+        /* 2 diff points */
         return -1;
       }
     }
@@ -1338,12 +1337,12 @@ int isect_line_sphere_v3(const float l1[3],
                          float r_p1[3],
                          float r_p2[3])
 {
-  /* Adapted for use in blender by Campbell Barton, 2011.
+  /* Adapted for use in dune by Campbell Barton, 2011.
    *
    * http://www.iebele.nl
    * `Atelier Iebele Abel <atelier@iebele.nl>` - 2001.
    *
-   * sphere_line_intersection function adapted from:
+   * sphere_line_intersection fn adapted from:
    * http://astronomy.swin.edu.au/pbourke/geometry/sphereline
    * `Paul Bourke <pbourke@swin.edu.au>`. */
 
@@ -1369,7 +1368,7 @@ int isect_line_sphere_v3(const float l1[3],
     return 0;
   }
   if (i == 0.0f) {
-    /* one intersection */
+    /* 1 intersection */
     mu = -b / (2.0f * a);
     madd_v3_v3v3fl(r_p1, l1, ldir, mu);
     return 1;
@@ -1377,11 +1376,11 @@ int isect_line_sphere_v3(const float l1[3],
   if (i > 0.0f) {
     const float i_sqrt = sqrtf(i); /* avoid calc twice */
 
-    /* first intersection */
+    /* 1st intersection */
     mu = (-b + i_sqrt) / (2.0f * a);
     madd_v3_v3v3fl(r_p1, l1, ldir, mu);
 
-    /* second intersection */
+    /* 2nd intersection */
     mu = (-b - i_sqrt) / (2.0f * a);
     madd_v3_v3v3fl(r_p2, l1, ldir, mu);
     return 2;
@@ -1398,7 +1397,7 @@ int isect_line_sphere_v2(const float l1[2],
                          float r_p1[2],
                          float r_p2[2])
 {
-  /* Keep in sync with #isect_line_sphere_v3. */
+  /* Keep in sync w isect_line_sphere_v3. */
 
   const float ldir[2] = {l2[0] - l1[0], l2[1] - l1[1]};
 
@@ -1425,11 +1424,11 @@ int isect_line_sphere_v2(const float l1[2],
   if (i > 0.0f) {
     const float i_sqrt = sqrtf(i); /* avoid calc twice */
 
-    /* first intersection */
+    /* 1st intersection */
     mu = (-b + i_sqrt) / (2.0f * a);
     madd_v2_v2v2fl(r_p1, l1, ldir, mu);
 
-    /* second intersection */
+    /* 2nd intersection */
     mu = (-b - i_sqrt) / (2.0f * a);
     madd_v2_v2v2fl(r_p2, l1, ldir, mu);
     return 2;
@@ -1441,8 +1440,7 @@ int isect_line_sphere_v2(const float l1[2],
 
 bool isect_point_poly_v2(const float pt[2], const float verts[][2], const uint nr)
 {
-  /* Keep in sync with #isect_point_poly_v2_int. */
-
+  /* Keep in sync w isect_point_poly_v2_int. */
   uint i, j;
   bool isect = false;
   for (i = 0, j = nr - 1; i < nr; j = i++) {
@@ -1458,8 +1456,7 @@ bool isect_point_poly_v2(const float pt[2], const float verts[][2], const uint n
 }
 bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const uint nr)
 {
-  /* Keep in sync with #isect_point_poly_v2. */
-
+  /* Keep in sync w isect_point_poly_v2. */
   uint i, j;
   bool isect = false;
   for (i = 0, j = nr - 1; i < nr; j = i++) {
@@ -1475,7 +1472,6 @@ bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const uint n
 }
 
 /* point in tri */
-
 bool isect_point_tri_v2_cw(const float pt[2],
                            const float v1[2],
                            const float v2[2],
@@ -1646,7 +1642,7 @@ bool isect_ray_tri_v3(const float ray_origin[3],
                       float *r_lambda,
                       float r_uv[2])
 {
-  /* NOTE(@ideasman42): these values were 0.000001 in 2.4x but for projection snapping on
+  /* These vals were 0.000001 in 2.4x but for projection snapping on
    * a human head `(1BU == 1m)`, subdivision-surface level 2, this gave many errors. */
   const float epsilon = 0.00000001f;
   float p[3], s[3], e1[3], e2[3], q[3];
@@ -1765,7 +1761,7 @@ void isect_ray_tri_watertight_v3_precalc(IsectRayPrecalc *isect_precalc,
 {
   float inv_dir_z;
 
-  /* Calculate dimension where the ray direction is maximal. */
+  /* Calc dimension where the ray direction is maximal. */
   int kz = axis_dominant_v3_single(ray_direction);
   int kx = (kz != 2) ? (kz + 1) : 0;
   int ky = (kx != 2) ? (kx + 1) : 0;
@@ -1775,7 +1771,7 @@ void isect_ray_tri_watertight_v3_precalc(IsectRayPrecalc *isect_precalc,
     SWAP(int, kx, ky);
   }
 
-  /* Calculate the shear constants. */
+  /* Cal the shear constants. */
   inv_dir_z = 1.0f / ray_direction[kz];
   isect_precalc->sx = ray_direction[kx] * inv_dir_z;
   isect_precalc->sy = ray_direction[ky] * inv_dir_z;
@@ -1802,7 +1798,7 @@ bool isect_ray_tri_watertight_v3(const float ray_origin[3],
   const float sy = isect_precalc->sy;
   const float sz = isect_precalc->sz;
 
-  /* Calculate vertices relative to ray origin. */
+  /* Calc verts relative to ray origin. */
   const float a[3] = {v0[0] - ray_origin[0], v0[1] - ray_origin[1], v0[2] - ray_origin[2]};
   const float b[3] = {v1[0] - ray_origin[0], v1[1] - ray_origin[1], v1[2] - ray_origin[2]};
   const float c[3] = {v2[0] - ray_origin[0], v2[1] - ray_origin[1], v2[2] - ray_origin[2]};
@@ -1819,7 +1815,7 @@ bool isect_ray_tri_watertight_v3(const float ray_origin[3],
   const float cx = c_kx - sx * c_kz;
   const float cy = c_ky - sy * c_kz;
 
-  /* Calculate scaled barycentric coordinates. */
+  /* Calc scaled barycentric coordinates. */
   const float u = cx * by - cy * bx;
   const float v = ax * cy - ay * cx;
   const float w = bx * ay - by * ax;
@@ -1829,21 +1825,20 @@ bool isect_ray_tri_watertight_v3(const float ray_origin[3],
     return false;
   }
 
-  /* Calculate determinant. */
+  /* Calc determinant. */
   det = u + v + w;
   if (UNLIKELY(det == 0.0f || !isfinite(det))) {
     return false;
   }
 
-  /* Calculate scaled z-coordinates of vertices and use them to calculate
-   * the hit distance.
-   */
+  /* Calc scaled z-coords of verts and use them to calc
+   * the hit distance. */
   const int sign_det = (float_as_int(det) & int(0x80000000));
   const float t = (u * a_kz + v * b_kz + w * c_kz) * sz;
   const float sign_t = xor_fl(t, sign_det);
   if ((sign_t < 0.0f)
-  /* Differ from Cycles, don't read r_lambda's original value
-   * otherwise we won't match any of the other intersect functions here...
+  /* Differ from Cycles, don't read r_lambda's original val
+   * otherwise we won't match any of the other intersect fns here...
    * which would be confusing. */
 #if 0
       || (sign_T > *r_lambda * xor_signmask(det, sign_mask))
@@ -1877,10 +1872,8 @@ bool isect_ray_tri_watertight_v3_simple(const float ray_origin[3],
 }
 
 #if 0 /* UNUSED */
-/**
- * A version of #isect_ray_tri_v3 which takes a threshold argument
- * so rays slightly outside the triangle to be considered as intersecting.
- */
+/* A version of isect_ray_tri_v3 which takes a threshold argul
+ * so rays slightly outside the triangle to be considered as intersecting. */
 bool isect_ray_tri_threshold_v3(const float ray_origin[3],
                                 const float ray_direction[3],
                                 const float v0[3],
@@ -2197,7 +2190,7 @@ bool isect_planes_v3_fn(
         }
 
         if (i_test == planes_len) { /* ok */
-          callback_fn(co_test, i, j, k, user_data);
+          cb_fn(co_test, i, j, k, user_data);
           found = true;
         }
       }
@@ -2241,7 +2234,7 @@ bool isect_tri_tri_v3_ex(const float tri_a[3][3],
   if ((side[1][0] && side[1][1] && side[1][2]) && (side[1][0] < 0.0f) == (side[1][1] < 0.0f) &&
       (side[1][0] < 0.0f) == (side[1][2] < 0.0f))
   {
-    /* All vertices of the 2nd triangle are positioned on the same side to the
+    /* All verts of the 2nd triangle are positioned on the same side to the
      * plane defined by the 1st triangle. */
     return false;
   }
@@ -2257,7 +2250,7 @@ bool isect_tri_tri_v3_ex(const float tri_a[3][3],
   if ((side[0][0] && side[0][1] && side[0][2]) && (side[0][0] < 0.0f) == (side[0][1] < 0.0f) &&
       (side[0][0] < 0.0f) == (side[0][2] < 0.0f))
   {
-    /* All vertices of the 1st triangle are positioned on the same side to the
+    /* All verts of the 1st triangle are positioned on the same side to the
      * plane defined by the 2nd triangle. */
     return false;
   }
@@ -2267,7 +2260,7 @@ bool isect_tri_tri_v3_ex(const float tri_a[3][3],
   cross_v3_v3v3_db(isect_dir, plane_a, plane_b);
   for (int i = 0; i < 2; i++) {
     const float(*tri)[3] = i == 0 ? tri_a : tri_b;
-    /* Rearrange the triangle so that the vertex that is alone on one side
+    /* Rearrange the triangle so that the vert that is alone on one side
      * of the plane is located at index 1. */
     int tri_i[3];
     if ((side[i][0] && side[i][1]) && (side[i][0] < 0.0f) == (side[i][1] < 0.0f)) {
@@ -2315,7 +2308,7 @@ bool isect_tri_tri_v3_ex(const float tri_a[3][3],
   }
 
   if ((range[0].max > range[1].min) && (range[0].min < range[1].max)) {
-    /* The triangles intersect because they overlap on the intersection line.
+    /* The triangles intersect bc they overlap on the intersection line.
      * Now identify the two points of intersection that are in the middle to get the actual
      * intersection between the triangles. (B--C from A--B--C--D) */
     if (range[0].min >= range[1].min) {
@@ -2366,14 +2359,11 @@ bool isect_tri_tri_v3(const float t_a0[3],
   return isect_tri_tri_v3_ex(tri_a, tri_b, r_i1, r_i2, &dummy);
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Tri-Tri Intersect 2D
+/* Tri-Tri Intersect 2D
  *
  * "Fast and Robust Triangle-Triangle Overlap Test
  * Using Orientation Predicates" P. Guigue - O. Devillers
- * Journal of Graphics Tools, 8(1), 2003.
- *
- * \{ */
+ * Journal of Graphics Tools, 8(1), 2003. */
 
 static bool isect_tri_tri_v2_impl_vert(const float t_a0[2],
                                        const float t_a1[2],
@@ -2542,10 +2532,7 @@ bool isect_tri_tri_v2(const float t_a0[2],
   return isect_tri_tri_impl_ccw_v2(t_a0, t_a1, t_a2, t_b0, t_b1, t_b2);
 }
 
-/** \} */
-
 /* Adapted from the paper by Kasper Fauerby */
-
 /* "Improved Collision detection and Response" */
 static bool getLowestRoot(
     const float a, const float b, const float c, const float maxR, float *root)
@@ -2555,7 +2542,7 @@ static bool getLowestRoot(
 
   /* If determinant is negative it means no solutions. */
   if (determinant >= 0.0f) {
-    /* calculate the two roots: (if determinant == 0 then
+    /* calc the 2 roots: (if determinant == 0 then
      * x1==x2 but lets disregard that slight optimization) */
     const float sqrtD = sqrtf(determinant);
     float r1 = (-b - sqrtD) / (2.0f * a);
@@ -2624,7 +2611,7 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
   sub_v3_v3v3(e2, v2, v0);
   sub_v3_v3v3(vel, p2, p1);
 
-  /*---test plane of tri---*/
+  /* test plane of tri */
   cross_v3_v3v3(nor, e1, e2);
   normalize_v3(nor);
 
@@ -2657,9 +2644,8 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
     CLAMP(t0, 0.0f, 1.0f);
     CLAMP(t1, 0.0f, 1.0f);
 
-    /*---test inside of tri---*/
+    /* test inside of tri */
     /* plane intersection point */
-
     point[0] = p1[0] + vel[0] * t0 - nor[0] * radius;
     point[1] = p1[1] + vel[1] * t0 - nor[1] * radius;
     point[2] = p1[2] + vel[2] * t0 - nor[2] * radius;
@@ -2669,9 +2655,9 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
     b = dot_v3v3(e1, e2);
     c = dot_v3v3(e2, e2);
 
-    sub_v3_v3v3(temp, point, v0);
-    d = dot_v3v3(temp, e1);
-    e = dot_v3v3(temp, e2);
+    sub_v3_v3v3(tmp, point, v0);
+    d = dot_v3v3(tmp, e1);
+    e = dot_v3v3(tmp, e2);
 
     x = d * c - e * b;
     y = e * a - d * b;
@@ -2687,7 +2673,7 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
 
   *r_lambda = 1.0f;
 
-  /*---test points---*/
+  /* test points */
   a = dot_v3v3(vel, vel);
 
   /*v0*/
