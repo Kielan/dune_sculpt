@@ -87,7 +87,7 @@ template<> float3x3 float3x3::operator*(const float3x3 &b) const
   _mm_store_ss(&result[2][2], sum[2]);
 
 #else
-  /** Manual unrolling since MSVC doesn't seem to unroll properly. */
+  /* Manual unrolling since MSVC doesn't seem to unroll properly. */
   result[0][0] = b[0][0] * a[0][0] + b[0][1] * a[1][0] + b[0][2] * a[2][0];
   result[0][1] = b[0][0] * a[0][1] + b[0][1] * a[1][1] + b[0][2] * a[2][1];
   result[0][2] = b[0][0] * a[0][2] + b[0][1] * a[1][2] + b[0][2] * a[2][2];
@@ -263,7 +263,7 @@ static void polar_decompose(const MatBase<T, 3, 3> &mat3,
     /* Dune and Eigen matrices are both column-major by default.
      * Since our matrix is squared, we can use thinU/V. */
     /* WORKAROUND: (ComputeThinU | ComputeThinV) must be set as runtime parameters in
-     * Eigen < 3.4.0. But this requires the matrix type to be dynamic to avoid an assert. */
+     * Eigen < 3.4.0. But this reqs the matrix type to be dynamic to avoid an assert. */
     using MatrixDynamicT = Eigen::Matrix<T, Dynamic, Dynamic>;
     JacobiSVD<MatrixDynamicT, NoQRPreconditioner> svd(
         Eigen::Map<const MatrixDynamicT>(mat3.base_ptr(), 3, 3), ComputeThinU | ComputeThinV);
@@ -297,11 +297,11 @@ MatBase<T, 3, 3> interpolate(const MatBase<T, 3, 3> &A, const MatBase<T, 3, 3> &
   polar_decompose(B, U_B, P_B);
 
   /* Quaternions cannot represent an axis flip. If such a singularity is detected, choose a
-   * different decomposition of the matrix that still satisfies A = U_A * P_A but which has a
+   * diff decomposition of the matrix that still satisfies A = U_A * P_A but which has a
    * positive determinant and thus no axis flips. This resolves #77154.
    *
-   * Note that a flip of two axes is just a rotation of 180 degrees around the third axis, and
-   * three flipped axes are just an 180 degree rotation + a single axis flip. It is thus sufficient
+   * A flip of two axes is just a rotation of 180 degrees around the third axis, and
+   * 3 flipped axes are a 180 degree rotation + a single axis flip. It is thus sufficient
    * to solve this problem for single axis flips. */
   if (is_negative(U_A)) {
     U_A = -U_A;
@@ -436,7 +436,6 @@ template MatBase<float, 3, 3> from_rotation(const AxisAngleCartesian &rotation);
 template MatBase<float, 4, 4> from_rotation(const AxisAngleCartesian &rotation);
 
 }  // namespace detail
-
 template float3 transform_point(const float3x3 &mat, const float3 &point);
 template float3 transform_point(const float4x4 &mat, const float3 &point);
 template float3 transform_direction(const float3x3 &mat, const float3 &direction);
@@ -455,6 +454,4 @@ template float4x4 perspective_infinite(
 
 }  // namespace projection
 
-/** \} */
-
-}  // namespace blender::math
+}  // namespace dune::math
