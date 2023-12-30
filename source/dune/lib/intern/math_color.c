@@ -136,10 +136,8 @@ void ycc_to_rgb(float y, float cb, float cr, float *r_r, float *r_g, float *r_b,
 {
   /* FIXME the following comment must be wrong because:
    * BLI_YCC_ITU_BT601 y 16.0 cr 16.0 -> r -0.7009. */
-
-  /* YCC input have a range of 16-235 and 16-240 except with JFIF_0_255 where the range is 0-255
+  /* YCC input have a range of 16-235 and 16-240 except w JFIF_0_255 where the range is 0-255
    * RGB outputs are in the range 0 - 1.0f. */
-
   float r = 128.0f, g = 128.0f, b = 128.0f;
 
   switch (colorspace) {
@@ -159,7 +157,7 @@ void ycc_to_rgb(float y, float cb, float cr, float *r_r, float *r_g, float *r_b,
       b = y + 1.772f * cb - 226.816f;
       break;
     default:
-      BLI_assert_unreachable();
+    lib_assert_unreachable();
       break;
   }
   *r_r = r / 255.0f;
@@ -295,7 +293,7 @@ void rgb_to_hsv_compat(float r, float g, float b, float *r_h, float *r_s, float 
   rgb_to_hsv(r, g, b, r_h, r_s, r_v);
 
   if (*r_v <= 1e-8) {
-    /* Very low v vals will affect the hs values, correct them in post. */
+    /* Very low v vals will affect the hs vals, correct them in post. */
     *r_h = orig_h;
     *r_s = orig_s;
   }
@@ -502,7 +500,6 @@ void rgb_byte_set_hue_float_offset(uchar rgb[3], float hue_offset)
 /* fast sRGB conversion
  * LUT from linear float to 16-bit short
  * based on http://mysite.verizon.net/spitzak/conversion/ */
-
 float lib_color_from_srgb_table[256];
 ushort lib_color_to_srgb_table[0x10000];
 
@@ -580,9 +577,9 @@ void lib_init_srgb_conversion(void)
   /* Fill in the lookup table to convert bytes to float: */
   for (b = 0; b <= 255; b++) {
     float f = srgb_to_linearrgb(((float)b) * (1.0f / 255.0f));
-    BLI_color_from_srgb_table[b] = f;
+    lib_color_from_srgb_table[b] = f;
     i = hipart(f);
     /* replace entries so byte->float->byte does not change the data: */
-    BLI_color_to_srgb_table[i] = (ushort)(b * 0x100);
+    lib_color_to_srgb_table[i] = (ushort)(b * 0x100);
   }
 }
