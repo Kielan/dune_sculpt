@@ -1,31 +1,29 @@
-#include "BLI_math_base.h"
-#include "BLI_math_color.h"
-#include "BLI_math_color_blend.h"
-#include "BLI_math_vector.h"
+#include "lib_math_base.h"
+#include "lib_math_color.h"
+#include "lib_math_color_blend.h"
+#include "lib_math_vector.h"
 
-#ifndef __MATH_COLOR_BLEND_INLINE_C__
-#  define __MATH_COLOR_BLEND_INLINE_C__
+#ifndef __MATH_COLOR_DUNE_INLINE_C__
+#  define __MATH_COLOR_DUNE_INLINE_C__
 
 /* don't add any saturation to a completely black and white image */
 #  define EPS_SATURATION 0.0005f
 #  define EPS_ALPHA 0.0005f
 
-/***************************** Color Blending ********************************
+/* Color Blending ********************************
  *
  * - byte colors are assumed to be straight alpha
  * - byte colors uses to do >>8 (same as /256) but actually should do /255,
  *   otherwise get quick darkening due to rounding
- * - divide_round_i is also used to avoid darkening due to integers always
+ * - divide_round_i is also used to avoid darkening due to ints always
  *   rounding down
- * - float colors are assumed to be premultiplied alpha
- */
+ * - float colors are assumed to be premultiplied alpha */
 
 /* straight alpha byte blending modes */
-
 MINLINE void blend_color_mix_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight over operation */
+    /* straight over op */
     const int t = src2[3];
     const int mt = 255 - t;
     int tmp[4];
@@ -49,7 +47,7 @@ MINLINE void blend_color_mix_byte(uchar dst[4], const uchar src1[4], const uchar
 MINLINE void blend_color_add_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight add operation */
+    /* straight add op */
     const int t = src2[3];
     int tmp[3];
 
@@ -71,7 +69,7 @@ MINLINE void blend_color_add_byte(uchar dst[4], const uchar src1[4], const uchar
 MINLINE void blend_color_sub_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight sub operation */
+    /* straight sub op */
     const int t = src2[3];
     int tmp[3];
 
@@ -93,7 +91,7 @@ MINLINE void blend_color_sub_byte(uchar dst[4], const uchar src1[4], const uchar
 MINLINE void blend_color_mul_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight multiply operation */
+    /* straight multiply op */
     const int t = src2[3];
     const int mt = 255 - t;
     int tmp[3];
@@ -116,7 +114,7 @@ MINLINE void blend_color_mul_byte(uchar dst[4], const uchar src1[4], const uchar
 MINLINE void blend_color_lighten_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight lighten operation */
+    /* straight lighten op */
     const int t = src2[3];
     const int mt = 255 - t;
     int tmp[3];
@@ -139,7 +137,7 @@ MINLINE void blend_color_lighten_byte(uchar dst[4], const uchar src1[4], const u
 MINLINE void blend_color_darken_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight darken operation */
+    /* straight darken op */
     const int t = src2[3];
     const int mt = 255 - t;
     int tmp[3];
@@ -179,7 +177,7 @@ MINLINE void blend_color_erase_alpha_byte(uchar dst[4], const uchar src1[4], con
 MINLINE void blend_color_add_alpha_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   if (src2[3] != 0) {
-    /* straight so just modify alpha channel */
+    /* straight so just mod alpha channel */
     const int t = src2[3];
 
     dst[0] = src1[0];
@@ -201,15 +199,15 @@ MINLINE void blend_color_overlay_byte(uchar dst[4], const uchar src1[4], const u
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src1[i] > 127) {
-        temp = 255 - ((255 - 2 * (src1[i] - 127)) * (255 - src2[i]) / 255);
+        tmp = 255 - ((255 - 2 * (src1[i] - 127)) * (255 - src2[i]) / 255);
       }
       else {
-        temp = (2 * src1[i] * src2[i]) >> 8;
+        tmp = (2 * src1[i] * src2[i]) >> 8;
       }
-      dst[i] = (uchar)min_ii((temp * fac + src1[i] * mfac) / 255, 255);
+      dst[i] = (uchar)min_ii((tmp * fac + src1[i] * mfac) / 255, 255);
     }
   }
   else {
@@ -251,8 +249,8 @@ MINLINE void blend_color_burn_byte(uchar dst[4], const uchar src1[4], const ucha
     int i = 3;
 
     while (i--) {
-      const int temp = (src2[i] == 0) ? 0 : max_ii(255 - ((255 - src1[i]) * 255) / src2[i], 0);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = (src2[i] == 0) ? 0 : max_ii(255 - ((255 - src1[i]) * 255) / src2[i], 0);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -269,8 +267,8 @@ MINLINE void blend_color_linearburn_byte(uchar dst[4], const uchar src1[4], cons
     int i = 3;
 
     while (i--) {
-      const int temp = max_ii(src1[i] + src2[i] - 255, 0);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = max_ii(src1[i] + src2[i] - 255, 0);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -287,8 +285,8 @@ MINLINE void blend_color_dodge_byte(uchar dst[4], const uchar src1[4], const uch
     int i = 3;
 
     while (i--) {
-      const int temp = (src2[i] == 255) ? 255 : min_ii((src1[i] * 255) / (255 - src2[i]), 255);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = (src2[i] == 255) ? 255 : min_ii((src1[i] * 255) / (255 - src2[i]), 255);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -305,8 +303,8 @@ MINLINE void blend_color_screen_byte(uchar dst[4], const uchar src1[4], const uc
     int i = 3;
 
     while (i--) {
-      const int temp = max_ii(255 - (((255 - src1[i]) * (255 - src2[i])) / 255), 0);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = max_ii(255 - (((255 - src1[i]) * (255 - src2[i])) / 255), 0);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -323,15 +321,15 @@ MINLINE void blend_color_softlight_byte(uchar dst[4], const uchar src1[4], const
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src1[i] < 127) {
-        temp = ((2 * ((src2[i] / 2) + 64)) * src1[i]) / 255;
+        tmp = ((2 * ((src2[i] / 2) + 64)) * src1[i]) / 255;
       }
       else {
-        temp = 255 - (2 * (255 - ((src2[i] / 2) + 64)) * (255 - src1[i]) / 255);
+        tmp = 255 - (2 * (255 - ((src2[i] / 2) + 64)) * (255 - src1[i]) / 255);
       }
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -348,15 +346,15 @@ MINLINE void blend_color_pinlight_byte(uchar dst[4], const uchar src1[4], const 
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src2[i] > 127) {
-        temp = max_ii(2 * (src2[i] - 127), src1[i]);
+        tmp = max_ii(2 * (src2[i] - 127), src1[i]);
       }
       else {
-        temp = min_ii(2 * src2[i], src1[i]);
+        tmp = min_ii(2 * src2[i], src1[i]);
       }
-      dst[i] = (uchar)((min_ii(temp, 255) * fac + src1[i] * mfac) / 255);
+      dst[i] = (uchar)((min_ii(tmp, 255) * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -373,15 +371,15 @@ MINLINE void blend_color_linearlight_byte(uchar dst[4], const uchar src1[4], con
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src2[i] > 127) {
-        temp = min_ii(src1[i] + 2 * (src2[i] - 127), 255);
+        tmp = min_ii(src1[i] + 2 * (src2[i] - 127), 255);
       }
       else {
-        temp = max_ii(src1[i] + 2 * src2[i] - 255, 0);
+        tmp = max_ii(src1[i] + 2 * src2[i] - 255, 0);
       }
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -398,16 +396,16 @@ MINLINE void blend_color_vividlight_byte(uchar dst[4], const uchar src1[4], cons
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src2[i] == 255) {
         temp = (src1[i] == 0) ? 127 : 255;
       }
       else if (src2[i] == 0) {
-        temp = (src1[i] == 255) ? 127 : 0;
+        tmp = (src1[i] == 255) ? 127 : 0;
       }
       else if (src2[i] > 127) {
-        temp = min_ii(((src1[i]) * 255) / (2 * (255 - src2[i])), 255);
+        tmp = min_ii(((src1[i]) * 255) / (2 * (255 - src2[i])), 255);
       }
       else {
         temp = max_ii(255 - ((255 - src1[i]) * 255 / (2 * src2[i])), 0);
