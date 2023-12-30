@@ -11,7 +11,6 @@
 #  define EPS_ALPHA 0.0005f
 
 /* Color Blending ********************************
- *
  * - byte colors are assumed to be straight alpha
  * - byte colors uses to do >>8 (same as /256) but actually should do /255,
  *   otherwise get quick darkening due to rounding
@@ -224,15 +223,15 @@ MINLINE void blend_color_hardlight_byte(uchar dst[4], const uchar src1[4], const
     int i = 3;
 
     while (i--) {
-      int temp;
+      int tmp;
 
       if (src2[i] > 127) {
-        temp = 255 - ((255 - 2 * (src2[i] - 127)) * (255 - src1[i]) / 255);
+        tmp = 255 - ((255 - 2 * (src2[i] - 127)) * (255 - src1[i]) / 255);
       }
       else {
-        temp = (2 * src2[i] * src1[i]) >> 8;
+        tmp = (2 * src2[i] * src1[i]) >> 8;
       }
-      dst[i] = (uchar)min_ii((temp * fac + src1[i] * mfac) / 255, 255);
+      dst[i] = (uchar)min_ii((tmp * fac + src1[i] * mfac) / 255, 255);
     }
   }
   else {
@@ -399,7 +398,7 @@ MINLINE void blend_color_vividlight_byte(uchar dst[4], const uchar src1[4], cons
       int tmp;
 
       if (src2[i] == 255) {
-        temp = (src1[i] == 0) ? 127 : 255;
+        tmp = (src1[i] == 0) ? 127 : 255;
       }
       else if (src2[i] == 0) {
         tmp = (src1[i] == 255) ? 127 : 0;
@@ -408,9 +407,9 @@ MINLINE void blend_color_vividlight_byte(uchar dst[4], const uchar src1[4], cons
         tmp = min_ii(((src1[i]) * 255) / (2 * (255 - src2[i])), 255);
       }
       else {
-        temp = max_ii(255 - ((255 - src1[i]) * 255 / (2 * src2[i])), 0);
+        tmp = max_ii(255 - ((255 - src1[i]) * 255 / (2 * src2[i])), 0);
       }
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -427,8 +426,8 @@ MINLINE void blend_color_difference_byte(uchar dst[4], const uchar src1[4], cons
     int i = 3;
 
     while (i--) {
-      const int temp = abs(src1[i] - src2[i]);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = abs(src1[i] - src2[i]);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
@@ -445,8 +444,8 @@ MINLINE void blend_color_exclusion_byte(uchar dst[4], const uchar src1[4], const
     int i = 3;
 
     while (i--) {
-      const int temp = 127 - min_ii(((2 * (src1[i] - 127) * (src2[i] - 127)) / 255), 127);
-      dst[i] = (uchar)((temp * fac + src1[i] * mfac) / 255);
+      const int tmp = 127 - min_ii(((2 * (src1[i] - 127) * (src2[i] - 127)) / 255), 127);
+      dst[i] = (uchar)((tmp * fac + src1[i] * mfac) / 255);
     }
   }
   else {
