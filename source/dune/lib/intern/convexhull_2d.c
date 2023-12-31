@@ -19,7 +19,7 @@
 /* Main Convex-Hull Calc */
 /* tests if a point is Left|On|Right of an infinite line.
  *    Input:  three points P0, P1, and P2
- * \returns > 0.0 for P2 left of the line through P0 and P1.
+ * returns > 0.0 for P2 left of the line through P0 and P1.
  *          = 0.0 for P2 on the line.
  *          < 0.0 for P2 right of the line.
  */
