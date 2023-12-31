@@ -1,4 +1,4 @@
-/* \ingroup lib */
+/* lib */
 #include "lib_dial_2d.h"
 
 #include "mem_guardedalloc.h"
