@@ -11,21 +11,21 @@
  *
  * The only 2 structs here which are ref externally are the.
  *
- * - BArrayStore: The whole array store.
- * - BArrayState: Represents a single state (array) of data.
+ * - ArrayStore: The whole array store.
+ * - ArrayState: Represents a single state (array) of data.
  *   These can be add using a ref state,
  *   while this could be considered the prev or parent state.
  *   no relationship is kept,
- *   so the caller is free to add any state from the same BArrayStore as a reference.
+ *   so the caller is free to add any state from the same ArrayStore as a ref.
  *
  * <pre>
- * <+> BArrayStore: root data-structure,
- *  |  can store many 'states', which share memory.
+ * <+> ArrayStore: root data-struct,
+ *  |  can store many 'states', which share mem.
  *  |
  *  |  This can store many arrays, however they must share the same 'stride'.
- *  |  Arrays of different types will need to use a new #BArrayStore.
+ *  |  Arrays of different types will need to use a new ArrayStore.
  *  |
- *  +- <+> states (Collection of #BArrayState's):
+ *  +- <+> states (Collection of ArrayState's):
  *  |   |  Each represents an array added by the user of this API.
  *  |   |  and refs a chunk_list (each state is a chunk_list user).
  *  |   |  Note that the list order has no significance.
