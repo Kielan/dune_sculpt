@@ -451,7 +451,7 @@ void lib_box_pack_2d(
              * on the bottom or side so we don't get
              * boxes outside the given rectangle ares
              *
-             * We can do an else/if here because only the first
+             * We can do an else/if here bc only the first
              * box can be at the very bottom left corner */
             if (box_xmin_get(box) <= 0) {
               box->v[TL]->free &= ~(TLF | BLF);
