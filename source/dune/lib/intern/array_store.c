@@ -30,30 +30,30 @@
  *  |   |  and refs a chunk_list (each state is a chunk_list user).
  *  |   |  Note that the list order has no significance.
  *  |   |
- *  |   +- <+> chunk_list (BChunkList):
+ *  |   +- <+> chunk_list (aChunkList):
  *  |       |  The chunks that make up this state.
  *  |       |  Each state is a chunk_list user,
  *  |       |  avoids duplicating lists when there is no change between states.
  *  |       |
- *  |       +- chunk_refs (List of #BChunkRef): Each chunk_ref links to a #BChunk.
+ *  |       +- chunk_refs (List of ChunkRef): Each chunk_ref links to a #BChunk.
  *  |          Each ref is a chunk user,
- *  |          avoids duplicating smaller chunks of memory found in multiple states.
+ *  |          avoids duplicating smaller chunks of mem found in multiple states.
  *  |
- *  +- info (BArrayInfo):
+ *  +- info (ArrayInfo):
  *  |  Sizes and offsets for this array-store.
  *  |  Also caches some vars for reuse.
  *  |
- *  +- <+> memory (BArrayMemory):
- *      |  Memory pools for storing BArrayStore data.
+ *  +- <+> mem (ArrayMem):
+ *      |  Mem pools for storing ArrayStore data.
  *      |
- *      +- chunk_list (Pool of BChunkList):
- *      |  All chunk_lists, (reference counted, used by #BArrayState).
+ *      +- chunk_list (Pool of ChunkList):
+ *      |  All chunk_lists, (ref counted, used by ArrayState).
  *      |
- *      +- chunk_ref (Pool of #BChunkRef):
- *      |  All chunk_refs (link between #BChunkList & #BChunk).
+ *      +- chunk_ref (Pool of ChunkRef):
+ *      |  All chunk_refs (link between ChunkList & Chunk).
  *      |
- *      +- chunks (Pool of #BChunk):
- *         All chunks, (reference counted, used by #BChunkList).
+ *      +- chunks (Pool of Chunk):
+ *         All chunks, (re counted, used by ChunkList).
  *         These have their headers hashed for reuse so we can quickly check for duplicates.
  * </pre>
  *
@@ -68,9 +68,9 @@
  * De-dup is performed on any remaining chunks, by hashing the first few bytes of the chunk
  * (see: BCHUNK_HASH_TABLE_ACCUMULATE_STEPS).
  *
- * This is cached for reuse since the referenced data never changes.
+ * This is cached for reuse since the refd data never changes.
  *
- * An array is created to store hash values at every 'stride',
+ * An array is created to store hash vals at every 'stride',
  * then stepped over to search for matching chunks.
  *
  * Once a match is found, there is a high chance next chunks match too,
@@ -287,7 +287,7 @@ typedef struct TableRef {
 static size_t bchunk_list_size(const ChunkList *chunk_list);
 
 /* Internal Chunk API */
-static Chunk *bchunk_new(ArrayMem *bs_mem, const uchar *data, const size_t data_len)
+static Chunk *chunk_new(ArrayMem *bs_mem, const uchar *data, const size_t data_len)
 {
   Chunk *chunk = lib_mempool_alloc(bs_mem->chunk);
   chunk->data = data;
