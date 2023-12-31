@@ -3,7 +3,7 @@
  * This is done by splitting arrays into chunks and using copy-on-write (COW),
  * to de-dup chunks, from the users perspective this is an implementation detail.
  *
- * Overvie
+ * Overview
  *
  * Data Struct
  *
