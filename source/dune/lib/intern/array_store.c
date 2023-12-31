@@ -259,7 +259,7 @@ typedef struct ChunkList {
 typedef struct Chunk {
   const uchar *data;
   size_t data_len;
-  /* number of ChunkList using this. */
+  /* num of ChunkList using this. */
   int users;
 
 #ifdef USE_HASH_TABLE_KEY_CACHE
@@ -432,8 +432,7 @@ static void chunk_list_ensure_min_size_last(const ArrayInfo *info,
          * never end up having very large chunks.
          * Gradual expanding on contracting will cause this.
          *
-         * if we do, the code below works (test by setting 'BCHUNK_SIZE_MAX_MUL = 1.2') */
-
+         * if we do, the code below works (test by setting 'CHUNK_SIZE_MAX_MUL = 1.2') */
         /* Keep chunk on the left hand side a regular size. */
         const size_t split = info->chunk_byte_size;
 
@@ -696,12 +695,9 @@ static void bchunk_list_fill_from_array(const ArrayInfo *info,
   ASSERT_CHUNKLIST_DATA(chunk_list, data);
 }
 
-/* Internal Table Lookup Functions. */
-/* -------------------------------------------------------------------- */
-/* Internal Hashing/De-Duplication API
- *
- * Only used by #bchunk_list_from_data_merge
- * \{ */
+/* Internal Table Lookup Fns. */
+/* Internal Hashing/De-Dup API
+ * Only used by chunk_list_from_data_merge */
 
 #define HASH_INIT (5381)
 
@@ -837,7 +833,7 @@ static hash_key key_from_chunk_ref(const ArrayInfo *info,
     key = chunk->key;
     if (key != HASH_TABLE_KEY_UNSET) {
       /* Using key cache!
-       * avoids calculating every time. */
+       * avoids calc every time. */
     }
     else {
       hash_array_from_cref(info, cref, info->accum_read_ahead_bytes, hash_store);
@@ -857,7 +853,7 @@ static hash_key key_from_chunk_ref(const ArrayInfo *info,
 #  endif
     return key;
   }
-  /* Corner case - we're too small, calculate the key each time. */
+  /* Corner case we're too small, calc the key each time. */
   hash_array_from_cref(info, cref, info->accum_read_ahead_bytes, hash_store);
   hash_accum_single(hash_store, hash_store_len, info->accum_steps);
   hash_key key = hash_store[0];
@@ -973,7 +969,7 @@ static const ChunkRef *table_lookup(const ArrayInfo *info,
 /* param data: Data to store in the returned val.
  * param data_len_original: Length of data in bytes.
  * param chunk_list_ref: Reuse this list or chunks within it, don't modify its content.
- * note Caller is responsible for adding the user. */
+ * Caller is responsible for adding the user. */
 static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
                                              ArrayMem *bs_mem,
                                              const uchar *data,
@@ -1024,7 +1020,7 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
   ChunkList *chunk_list = chunk_list_new(bs_mem, data_len_original);
   if (cref_match_first != NULL) {
     size_t chunk_size_step = 0;
-    const ChunkRef *cref = chunk_list_reference->chunk_refs.first;
+    const ChunkRef *cref = chunk_list_ref->chunk_refs.first;
     while (true) {
       Chunk *chunk = cref->link;
       chunk_size_step += chunk->data_len;
@@ -1049,10 +1045,8 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
 
   /* Fast-Path for end chunks
    * Check for trailing chunks. */
-
   /* In this case use 'chunk_list_ref_last' to define the last index
    * `index_match_last = -1`. */
-
   /* Warning, from now on don't use len(data) since we want to ignore chunks alrdy matched. */
   size_t data_len = data_len_original;
 #define data_len_original invalid_usage
@@ -1089,7 +1083,6 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
   /* Check for aligned chunks
    * This saves a lot of searching, so use simple heuristics to detect aligned arrays.
    * (may need to tweak exact method). */
-
   bool use_aligned = false;
 
 #ifdef USE_ALIGN_CHUNKS_TEST
@@ -1139,7 +1132,6 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
     /* Only create a table if we have at least one chunk to search
      * otherwise just make a new one.
      * Support re-arranged chunks. */
-
 #ifdef USE_HASH_TABLE_ACCUMULATE
     size_t i_table_start = i_prev;
     const size_t table_hash_array_len = (data_len - i_prev) / info->chunk_stride;
@@ -1164,7 +1156,7 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
     const size_t table_len = chunk_list_ref_remaining_len * BCHUNK_HASH_TABLE_MUL;
     TableRef **table = mem_calloc(table_len * sizeof(*table), __func__);
 
-    /* Table_make - inline
+    /* Table_make inline
      * include one matching chunk, to allow for repeating vals. */
     {
 #ifdef USE_HASH_TABLE_ACCUMULATE
@@ -1210,14 +1202,14 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
         );
         const uint key_index = (uint)(key % (hash_key)table_len);
         TableRef *tref_prev = table[key_index];
-        lib_assert(table_ref_stack_n < chunk_list_reference_remaining_len);
+        lib_assert(table_ref_stack_n < chunk_list_ref_remaining_len);
 #ifdef USE_HASH_TABLE_DEDUP
         bool is_dup = false;
         if (tref_prev) {
           const Chunk *chunk_a = cref->link;
           const TableRef *tref = tref_prev;
           do {
-            /* Not an error, it just isn't expected the links are ever shared. */
+            /* Not an err, it just isn't expected the links are ever shared. */
             lib_assert(tref->cref != cref);
             const Chunk *chunk_b = tref->cref->link;
 #  ifdef USE_HASH_TABLE_KEY_CACHE
@@ -1336,7 +1328,7 @@ static ChunkList *chunk_list_from_data_merge(const ArrayInfo *info,
       Chunk *chunk = cref->link;
       // lib_assert(chunk_data_compare(chunk, data, data_len, i_prev));
       i_prev += chunk->data_len;
-      /* Use simple since we assume the refs chunks have already been sized correctly. */
+      /* Use simple since we assume the refs chunks have alrdy been sized correctly. */
       chunk_list_append_only(bs_mem, chunk_list, chunk);
       ASSERT_CHUNKLIST_DATA(chunk_list, data);
       cref = cref->next;
@@ -1405,7 +1397,7 @@ ArrayStore *lib_array_store_create(uint stride, uint chunk_count)
   bs->mem.chunk_list = lib_mempool_create(sizeof(ChunkList), 0, 512, LIB_MEMPOOL_NOP);
   bs->mem.chunk_ref = lib_mempool_create(sizeof(ChunkRef), 0, 512, LIB_MEMPOOL_NOP);
   /* Allow iter to simplify freeing, otherwise its not needed
-   * (we could loop over all states as an alternative). */
+   * (we could loop over all states as an alt). */
   bs->mem.chunk = lib_mempool_create(sizeof(Chunk), 0, 512, LIB_MEMPOOL_ALLOW_ITER);
 
   lib_assert(bs->info.accum_read_ahead_bytes <= bs->info.chunk_byte_size);
@@ -1609,25 +1601,24 @@ bool lib_array_store_is_valid(ArrayStore *bs)
   }
 
   {
-    BLI_mempool_iter iter;
-    BChunk *chunk;
-    BLI_mempool_iternew(bs->memory.chunk, &iter);
-    while ((chunk = BLI_mempool_iterstep(&iter))) {
-      if (!(MEM_allocN_len(chunk->data) >= chunk->data_len)) {
+    lib_empool_iter iter;
+    Chunk *chunk;
+    lib_mempool_iternew(bs->mem.chunk, &iter);
+    while ((chunk = lib_mempool_iterstep(&iter))) {
+      if (!(mem_alloc_len(chunk->data) >= chunk->data_len)) {
         return false;
       }
     }
   }
 
-  /* Check User Count & Lost References
-   * ---------------------------------- */
+  /* Check User Count & Lost Ref */
   {
-    GHashIterator gh_iter;
+    GHashIter gh_iter;
 
 #define GHASH_PTR_ADD_USER(gh, pt) \
   { \
     void **val; \
-    if (BLI_ghash_ensure_p((gh), (pt), &val)) { \
+    if (lib_ghash_ensure_p((gh), (pt), &val)) { \
       *((int *)val) += 1; \
     } \
     else { \
@@ -1637,46 +1628,46 @@ bool lib_array_store_is_valid(ArrayStore *bs)
   ((void)0)
 
     /* Count chunk_list's. */
-    GHash *chunk_list_map = BLI_ghash_ptr_new(__func__);
-    GHash *chunk_map = BLI_ghash_ptr_new(__func__);
+    GHash *chunk_list_map = lib_ghash_ptr_new(__func__);
+    GHash *chunk_map = lib_ghash_ptr_new(__func__);
 
     int totrefs = 0;
-    LISTBASE_FOREACH (BArrayState *, state, &bs->states) {
+    LIST_FOREACH (ArrayState *, state, &bs->states) {
       GHASH_PTR_ADD_USER(chunk_list_map, state->chunk_list);
     }
     GHASH_ITER (gh_iter, chunk_list_map) {
-      const BChunkList *chunk_list = BLI_ghashIterator_getKey(&gh_iter);
-      const int users = POINTER_AS_INT(BLI_ghashIterator_getValue(&gh_iter));
+      const ChunkList *chunk_list = lib_ghashIter_getKey(&gh_iter);
+      const int users = PTR_AS_INT(lib_ghashIter_getVal(&gh_iter));
       if (!(chunk_list->users == users)) {
         ok = false;
         goto user_finally;
       }
     }
-    if (!(BLI_mempool_len(bs->memory.chunk_list) == (int)BLI_ghash_len(chunk_list_map))) {
+    if (!(lib_mempool_len(bs->mem.chunk_list) == (int)lib_ghash_len(chunk_list_map))) {
       ok = false;
       goto user_finally;
     }
 
     /* Count chunk's. */
     GHASH_ITER (gh_iter, chunk_list_map) {
-      const BChunkList *chunk_list = BLI_ghashIterator_getKey(&gh_iter);
-      LISTBASE_FOREACH (const BChunkRef *, cref, &chunk_list->chunk_refs) {
+      const ChunkList *chunk_list = lib_ghashIter_getKey(&gh_iter);
+      LIST_FOREACH (const ChunkRef *, cref, &chunk_list->chunk_refs) {
         GHASH_PTR_ADD_USER(chunk_map, cref->link);
         totrefs += 1;
       }
     }
-    if (!(BLI_mempool_len(bs->memory.chunk) == (int)BLI_ghash_len(chunk_map))) {
+    if (!(lib_mempool_len(bs->mem.chunk) == (int)lib_ghash_len(chunk_map))) {
       ok = false;
       goto user_finally;
     }
-    if (!(BLI_mempool_len(bs->memory.chunk_ref) == totrefs)) {
+    if (!(lib_mempool_len(bs->mem.chunk_ref) == totrefs)) {
       ok = false;
       goto user_finally;
     }
 
     GHASH_ITER (gh_iter, chunk_map) {
-      const BChunk *chunk = BLI_ghashIterator_getKey(&gh_iter);
-      const int users = POINTER_AS_INT(BLI_ghashIterator_getValue(&gh_iter));
+      const Chunk *chunk = lib_ghashIter_getKey(&gh_iter);
+      const int users = PTR_AS_INT(lib_ghashIter_getVal(&gh_iter));
       if (!(chunk->users == users)) {
         ok = false;
         goto user_finally;
@@ -1686,12 +1677,10 @@ bool lib_array_store_is_valid(ArrayStore *bs)
 #undef GHASH_PTR_ADD_USER
 
   user_finally:
-    BLI_ghash_free(chunk_list_map, NULL, NULL);
-    BLI_ghash_free(chunk_map, NULL, NULL);
+    lib_ghash_free(chunk_list_map, NULL, NULL);
+    lib_ghash_free(chunk_map, NULL, NULL);
   }
 
   return ok;
-  /* TODO: dangling pointer checks. */
+  /* TODO: dangling ptr checks. */
 }
-
-/** \} */
