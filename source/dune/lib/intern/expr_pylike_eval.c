@@ -42,17 +42,17 @@
 typedef enum eOpCode {
   /* Double constant: (-> dval). */
   OPCODE_CONST,
-  /* 1 argument function call: (a -> func1(a)). */
+  /* 1 argument fn call: (a -> func1(a)). */
   OPCODE_FN1,
-  /* 2 argument function call: (a b -> func2(a,b)). */
+  /* 2 argument fn call: (a b -> func2(a,b)). */
   OPCODE_FN2,
-  /* 3 argument function call: (a b c -> func3(a,b,c)). */
+  /* 3 argument fn call: (a b c -> func3(a,b,c)). */
   OPCODE_FN3,
   /* Parameter access: (-> params[ival]) */
   OPCODE_PARAM,
-  /* Minimum of multiple inputs: (a b c... -> min); ival = arg count. */
+  /* Min of multiple inputs: (a b c... -> min); ival = arg count. */
   OPCODE_MIN,
-  /* Maximum of multiple inputs: (a b c... -> max); ival = arg count. */
+  /* Max of multiple inputs: (a b c... -> max); ival = arg count. */
   OPCODE_MAX,
   /* Jump (pc += jmp_offset) */
   OPCODE_JMP,
@@ -79,9 +79,9 @@ typedef struct ExprOp {
     int ival;
     double dval;
     void *ptr;
-    UnaryOpFunc func1;
-    BinaryOpFunc func2;
-    TernaryOpFunc func3;
+    UnaryOpFn fn1;
+    BinaryOpFn fn2;
+    TernaryOpFn fn3;
   } arg;
 } ExprOp;
 
@@ -241,7 +241,7 @@ eExprPyLike_EvalStatus lib_expr_pylike_eval(ExprPyLike_Parsed *expr,
 
   *r_result = stack[0];
 
-  /* Detect floating point evaluation errors. */
+  /* Detect floating point eval errs. */
   int flags = fetestexcept(FE_DIVBYZERO | FE_INVALID);
   if (flags) {
     return (flags & FE_INVALID) ? EXPR_PYLIKE_MATH_ERROR : EXPR_PYLIKE_DIV_BY_ZERO;
@@ -475,7 +475,7 @@ static ExprOp *parse_alloc_ops(ExprParseState *state, int count)
   return op;
 }
 
-/* Add one operation and track stack usage. */
+/* Add one op and track stack usage. */
 static ExprOp *parse_add_op(ExprParseState *state, eOpCode code, int stack_delta)
 {
   /* track eval stack depth */
@@ -533,7 +533,7 @@ static bool parse_add_fn(ExprParseState *state, eOpCode code, int args, void *fn
       CHECK_ERROR(args == 1);
 
       if (jmp_gap >= 1 && prev_ops[-1].opcode == OPCODE_CONST) {
-        UnaryOpFn fn = funcptr;
+        UnaryOpFn fn = fnptr;
 
         /* volatile bc some compilers overly aggressive optimize this call out.
          * see D6012 for details. */
@@ -551,7 +551,7 @@ static bool parse_add_fn(ExprParseState *state, eOpCode code, int args, void *fn
 
       if (jmp_gap >= 2 && prev_ops[-2].opcode == OPCODE_CONST &&
           prev_ops[-1].opcode == OPCODE_CONST) {
-        BinaryOpFn fn = funcptr;
+        BinaryOpFn fn = fnptr;
 
         /* volatile bc some compilers overly aggressive optimize this call out.
          * see D6012 for details. */
@@ -667,7 +667,7 @@ static bool parse_next_token(ExprParseState *state)
     return true;
   }
 
-  /* Special characters (single character tokens) */
+  /* Special chars (single char tokens) */
   if (strchr(token_chars, *state->cur)) {
     state->token = *state->cur++;
     return true;
@@ -907,7 +907,7 @@ static bool parse_cmp(ExprParseState *state)
 
   BinaryOpFn fn = parse_get_cmp_fn(state->token);
 
-  if (func) {
+  if (fn) {
     CHECK_ERROR(parse_next_token(state) && parse_add(state));
 
     return parse_cmp_chain(state, fn);
@@ -1015,7 +1015,7 @@ ExprPyLike_Parsed *lib_expr_pylike_parse(const char *expression,
                                          const char **param_names,
                                          int param_names_len)
 {
-  /* Prepare the parser state. */
+  /* Prep the parser state. */
   ExprParseState state;
   memset(&state, 0, sizeof(state));
 
@@ -1045,11 +1045,11 @@ ExprPyLike_Parsed *lib_expr_pylike_parse(const char *expression,
   }
   else {
     /* Always return a non-NULL object so that parse failure can be cached. */
-    expr = MEM_callocN(sizeof(ExprPyLike_Parsed), "ExprPyLike_Parsed(empty)");
+    expr = mem_calloc(sizeof(ExprPyLike_Parsed), "ExprPyLike_Parsed(empty)");
   }
 
-  MEM_freeN(state.tokenbuf);
-  MEM_freeN(state.ops);
+  mem_free(state.tokenbuf);
+  mem_free(state.ops);
   return expr;
 }
 
