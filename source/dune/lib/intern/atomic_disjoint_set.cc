@@ -33,7 +33,7 @@ void AtomicDisjointSet::calc_reduced_ids(MutableSpan<int> result) const
 
   const int size = result.size();
 
-  /* Find the root for element. With multi-threading, this root is not deterministic. So
+  /* Find the root for elem. W multi-threading, this root is not deterministic. So
    * some postprocessing has to be done to make it deterministic. */
   threading::EnumerableThreadSpecific<Map<int, int>> first_occurrence_by_root_per_thread;
   threading::parallel_for(IndexRange(size), 1024, [&](const IndexRange range) {
@@ -45,14 +45,14 @@ void AtomicDisjointSet::calc_reduced_ids(MutableSpan<int> result) const
     }
   });
 
-  /* Build a map that contains the first element index that has a certain root. */
+  /* Build a map containing the 1st elem index that has a certain root. */
   Map<int, int> &combined_map = first_occurrence_by_root_per_thread.local();
   for (const Map<int, int> &other_map : first_occurrence_by_root_per_thread) {
     if (&combined_map == &other_map) {
       continue;
     }
     for (const auto item : other_map.items()) {
-      update_first_occurrence(combined_map, item.key, item.value);
+      update_first_occurrence(combined_map, item.key, item.val);
     }
   }
 
@@ -61,7 +61,7 @@ void AtomicDisjointSet::calc_reduced_ids(MutableSpan<int> result) const
     int first_occurrence;
   };
 
-  /* Sort roots by first occurrence. This removes the non-determinism above. */
+  /* Sort roots by 1at occurrence. This removes the non-determinism above. */
   Vector<RootOccurence, 16> root_occurrences;
   root_occurrences.reserve(combined_map.size());
   for (const auto item : combined_map.items()) {
@@ -102,5 +102,4 @@ int AtomicDisjointSet::count_sets() const
       },
       [](const int a, const int b) { return a + b; });
 }
-
 }  // namespace dune
