@@ -213,6 +213,6 @@ bool lib_astar_graph_solve(LibAStarGraph *as_graph,
     }
   }
 
-  BLI_heapsimple_free(todo_nodes, NULL);
+  lib_heapsimple_free(todo_nodes, NULL);
   return false;
 }
