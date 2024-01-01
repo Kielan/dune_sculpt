@@ -106,7 +106,7 @@ void lib_kdtree_nd_(insert)(KDTree *tree, int index, const float co[KD_DIMS])
 #endif
 
   /* Array isn't calloc'd,
-   * need to init all struct members */
+   * need to init all struct mems */
   node->left = node->right = KD_NODE_UNSET;
   copy_vn_vn(node->co, co);
   node->index = index;
@@ -303,7 +303,7 @@ int lib_kdtree_nd_(find_nearest)(const KDTree *tree,
   return min_node->index;
 }
 
-/* A version of lib_kdtree_3d_find_nearest which runs a callback
+/* A v. of lib_kdtree_3d_find_nearest which runs a cb
  * to filter out vals.
  * param filter_cb: Filter find results,
  * Return codes: (1: accept, 0: skip, -1: immediate exit). */
@@ -440,8 +440,8 @@ static void nearest_ordered_insert(KDTreeNearest *nearest,
   copy_vn_vn(nearest[i].co, co);
 }
 
-/* Find nearest_len_capacity nearest returns number of points found, with results in nearest.
- * param r_nearest: An array of nearest, sized at least nearest_len_capacity. */
+/* Find nearest_len_capacity nearest returns num of points found, w results in nearest.
+ * param r_nearest: An arr of nearest, sized at least nearest_len_capacity. */
 int lib_kdtree_nd_(find_nearest_n_with_len_squared_cb)(
     const KDTree *tree,
     const float co[KD_DIMS],
