@@ -30,7 +30,7 @@ typedef struct AKey {
 
 typedef struct Argument {
   AKey *key;
-  BAArgCb fn;
+  AArgCb fn;
   void *data;
   ArgDoc *doc;
 } Argument;
@@ -45,7 +45,7 @@ struct Args {
   ArgPrintFn print_fn;
   void *print_user_data;
 
-  /* Only use when initi arguments. */
+  /* Only use when initing args. */
   int current_pass;
 };
 
@@ -92,7 +92,7 @@ static Argument *lookUp(Args *ba, const char *arg, int pass, int case_str)
   return lib_ghash_lookup(ba->items, &key);
 }
 
-/* Default print function. */
+/* Default print fn. */
 ATTR_PRINTF_FORMAT(2, 0)
 static void args_print_wrapper(void *UNUSED(user_data), const char *format, va_list args)
 {
@@ -108,7 +108,7 @@ bArgs *lib_args_create(int argc, const char **argv)
   ba->argc = argc;
   ba->argv = argv;
 
-  /* Must be init by #BLI_args_pass_set. */
+  /* Must be init by lib_args_pass_set. */
   ba->current_pass = 0;
 
   lib_args_print_fn_set(ba, args_print_wrapper, NULL);
@@ -195,8 +195,8 @@ static void internalAdd(
            a->key->case_str == 1 ? "not " : "");
   }
 
-  a = mem_calloc(sizeof(Argument), "bArgument");
-  key = mem_calloc(sizeof(AKey), "bAKey");
+  a = mem_calloc(sizeof(Arg), "Arg");
+  key = mem_calloc(sizeof(AKey), "AKey");
 
   key->arg = arg;
   key->pass = pass;
@@ -216,7 +216,7 @@ void lib_args_add_case(Args *ba,
                        const char *long_arg,
                        int long_case,
                        const char *doc,
-                       BAArgCb cb,
+                       AArgCb cb,
                        void *data)
 {
   ArgDoc *d = internalDocs(ba, short_arg, long_arg, doc);
@@ -240,24 +240,24 @@ void lib_args_add(Args *ba,
   lib_args_add_case(ba, short_arg, 0, long_arg, 0, doc, cb, data);
 }
 
-static void internalDocPrint(bArgs *ba, bArgDoc *d)
+static void internalDocPrint(Args *args, ArgDoc *d)
 {
   if (d->short_arg && d->long_arg) {
-    lib_args_printf(ba, "%s or %s", d->short_arg, d->long_arg);
+    lib_args_printf(args, "%s or %s", d->short_arg, d->long_arg);
   }
   else if (d->short_arg) {
-    lib_args_printf(ba, "%s", d->short_arg);
+    lib_args_printf(args, "%s", d->short_arg);
   }
   else if (d->long_arg) {
-    lib_args_printf(ba, "%s", d->long_arg);
+    lib_args_printf(args, "%s", d->long_arg);
   }
 
-  lib_args_printf(ba, " %s\n\n", d->documentation);
+  lib_args_printf(args, " %s\n\n", d->documentation);
 }
 
-void lib_args_print_arg_doc(Args *ba, const char *arg)
+void lib_args_print_arg_doc(Args *args, const char *arg)
 {
-  Argument *a = lookUp(ba, arg, -1, -1);
+  Argument *a = lookUp(args, arg, -1, -1);
 
   if (a) {
     ArgDoc *d = a->doc;
@@ -268,20 +268,20 @@ void lib_args_print_arg_doc(Args *ba, const char *arg)
   }
 }
 
-void lib_args_print_other_doc(Args *ba)
+void lib_args_print_other_doc(Args *args)
 {
   ArgDoc *d;
 
-  for (d = ba->docs.first; d; d = d->next) {
+  for (d = args->docs.first; d; d = d->next) {
     if (d->done == 0) {
-      internalDocPrint(ba, d);
+      internalDocPrint(args, d);
     }
   }
 }
 
-bool lib_args_has_other_doc(const Args *ba)
+bool lib_args_has_other_doc(const Args *args)
 {
-  for (const ArgDoc *d = ba->docs.first; d; d = d->next) {
+  for (const ArgDoc *d = args->docs.first; d; d = d->next) {
     if (d->done == 0) {
       return true;
     }
@@ -289,16 +289,16 @@ bool lib_args_has_other_doc(const Args *ba)
   return false;
 }
 
-void lib_args_parse(Args *ba, int pass, BA_ArgCallback default_cb, void *default_data)
+void lib_args_parse(Args *args, int pass, A_ArgCb default_cb, void *default_data)
 {
   lib_assert((pass != 0) && (pass >= -1));
   int i = 0;
 
-  for (i = 1; i < ba->argc; i++) { /* skip argv[0] */
-    if (ba->passes[i] == 0) {
-      /* -1 signal what side of the comparison it is */
-      Arg *a = lookUp(ba, ba->argv[i], pass, -1);
-      BAArgCb fn = NULL;
+  for (i = 1; i < args->argc; i++) { /* skip argv[0] */
+    if (args->passes[i] == 0) {
+      /* -1 signal what side of the cmp it is */
+      Arg *a = lookUp(args, args->argv[i], pass, -1);
+      AArgCb fn = NULL;
       void *data = NULL;
 
       if (a) {
@@ -306,26 +306,26 @@ void lib_args_parse(Args *ba, int pass, BA_ArgCallback default_cb, void *default
         data = a->data;
       }
       else {
-        func = default_cb;
+        fn = default_cb;
         data = default_data;
       }
 
-      if (func) {
-        int retval = fn(ba->argc - i, ba->argv + i, data);
+      if (fn) {
+        int retval = fn(args->argc - i, args->argv + i, data);
 
         if (retval >= 0) {
           int j;
 
-          /* use extra arguments */
+          /* use extra args */
           for (j = 0; j <= retval; j++) {
-            ba->passes[i + j] = pass;
+            args->passes[i + j] = pass;
           }
           i += retval;
         }
         else if (retval == -1) {
           if (a) {
             if (a->key->pass != -1) {
-              ba->passes[i] = pass;
+              args->passes[i] = pass;
             }
           }
           break;
