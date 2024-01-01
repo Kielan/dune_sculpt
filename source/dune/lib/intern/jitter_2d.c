@@ -1,5 +1,4 @@
 /* Jitter offset table */
-
 #include "mem_guardedalloc.h"
 #include <math.h>
 #include <string.h>
@@ -9,7 +8,7 @@
 
 #include "lib_strict_flags.h"
 
-void lib_jitterate1(float (*jit1)[2], float (*jit2)[2], int num, float radius1)
+void lib_jitter1(float (*jit1)[2], float (*jit2)[2], int num, float radius1)
 {
   int i, j, k;
   float vecx, vecy, dvecx, dvecy, x, y, len;
@@ -67,7 +66,7 @@ void lib_jitterate1(float (*jit1)[2], float (*jit2)[2], int num, float radius1)
   memcpy(jit1, jit2, 2 * (uint)num * sizeof(float));
 }
 
-void lib_jitterate2(float (*jit1)[2], float (*jit2)[2], int num, float radius2)
+void lib_jitter2(float (*jit1)[2], float (*jit2)[2], int num, float radius2)
 {
   int i, j;
   float vecx, vecy, dvecx, dvecy, x, y;
@@ -150,9 +149,9 @@ void lib_jitter_init(float (*jitarr)[2], int num)
   lib_rng_free(rng);
 
   for (i = 0; i < 24; i++) {
-    lib_jitterate1(jitarr, jit2, num, rad1);
-    lib_jitterate1(jitarr, jit2, num, rad1);
-    lib_jitterate2(jitarr, jit2, num, rad2);
+    lib_jitter1(jitarr, jit2, num, rad1);
+    lib_jitter1(jitarr, jit2, num, rad1);
+    lib_jitter2(jitarr, jit2, num, rad2);
   }
 
   mem_free(jit2);
