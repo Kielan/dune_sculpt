@@ -4,13 +4,13 @@
 
 namespace dune::lazy_threading {
 
-/* This uses a "raw" stack and vector so that it can be destructed after Blender checks for memory
- * leaks. A new list of receivers is created whenever an isolated region is entered to avoid
+/* This uses a "raw" stack and vector so that it can be destructed after Dune checks for mem
+ * leaks. A new list of receivers is created whenever an isolated rgn is entered to avoid
  * deadlocks. */
 using HintReceivers = RawStack<RawVector<FnRef<void()>, 0>, 0>;
 static thread_local HintReceivers hint_receivers = []() {
   HintReceivers receivers;
-  /* Make sure there is always at least one vector. */
+  /* Make sure there is always at least 1 vector. */
   receivers.push_as();
   return receivers;
 }();
