@@ -83,22 +83,21 @@ void *resize_trivial_array_impl(void *old_data,
     if (auto *info = const_cast<MEMFreeImplicitSharing *>(
             dynamic_cast<const MEMFreeImplicitSharing *>(*sharing_info)))
     {
-      /* If the array was allocated with the MEM allocator, we can use realloc directly, which
+      /* If the array was alloc w the mem allocator, can use realloc directly, which
        * could theoretically give better performance if the data can be reused in place. */
-      void *new_data = static_cast<int *>(MEM_reallocN(old_data, new_size));
+      void *new_data = static_cast<int *>(mem_realloc(old_data, new_size));
       info->data = new_data;
       (*sharing_info)->tag_ensured_mutable();
       return new_data;
     }
   }
 
-  void *new_data = MEM_mallocN_aligned(new_size, alignment, __func__);
+  void *new_data = mem_malloc_aligned(new_size, alignment, __func__);
   memcpy(new_data, old_data, std::min(old_size, new_size));
-  (*sharing_info)->remove_user_and_delete_if_last();
+  (*sharing_info)->remove_user_and_del_if_last();
   *sharing_info = info_for_mem_free(new_data);
   return new_data;
 }
 
 }  // namespace detail
-
-}  // namespace blender::implicit_sharing
+}  // namespace dune::implicit_sharing
