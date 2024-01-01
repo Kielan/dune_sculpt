@@ -23,7 +23,6 @@ uint lib_ghashutil_ptrhash(const void *key)
 uint lib_ghashutil_ptrhash(const void *key)
 {
   /* Based Python3.7's ptr hashing fn. */
-
   size_t y = (size_t)key;
   /* bottom 3 or 4 bits are likely to be 0; rotate y by 4 to avoid
    * excessive hash collisions for dictionaries and sets */
@@ -219,7 +218,7 @@ GSet *lib_gset_ptr_new(const char *info)
 
 GSet *lib_gset_str_new_ex(const char *info, const uint nentries_reserve)
 {
-  return lib_gset_new_ex(BLI_ghashutil_strhash_p, BLI_ghashutil_strcmp, info, nentries_reserve);
+  return lib_gset_new_ex(lib_ghashutil_strhash_p, BLI_ghashutil_strcmp, info, nentries_reserve);
 }
 GSet *lib_gset_str_new(const char *info)
 {
@@ -228,20 +227,18 @@ GSet *lib_gset_str_new(const char *info)
 
 GSet *lib_gset_pair_new_ex(const char *info, const uint nentries_reserve)
 {
-  return lib_gset_new_ex(BLI_ghashutil_pairhash, BLI_ghashutil_paircmp, info, nentries_reserve);
+  return lib_gset_new_ex(lib_ghashutil_pairhash, BLI_ghashutil_paircmp, info, nentries_reserve);
 }
 GSet *lib_gset_pair_new(const char *info)
 {
-  return BLI_gset_pair_new_ex(info, 0);
+  return lib_gset_pair_new_ex(info, 0);
 }
 
-GSet *BLI_gset_int_new_ex(const char *info, const uint nentries_reserve)
+GSet *lib_gset_int_new_ex(const char *info, const uint nentries_reserve)
 {
-  return BLI_gset_new_ex(BLI_ghashutil_inthash_p, BLI_ghashutil_intcmp, info, nentries_reserve);
+  return lib_gset_new_ex(lib_ghashutil_inthash_p, BLI_ghashutil_intcmp, info, nentries_reserve);
 }
-GSet *BLI_gset_int_new(const char *info)
+GSet *lib_gset_int_new(const char *info)
 {
-  return BLI_gset_int_new_ex(info, 0);
+  return lib_gset_int_new_ex(info, 0);
 }
-
-/** \} */
