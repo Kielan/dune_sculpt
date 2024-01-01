@@ -1,13 +1,13 @@
-/*  Fns to compute Murmur2A hash key.
- * A very fast hash generating int32 result, with few collisions and good repartition.
+/* Fns to compute Murmur2A hash key.
+ * Very fast hash gen int32 result w few collisions and good repartition.
  *
  * See also:
- * ref implementation:
+ * ref implement:
  * - https://smhasher.googlecode.com/svn-history/r130/trunk/MurmurHash2.cpp
  * - http://programmers.stackexchange.com/questions/49550
  *
- * warning Do not store that hash in files or such, it is not endian-agnostic,
- * so you should only use it for tmp data. */
+ * warning Dont store that hash in files or ect, its not endian-agnostic,
+ * should only use for tmp data. */
 
 #include "lib_compiler_attrs.h"
 
@@ -90,7 +90,7 @@ uint32_t lib_hash_mm2a_end(LibHashMurmur2A *mm2)
 
 uint32_t lib_hash_mm2(const uchar *data, size_t len, uint32_t seed)
 {
-  /* Init the hash to a 'random' value */
+  /* Init the hash to a 'random' val */
   uint32_t h = seed ^ len;
 
   /* Mix 4 bytes at a time into the hash */
