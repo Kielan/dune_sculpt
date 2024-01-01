@@ -89,9 +89,9 @@ int64_t lib_read(int fd, void *buf, size_t nbytes)
   /* Define our own read as `read` is not guaranteed to read the num of bytes requested.
    * This happens rarely but was observed with larger than 2GB files on Linux, see: #113473.
    *
-   * Even though this is a loop, the most common code-path will exit with "Success" case.
+   * Though this is a loop, the most common code-path will exit with "Success" case.
    * In the case where read more data than the file contains, it will loop twice,
-   * exiting on EOF with the second iter. */
+   * exiting on EOF on the second iter. */
   int64_t nbytes_read_total = 0;
   while (true) {
     int64_t nbytes_read = read(fd,
@@ -166,8 +166,8 @@ size_t lib_file_zstd_from_mem_at_pos(
 {
   fseek(file, file_offset, SEEK_SET);
 
-  ZSTD_CCxt *ctx = ZSTD_createCCxt();
-  ZSTD_CCxt_setParam(ctx, ZSTD_c_compressionLevel, compression_level);
+  ZSTD_CCxt *cxt = ZSTD_createCCxt();
+  ZSTD_CCxt_setParam(cxt, ZSTD_c_compressionLevel, compression_level);
 
   ZSTD_inBuf input = {buf, len, 0};
 
@@ -178,7 +178,7 @@ size_t lib_file_zstd_from_mem_at_pos(
   /* Compress block and write it out until the input has been consumed. */
   while (input.pos < input.size) {
     ZSTD_outBuf output = {out_buf, out_len, 0};
-    size_t ret = ZSTD_compressStream2(ctx, &output, &input, ZSTD_e_continue);
+    size_t ret = ZSTD_compressStream2(cxt, &output, &input, ZSTD_e_continue);
     if (ZSTD_isError(ret)) {
       break;
     }
@@ -255,7 +255,7 @@ bool lib_file_magic_is_gzip(const char header[4])
 bool lib_file_magic_is_zstd(const char header[4])
 {
   /* ZSTD files consist of concatenated frames, each either a ZSTD frame or a skippable frame.
-   * Both types of frames start with a magic number: `0xFD2FB528` for ZSTD frames and `0x184D2A5`
+   * Both types of frames start w a magic num: `0xFD2FB528` for ZSTD frames and `0x184D2A5`
    * for skippable frames, with the * being anything from 0 to F.
    *
    * To check whether a file is ZSTD-compressed, we just check whether the first frame matches
@@ -316,7 +316,7 @@ bool lib_file_touch(const char *filepath)
       f = lib_fopen(filepath, "w+b");
     }
     else {
-      /* Otherwise, rewrite first byte. */
+      /* else rewrite 1st byte. */
       rewind(f);
       putc(c, f);
     }
@@ -431,14 +431,14 @@ int lib_rename(const char *from, const char *to)
     return 1;
   }
 
-  /* NOTE(@ideasman42): there are no checks that `from` & `to` *aren't* the same file.
+  /* NOTE: there are no checks that `from` & `to` *aren't* the same file.
    * It's up to the caller to ensure this. In practice these paths are often generated
-   * and known to be different rather than arbitrary user input.
-   * In the case of arbitrary paths (renaming a file in the file-selector for example),
+   * and known to be diff rather than arbitrary user input.
+   * In the case of arbitrary paths (renaming a file in the file-sel for example),
    * the caller must ensure file renaming doesn't cause user data loss.
    *
    * Support for checking the files aren't the same could be added, however path comparison
-   * alone is *not* a guarantee the files are different (given the possibility of accessing
+   * alone is *not* a guarantee the files are diff (given the possibility of accessing
    * the same file through different paths via symbolic-links), we could instead support a
    * version of Python's `os.path.samefile(..)` which compares the I-node & device.
    * In this particular case we would not want to follow symbolic-links as well.
@@ -446,16 +446,16 @@ int lib_rename(const char *from, const char *to)
    * Noting it as a potential improvement. */
 
   /* To avoid the concurrency 'time of check/time of use' (TOC/TOU) issue, this code attempts
-   * to use available solutions for an 'atomic' (file-system wise) rename operation, instead of
-   * first checking for an existing `to` target path, and then doing the rename operation if it
+   * to use available solutions for an 'atomic' (file-sys wise) rename op, instead of
+   * 1st checking for an existing `to` target path, and then doing the rename op if it
    * does not exists at the time of check.
    *
    * Windows (through `MoveFileExW`) by default does not allow replacing an existing path. It is
    * however not clear whether its API is exposed to the TOC/TOU issue or not.
    *
-   * On Linux or OSX, to keep operations atomic, special non-standardized variants of `rename` must
-   * be used, depending on the OS. Note that there may also be failure due to file system not
-   * supporting this operation, although in practice this should not be a problem in modern
+   * On Linux or OSX, to keep ops atomic, special non-standardized variants of `rename` must
+   * be used, depending on the OS. There may also be failure due to file sys not
+   * supporting this op, in practice this should not be a problem in modern
    * systems.
    *   - https://man7.org/linux/man-pages/man2/rename.2.html
    *   - https://www.unix.com/man-page/mojave/2/renameatx_np/
@@ -582,8 +582,8 @@ int lib_access(const char *filepath, int mode)
 
 static bool del_soft(const wchar_t *path_16, const char **err_msg)
 {
-  /* Dels file or directory to recycling bin. The latter moves all contained files and
-   * directories recursively to the recycling bin as well. */
+  /* Dels file or dir to recycling bin. The latter moves all contained files and
+   * dirs recursively to the recycling bin as well. */
   IFileOp *pfo;
   IShellItem *psi;
 
@@ -591,7 +591,7 @@ static bool del_soft(const wchar_t *path_16, const char **err_msg)
 
   if (SUCCEEDED(hr)) {
     /* This is also the case when COM was prev init and CoInitEx returns
-     * S_FALSE, which is not an error. Both HRESULT vals S_OK and S_FALSE indicate success. */
+     * S_FALSE, which is not an err. Both HRESULT vals S_OK and S_FALSE indicate success. */
 
     hr = CoCreateInstance(
         CLSID_FileOp, NULL, CLSCXT_ALL, IID_IFileOp, (void **)&pfo);
@@ -617,7 +617,7 @@ static bool del_soft(const wchar_t *path_16, const char **err_msg)
             }
           }
           else {
-            *err_msg = "Failed to prepare del op";
+            *err_msg = "Failed to prep del op";
           }
           psi->Release();
         }
@@ -722,7 +722,7 @@ int lib_del(const char *path, bool dir, bool recursive)
   return err;
 }
 
-/* Moves the files or directories to the recycling bin. */
+/* Moves the files or dirs to the recycling bin. */
 int lib_del_soft(const char *file, const char **err_msg)
 {
   int err;
@@ -741,7 +741,7 @@ int lib_del_soft(const char *file, const char **err_msg)
 /* MS-Windows doesn't support moving to a directory, it has to be
  * `mv filepath filepath` and not `mv filepath destination_directory` (same for copying).
  *
- * So when `path_dst` ends with as slash:
+ * When `path_dst` ends w as slash:
  * ensure the filename component of `path_src` is added to a copy of `path_dst`. */
 static const char *path_destination_ensure_filename(const char *path_src,
                                                     const char *path_dst,
@@ -908,7 +908,7 @@ static int recursive_op(const char *startfrom,
     }
 
     if (!S_ISDIR(st.st_mode)) {
-      /* source isn't a directory, can't do recursive walking for it,
+      /* src isn't a dir, can't do recursive walking for it,
        * so just call file cb and leave */
       if (cb_file != nullptr) {
         ret = cb_file(from, to);
@@ -922,7 +922,7 @@ static int recursive_op(const char *startfrom,
 
     dirlist_num = scandir(startfrom, &dirlist, nullptr, alphasort);
     if (dirlist_num < 0) {
-      /* error opening directory for listing */
+      /* err opening directory for listing */
       perror("scandir");
       ret = -1;
       break;
@@ -1032,7 +1032,7 @@ static int del_single_file(const char *from, const char * /*to*/)
   if (unlink(from)) {
     perror("unlink");
 
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   return RecursiveOpCb_OK;
@@ -1213,8 +1213,8 @@ static int set_permissions(const char *file, const struct stat *st)
   return 0;
 }
 
-/* pre-recursive cb for copying operation
- * creates a destination directory where all source content fill be copied to */
+/* pre-recursive cb for copying op
+ * creates a destination dir where all src content fill be copied to */
 static int copy_cb_pre(const char *from, const char *to)
 {
   struct stat st;
@@ -1229,10 +1229,10 @@ static int copy_cb_pre(const char *from, const char *to)
     return RecursiveOpCb_Err;
   }
 
-  /* create a directory */
+  /* create a dir */
   if (mkdir(to, st.st_mode)) {
     perror("mkdir");
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   /* set proper owner and group on new directory */
@@ -1253,12 +1253,12 @@ static int copy_single_file(const char *from, const char *to)
 
   if (check_the_same(from, to)) {
     fprintf(stderr, "%s: '%s' is the same as '%s'\n", __func__, from, to);
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   if (lstat(from, &st)) {
     perror("lstat");
-    return RecursiveOpCb_Error;
+    return RecursiveOpCb_Err;
   }
 
   if (S_ISLNK(st.st_mode)) {
@@ -1309,11 +1309,11 @@ static int copy_single_file(const char *from, const char *to)
     /* copy special type of file */
     if (mknod(to, st.st_mode, st.st_rdev)) {
       perror("mknod");
-      return RecursiveOpCb_Error;
+      return RecursiveOpCb_Err;
     }
 
     if (set_permissions(to, &st)) {
-      return RecursiveOpCb_Error;
+      return RecursiveOpCb_Err;
     }
 
     return RecursiveOpCb_OK;
