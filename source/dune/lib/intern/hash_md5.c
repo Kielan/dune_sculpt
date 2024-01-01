@@ -252,7 +252,7 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
   char buf[BLOCKSIZE + 72];
   size_t pad, sum;
 
-  /* Init the computeo cxt. */
+  /* Init the compute cxt. */
   md5_init_cxt(&cxt);
 
   len[0] = 0;
