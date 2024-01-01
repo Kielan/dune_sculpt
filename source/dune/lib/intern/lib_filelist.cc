@@ -12,7 +12,7 @@
 #include <time.h>
 
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#  include "lib_winstuff.h"
 #  include "utfconv.hh"
 #  include <direct.h>
 #  include <io.h>
@@ -23,28 +23,25 @@
 #endif
 
 /* lib includes */
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_listBase.h"
+#include "types_list.h"
 
-#include "BLI_fileops.h"
-#include "BLI_fileops_types.h"
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.hh"
+#include "lib_fileops.h"
+#include "lib_fileops_types.h"
+#include "lib_list.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_string_utils.hh"
 
-#include "../imbuf/IMB_imbuf.h"
+#include "../imbuf/imbuf.h"
 
-/*
- * Ordering function for sorting lists of files/directories. Returns -1 if
- * entry1 belongs before entry2, 0 if they are equal, 1 if they should be swapped.
- */
+/* Ordering fn for sorting lists of files/dirs. Returns -1 if
+ * entry1 belongs before entry2, 0 if they are equal, 1 if they should be swapped. */
 static int direntry_cmp(direntry *entry1, direntry *entry2)
 {
   /* type is equal to stat.st_mode */
-
-  /* directories come before non-directories */
+  /* dirs come before non-dirs */
   if (S_ISDIR(entry1->type)) {
     if (S_ISDIR(entry2->type) == 0) {
       return -1;
@@ -66,7 +63,7 @@ static int direntry_cmp(direntry *entry1, direntry *entry2)
       return 1;
     }
   }
-  /* arbitrary, but consistent, ordering of different types of non-regular files */
+  /* arbitrary, but consistent, ordering of diff types of non-regular files */
   if ((entry1->type & S_IFMT) < (entry2->type & S_IFMT)) {
     return -1;
   }
@@ -74,8 +71,8 @@ static int direntry_cmp(direntry *entry1, direntry *entry2)
     return 1;
   }
 
-  /* OK, now we know their S_IFMT fields are the same, go on to a name comparison */
-  /* make sure "." and ".." are always first */
+  /* Now known the S_IFMT fields are same, go on to a name comparison */
+  /* ensure "." and ".." 1st always */
   if (FILENAME_IS_CURRENT(entry1->relname)) {
     return -1;
   }
@@ -89,17 +86,15 @@ static int direntry_cmp(direntry *entry1, direntry *entry2)
     return 1;
   }
 
-  return BLI_strcasecmp_natural(entry1->relname, entry2->relname);
+  return lib_strcasecmp_natural(entry1->relname, entry2->relname);
 }
 
-struct BuildDirCtx {
+struct BuildDirCxt {
   direntry *files; /* array[files_num] */
   int files_num;
 };
 
-/**
- * Scans the directory named *dirname and appends entries for its contents to files.
- */
+/* Scans dir named *dirname and appends entries for its contents to files. */
 static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
 {
   DIR *dir = opendir(dirname);
@@ -111,17 +106,17 @@ static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
     return;
   }
 
-  ListBase dirbase = {nullptr, nullptr};
+  List dirbase = {nullptr, nullptr};
   int newnum = 0;
   const dirent *fname;
   bool has_current = false, has_parent = false;
 
   char dirname_with_slash[FILE_MAXDIR + 1];
-  size_t dirname_with_slash_len = BLI_strncpy_rlen(
+  size_t dirname_with_slash_len = lib_strncpy_rlen(
       dirname_with_slash, dirname, sizeof(dirname_with_slash) - 1);
 
   if ((dirname_with_slash_len > 0) &&
-      (BLI_path_slash_is_native_compat(dirname[dirname_with_slash_len - 1]) == false))
+      (lib_path_slash_is_native_compat(dirname[dirname_with_slash_len - 1]) == false))
   {
     dirname_with_slash[dirname_with_slash_len++] = SEP;
     dirname_with_slash[dirname_with_slash_len] = '\0';
@@ -130,14 +125,14 @@ static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
   while ((fname = readdir(dir)) != nullptr) {
     dirlink *const dlink = (dirlink *)malloc(sizeof(dirlink));
     if (dlink != nullptr) {
-      dlink->name = BLI_strdup(fname->d_name);
+      dlink->name = lib_strdup(fname->d_name);
       if (FILENAME_IS_PARENT(dlink->name)) {
         has_parent = true;
       }
       else if (FILENAME_IS_CURRENT(dlink->name)) {
         has_current = true;
       }
-      BLI_addhead(&dirbase, dlink);
+      lib_addhead(&dirbase, dlink);
       newnum++;
     }
   }
@@ -146,11 +141,11 @@ static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
     char pardir[FILE_MAXDIR];
 
     STRNCPY(pardir, dirname);
-    if (BLI_path_parent_dir(pardir) && (BLI_access(pardir, R_OK) == 0)) {
+    if (lib_path_parent_dir(pardir) && (lib_access(pardir, R_OK) == 0)) {
       dirlink *const dlink = (dirlink *)malloc(sizeof(dirlink));
       if (dlink != nullptr) {
-        dlink->name = BLI_strdup(FILENAME_PARENT);
-        BLI_addhead(&dirbase, dlink);
+        dlink->name = lib_strdup(FILENAME_PARENT);
+        lib_addhead(&dirbase, dlink);
         newnum++;
       }
     }
@@ -158,46 +153,46 @@ static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
   if (!has_current) {
     dirlink *const dlink = (dirlink *)malloc(sizeof(dirlink));
     if (dlink != nullptr) {
-      dlink->name = BLI_strdup(FILENAME_CURRENT);
-      BLI_addhead(&dirbase, dlink);
+      dlink->name = lib_strdup(FILENAME_CURRENT);
+      lib_addhead(&dirbase, dlink);
       newnum++;
     }
   }
 
   if (newnum) {
-    if (dir_ctx->files) {
-      void *const tmp = MEM_reallocN(dir_ctx->files,
-                                     (dir_ctx->files_num + newnum) * sizeof(direntry));
+    if (dir_cxt->files) {
+      void *const tmp = mem_realloc(dir_cxt->files,
+                                     (dir_cxt->files_num + newnum) * sizeof(direntry));
       if (tmp) {
-        dir_ctx->files = (direntry *)tmp;
+        dir_cxt->files = (direntry *)tmp;
       }
-      else { /* Reallocation may fail. */
-        MEM_freeN(dir_ctx->files);
+      else { /* Realloc may fail. */
+        mem_free(dir_cxt->files);
         dir_ctx->files = nullptr;
       }
     }
 
-    if (dir_ctx->files == nullptr) {
-      dir_ctx->files = (direntry *)MEM_mallocN(newnum * sizeof(direntry), __func__);
+    if (dir_cxt->files == nullptr) {
+      dir_cxt->files = (direntry *)mem_malloc(newnum * sizeof(direntry), __func__);
     }
 
-    if (UNLIKELY(dir_ctx->files == nullptr)) {
-      fprintf(stderr, "Couldn't get memory for dir: %s\n", dirname);
-      dir_ctx->files_num = 0;
+    if (UNLIKELY(dir_cxt->files == nullptr)) {
+      fprintf(stderr, "Couldn't get mem for dir: %s\n", dirname);
+      dir_cxt->files_num = 0;
     }
     else {
       dirlink *dlink = (dirlink *)dirbase.first;
-      direntry *file = &dir_ctx->files[dir_ctx->files_num];
+      direntry *file = &dir_cxt->files[dir_cxt->files_num];
 
       while (dlink) {
         memset(file, 0, sizeof(direntry));
         file->relname = dlink->name;
-        file->path = BLI_string_joinN(dirname_with_slash, dlink->name);
-        if (BLI_stat(file->path, &file->s) != -1) {
+        file->path = lib_string_joinN(dirname_with_slash, dlink->name);
+        if (lib_stat(file->path, &file->s) != -1) {
           file->type = file->s.st_mode;
         }
         else if (FILENAME_IS_CURRPAR(file->relname)) {
-          /* Unfortunately a hack around UNC paths on WIN32,
+          /* Unfortunate a hack around UNC paths on WIN32,
            * which does not support `stat` on `\\SERVER\foo\..`. */
           file->type |= S_IFDIR;
         }
@@ -206,56 +201,54 @@ static void bli_builddir(BuildDirCtx *dir_ctx, const char *dirname)
         dlink = dlink->next;
       }
 
-      qsort(dir_ctx->files,
-            dir_ctx->files_num,
+      qsort(dir_cxt->files,
+            dir_cxt->files_num,
             sizeof(direntry),
             (int (*)(const void *, const void *))direntry_cmp);
     }
 
-    BLI_freelist(&dirbase);
+    lib_freelist(&dirbase);
   }
 
   closedir(dir);
 }
 
-uint BLI_filelist_dir_contents(const char *dirname, direntry **r_filelist)
+uint lib_filelist_dir_contents(const char *dirname, direntry **r_filelist)
 {
-  BuildDirCtx dir_ctx;
+  BuildDirCxt dir_cxt;
 
-  dir_ctx.files_num = 0;
-  dir_ctx.files = nullptr;
+  dir_cxt.files_num = 0;
+  dir_cxt.files = nullptr;
 
-  bli_builddir(&dir_ctx, dirname);
+  bli_builddir(&dir_cxt, dirname);
 
-  if (dir_ctx.files) {
-    *r_filelist = dir_ctx.files;
+  if (dir_cxt.files) {
+    *r_filelist = dir_cxt.files;
   }
   else {
-    /* Keep Blender happy. Blender stores this in a variable
+    /* Keep Dune happy. Dune stores this in a var
      * where 0 has special meaning..... */
-    *r_filelist = static_cast<direntry *>(MEM_mallocN(sizeof(**r_filelist), __func__));
+    *r_filelist = static_cast<direntry *>(mem_malloc(sizeof(**r_filelist), __func__));
   }
 
-  return dir_ctx.files_num;
+  return dir_cxt.files_num;
 }
 
-void BLI_filelist_entry_size_to_string(const struct stat *st,
+void lib_filelist_entry_size_to_string(const struct stat *st,
                                        const uint64_t st_size_fallback,
                                        const bool compact,
                                        char r_size[FILELIST_DIRENTRY_SIZE_LEN])
 {
-  /*
-   * Seems st_size is signed 32-bit value in *nix and Windows.  This
-   * will buy us some time until files get bigger than 4GB or until
-   * everyone starts using __USE_FILE_OFFSET64 or equivalent.
-   */
+  /* Seems st_size is signed 32-bit val in *nix and Windows.  This
+   * will buy sime time time until files get bigger than 4GB or until
+   * everyone starts using __USE_FILE_OFFSET64 or equiv. */
   double size = double(st ? st->st_size : st_size_fallback);
 #ifdef WIN32
   if (compact) {
-    BLI_str_format_byte_unit_compact(r_size, size, false);
+    lib_str_format_byte_unit_compact(r_size, size, false);
   }
   else {
-    BLI_str_format_byte_unit(r_size, size, false);
+    lib_str_format_byte_unit(r_size, size, false);
   }
 #else
   if (compact) {
@@ -334,7 +327,7 @@ void lib_filelist_entry_owner_to_string(const struct stat *st,
 #endif
 }
 
-void BLI_filelist_entry_datetime_to_string(const struct stat *st,
+void lib_filelist_entry_datetime_to_string(const struct stat *st,
                                            const int64_t ts,
                                            const bool compact,
                                            char r_time[FILELIST_DIRENTRY_TIME_LEN],
@@ -348,7 +341,7 @@ void BLI_filelist_entry_datetime_to_string(const struct stat *st,
   int yesterday_yday = 0;
 
   if (r_is_today || r_is_yesterday) {
-    /* `localtime()` has only one buffer so need to get data out before called again. */
+    /* `localtime()` has only 1 buf: req to get data out before called again. */
     const time_t ts_now = time(nullptr);
     tm *today = localtime(&ts_now);
 
@@ -408,8 +401,8 @@ void lib_filelist_entry_dup(direntry *dst, const direntry *src)
 }
 
 void lib_filelist_dup(direntry **dest_filelist,
-                            direntry *const src_filelist,
-                            const uint nrentries)
+                      direntry *const src_filelist,
+                      const uint nrentries)
 {
   uint i;
 
@@ -432,14 +425,14 @@ void lib_filelist_entry_free(direntry *entry)
   }
 }
 
-void BLI_filelist_free(direntry *filelist, const uint nrentries)
+void lib_filelist_free(direntry *filelist, const uint nrentries)
 {
   uint i;
   for (i = 0; i < nrentries; i++) {
-    BLI_filelist_entry_free(&filelist[i]);
+    lib_filelist_entry_free(&filelist[i]);
   }
 
   if (filelist != nullptr) {
-    MEM_freeN(filelist);
+    mem_free(filelist);
   }
 }
