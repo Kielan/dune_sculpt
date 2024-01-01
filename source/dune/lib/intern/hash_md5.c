@@ -1,6 +1,5 @@
 /* Fns to compute MD5 msg digest of files or mema blocks
- *  according to the definition of MD5 in RFC 1321 from April 1992. */
-
+ *  according the def. of MD5 in RFC 1321 from April 1992. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +16,6 @@
  * An alt approach: use autoconf's AC_CHECK_SIZEOF macro but would req
  * the config script compile and *run* the resulting executable.
  * Locally running cross-compiled executables is usually not possible. */
-
 #if defined __STDC__ && __STDC__
 #  define UINT_MAX_32_BITS 4294967295U
 #else
@@ -25,8 +23,8 @@
 #endif
 
 /* If UINT_MAX isn't defined, assume it's a 32-bit type.
- * This should be valid for all systems GNU cares about
- * bc that doesn't include 16-bit systems, and only modern systems
+ * This should be valid for all sys GNU cares about
+ * bc that doesn't include 16-bit sys, and only modern sys
  * (that certainly have <limits.h>) have 64+-bit integral types. */
 
 #ifndef UINT_MAX
@@ -113,7 +111,7 @@ static void md5_proc_block(const void *buf, size_t len, struct md5_cxt *cxt)
     md5_uint32 C_save = C;
     md5_uint32 D_save = D;
 
-    /* First round: using the given function, the context and a constant the next cxt is
+    /* 1st round: using the given fn, the cxt and a constant the next cxt is
      * computed. Bc the algorithms processing unit is a 32-bit word and it is determined
      * to work on words in little endian byte order we perhaps have to change the byte order
      * before the computation. To reduce the work for the next steps we store the swapped words
@@ -125,7 +123,7 @@ static void md5_proc_block(const void *buf, size_t len, struct md5_cxt *cxt)
   a += b; \
   (void)0
 
-    /* Before we start, one word to the strange constants. They are defined in RFC 1321 as:
+    /* Before start, 1 word to the strange constants. They are defined in RFC 1321 as:
      *     `T[i] = (int) (4294967296.0 * fabs (sin (i))), i=1..64 */
     /* Round 1. */
     OP(A, B, C, D, 7, 0xd76aa478);
@@ -147,8 +145,8 @@ static void md5_proc_block(const void *buf, size_t len, struct md5_cxt *cxt)
 
 #undef OP
 
-    /* For the 2nd to fourth round we have the possibly swapped words in CORRECT_WORDS.
-     * Redefine the macro to take an additional first arg specifying the fn to use. */
+    /* For the 2nd to 4th round we have the possibly swapped words in CORRECT_WORDS.
+     * Redefine the macro to take an additional 1st arg spec. the fn to use. */
 #define OP(f, a, b, c, d, k, s, T) \
   a += f(b, c, d) + correct_words[k] + T; \
   CYCLIC(a, s); \
@@ -254,7 +252,7 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
   char buf[BLOCKSIZE + 72];
   size_t pad, sum;
 
-  /* Init the computation cxt. */
+  /* Init the computeo cxt. */
   md5_init_cxt(&cxt);
 
   len[0] = 0;
@@ -263,8 +261,8 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
   /* Iter over full file contents. */
   while (1) {
     /* We read the file in blocks of BLOCKSIZE bytes.
-     * One call of the computation fn processes the whole buf
-     * so that with the next round of the loop another block can be read. */
+     * One call of the computation fn procs the whole buf
+     * so w next round of loop another block can be read. */
     size_t n;
     sum = 0;
 
@@ -278,8 +276,8 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
       return 1;
     }
 
-    /* RFC 1321 specifies the possible length of the file up to 2^64 bits.
-     * Here we only compute the num of bytes. Do a double word increment. */
+    /* RFC 1321 specs possible length of file up to 2^64 bits.
+     * Here only compute num of bytes. Do a double word increment. */
     len[0] += sum;
     if (len[0] < sum) {
       ++len[1];
@@ -290,7 +288,7 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
       break;
     }
 
-    /* Process buf with BLOCKSIZE bytes. Note that `BLOCKSIZE % 64 == 0`. */
+    /* Proc buf w BLOCKSIZE bytes. Note `BLOCKSIZE % 64 == 0`. */
     md5_process_block(buf, BLOCKSIZE, &ctx);
   }
 
@@ -298,18 +296,18 @@ int lib_hash_md5_stream(FILE *stream, void *resblock)
    * 'fillbuf' contains the needed bits. */
   memcpy(&buf[sum], fillbuf, 64);
 
-  /* Compute amount of padding bytes needed. Alignment is done to `(N + PAD) % 64 == 56`.
-   * There is always at least one byte padded, i.e. if the alignment is correctly aligned,
-   * 64 padding bytes are added. */
+  /* Compute amount of pad bytes needed. Align is done to `(N + PAD) % 64 == 56`.
+   * Always at min 1 byte padded, i.e. if the align is correctly aligned,
+   * 64 pad bytes are added. */
   pad = sum & 63;
   pad = pad >= 56 ? 64 + 56 - pad : 56 - pad;
 
   /* Put the 64-bit file length in *bits* at the end of the buffer. */
-  *(md5_uint32 *)&buffer[sum + pad] = SWAP(len[0] << 3);
-  *(md5_uint32 *)&buffer[sum + pad + 4] = SWAP((len[1] << 3) | (len[0] >> 29));
+  *(md5_uint32 *)&buf[sum + pad] = SWAP(len[0] << 3);
+  *(md5_uint32 *)&buf[sum + pad + 4] = SWAP((len[1] << 3) | (len[0] >> 29));
 
-  /* Process last bytes. */
-  md5_process_block(buffer, sum + pad + 8, &ctx);
+  /* Proc last bytes. */
+  md5_proc_block(buf, sum + pad + 8, &ctx);
 
   /* Construct result in desired memory. */
   md5_read_cxt(&cxt, resblock);
@@ -326,29 +324,29 @@ void *lib_hash_md5_buf(const char *buf, size_t len, void *resblock)
   /* Init the computation cxt. */
   md5_init_cxt(&cxt);
 
-  /* Process whole buffer but last len % 64 bytes. */
-  md5_process_block(buffer, blocks, &ctx);
+  /* Proc whole buf but last len % 64 bytes. */
+  md5_process_block(buf, blocks, &cxt);
 
-  /* REST bytes are not processed yet. */
+  /* REST bytes are not proc yet. */
   rest = len - blocks;
-  /* Copy to own buffer. */
+  /* Copy to own buf. */
   memcpy(restbuf, &buffer[blocks], rest);
-  /* Append needed fill bytes at end of buffer.
-   * We can copy 64 bytes because the buffer is always big enough. */
+  /* Append needed fill bytes at end of buf.
+   * Can copy 64 bytes bc the buf is always big enough. */
   memcpy(&restbuf[rest], fillbuf, 64);
 
-  /* PAD bytes are used for padding to correct alignment.
-   * Note that always at least one byte is padded. */
+  /* PAD bytes are used for pad to correct align.
+   * Always min 1 byte is padded. */
   pad = rest >= 56 ? 64 + 56 - rest : 56 - rest;
 
-  /* Put length of buffer in *bits* in last eight bytes. */
+  /* Put length of buf in *bits* in last 8 bytes. */
   *(md5_uint32 *)&restbuf[rest + pad] = (md5_uint32)SWAP(len << 3);
   *(md5_uint32 *)&restbuf[rest + pad + 4] = (md5_uint32)SWAP(len >> 29);
 
-  /* Process last bytes. */
-  md5_process_block(restbuf, rest + pad + 8, &ctx);
+  /* Proc last bytes. */
+  md5_proc_block(restbuf, rest + pad + 8, &ctx);
 
-  /* Put result in desired memory area. */
+  /* Put result in desired mem area. */
   return md5_read_cxt(&cxt, resblock);
 }
 
