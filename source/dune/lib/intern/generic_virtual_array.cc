@@ -4,14 +4,11 @@
 
 namespace dune {
 
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl
- * \{ */
-
+/* GVArrayImpl */
 void GVArrayImpl::materialize(const IndexMask &mask, void *dst) const
 {
   mask.foreach_index_optimized<int64_t>([&](const int64_t i) {
-    void *elem_dst = POINTER_OFFSET(dst, type_->size() * i);
+    void *elem_dst = PTR_OFFSET(dst, type_->size() * i);
     this->get(i, elem_dst);
   });
 }
@@ -19,7 +16,7 @@ void GVArrayImpl::materialize(const IndexMask &mask, void *dst) const
 void GVArrayImpl::materialize_to_uninitialized(const IndexMask &mask, void *dst) const
 {
   mask.foreach_index_optimized<int64_t>([&](const int64_t i) {
-    void *elem_dst = POINTER_OFFSET(dst, type_->size() * i);
+    void *elem_dst = PTR_OFFSET(dst, type_->size() * i);
     this->get_to_uninitialized(i, elem_dst);
   });
 }
@@ -27,7 +24,7 @@ void GVArrayImpl::materialize_to_uninitialized(const IndexMask &mask, void *dst)
 void GVArrayImpl::materialize_compressed(const IndexMask &mask, void *dst) const
 {
   mask.foreach_index_optimized<int64_t>([&](const int64_t i, const int64_t pos) {
-    void *elem_dst = POINTER_OFFSET(dst, type_->size() * pos);
+    void *elem_dst = PTR_OFFSET(dst, type_->size() * pos);
     this->get(i, elem_dst);
   });
 }
@@ -35,14 +32,14 @@ void GVArrayImpl::materialize_compressed(const IndexMask &mask, void *dst) const
 void GVArrayImpl::materialize_compressed_to_uninitialized(const IndexMask &mask, void *dst) const
 {
   mask.foreach_index_optimized<int64_t>([&](const int64_t i, const int64_t pos) {
-    void *elem_dst = POINTER_OFFSET(dst, type_->size() * pos);
+    void *elem_dst = PTR_OFFSET(dst, type_->size() * pos);
     this->get_to_uninitialized(i, elem_dst);
   });
 }
 
 void GVArrayImpl::get(const int64_t index, void *r_value) const
 {
-  type_->destruct(r_value);
+  type_->destruct(r_val);
   this->get_to_uninitialized(index, r_value);
 }
 
@@ -56,24 +53,19 @@ bool GVArrayImpl::try_assign_VArray(void * /*varray*/) const
   return false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVMutableArrayImpl
- * \{ */
-
-void GVMutableArrayImpl::set_by_copy(const int64_t index, const void *value)
+/* GVMutableArrayImpl */
+void GVMutableArrayImpl::set_by_copy(const int64_t index, const void *val)
 {
-  BUFFER_FOR_CPP_TYPE_VALUE(*type_, buffer);
-  type_->copy_construct(value, buffer);
-  this->set_by_move(index, buffer);
-  type_->destruct(buffer);
+  BUF_FOR_CPP_TYPE_VAL(*type_, buf);
+  type_->copy_construct(val, buf);
+  this->set_by_move(index, buf);
+  type_->destruct(buf);
 }
 
-void GVMutableArrayImpl::set_by_relocate(const int64_t index, void *value)
+void GVMutableArrayImpl::set_by_relocate(const int64_t index, void *val)
 {
-  this->set_by_move(index, value);
-  type_->destruct(value);
+  this->set_by_move(index, val);
+  type_->destruct(val);
 }
 
 void GVMutableArrayImpl::set_all(const void *src)
@@ -84,7 +76,7 @@ void GVMutableArrayImpl::set_all(const void *src)
   }
   else {
     for (int64_t i : IndexRange(size_)) {
-      this->set_by_copy(i, POINTER_OFFSET(src, type_->size() * i));
+      this->set_by_copy(i, PTR_OFFSET(src, type_->size() * i));
     }
   }
 }
@@ -107,35 +99,30 @@ bool GVMutableArrayImpl::try_assign_VMutableArray(void * /*varray*/) const
   return false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl_For_GSpan
- * \{ */
-
+/* GVArrayImpl_For_GSpan */
 void GVArrayImpl_For_GSpan::get(const int64_t index, void *r_value) const
 {
-  type_->copy_assign(POINTER_OFFSET(data_, element_size_ * index), r_value);
+  type_->copy_assign(PTR_OFFSET(data_, element_size_ * index), r_value);
 }
 
 void GVArrayImpl_For_GSpan::get_to_uninitialized(const int64_t index, void *r_value) const
 {
-  type_->copy_construct(POINTER_OFFSET(data_, element_size_ * index), r_value);
+  type_->copy_construct(PTR_OFFSET(data_, element_size_ * index), r_value);
 }
 
 void GVArrayImpl_For_GSpan::set_by_copy(const int64_t index, const void *value)
 {
-  type_->copy_assign(value, POINTER_OFFSET(data_, element_size_ * index));
+  type_->copy_assign(val, PTR_OFFSET(data_, element_size_ * index));
 }
 
 void GVArrayImpl_For_GSpan::set_by_move(const int64_t index, void *value)
 {
-  type_->move_construct(value, POINTER_OFFSET(data_, element_size_ * index));
+  type_->move_construct(val, PTR_OFFSET(data_, element_size_ * index));
 }
 
 void GVArrayImpl_For_GSpan::set_by_relocate(const int64_t index, void *value)
 {
-  type_->relocate_assign(value, POINTER_OFFSET(data_, element_size_ * index));
+  type_->relocate_assign(val, PTR_OFFSET(data_, element_size_ * index));
 }
 
 CommonVArrayInfo GVArrayImpl_For_GSpan::common_info() const
@@ -164,100 +151,83 @@ void GVArrayImpl_For_GSpan::materialize_compressed_to_uninitialized(const IndexM
   type_->copy_construct_compressed(data_, dst, mask);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl_For_SingleValueRef
- * \{ */
-
-/* Generic virtual array where each element has the same value. The value is not owned. */
-
-void GVArrayImpl_For_SingleValueRef::get(const int64_t /*index*/, void *r_value) const
+/* GVArrayImpl_For_SingleValRef */
+/* Generic virtual array where each element has the same val. The val is not owned. */
+void GVArrayImpl_For_SingleValRef::get(const int64_t /*index*/, void *r_val) const
 {
-  type_->copy_assign(value_, r_value);
+  type_->copy_assign(value_, r_val);
 }
-void GVArrayImpl_For_SingleValueRef::get_to_uninitialized(const int64_t /*index*/,
-                                                          void *r_value) const
+void GVArrayImpl_For_SingleValRef::get_to_uninitialized(const int64_t /*index*/,
+                                                          void *r_val) const
 {
-  type_->copy_construct(value_, r_value);
+  type_->copy_construct(val_, r_val);
 }
 
-CommonVArrayInfo GVArrayImpl_For_SingleValueRef::common_info() const
+CommonVArrayInfo GVArrayImpl_For_SingleValRef::common_info() const
 {
-  return CommonVArrayInfo{CommonVArrayInfo::Type::Single, true, value_};
+  return CommonVArrayInfo{CommonVArrayInfo::Type::Single, true, val_};
 }
 
-void GVArrayImpl_For_SingleValueRef::materialize(const IndexMask &mask, void *dst) const
+void GVArrayImpl_For_SingleValRef::materialize(const IndexMask &mask, void *dst) const
 {
-  type_->fill_assign_indices(value_, dst, mask);
+  type_->fill_assign_indices(val_, dst, mask);
 }
 
-void GVArrayImpl_For_SingleValueRef::materialize_to_uninitialized(const IndexMask &mask,
-                                                                  void *dst) const
+void GVArrayImpl_For_SingleValRef::materialize_to_uninitialized(const IndexMask &mask,
+                                                                void *dst) const
 {
-  type_->fill_construct_indices(value_, dst, mask);
+  type_->fill_construct_indices(vae_, dst, mask);
 }
 
-void GVArrayImpl_For_SingleValueRef::materialize_compressed(const IndexMask &mask, void *dst) const
+void GVArrayImpl_For_SingleValRef::materialize_compressed(const IndexMask &mask, void *dst) const
 {
-  type_->fill_assign_n(value_, dst, mask.size());
+  type_->fill_assign_n(val_, dst, mask.size());
 }
 
-void GVArrayImpl_For_SingleValueRef::materialize_compressed_to_uninitialized(const IndexMask &mask,
+void GVArrayImpl_For_SingleValRef::materialize_compressed_to_uninitialized(const IndexMask &mask,
                                                                              void *dst) const
 {
-  type_->fill_construct_n(value_, dst, mask.size());
+  type_->fill_construct_n(val_, dst, mask.size());
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl_For_SingleValue
- * \{ */
-
-/* Same as GVArrayImpl_For_SingleValueRef, but the value is owned. */
-class GVArrayImpl_For_SingleValue : public GVArrayImpl_For_SingleValueRef,
-                                    NonCopyable,
-                                    NonMovable {
+/* GVArrayImpl_For_SingleVal */
+/* Same as GVArrayImpl_For_SingleValRef, but the value is owned. */
+class GVArrayImpl_For_SingleVal : public GVArrayImpl_For_SingleValRef,
+                                  NonCopyable,
+                                  NonMovable {
  public:
-  GVArrayImpl_For_SingleValue(const CPPType &type, const int64_t size, const void *value)
-      : GVArrayImpl_For_SingleValueRef(type, size)
+  GVArrayImpl_For_SingleVal(const CPPType &type, const int64_t size, const void *value)
+      : GVArrayImpl_For_SingleValRef(type, size)
   {
-    value_ = MEM_mallocN_aligned(type.size(), type.alignment(), __func__);
-    type.copy_construct(value, (void *)value_);
+    value_ = mem_malloc_aligned(type.size(), type.alignment(), __func__);
+    type.copy_construct(val, (void *)value_);
   }
 
-  ~GVArrayImpl_For_SingleValue() override
+  ~GVArrayImpl_For_SingleVal() override
   {
-    type_->destruct((void *)value_);
-    MEM_freeN((void *)value_);
+    type_->destruct((void *)val_);
+    mem_free((void *)val_);
   }
 };
 
-/** \} */
+/* GVArrayImpl_For_SmallTrivialSingleVal */
 
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl_For_SmallTrivialSingleValue
- * \{ */
-
-/**
- * Contains an inline buffer that can store a single value of a trivial type.
- * This avoids the allocation that would be done by #GVArrayImpl_For_SingleValue.
- */
-template<int BufferSize> class GVArrayImpl_For_SmallTrivialSingleValue : public GVArrayImpl {
+/* Contains an inline buf that can store a single val of a trivial type.
+ * This avoids the allocation that would be done by GVArrayImpl_For_SingleVal. */
+template<int BufferSize> class GVArrayImpl_For_SmallTrivialSingleVal : public GVArrayImpl {
  private:
   AlignedBuffer<BufferSize, 8> buffer_;
 
  public:
-  GVArrayImpl_For_SmallTrivialSingleValue(const CPPType &type,
+  GVArrayImpl_For_SmallTrivialSingleVal(const CPPType &type,
                                           const int64_t size,
                                           const void *value)
       : GVArrayImpl(type, size)
   {
-    BLI_assert(type.is_trivial());
-    BLI_assert(type.alignment() <= 8);
-    BLI_assert(type.size() <= BufferSize);
-    type.copy_construct(value, &buffer_);
+    lib_assert(type.is_trivial());
+    lib_assert(type.alignment() <= 8);
+    lib_assert(type.size() <= BufSize);
+    type.copy_construct(value, &buf_);
   }
 
  private:
@@ -267,26 +237,21 @@ template<int BufferSize> class GVArrayImpl_For_SmallTrivialSingleValue : public 
   }
   void get_to_uninitialized(const int64_t /*index*/, void *r_value) const override
   {
-    this->copy_value_to(r_value);
+    this->copy_val_to(r_value);
   }
 
-  void copy_value_to(void *dst) const
+  void copy_val_to(void *dst) const
   {
-    memcpy(dst, &buffer_, type_->size());
+    memcpy(dst, &buf_, type_->size());
   }
 
   CommonVArrayInfo common_info() const override
   {
-    return CommonVArrayInfo{CommonVArrayInfo::Type::Single, true, &buffer_};
+    return CommonVArrayInfo{CommonVArrayInfo::Type::Single, true, &buf_};
   }
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArraySpan
- * \{ */
-
+/* GVArraySpan */
 GVArraySpan::GVArraySpan() = default;
 
 GVArraySpan::GVArraySpan(GVArray varray)
@@ -302,7 +267,7 @@ GVArraySpan::GVArraySpan(GVArray varray)
     data_ = info.data;
   }
   else {
-    owned_data_ = MEM_mallocN_aligned(type_->size() * size_, type_->alignment(), __func__);
+    owned_data_ = mem_malloc_aligned(type_->size() * size_, type_->alignment(), __func__);
     varray_.materialize_to_uninitialized(IndexRange(size_), owned_data_);
     data_ = owned_data_;
   }
@@ -332,7 +297,7 @@ GVArraySpan::~GVArraySpan()
 {
   if (owned_data_ != nullptr) {
     type_->destruct_n(owned_data_, size_);
-    MEM_freeN(owned_data_);
+    mem_free(owned_data_);
   }
 }
 
@@ -361,8 +326,8 @@ GMutableVArraySpan::GMutableVArraySpan(GVMutableArray varray, const bool copy_va
     data_ = const_cast<void *>(info.data);
   }
   else {
-    owned_data_ = MEM_mallocN_aligned(type_->size() * size_, type_->alignment(), __func__);
-    if (copy_values_to_span) {
+    owned_data_ = mem_malloc_aligned(type_->size() * size_, type_->alignment(), __func__);
+    if (copy_vals_to_span) {
       varray_.materialize_to_uninitialized(IndexRange(size_), owned_data_);
     }
     else {
@@ -405,7 +370,7 @@ GMutableVArraySpan::~GMutableVArraySpan()
   }
   if (owned_data_ != nullptr) {
     type_->destruct_n(owned_data_, size_);
-    MEM_freeN(owned_data_);
+    mem_free(owned_data_);
   }
 }
 
@@ -438,12 +403,7 @@ const GVMutableArray &GMutableVArraySpan::varray() const
   return varray_;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayImpl_For_SlicedGVArray
- * \{ */
-
+/* GVArrayImpl_For_SlicedGVArray */
 class GVArrayImpl_For_SlicedGVArray : public GVArrayImpl {
  protected:
   GVArray varray_;
@@ -457,7 +417,7 @@ class GVArrayImpl_For_SlicedGVArray : public GVArrayImpl {
         offset_(slice.start()),
         slice_(slice)
   {
-    BLI_assert(slice.one_after_last() <= varray_.size());
+    lib_assert(slice.one_after_last() <= varray_.size());
   }
 
   void get(const int64_t index, void *r_value) const override
@@ -480,7 +440,7 @@ class GVArrayImpl_For_SlicedGVArray : public GVArrayImpl {
       case CommonVArrayInfo::Type::Span: {
         return CommonVArrayInfo(CommonVArrayInfo::Type::Span,
                                 internal_info.may_have_ownership,
-                                POINTER_OFFSET(internal_info.data, type_->size() * offset_));
+                                PTR_OFFSET(internal_info.data, type_->size() * offset_));
       }
       case CommonVArrayInfo::Type::Single: {
         return internal_info;
@@ -497,17 +457,12 @@ class GVArrayImpl_For_SlicedGVArray : public GVArrayImpl {
       const IndexMask &segment_mask = mask_from_segment.update(
           {segment.offset() + offset_, segment.base_span()});
       varray_.materialize_compressed_to_uninitialized(segment_mask,
-                                                      POINTER_OFFSET(dst, type_->size() * start));
+                                                      PTR_OFFSET(dst, type_->size() * start));
     });
   }
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArrayCommon
- * \{ */
-
+/* GVArrayCommon */
 GVArrayCommon::GVArrayCommon(const GVArrayCommon &other) : storage_(other.storage_)
 {
   impl_ = this->impl_from_storage();
@@ -551,7 +506,7 @@ void GVArrayCommon::materialize_to_uninitialized(void *dst) const
 
 void GVArrayCommon::materialize_to_uninitialized(const IndexMask &mask, void *dst) const
 {
-  BLI_assert(mask.min_array_size() <= impl_->size());
+  lib_assert(mask.min_array_size() <= impl_->size());
   impl_->materialize_to_uninitialized(mask, dst);
 }
 
@@ -593,7 +548,7 @@ bool GVArrayCommon::is_span() const
 
 GSpan GVArrayCommon::get_internal_span() const
 {
-  BLI_assert(this->is_span());
+  lib_assert(this->is_span());
   const CommonVArrayInfo info = impl_->common_info();
   return GSpan(this->type(), info.data, this->size());
 }
@@ -606,15 +561,15 @@ bool GVArrayCommon::is_single() const
 
 void GVArrayCommon::get_internal_single(void *r_value) const
 {
-  BLI_assert(this->is_single());
+  lib_assert(this->is_single());
   const CommonVArrayInfo info = impl_->common_info();
-  this->type().copy_assign(info.data, r_value);
+  this->type().copy_assign(info.data, r_val);
 }
 
 void GVArrayCommon::get_internal_single_to_uninitialized(void *r_value) const
 {
-  impl_->type().default_construct(r_value);
-  this->get_internal_single(r_value);
+  impl_->type().default_construct(r_val);
+  this->get_internal_single(r_val);
 }
 
 const GVArrayImpl *GVArrayCommon::impl_from_storage() const
@@ -630,12 +585,7 @@ IndexRange GVArrayCommon::index_range() const
   return IndexRange(this->size());
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #GVArray
- * \{ */
-
+/* GVArray */
 GVArray::GVArray(const GVArray &other) = default;
 
 GVArray::GVArray(GVArray &&other) noexcept = default;
@@ -647,7 +597,7 @@ GVArray::GVArray(std::shared_ptr<const GVArrayImpl> impl) : GVArrayCommon(std::m
 GVArray::GVArray(varray_tag::single /*tag*/, const CPPType &type, int64_t size, const void *value)
 {
   if (type.is_trivial() && type.size() <= 16 && type.alignment() <= 8) {
-    this->emplace<GVArrayImpl_For_SmallTrivialSingleValue<16>>(type, size, value);
+    this->emplace<GVArrayImpl_For_SmallTrivialSingleVal<16>>(type, size, value);
   }
   else {
     this->emplace<GVArrayImpl_For_SingleValue>(type, size, value);
@@ -701,7 +651,7 @@ GVArray GVArray::slice(IndexRange slice) const
   if (info.type == CommonVArrayInfo::Type::Single) {
     return GVArray::ForSingle(this->type(), slice.size(), info.data);
   }
-  /* Need to check for ownership, bx otherwise the referenced data can be destructed when
+  /* Need to check for ownership, bx otherwise the refd data can be destructed when
    * this is destructed. */
   if (info.type == CommonVArrayInfo::Type::Span && !info.may_have_ownership) {
     return GVArray::ForSpan(GSpan(this->type(), info.data, this->size()).slice(slice));
@@ -722,7 +672,6 @@ GVArray &GVArray::operator=(GVArray &&other) noexcept
 }
 
 /* GVMutableArray */
-
 GVMutableArray::GVMutableArray(const GVMutableArray &other) = default;
 GVMutableArray::GVMutableArray(GVMutableArray &&other) noexcept = default;
 
@@ -786,9 +735,9 @@ CommonVArrayInfo GVArrayImpl_For_GSpan_final::common_info() const
   return CommonVArrayInfo(CommonVArrayInfo::Type::Span, false, data_);
 }
 
-CommonVArrayInfo GVArrayImpl_For_SingleValueRef_final::common_info() const
+CommonVArrayInfo GVArrayImpl_For_SingleValRef_final::common_info() const
 {
   return CommonVArrayInfo(CommonVArrayInfo::Type::Single, false, value_);
 }
 
-}  // namespace blender
+}  // namespace dune
