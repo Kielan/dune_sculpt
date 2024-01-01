@@ -24,9 +24,9 @@ struct _GSQueue {
   struct QueueChunk *chunk_free;  /* free chunks to reuse */
   size_t chunk_first_index;       /* index into 'chunk_first' */
   size_t chunk_last_index;        /* index into 'chunk_last' */
-  size_t chunk_elem_max;          /* number of elements per chunk */
-  size_t elem_size;               /* memory size of elements */
-  size_t elem_num;                /* total number of elements */
+  size_t chunk_elem_max;          /* num of elems per chunk */
+  size_t elem_size;               /* mem size of elems */
+  size_t elem_num;                /* total num of elems */
 };
 
 static void *queue_get_first_elem(GSQueue *queue)
