@@ -1,9 +1,6 @@
-/* A min-heap / priority queue ADT.
- *
- * Simplified version of the heap that only supports insertion and removal from top.
- *
+/* A min-heap/priority queue ADT.
+ * Simplified v of the heap, only supports insert + removal from top.
  * See lib_heap.c for a more full featured heap implementation */
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,9 +12,7 @@
 
 #define HEAP_PARENT(i) (((i)-1) >> 1)
 
-/* -------------------------------------------------------------------- */
-/** \name HeapSimple Internal Structs */
-
+/* HeapSimple Intern Structs */
 typedef struct HeapSimpleNode {
   float val;
   void *ptr;
@@ -33,8 +28,8 @@ struct HeapSimple {
 static void heapsimple_down(HeapSimple *heap, uint start_i, const HeapSimpleNode *init)
 {
 #if 1
-  /* The compiler isn't smart enough to realize that all computations
-   * using index here can be modified to work with byte offset. */
+  /* Cmpiler not smart enough to realize all computations
+   * using index here can be modified to work w byte offset. */
   uint8_t *const tree_buf = (uint8_t *)heap->tree;
 
 #  define OFFSET(i) (i * (uint)sizeof(HeapSimpleNode))
@@ -52,7 +47,7 @@ static void heapsimple_down(HeapSimple *heap, uint start_i, const HeapSimpleNode
 
   /* Pull the active node vals into locals. This allows spilling
    * the data from registers instead of literally swapping nodes. */
-  float active_val = init->value;
+  float active_val = init->val;
   void *active_ptr = init->ptr;
 
   /* Prep the 1st iter and spill val. */
@@ -64,7 +59,7 @@ static void heapsimple_down(HeapSimple *heap, uint start_i, const HeapSimpleNode
     const uint l = HEAP_LEFT_OFFSET(i);
     const uint r = l + OFFSET(1); /* right */
 
-    /* Find the child with the smallest value. */
+    /* Find the child w smallest val. */
     uint smallest = i;
 
     if (LIKELY(l < size) && NODE(l).value < active_val) {
@@ -78,14 +73,14 @@ static void heapsimple_down(HeapSimple *heap, uint start_i, const HeapSimpleNode
       break;
     }
 
-    /* Move the smallest child into the current node.
-     * Skip padding: for some reason that makes it faster here. */
-    NODE(i).value = NODE(smallest).value;
+    /* Move smallest child to current node.
+     * Skip pad: for some reason that makes it faster here. */
+    NODE(i).val = NODE(smallest).value;
     NODE(i).ptr = NODE(smallest).ptr;
 
     /* Proceed to next iter and spill val. */
     i = smallest;
-    NODE(i).value = active_val;
+    NODE(i).val = active_val;
   }
 
   /* Spill the ptr into the final position of the node. */
@@ -115,26 +110,23 @@ static void heapsimple_up(HeapSimple *heap, uint i, float active_val, void *acti
   tree[i].ptr = active_ptr;
 }
 
-/* -------------------------------------------------------------------- */
-/* Public HeapSimple API
- * \{ */
-
-HeapSimple *BLI_heapsimple_new_ex(uint reserve_num)
+/* Public HeapSimple API */
+HeapSimple *lib_heapsimple_new_ex(uint reserve_num)
 {
-  HeapSimple *heap = MEM_mallocN(sizeof(HeapSimple), __func__);
-  /* ensure we have at least one so we can keep doubling it */
+  HeapSimple *heap = mem_malloc(sizeof(HeapSimple), __func__);
+  /* ensure min 1 to keep doubling it */
   heap->size = 0;
   heap->bufsize = MAX2(1u, reserve_num);
-  heap->tree = MEM_mallocN(heap->bufsize * sizeof(HeapSimpleNode), "BLIHeapSimpleTree");
+  heap->tree = mem_malloc(heap->bufsize * sizeof(HeapSimpleNode), "HeapSimpleTree");
   return heap;
 }
 
-HeapSimple *BLI_heapsimple_new(void)
+HeapSimple *lib_heapsimple_new(void)
 {
-  return BLI_heapsimple_new_ex(1);
+  return lib_heapsimple_new_ex(1);
 }
 
-void BLI_heapsimple_free(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
+void lib_heapsimple_free(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
 {
   if (ptrfreefp) {
     for (uint i = 0; i < heap->size; i++) {
@@ -142,11 +134,11 @@ void BLI_heapsimple_free(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
     }
   }
 
-  MEM_freeN(heap->tree);
-  MEM_freeN(heap);
+  mem_free(heap->tree);
+  mem_free(heap);
 }
 
-void BLI_heapsimple_clear(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
+void lob_heapsimple_clear(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
 {
   if (ptrfreefp) {
     for (uint i = 0; i < heap->size; i++) {
@@ -157,36 +149,36 @@ void BLI_heapsimple_clear(HeapSimple *heap, HeapSimpleFreeFP ptrfreefp)
   heap->size = 0;
 }
 
-void BLI_heapsimple_insert(HeapSimple *heap, float value, void *ptr)
+void lib_heapsimple_insert(HeapSimple *heap, float value, void *ptr)
 {
   if (UNLIKELY(heap->size >= heap->bufsize)) {
     heap->bufsize *= 2;
-    heap->tree = MEM_reallocN(heap->tree, heap->bufsize * sizeof(*heap->tree));
+    heap->tree = mem_realloc(heap->tree, heap->bufsize * sizeof(*heap->tree));
   }
 
-  heapsimple_up(heap, heap->size++, value, ptr);
+  heapsimple_up(heap, heap->size++, valu, ptr);
 }
 
-bool BLI_heapsimple_is_empty(const HeapSimple *heap)
+bool lib_heapsimple_is_empty(const HeapSimple *heap)
 {
   return (heap->size == 0);
 }
 
-uint BLI_heapsimple_len(const HeapSimple *heap)
+uint lib_heapsimple_len(const HeapSimple *heap)
 {
   return heap->size;
 }
 
-float BLI_heapsimple_top_value(const HeapSimple *heap)
+float lib_heapsimple_top_val(const HeapSimple *heap)
 {
-  BLI_assert(heap->size != 0);
+  lib_assert(heap->size != 0);
 
-  return heap->tree[0].value;
+  return heap->tree[0].val;
 }
 
-void *BLI_heapsimple_pop_min(HeapSimple *heap)
+void *lib_heapsimple_pop_min(HeapSimple *heap)
 {
-  BLI_assert(heap->size != 0);
+  lib_assert(heap->size != 0);
 
   void *ptr = heap->tree[0].ptr;
 
@@ -195,6 +187,4 @@ void *BLI_heapsimple_pop_min(HeapSimple *heap)
   }
 
   return ptr;
-}
 
-/** \} */
