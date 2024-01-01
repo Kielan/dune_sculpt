@@ -10,11 +10,11 @@ struct Dial {
   float center[2];
 
   /* threshold of the dial. Distance of current position has to be greater
-   * than the threshold to be used in any calculations */
+   * than the threshold to be used in any calcs */
   float threshold_squared;
 
-  /* the direction of the first dial position exceeding the threshold. This
-   * is later used as the basis against which rotation angle is calculated */
+  /* direction of 1st dial position exceeding the threshold.
+   * Is later used as basis against which rotation angle is calc */
   float init_direction[2];
 
   /* cache the last angle to detect rotations bigger than -/+ PI */
