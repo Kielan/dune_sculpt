@@ -1,28 +1,28 @@
 #include <iostream>
 #include <mutex>
 
-#include "BLI_array.hh"
-#include "BLI_bit_vector.hh"
-#include "BLI_enumerable_thread_specific.hh"
-#include "BLI_index_mask.hh"
-#include "BLI_math_base.hh"
-#include "BLI_set.hh"
-#include "BLI_sort.hh"
-#include "BLI_strict_flags.h"
-#include "BLI_task.hh"
-#include "BLI_threads.h"
-#include "BLI_timeit.hh"
-#include "BLI_virtual_array.hh"
+#include "lib_array.hh"
+#include "lib_bit_vector.hh"
+#include "lib_enumerable_thread_specific.hh"
+#include "lib_index_mask.hh"
+#include "lib_math_base.hh"
+#include "lib_set.hh"
+#include "lib_sort.hh"
+#include "lib_strict_flags.h"
+#include "lib_task.hh"
+#include "lib_threads.h"
+#include "lib_timeit.hh"
+#include "lib_virtual_array.hh"
 
-namespace blender::index_mask {
+namespace dune::index_mask {
 
 template<typename T> void build_reverse_map(const IndexMask &mask, MutableSpan<T> r_map)
 {
 #ifndef NDEBUG
-  /* Catch errors with asserts in debug builds. */
+  /* Catch errs w asserts in debug builds. */
   r_map.fill(-1);
 #endif
-  BLI_assert(r_map.size() >= mask.min_array_size());
+  lib_assert(r_map.size() >= mask.min_arr_size());
   mask.foreach_index_optimized<T>(GrainSize(4096),
                                   [&](const T src, const T dst) { r_map[src] = dst; });
 }
@@ -44,10 +44,10 @@ const IndexMask &get_static_index_mask_for_min_size(const int64_t min_size)
   static constexpr int64_t max_size = (int64_t(1) << size_shift);      /* 2'147'483'648 */
   static constexpr int64_t segments_num = max_size / max_segment_size; /*       131'072 */
 
-  /* Make sure we are never requesting a size that's larger than what was statically allocated.
-   * If that's ever needed, we can either increase #size_shift or dynamically allocate an even
+  /* Make sure we are never requesting a size that's larger than what was statically alloc.
+   * If that's ever needed, we can either increase size_shift or dynamically allocate an even
    * larger mask. */
-  BLI_assert(min_size <= max_size);
+  lib_assert(min_size <= max_size);
   UNUSED_VARS_NDEBUG(min_size);
 
   static IndexMask static_mask = []() {
@@ -58,7 +58,7 @@ const IndexMask &get_static_index_mask_for_min_size(const int64_t min_size)
 
     static const int16_t *static_offsets = get_static_indices_array().data();
 
-    /* Isolate because the mutex protecting the initialization of #static_mask is locked. */
+    /* Isolate bc the mutex protecting the initialization of #static_mask is locked. */
     threading::isolate_task([&]() {
       threading::parallel_for(IndexRange(segments_num), 1024, [&](const IndexRange range) {
         for (const int64_t segment_i : range) {
@@ -163,12 +163,10 @@ IndexMask IndexMask::slice_and_offset(const int64_t start,
   return sliced_mask;
 }
 
-/**
- * Merges consecutive segments in some cases. Having fewer but larger segments generally allows for
- * better performance when using the mask later on.
- */
+/* Merges consecutive segments in some cases. Having fewer but larger segments generally allows for
+ * better perf when using the mask later on. */
 static void consolidate_segments(Vector<IndexMaskSegment, 16> &segments,
-                                 IndexMaskMemory & /*memory*/)
+                                 IndexMaskMem & /*memory*/)
 {
   if (segments.is_empty()) {
     return;
@@ -223,24 +221,22 @@ static void consolidate_segments(Vector<IndexMaskSegment, 16> &segments,
   segments.remove_if([](const IndexMaskSegment segment) { return segment.is_empty(); });
 }
 
-/**
- * Create a new #IndexMask from the given segments. The provided segments are expected to be
- * owned by #memory already.
- */
-static IndexMask mask_from_segments(const Span<IndexMaskSegment> segments, IndexMaskMemory &memory)
+/* Create a new IndexMask from the given segments. The provided segments are expected to be
+ * owned by #em alrdy. */
+static IndexMask mask_from_segments(const Span<IndexMaskSegment> segments, IndexMaskMem &mem)
 {
   if (segments.is_empty()) {
     return {};
   }
   const int64_t segments_num = segments.size();
 
-  /* Allocate buffers for the mask. */
+  /* Alloc bufs for the mask. */
   MutableSpan<const int16_t *> indices_by_segment = memory.allocate_array<const int16_t *>(
       segments_num);
   MutableSpan<int64_t> segment_offsets = memory.allocate_array<int64_t>(segments_num);
   MutableSpan<int64_t> cumulative_segment_sizes = memory.allocate_array<int64_t>(segments_num + 1);
 
-  /* Fill buffers. */
+  /* Fill bufs. */
   cumulative_segment_sizes[0] = 0;
   for (const int64_t segment_i : segments.index_range()) {
     const IndexMaskSegment segment = segments[segment_i];
@@ -249,7 +245,7 @@ static IndexMask mask_from_segments(const Span<IndexMaskSegment> segments, Index
     cumulative_segment_sizes[segment_i + 1] = cumulative_segment_sizes[segment_i] + segment.size();
   }
 
-  /* Initialize mask. */
+  /* Init mask. */
   IndexMask mask;
   IndexMaskData &data = mask.data_for_inplace_construction();
   data.indices_num_ = cumulative_segment_sizes.last();
@@ -262,10 +258,8 @@ static IndexMask mask_from_segments(const Span<IndexMaskSegment> segments, Index
   return mask;
 }
 
-/**
- * Split the indices into segments. Afterwards, the indices referenced by #r_segments are either
- * owned by #allocator or statically allocated.
- */
+/* Split the indices into segments. Afterwards, the indices refd by #_segments are either
+ * owned by allocator or statically alloc. */
 template<typename T, int64_t InlineBufferSize>
 static void segments_from_indices(const Span<T> indices,
                                   LinearAllocator<> &allocator,
@@ -274,7 +268,7 @@ static void segments_from_indices(const Span<T> indices,
   Vector<std::variant<IndexRange, Span<T>>, 16> segments;
 
   for (int64_t start = 0; start < indices.size(); start += max_segment_size) {
-    /* Slice to make sure that each segment is no longer than #max_segment_size. */
+    /* Slice to make sure that each segment is no longer than max_segment_size. */
     const Span<T> indices_slice = indices.slice_safe(start, max_segment_size);
     unique_sorted_indices::split_to_ranges_and_spans<T>(indices_slice, 64, segments);
   }
@@ -296,7 +290,7 @@ static void segments_from_indices(const Span<T> indices,
             [&](const T value) { return value - offset >= max_segment_size; });
         for (const int64_t i : IndexRange(next_segment_size)) {
           const int64_t offset_index = segment_indices[i] - offset;
-          BLI_assert(offset_index < max_segment_size);
+          lib_assert(offset_index < max_segment_size);
           offset_indices[i] = int16_t(offset_index);
         }
         r_segments.append_as(offset, offset_indices.take_front(next_segment_size));
@@ -307,9 +301,7 @@ static void segments_from_indices(const Span<T> indices,
   }
 }
 
-/**
- * Utility to generate segments on multiple threads and to reduce the result in the end.
- */
+/* Util to generate segments on mult threads and to reduce the result in the end. */
 struct ParallelSegmentsCollector {
   struct LocalData {
     LinearAllocator<> allocator;
@@ -318,11 +310,9 @@ struct ParallelSegmentsCollector {
 
   threading::EnumerableThreadSpecific<LocalData> data_by_thread;
 
-  /**
-   * Move ownership of memory allocated from all threads to #main_allocator. Also, extend
-   * #main_segments with the segments created on each thread. The segments are also sorted to make
-   * sure that they are in the correct order.
-   */
+  /* Move ownership of mem allocd from all threads to main_allocator. Also, extend
+   * main_segments w the segments created on each thread. The segments are also sorted to make
+   * sure that they are in the correct order. */
   void reduce(LinearAllocator<> &main_allocator, Vector<IndexMaskSegment, 16> &main_segments)
   {
     for (LocalData &data : this->data_by_thread) {
@@ -335,12 +325,10 @@ struct ParallelSegmentsCollector {
   }
 };
 
-/**
- * Convert a range to potentially multiple index mask segments.
- */
+/* Convert a range to potentially multiple index mask segments. */
 static void range_to_segments(const IndexRange range, Vector<IndexMaskSegment, 16> &r_segments)
 {
-  const Span<int16_t> static_indices = get_static_indices_array();
+  const Span<int16_t> static_indices = get_static_indices_arr();
   for (int64_t start = 0; start < range.size(); start += max_segment_size) {
     const int64_t size = std::min(max_segment_size, range.size() - start);
     r_segments.append_as(range.start() + start, static_indices.take_front(size));
@@ -349,10 +337,10 @@ static void range_to_segments(const IndexRange range, Vector<IndexMaskSegment, 1
 
 static int64_t get_size_before_gap(const Span<int16_t> indices)
 {
-  BLI_assert(indices.size() >= 2);
+  lib_assert(indices.size() >= 2);
   if (indices[1] > indices[0] + 1) {
     /* For sparse indices, often the next gap is just after the next index.
-     * In this case we can skip the logarithmic check below. */
+     * In this case can skip the logarithmic check below. */
     return 1;
   }
   return unique_sorted_indices::find_size_of_next_range(indices);
@@ -470,7 +458,7 @@ IndexMask IndexMask::complement(const IndexRange universe, IndexMaskMemory &memo
 
     constexpr int64_t min_grain_size = 16;
     constexpr int64_t max_grain_size = 4096;
-    const int64_t threads_num = BLI_system_thread_count();
+    const int64_t threads_num = lib_sys_thread_count();
     const int64_t grain_size = std::clamp(
         segments_num / threads_num, min_grain_size, max_grain_size);
 
@@ -505,7 +493,7 @@ IndexMask IndexMask::from_indices(const Span<T> indices, IndexMaskMemory &memory
   }
   if (const std::optional<IndexRange> range = unique_sorted_indices::non_empty_as_range_try(
           indices)) {
-    /* Fast case when the indices encode a single range. */
+    /* Fast case when indices encode single range. */
     return *range;
   }
 
@@ -517,8 +505,8 @@ IndexMask IndexMask::from_indices(const Span<T> indices, IndexMaskMemory &memory
     segments_from_indices(indices, memory, segments);
   }
   else {
-    const int64_t threads_num = BLI_system_thread_count();
-    /* Can be faster with a larger grain size, but only when there are enough indices. */
+    const int64_t threads_num = lib_sys_thread_count();
+    /* Can be faster w larger grain size, but only when there are enough indices. */
     const int64_t grain_size = std::clamp(
         indices.size() / (threads_num * 4), min_grain_size, max_grain_size);
 
@@ -527,22 +515,22 @@ IndexMask IndexMask::from_indices(const Span<T> indices, IndexMaskMemory &memory
       ParallelSegmentsCollector::LocalData &local_data = segments_collector.data_by_thread.local();
       segments_from_indices(indices.slice(range), local_data.allocator, local_data.segments);
     });
-    segments_collector.reduce(memory, segments);
+    segments_collector.reduce(mem, segments);
   }
-  consolidate_segments(segments, memory);
-  return mask_from_segments(segments, memory);
+  consolidate_segments(segments, mem);
+  return mask_from_segments(segments, mem);
 }
 
-IndexMask IndexMask::from_bits(const BitSpan bits, IndexMaskMemory &memory)
+IndexMask IndexMask::from_bits(const BitSpan bits, IndexMaskMem &mem)
 {
-  return IndexMask::from_bits(bits.index_range(), bits, memory);
+  return IndexMask::from_bits(bits.index_range(), bits, mem);
 }
 
 IndexMask IndexMask::from_bits(const IndexMask &universe,
                                const BitSpan bits,
-                               IndexMaskMemory &memory)
+                               IndexMaskMem &mem)
 {
-  return IndexMask::from_predicate(universe, GrainSize(1024), memory, [bits](const int64_t index) {
+  return IndexMask::from_predicate(universe, GrainSize(1024), mem, [bits](const int64_t index) {
     return bits[index].test();
   });
 }
@@ -596,7 +584,7 @@ IndexMask IndexMask::from_union(const IndexMask &mask_a,
 
 template<typename T> void IndexMask::to_indices(MutableSpan<T> r_indices) const
 {
-  BLI_assert(this->size() == r_indices.size());
+  lib_assert(this->size() == r_indices.size());
   this->foreach_index_optimized<int64_t>(
       GrainSize(1024), [r_indices = r_indices.data()](const int64_t i, const int64_t pos) {
         r_indices[pos] = T(i);
@@ -605,7 +593,7 @@ template<typename T> void IndexMask::to_indices(MutableSpan<T> r_indices) const
 
 void IndexMask::to_bits(MutableBitSpan r_bits) const
 {
-  BLI_assert(r_bits.size() >= this->min_array_size());
+  lib_assert(r_bits.size() >= this->min_array_size());
   r_bits.reset_all();
   this->foreach_segment_optimized([&](const auto segment) {
     if constexpr (std::is_same_v<std::decay_t<decltype(segment)>, IndexRange>) {
@@ -622,7 +610,7 @@ void IndexMask::to_bits(MutableBitSpan r_bits) const
 
 void IndexMask::to_bools(MutableSpan<bool> r_bools) const
 {
-  BLI_assert(r_bools.size() >= this->min_array_size());
+  lib_assert(r_bools.size() >= this->min_array_size());
   r_bools.fill(false);
   this->foreach_index_optimized<int64_t>(GrainSize(2048),
                                          [&](const int64_t i) { r_bools[i] = true; });
@@ -637,24 +625,22 @@ Vector<IndexRange> IndexMask::to_ranges() const
 
 Vector<IndexRange> IndexMask::to_ranges_invert(const IndexRange universe) const
 {
-  IndexMaskMemory memory;
-  return this->complement(universe, memory).to_ranges();
+  IndexMaskMem mem;
+  return this->complement(universe, mem).to_ranges();
 }
 
 namespace detail {
 
-/**
- * Filter the indices from #universe_segment using #filter_indices. Store the resulting indices as
- * segments.
- */
+/* Filter the indices from universe_segment using filter_indices. Store the resulting indices as
+ * segments. */
 static void segments_from_predicate_filter(
     const IndexMaskSegment universe_segment,
     LinearAllocator<> &allocator,
-    const FunctionRef<int64_t(IndexMaskSegment indices, int16_t *r_true_indices)> filter_indices,
+    const FnRef<int64_t(IndexMaskSegment indices, int16_t *r_true_indices)> filter_indices,
     Vector<IndexMaskSegment, 16> &r_segments)
 {
-  std::array<int16_t, max_segment_size> indices_array;
-  const int64_t true_indices_num = filter_indices(universe_segment, indices_array.data());
+  std::array<int16_t, max_segment_size> indices_arr;
+  const int64_t true_indices_num = filter_indices(universe_segment, indices_arr.data());
   if (true_indices_num == 0) {
     return;
   }
@@ -662,7 +648,7 @@ static void segments_from_predicate_filter(
   Vector<std::variant<IndexRange, Span<int16_t>>> true_segments;
   unique_sorted_indices::split_to_ranges_and_spans<int16_t>(true_indices, 64, true_segments);
 
-  const Span<int16_t> static_indices = get_static_indices_array();
+  const Span<int16_t> static_indices = get_static_indices_arr();
 
   for (const auto &true_segment : true_segments) {
     if (std::holds_alternative<IndexRange>(true_segment)) {
@@ -680,18 +666,18 @@ static void segments_from_predicate_filter(
 IndexMask from_predicate_impl(
     const IndexMask &universe,
     const GrainSize grain_size,
-    IndexMaskMemory &memory,
-    const FunctionRef<int64_t(IndexMaskSegment indices, int16_t *r_true_indices)> filter_indices)
+    IndexMaskMem &mem,
+    const FnRef<int64_t(IndexMaskSegment indices, int16_t *r_true_indices)> filter_indices)
 {
   if (universe.is_empty()) {
     return {};
   }
 
   Vector<IndexMaskSegment, 16> segments;
-  if (universe.size() <= grain_size.value) {
+  if (universe.size() <= grain_size.val) {
     for (const int64_t segment_i : IndexRange(universe.segments_num())) {
       const IndexMaskSegment universe_segment = universe.segment(segment_i);
-      segments_from_predicate_filter(universe_segment, memory, filter_indices, segments);
+      segments_from_predicate_filter(universe_segment, mem, filter_indices, segments);
     }
   }
   else {
@@ -701,7 +687,7 @@ IndexMask from_predicate_impl(
       segments_from_predicate_filter(
           universe_segment, data.allocator, filter_indices, data.segments);
     });
-    segments_collector.reduce(memory, segments);
+    segments_collector.reduce(mem, segments);
   }
 
   consolidate_segments(segments, memory);
@@ -709,7 +695,7 @@ IndexMask from_predicate_impl(
 }
 }  // namespace detail
 
-std::optional<RawMaskIterator> IndexMask::find(const int64_t query_index) const
+std::optional<RawMaskIter> IndexMask::find(const int64_t query_index) const
 {
   if (this->is_empty()) {
     return std::nullopt;
@@ -733,23 +719,23 @@ std::optional<RawMaskIterator> IndexMask::find(const int64_t query_index) const
     return std::nullopt;
   }
   const int64_t index_in_segment = -1 + binary_search::find_predicate_begin(
-                                            local_segment, [&](const int16_t value) {
-                                              return local_query_index < value;
+                                            local_segment, [&](const int16_t val) {
+                                              return local_query_index < val;
                                             });
   if (local_segment[index_in_segment] != local_query_index) {
     return std::nullopt;
   }
-  return RawMaskIterator{segment_i, int16_t(index_in_segment)};
+  return RawMaskIter{segment_i, int16_t(index_in_segment)};
 }
 
 bool IndexMask::contains(const int64_t query_index) const
 {
-  return this->find(query_index).has_value();
+  return this->find(query_index).has_val();
 }
 
-template IndexMask IndexMask::from_indices(Span<int32_t>, IndexMaskMemory &);
-template IndexMask IndexMask::from_indices(Span<int64_t>, IndexMaskMemory &);
+template IndexMask IndexMask::from_indices(Span<int32_t>, IndexMaskMem &);
+template IndexMask IndexMask::from_indices(Span<int64_t>, IndexMaskMem &);
 template void IndexMask::to_indices(MutableSpan<int32_t>) const;
 template void IndexMask::to_indices(MutableSpan<int64_t>) const;
 
-}  // namespace blender::index_mask
+}  // namespace dune::index_mask
