@@ -1,5 +1,5 @@
 /* A min-heap/priority queue ADT.
- * Simplified v of the heap, only supports insert + removal from top.
+ * Simpl. v of heap; support ins+rmv from top.
  * See lib_heap.c for a more full featured heap implementation */
 #include <stdlib.h>
 #include <string.h>
