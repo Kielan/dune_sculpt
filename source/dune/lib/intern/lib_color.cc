@@ -57,4 +57,4 @@ template std::ostream &operator<<(
     std::ostream &stream,
     const ColorRGBA<uint8_t, eSpace::SceneLinearByteEncoded, eAlpha::Straight> &c);
 
-}  // namespace blender
+}  // namespace dune
