@@ -1,9 +1,5 @@
-/** \file
- * \ingroup bli
- *
- *  Functions to compute MD5 message digest of files or memory blocks
- *  according to the definition of MD5 in RFC 1321 from April 1992.
- */
+/* Fns to compute MD5 msg digest of files or mema blocks
+ *  according to the definition of MD5 in RFC 1321 from April 1992. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,8 +14,8 @@
 
 /* The following contortions are an attempt to use the C preprocessor to determine an unsigned
  * integral type that is 32 bits wide.
- * An alternative approach is to use autoconf's AC_CHECK_SIZEOF macro, but doing that would require
- * that the configure script compile and *run* the resulting executable.
+ * An alt approach: use autoconf's AC_CHECK_SIZEOF macro but would req
+ * the config script compile and *run* the resulting executable.
  * Locally running cross-compiled executables is usually not possible. */
 
 #if defined __STDC__ && __STDC__
@@ -30,7 +26,7 @@
 
 /* If UINT_MAX isn't defined, assume it's a 32-bit type.
  * This should be valid for all systems GNU cares about
- * because that doesn't include 16-bit systems, and only modern systems
+ * bc that doesn't include 16-bit systems, and only modern systems
  * (that certainly have <limits.h>) have 64+-bit integral types. */
 
 #ifndef UINT_MAX
@@ -82,12 +78,12 @@ static void md5_init_cxt(struct md5_ctx *cxt)
   ctx->D = 0x10325476;
 }
 
-/* Starting with the result of former calls of this fn (or the init),
- * this fn updates the 'ctx' cxt for the next 'len' bytes starting at 'buf'.
- * It is necessary that 'len' is a multiple of 64!!! */
+/* Starting w the result of former calls of this fn (or the init),
+ * this fn updates the 'cxt' cxt for the next 'len' bytes starting at 'buf'.
+ * Its necessary that 'len' is a multiple of 64!!! */
 static void md5_proc_block(const void *buf, size_t len, struct md5_cxt *cxt)
 {
-/* These are the 4 fns used in the four steps of the MD5 algorithm and defined in the
+/* These are the 4 fns used in the 4 steps of the MD5 algorithm and defined in the
  * RFC 1321. The 1st fn is a little bit optimized
  * (as found in Colin Plumbs public domain implementation). */
 /* #define FF(b, c, d) ((b & c) | (~b & d)) */
@@ -131,7 +127,6 @@ static void md5_proc_block(const void *buf, size_t len, struct md5_cxt *cxt)
 
     /* Before we start, one word to the strange constants. They are defined in RFC 1321 as:
      *     `T[i] = (int) (4294967296.0 * fabs (sin (i))), i=1..64 */
-
     /* Round 1. */
     OP(A, B, C, D, 7, 0xd76aa478);
     OP(D, A, B, C, 12, 0xe8c7b756);
@@ -254,7 +249,7 @@ static void *md5_read_cxt(const struct md5_cxt *cxt, void *resbuf)
 int lib_hash_md5_stream(FILE *stream, void *resblock)
 {
 #define BLOCKSIZE 4096 /* IMPORTANT: must be a multiple of 64. */
-  struct md5_ctx ctx;
+  struct md5_cxt cxt;
   md5_uint32 len[2];
   char buf[BLOCKSIZE + 72];
   size_t pad, sum;
