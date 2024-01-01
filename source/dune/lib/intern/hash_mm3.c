@@ -1,7 +1,7 @@
 /* Fns to compute Murmur3 hash key.
- * This Code is based on alShaders/Cryptomatte/MurmurHash3.h:
- * MurmurHash3 was written by Austin Appleby, and is placed in the public
- * domain. The author hereby disclaims copyright to this source code. */
+ * Code based on alShaders/Cryptomatte/MurmurHash3.h:
+ * MurmurHash3 written by Austin Appleby, placed in the pub
+ * domain. Author hereby disclaims copyright to src code. */
 
 #include "lib_compiler_attrs.h"
 #include "lib_compiler_compat.h"
@@ -22,7 +22,7 @@ static inline uint32_t rotl32(uint32_t x, int8_t r)
 #  define BIG_CONSTANT(x) (x##LLU)
 #endif /* !defined(_MSC_VER) */
 
-/* Block read - if your platform needs to do endian-swapping or can only
+/* Block read if your platform needs to do endian-swapping or can only
  * handle aligned reads, do the conversion here */
 
 LIB_INLINE uint32_t getblock32(const uint32_t *p, int i)
@@ -35,7 +35,7 @@ LIB_INLINE uint64_t getblock64(const uint64_t *p, int i)
   return p[i];
 }
 
-/* Finalization mix - force all bits of a hash block to avalanche */
+/* Final mix: force all bits of a hash block to avalanche */
 LIB_INLINE uint32_t fmix32(uint32_t h)
 {
   h ^= h >> 16;
@@ -104,7 +104,6 @@ uint32_t lib_hash_mm3(const uchar *data, size_t len, uint32_t seed)
   }
 
   /* finalization */
-
   h1 ^= len;
 
   h1 = fmix32(h1);
