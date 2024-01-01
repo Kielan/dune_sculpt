@@ -66,7 +66,7 @@ bool lib_lasso_is_edge_inside(const int mcoords[][2],
     return true;
   }
 
-  /* no points in lasso, so we have to intersect with lasso edge */
+  /* no points in lasso, so we have to intersect w lasso edge */
   if (isect_seg_seg_v2_int(mcoords[0], mcoords[mcoords_len - 1], v1, v2) > 0) {
     return true;
   }
