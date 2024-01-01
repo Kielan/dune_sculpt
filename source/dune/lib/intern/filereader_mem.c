@@ -73,20 +73,18 @@ FileReader *lib_filereader_new_mem(const void *data, size_t len)
   return (FileReader *)mem;
 }
 
-/* Memory-mapped file reading.
- * By using `mmap()`, we can map a file so that it can be treated like normal memory,
- * meaning that we can just read from it with `memcpy()` etc.
- * This avoids system call overhead and can significantly speed up file loading.
- */
-
-static int64_t memory_read_mmap(FileReader *reader, void *buffer, size_t size)
+/* Mem-mapped file reading.
+ * By using `mmap()`, we can map a file so that it can be treated like normal mem,
+ * meaning that we can just read from it w `memcpy()` etc.
+ * This avoids sys call overhead and can significantly speed up file loading. */
+static int64_t mem_read_mmap(FileReader *reader, void *buf, size_t size)
 {
-  MemoryReader *mem = (MemoryReader *)reader;
+  MemReader *mem = (MemReader *)reader;
 
-  /* Don't read more bytes than there are available in the buffer. */
+  /* Don't read more bytes than there are available in the buf. */
   size_t readsize = MIN2(size, (size_t)(mem->length - mem->reader.offset));
 
-  if (!BLI_mmap_read(mem->mmap, buffer, mem->reader.offset, readsize)) {
+  if (!lib_mmap_read(mem->mmap, buf, mem->reader.offset, readsize)) {
     return 0;
   }
 
@@ -95,9 +93,9 @@ static int64_t memory_read_mmap(FileReader *reader, void *buffer, size_t size)
   return readsize;
 }
 
-static void memory_close_mmap(FileReader *reader)
+static void mem_close_mmap(FileReader *reader)
 {
-  MemoryReader *mem = (MemoryReader *)reader;
+  MemReader *mem = (MemReader *)reader;
   lib_mmap_free(mem->mmap);
   mem_free(mem);
 }
@@ -109,14 +107,14 @@ FileReader *lib_filereader_new_mmap(int filedes)
     return NULL;
   }
 
-  MemReader *mem = MEM_callocN(sizeof(MemoryReader), __func__);
+  MemReader *mem = mem_calloc(sizeof(MemReader), __func__);
 
   mem->mmap = mmap;
-  mem->length = BLI_mmap_get_length(mmap);
+  mem->length = lib_mmap_get_length(mmap);
 
-  mem->reader.read = memory_read_mmap;
-  mem->reader.seek = memory_seek;
-  mem->reader.close = memory_close_mmap;
+  mem->reader.read = mem_read_mmap;
+  mem->reader.seek = mem_seek;
+  mem->reader.close = mem_close_mmap;
 
   return (FileReader *)mem;
 }
