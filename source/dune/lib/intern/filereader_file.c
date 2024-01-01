@@ -17,10 +17,10 @@ typedef struct {
   int filedes;
 } RawFileReader;
 
-static int64_t file_read(FileReader *reader, void *buffer, size_t size)
+static int64_t file_read(FileReader *reader, void *buf, size_t size)
 {
   RawFileReader *rawfile = (RawFileReader *)reader;
-  int64_t readsize = lib_read(rawfile->filedes, buffer, size);
+  int64_t readsize = lib_read(rawfile->filedes, buf, size);
 
   if (readsize >= 0) {
     rawfile->reader.offset += readsize;
