@@ -123,7 +123,7 @@ LIB_INLINE uint ghash_bucket_index(const GHash *gh, const uint hash)
 #endif
 }
 
-/* Find the index of next used bucket, starting from curr_bucket (gh is assumed non-empty). */
+/* Find index of next used bucket, starting from curr_bucket (gh is assumed non-empty). */
 LIB_INLINE uint ghash_find_next_bucket_index(const GHash *gh, uint curr_bucket)
 {
   if (curr_bucket >= gh->nbuckets) {
@@ -188,7 +188,7 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
           buckets_new[bucket_index] = e;
         }
 #else
-        /* No need to recompute hashes in this case, since our mask is just smaller,
+        /* No need to recompute hashes in this case, bc mask is just smaller,
          * all items in old bucket 'i' will go in same new bucket (i & new_mask)! */
         const uint bucket_index = ghash_bucket_index(gh, i);
         lib_assert(!buckets_old[i] ||
@@ -212,8 +212,8 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
   }
 }
 
-/* Check if the number of items in the GHash is large enough to require more buckets,
- * or small enough to require less buckets, and resize gh accordingly.q */
+/* Check if num of items in GHash is large enough to req more buckets,
+ * or small enough to req less buckets; resize gh accordingly. */
 static void ghash_buckets_expand(GHash *gh, const uint nentries, const bool user_defined)
 {
   uint new_nbuckets;
@@ -299,7 +299,7 @@ static void ghash_buckets_contract(GHash *gh,
   ghash_buckets_resize(gh, new_nbuckets);
 }
 
-/* Clear and reset \a gh buckets, reserve again buckets for given number of entries. */
+/* Clear+reset gh buckets reserve again buckets for given num of entries. */
 LIB_INLINE void ghash_buckets_reset(GHash *gh, const uint nentries)
 {
   MEM_SAFE_FREE(gh->buckets);
@@ -323,14 +323,14 @@ LIB_INLINE void ghash_buckets_reset(GHash *gh, const uint nentries)
   ghash_buckets_expand(gh, nentries, (nentries != 0));
 }
 
-/* Internal lookup function.
- * Takes hash and bucket_index arguments to avoid calling ghash_keyhash and ghash_bucket_index
+/* Internal lookup fn.
+ * Takes hash and bucket_index args to avoid calling ghash_keyhash and ghash_bucket_index
  * multiple times. */
 LIB_INLINE Entry *ghash_lookup_entry_ex(const GHash *gh, const void *key, const uint bucket_index)
 {
   Entry *e;
-  /* If we do not store GHash, not worth computing it for each entry here!
-   * Typically, comparison fn will be quicker, and since it's needed in the end anyway... */
+  /* If dont store GHash not worth computing it for each entry here!
+   * Typically cmp fn will be quicker, bc it's needed in the end anyway... */
   for (e = gh->buckets[bucket_index]; e; e = e->next) {
     if (UNLIKELY(gh->cmpfp(key, e->key) == false)) {
       return e;
@@ -340,17 +340,17 @@ LIB_INLINE Entry *ghash_lookup_entry_ex(const GHash *gh, const void *key, const 
   return NULL;
 }
 
-/* Internal lookup fn, returns previous entry of target one too.
- * Takes bucket_index argument to avoid calling ghash_keyhash and ghash_bucket_index
- * multiple times.
- * Useful when modifying buckets somehow (like removing an entry...). */
+/* Internal lookup fn, returns prev entry of target one too.
+ * Takes bucket_index arg to avoid calling ghash_keyhash and ghash_bucket_index
+ * mult times.
+ * Useful when modding buckets (ie removing an entry...). */
 LIB_INLINE Entry *ghash_lookup_entry_prev_ex(GHash *gh,
                                              const void *key,
                                              Entry **r_e_prev,
                                              const uint bucket_index)
 {
-  /* If we do not store GHash, not worth computing it for each entry here!
-   * Typically, comparison fn will be quicker, and since it's needed in the end anyway... */
+  /* If no store GHash not worth computing for each entry here!
+   * Typically cmp fn will be quicker and bc its needed in end anyway... */
   for (Entry *e_prev = NULL, *e = gh->buckets[bucket_index]; e; e_prev = e, e = e->next) {
     if (UNLIKELY(gh->cmpfp(key, e->key) == false)) {
       *r_e_prev = e_prev;
@@ -362,7 +362,7 @@ LIB_INLINE Entry *ghash_lookup_entry_prev_ex(GHash *gh,
   return NULL;
 }
 
-/* Internal lookup fn. Only wraps ghash_lookup_entry_ex */
+/* Intern lookup fn. Only wraps ghash_lookup_entry_ex */
 LIB_INLINE Entry *ghash_lookup_entry(const GHash *gh, const void *key)
 {
   const uint hash = ghash_keyhash(gh, key);
@@ -393,7 +393,7 @@ static GHash *ghash_new(GHashHashFP hashfp,
 
 /* Internal insert fn.
  * Takes hash and bucket_index args to avoid calling ghash_keyhash and ghash_bucket_index
- * multiple times. */
+ * mult times. */
 LIB_INLINE void ghash_insert_ex(GHash *gh, void *key, void *val, const uint bucket_index)
 {
   GHashEntry *e = lib_mempool_alloc(gh->entrypool);
@@ -409,7 +409,7 @@ LIB_INLINE void ghash_insert_ex(GHash *gh, void *key, void *val, const uint buck
   ghash_buckets_expand(gh, ++gh->nentries, false);
 }
 
-/* Insert fn that takes a pre-allocated entry. */
+/* Insert fn that takes a pre-alloc entry. */
 LIB_INLINE void ghash_insert_ex_keyonly_entry(GHash *gh,
                                               void *key,
                                               const uint bucket_index,
@@ -534,7 +534,7 @@ static Entry *ghash_remove_ex(GHash *gh,
   return e;
 }
 
-/* Remove a random entry and return it (or NULL if empty), caller must free from gh->entrypool. */
+/* Remove a random entry + return it (or NULL if empty), caller must free from gh->entrypool. */
 static Entry *ghash_pop(GHash *gh, GHashIterState *state)
 {
   uint curr_bucket = state->curr_bucket;
@@ -583,7 +583,7 @@ static GHash *ghash_copy(const GHash *gh, GHashKeyCopyFP keycopyfp, GHashValCopy
 {
   GHash *gh_new;
   uint i;
-  /* This allows us to be sure to get the same number of buckets in gh_new as in ghash. */
+  /* This allow ensure get same num buckets in gh_new as in ghash. */
   const uint reserve_nentries_new = MAX2(GHASH_LIMIT_GROW(gh->nbuckets) - 1, gh->nentries);
 
   lib_assert(!valcopyfp || !(gh->flag & GHASH_FLAG_IS_GSET));
@@ -597,15 +597,14 @@ static GHash *ghash_copy(const GHash *gh, GHashKeyCopyFP keycopyfp, GHashValCopy
     Entry *e;
 
     for (e = gh->buckets[i]; e; e = e->next) {
-      Entry *e_new = BLI_mempool_alloc(gh_new->entrypool);
+      Entry *e_new = lib_mempool_alloc(gh_new->entrypool);
       ghash_entry_copy(gh_new, e_new, gh, e, keycopyfp, valcopyfp);
 
-      /* Warning!
-       * This means entries in buckets in new copy will be in reversed order!
-       * This shall not be an issue though, since order should never be assumed in ghash. */
+      /* Warning! Means entries in buckets in new copy will be in reversed order!
+       * This shall not be an issue bc order should never be assumed in ghash. */
 
-      /* We can use 'i' here, since we are sure that
-       * 'gh' and 'gh_new' have the same number of buckets! */
+      /* Can use 'i' here, bc is sure
+       * 'gh' and 'gh_new' have same num of buckets! */
       e_new->next = gh_new->buckets[i];
       gh_new->buckets[i] = e_new;
     }
@@ -615,7 +614,7 @@ static GHash *ghash_copy(const GHash *gh, GHashKeyCopyFP keycopyfp, GHashValCopy
   return gh_new;
 }
 
-/* GHash Public AP */
+/* GHash Pub AP */
 GHash *lib_ghash_new_ex(GHashHashFP hashfp,
                         GHashCmpFP cmpfp,
                         const char *info,
@@ -734,7 +733,7 @@ bool lib_ghash_remove(GHash *gh,
   const uint bucket_index = ghash_bucket_index(gh, hash);
   Entry *e = ghash_remove_ex(gh, key, keyfreefp, valfreefp, bucket_index);
   if (e) {
-    BLI_mempool_free(gh->entrypool, e);
+    lib_mempool_free(gh->entrypool, e);
     return true;
   }
   return false;
@@ -751,7 +750,7 @@ void *lib_ghash_popkey(GHash *gh, const void *key, GHashKeyFreeFP keyfreefp)
   lib_assert(!(gh->flag & GHASH_FLAG_IS_GSET));
   if (e) {
     void *val = e->val;
-    BLI_mempool_free(gh->entrypool, e);
+    lib_mempool_free(gh->entrypool, e);
     return val;
   }
   return NULL;
@@ -780,7 +779,7 @@ bool lib_ghash_pop(GHash *gh, GHashIterState *state, void **r_key, void **r_val)
   return false;
 }
 
-void BLI_ghash_clear_ex(GHash *gh,
+void lib_ghash_clear_ex(GHash *gh,
                         GHashKeyFreeFP keyfreefp,
                         GHashValFreeFP valfreefp,
                         const uint nentries_reserve)
@@ -800,7 +799,7 @@ void lib_ghash_clear(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfree
 
 void lib_ghash_free(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
 {
-  lib_assert((int)gh->nentries == BLI_mempool_len(gh->entrypool));
+  lib_assert((int)gh->nentries == lib_mempool_len(gh->entrypool));
   if (keyfreefp || valfreefp) {
     ghash_free_cb(gh, keyfreefp, valfreefp);
   }
@@ -907,7 +906,7 @@ bool lib_gset_ensure_p_ex(GSet *gs, const void *key, void ***r_key)
   const bool haskey = (e != NULL);
 
   if (!haskey) {
-    /* Pass 'key' in case we resize */
+    /* Pass 'key' in case of resize */
     e = lib_mempool_alloc(((GHash *)gs)->entrypool);
     ghash_insert_ex_keyonly_entry((GHash *)gs, (void *)key, bucket_index, (Entry *)e);
     e->key = NULL; /* caller must re-assign */
@@ -978,45 +977,39 @@ void lib_gset_flag_clear(GSet *gs, uint flag)
 }
 
 /* GSet Combined Key/Val Usage
- *
  * Not typical `set` use, only use when the ptr id matters.
- * This can be useful when the key refs data stored outside the GSet. */
+ * Useful when the key refs data stored outside the GSet. */
 
-void *BLI_gset_lookup(const GSet *gs, const void *key)
+void *lib_gset_lookup(const GSet *gs, const void *key)
 {
   Entry *e = ghash_lookup_entry((const GHash *)gs, key);
   return e ? e->key : NULL;
 }
 
-void *BLI_gset_pop_key(GSet *gs, const void *key)
+void *lib_gset_pop_key(GSet *gs, const void *key)
 {
   const uint hash = ghash_keyhash((GHash *)gs, key);
   const uint bucket_index = ghash_bucket_index((GHash *)gs, hash);
   Entry *e = ghash_remove_ex((GHash *)gs, key, NULL, NULL, bucket_index);
   if (e) {
     void *key_ret = e->key;
-    BLI_mempool_free(((GHash *)gs)->entrypool, e);
+    lib_mempool_free(((GHash *)gs)->entrypool, e);
     return key_ret;
   }
   return NULL;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Debugging & Introspection
- * \{ */
-
-int BLI_ghash_buckets_len(const GHash *gh)
+/* Debugging & Introspection  */
+int lib_ghash_buckets_len(const GHash *gh)
 {
   return (int)gh->nbuckets;
 }
-int BLI_gset_buckets_len(const GSet *gs)
+int lib_gset_buckets_len(const GSet *gs)
 {
-  return BLI_ghash_buckets_len((const GHash *)gs);
+  return lib_ghash_buckets_len((const GHash *)gs);
 }
 
-double BLI_ghash_calc_quality_ex(GHash *gh,
+double lib_ghash_calc_quality_ex(GHash *gh,
                                  double *r_load,
                                  double *r_variance,
                                  double *r_prop_empty_buckets,
@@ -1055,9 +1048,8 @@ double BLI_ghash_calc_quality_ex(GHash *gh,
   }
 
   if (r_variance) {
-    /* We already know our mean (i.e. load factor), easy to compute variance.
-     * See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Two-pass_algorithm
-     */
+    /* Alrdy know our mean (i.e. load factor), easy to compute variance.
+     * See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Two-pass_algorithm */
     double sum = 0.0;
     for (i = 0; i < gh->nbuckets; i++) {
       int count = 0;
@@ -1122,9 +1114,7 @@ double lib_ghash_calc_quality(GHash *gh)
 {
   return lib_ghash_calc_quality_ex(gh, NULL, NULL, NULL, NULL, NULL);
 }
-double BLI_gset_calc_quality(GSet *gs)
+double lib_gset_calc_quality(GSet *gs)
 {
-  return BLI_ghash_calc_quality_ex((GHash *)gs, NULL, NULL, NULL, NULL, NULL);
+  return lib_ghash_calc_quality_ex((GHash *)gs, NULL, NULL, NULL, NULL, NULL);
 }
-
-/** \} */
