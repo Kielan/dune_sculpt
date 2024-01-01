@@ -21,11 +21,10 @@ struct HeapNodeChunk {
   HeapNode buf[0];
 };
 
-/* Number of nodes to include per HeapNodeChunk when no reserved size is passed,
- * or we alloc past the reserved number.
- *
+/* Num of nodes to include per HeapNodeChunk when no reserved size is passed,
+ * or we alloc past the reserved num.
  * Optimize num for 64kb allocs.
- * keep type in sync with nodes_num in heap_node_alloc_chunk. */
+ * keep type in sync w nodes_num in heap_node_alloc_chunk. */
 #define HEAP_CHUNK_DEFAULT_NUM \
   (uint)(MEM_SIZE_OPTIMAL((1 << 16) - sizeof(struct HeapNode_Chunk)) / sizeof(HeapNode))
 
@@ -35,14 +34,14 @@ struct Heap {
   HeapNode **tree;
 
   struct {
-    /* Always keep at least one chunk (never NULL) */
+    /* Always keep min 1 chunk (never NULL) */
     struct HeapNodeChunk *chunk;
-    /* when NULL, allocate a new chunk */
+    /* when NULL alloc a new chunk */
     HeapNode *free;
   } nodes;
 };
 
-/* Internal Fns */
+/* Intern Fns */
 #define HEAP_PARENT(i) (((i)-1) >> 1)
 #define HEAP_LEFT(i) (((i) << 1) + 1)
 #define HEAP_RIGHT(i) (((i) << 1) + 2)
@@ -117,7 +116,7 @@ static void heap_up(Heap *heap, uint i)
   }
 }
 
-/* Internal Mem Management */
+/* Internal Mem Mngmt */
 static struct HeapNodeChunk *heap_node_alloc_chunk(uint nodes_num,
                                                    struct HeapNodeChunk *chunk_prev)
 {
@@ -158,7 +157,7 @@ static void heap_node_free(Heap *heap, HeapNode *node)
 Heap *lib_heap_new_ex(uint reserve_num)
 {
   Heap *heap = mem_malloc(sizeof(Heap), __func__);
-  /* ensure we have at least one so we can keep doubling it */
+  /* ensure have min 1 to keep doubling it */
   heap->size = 0;
   heap->bufsize = MAX2(1u, reserve_num);
   heap->tree = mem_malloc(heap->bufsize * sizeof(HeapNode *), "BLIHeapTree");
@@ -189,15 +188,15 @@ void lib_heap_free(Heap *heap, HeapFreeFP ptrfreefp)
   do {
     struct HeapNode_Chunk *chunk_prev;
     chunk_prev = chunk->prev;
-    MEM_freeN(chunk);
+    mem_free(chunk);
     chunk = chunk_prev;
   } while (chunk);
 
-  mem_freeN(heap->tree);
-  mem_freeN(heap);
+  mem_free(heap->tree);
+  mem_free(heap);
 }
 
-void BLI_heap_clear(Heap *heap, HeapFreeFP ptrfreefp)
+void lib_heap_clear(Heap *heap, HeapFreeFP ptrfreefp)
 {
   if (ptrfreefp) {
     uint i;
@@ -211,26 +210,26 @@ void BLI_heap_clear(Heap *heap, HeapFreeFP ptrfreefp)
   /* Remove all except the last chunk */
   while (heap->nodes.chunk->prev) {
     struct HeapNode_Chunk *chunk_prev = heap->nodes.chunk->prev;
-    MEM_freeN(heap->nodes.chunk);
+    mem_free(heap->nodes.chunk);
     heap->nodes.chunk = chunk_prev;
   }
   heap->nodes.chunk->size = 0;
   heap->nodes.free = NULL;
 }
 
-HeapNode *BLI_heap_insert(Heap *heap, float value, void *ptr)
+HeapNode *lib_heap_insert(Heap *heap, float value, void *ptr)
 {
   HeapNode *node;
 
   if (UNLIKELY(heap->size >= heap->bufsize)) {
     heap->bufsize *= 2;
-    heap->tree = MEM_reallocN(heap->tree, heap->bufsize * sizeof(*heap->tree));
+    heap->tree = mem_realloc(heap->tree, heap->bufsize * sizeof(*heap->tree));
   }
 
   node = heap_node_alloc(heap);
 
   node->ptr = ptr;
-  node->value = value;
+  node->val = val;
   node->index = heap->size;
 
   heap->tree[node->index] = node;
@@ -242,41 +241,41 @@ HeapNode *BLI_heap_insert(Heap *heap, float value, void *ptr)
   return node;
 }
 
-void BLI_heap_insert_or_update(Heap *heap, HeapNode **node_p, float value, void *ptr)
+void lib_heap_insert_or_update(Heap *heap, HeapNode **node_p, float val, void *ptr)
 {
   if (*node_p == NULL) {
-    *node_p = lib_heap_insert(heap, value, ptr);
+    *node_p = lib_heap_insert(heap, val, ptr);
   }
   else {
-    lib_heap_node_val_update_ptr(heap, *node_p, value, ptr);
+    lib_heap_node_val_update_ptr(heap, *node_p, val, ptr);
   }
 }
 
-bool BLI_heap_is_empty(const Heap *heap)
+bool lib_heap_is_empty(const Heap *heap)
 {
   return (heap->size == 0);
 }
 
-uint BLI_heap_len(const Heap *heap)
+uint lib_heap_len(const Heap *heap)
 {
   return heap->size;
 }
 
-HeapNode *BLI_heap_top(const Heap *heap)
+HeapNode *lib_heap_top(const Heap *heap)
 {
   return heap->tree[0];
 }
 
-float BLI_heap_top_value(const Heap *heap)
+float lib_heap_top_val(const Heap *heap)
 {
-  BLI_assert(heap->size != 0);
+  lib_assert(heap->size != 0);
 
-  return heap->tree[0]->value;
+  return heap->tree[0]->val;
 }
 
-void *BLI_heap_pop_min(Heap *heap)
+void *lib_heap_pop_min(Heap *heap)
 {
-  BLI_assert(heap->size != 0);
+  lib_assert(heap->size != 0);
 
   void *ptr = heap->tree[0]->ptr;
 
@@ -290,9 +289,9 @@ void *BLI_heap_pop_min(Heap *heap)
   return ptr;
 }
 
-void BLI_heap_remove(Heap *heap, HeapNode *node)
+void lib_heap_remove(Heap *heap, HeapNode *node)
 {
-  BLI_assert(heap->size != 0);
+  lib_assert(heap->size != 0);
 
   uint i = node->index;
 
@@ -302,40 +301,40 @@ void BLI_heap_remove(Heap *heap, HeapNode *node)
     i = p;
   }
 
-  BLI_heap_pop_min(heap);
+  lib_heap_pop_min(heap);
 }
 
-void BLI_heap_node_value_update(Heap *heap, HeapNode *node, float value)
+void lib_heap_node_val_update(Heap *heap, HeapNode *node, float value)
 {
-  if (value < node->value) {
-    node->value = value;
+  if (value < node->val) {
+    node->val = value;
     heap_up(heap, node->index);
   }
-  else if (value > node->value) {
-    node->value = value;
+  else if (val > node->val) {
+    node->val = val;
     heap_down(heap, node->index);
   }
 }
 
-void BLI_heap_node_value_update_ptr(Heap *heap, HeapNode *node, float value, void *ptr)
+void pob_heap_node_val_update_ptr(Heap *heap, HeapNode *node, float val, void *ptr)
 {
-  node->ptr = ptr; /* only difference */
-  if (value < node->value) {
-    node->value = value;
+  node->ptr = ptr; /* only diff */
+  if (val < node->val) {
+    node->val = value;
     heap_up(heap, node->index);
   }
-  else if (value > node->value) {
-    node->value = value;
+  else if (val > node->val) {
+    node->val = val;
     heap_down(heap, node->index);
   }
 }
 
-float BLI_heap_node_value(const HeapNode *heap)
+float lib_heap_node_val(const HeapNode *heap)
 {
-  return heap->value;
+  return heap->val;
 }
 
-void *BLI_heap_node_ptr(const HeapNode *heap)
+void *lib_heap_node_ptr(const HeapNode *heap)
 {
   return heap->ptr;
 }
@@ -361,9 +360,7 @@ static bool heap_is_minheap(const Heap *heap, uint root)
   }
   return true;
 }
-bool BLI_heap_is_valid(const Heap *heap)
+bool lib_heap_is_valid(const Heap *heap)
 {
   return heap_is_minheap(heap, 0);
 }
-
-/** \} */
