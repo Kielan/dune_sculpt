@@ -107,7 +107,6 @@ void lib_kdtree_nd_(insert)(KDTree *tree, int index, const float co[KD_DIMS])
 
   /* Array isn't calloc'd,
    * need to init all struct members */
-
   node->left = node->right = KD_NODE_UNSET;
   copy_vn_vn(node->co, co);
   node->index = index;
@@ -306,7 +305,6 @@ int lib_kdtree_nd_(find_nearest)(const KDTree *tree,
 
 /* A version of lib_kdtree_3d_find_nearest which runs a callback
  * to filter out vals.
- *
  * param filter_cb: Filter find results,
  * Return codes: (1: accept, 0: skip, -1: immediate exit). */
 int lib_kdtree_nd_(find_nearest_cb)(
@@ -696,11 +694,9 @@ int lib_kdtree_nd_(range_search)(const KDTree *tree,
 }
 
 /* A version of lib_kdtree_3d_range_search which runs a cb
- * instead of allocating an array.
- *
+ * instead of alloc an array.
  * param search_cb: Called for every node found in range,
  * false return val performs an early exit.
- *
  * the order of calls isn't sorted based on distance. */
 void lib_kdtree_nd_(range_search_cb)(
     const KDTree *tree,
@@ -768,8 +764,8 @@ finally:
   }
 }
 
-/* Use when we want to loop over nodes ordered by index.
- * Requires indices to be aligned with nodes. */
+/* Use when: want to loop over nodes ordered by index.
+ * Requires indices to be aligned w nodes. */
 static int *kdtree_order(const KDTree *tree)
 {
   const KDTreeNode *nodes = tree->nodes;
@@ -817,7 +813,7 @@ static void dedup_recursive(const struct DeDupParams *p, uint i)
       }
     }
     if (node->left != KD_NODE_UNSET) {
-      deduplicate_recursive(p, node->left);
+      dedup_recursive(p, node->left);
     }
     if (node->right != KD_NODE_UNSET) {
       dedup_recursive(p, node->right);
