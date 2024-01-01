@@ -32,14 +32,14 @@
 #include "lib_path_util.h"
 #include "lib_string.h"
 
-#include "../imbuf/IMB_imbuf.h"
+#include "../imbuf/imbuf.h"
 
 /* Ordering n for sorting lists of files/directories. Returns -1 if
  * entry1 belongs before entry2, 0 if they are equal, 1 if they should be swapped. */
 static int lib_compare(struct direntry *entry1, struct direntry *entry2)
 {
   /* type is equal to stat.st_mode */
-  /* directories come before non-directories */
+  /* dirs come before non-dirs */
   if (S_ISDIR(entry1->type)) {
     if (S_ISDIR(entry2->type) == 0) {
       return -1;
@@ -61,7 +61,7 @@ static int lib_compare(struct direntry *entry1, struct direntry *entry2)
       return 1;
     }
   }
-  /* arbitrary, but consistent, ordering of different types of non-regular files */
+  /* arbitrary but consistent, ordering of diff types of non-regular files */
   if ((entry1->type & S_IFMT) < (entry2->type & S_IFMT)) {
     return -1;
   }
@@ -92,7 +92,7 @@ struct BuildDirCxt {
   int nrfiles;
 };
 
-/* Scans the directory named *dirname and appends entries for its contents to files */
+/* Scans the dir named *dirname and appends entries for its contents to files */
 static void lib_builddir(struct BuildDirCxt *dir_cxt, const char *dirname)
 {
   struct List dirbase = {NULL, NULL};
@@ -141,7 +141,7 @@ static void lib_builddir(struct BuildDirCxt *dir_cxt, const char *dirname)
     }
 
     if (newnum) {
-      if (dir_ctx->files) {
+      if (dir_cxt->files) {
         void *const tmp = mem_reallocn(dir_cxt->files,
                                        (dir_cxt->nrfiles + newnum) * sizeof(struct direntry));
         if (tmp) {
@@ -181,7 +181,7 @@ static void lib_builddir(struct BuildDirCxt *dir_cxt, const char *dirname)
         }
       }
       else {
-        printf("Couldn't get memory for dir\n");
+        printf("Couldn't get mem for dir\n");
         exit(1);
       }
 
@@ -194,7 +194,7 @@ static void lib_builddir(struct BuildDirCxt *dir_cxt, const char *dirname)
       }
     }
     else {
-      printf("%s empty directory\n", dirname);
+      printf("%s empty dir\n", dirname);
     }
 
     closedir(dir);
@@ -206,7 +206,7 @@ static void lib_builddir(struct BuildDirCxt *dir_cxt, const char *dirname)
 
 unsigned int lib_filelist_dir_contents(const char *dirname, struct direntry **r_filelist)
 {
-  struct BuildDirCxt dir_ctx;
+  struct BuildDirCxt dir_cxt;
 
   dir_cxt.nrfiles = 0;
   dir_cxt.files = NULL;
@@ -217,7 +217,7 @@ unsigned int lib_filelist_dir_contents(const char *dirname, struct direntry **r_
     *r_filelist = dir_cxt.files;
   }
   else {
-    /* Keep Dune happy. Dune stores this in a variable
+    /* Keep Dune happy. Dune stores this in a var
      * where 0 has special meaning..... */
     *r_filelist = mem_mallocn(sizeof(**r_filelist), __func__);
   }
@@ -231,7 +231,7 @@ void lib_filelist_entry_size_to_string(const struct stat *st,
                                        const bool UNUSED(compact),
                                        char r_size[FILELIST_DIRENTRY_SIZE_LEN])
 {
-  /* Seems st_size is signed 32-bit value in *nix and Windows.  This
+  /* Seems st_size is signed 32-bit val in *nix and Windows.  This
    * will buy us some time until files get bigger than 4GB or until
    * everyone starts using __USE_FILE_OFFSET64 or equivalent. */
   double size = (double)(st ? st->st_size : sz);
@@ -321,7 +321,7 @@ void lib_filelist_entry_datetime_to_string(const struct stat *st,
   int yesterday_yday = 0;
 
   if (r_is_today || r_is_yesterday) {
-    /* `localtime()` has only one buffer so need to get data out before called again. */
+    /* `localtime()` has only one buf so need to get data out before called again. */
     const time_t ts_now = time(NULL);
     struct tm *today = localtime(&ts_now);
 
@@ -380,9 +380,9 @@ void lib_filelist_entry_duplicate(struct direntry *dst, const struct direntry *s
   }
 }
 
-void lib_filelist_duplicate(struct direntry **dest_filelist,
-                            struct direntry *const src_filelist,
-                            const unsigned int nrentries)
+void lib_filelist_dup(struct direntry **dest_filelist,
+                      struct direntry *const src_filelist,
+                      const unsigned int nrentries)
 {
   unsigned int i;
 
@@ -390,7 +390,7 @@ void lib_filelist_duplicate(struct direntry **dest_filelist,
   for (i = 0; i < nrentries; i++) {
     struct direntry *const src = &src_filelist[i];
     struct direntry *dst = &(*dest_filelist)[i];
-    lib_filelist_entry_duplicate(dst, src);
+    lib_filelist_entry_dup(dst, src);
   }
 }
 
