@@ -38,4 +38,4 @@ AlignedIndexRanges split_index_range_by_alignment(const IndexRange range, const 
   return aligned_ranges;
 }
 
-}  // namespace blender
+}  // namespace dune
