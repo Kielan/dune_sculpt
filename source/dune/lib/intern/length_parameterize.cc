@@ -23,7 +23,7 @@ void sample_uniform(const Span<float> lengths,
   threading::parallel_for(IndexRange(count), 512, [&](const IndexRange range) {
     SampleSegmentHint hint;
     for (const int i : range) {
-      /* Use minimum to avoid issues with floating point accuracy. */
+      /* Use min to avoid issues w floating point accuracy. */
       const float sample_length = std::min(total_length, i * step_length);
       sample_at_length(lengths, sample_length, r_segment_indices[i], r_factors[i], &hint);
     }
@@ -40,8 +40,8 @@ void sample_at_lengths(const Span<float> accumulated_segment_lengths,
   lib_assert(std::is_sorted(sample_lengths.begin(), sample_lengths.end()));
 
   const int count = sample_lengths.size();
-  BLI_assert(count == r_segment_indices.size());
-  BLI_assert(count == r_factors.size());
+  lib_assert(count == r_segment_indices.size());
+  lib_assert(count == r_factors.size());
 
   threading::parallel_for(IndexRange(count), 512, [&](const IndexRange range) {
     SampleSegmentHint hint;
@@ -53,4 +53,4 @@ void sample_at_lengths(const Span<float> accumulated_segment_lengths,
   });
 }
 
-}  // namespace blender::length_parameterize
+}  // namespace dune::length_parameterize
