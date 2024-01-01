@@ -2,7 +2,6 @@
  * Code based on alShaders/Cryptomatte/MurmurHash3.h:
  * MurmurHash3 written by Austin Appleby, placed in the pub
  * domain. Author hereby disclaims copyright to src code. */
-
 #include "lib_compiler_attrs.h"
 #include "lib_compiler_compat.h"
 #include "pib_hash_mm3.h" /* own include */
