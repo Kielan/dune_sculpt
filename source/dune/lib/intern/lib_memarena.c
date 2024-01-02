@@ -1,12 +1,9 @@
 /* Efficient mem alloc for many small chunks.
  * About Mem Arena
- *
  * Mem arena's are commonly used when the program
  * needs to quickly alloc lots of little bits of data,
  * which are all freed at the same moment.
- *
- * Mem can't be freed during the arenas lifetime. */
-
+ * - Mem can't be freed during the arena's lifetime. */
 #include <stdlib.h>
 #include <string.h>
 
