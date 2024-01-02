@@ -49,7 +49,7 @@ void lib_linklist_lockfree_insert(LockfreeLinkList *list, LockfreeLinkNode *node
   atomic_cas_ptr((void **)&list->tail, tail_node, node);
 }
 
-LockfreeLinkNode *BLI_linklist_lockfree_begin(LockfreeLinkList *list)
+LockfreeLinkNode *lib_linklist_lockfree_begin(LockfreeLinkList *list)
 {
   return list->head->next;
 }
