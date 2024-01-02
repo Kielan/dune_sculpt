@@ -12,7 +12,7 @@
 
 #include "PIL_time.h"
 
-/* for checking system threads - LIB_system_thread_count */
+/* for checking sys threads: lib_sys_thread_count */
 #ifdef WIN32
 #  include <sys/timeb.h>
 #  include <windows.h>
@@ -42,35 +42,30 @@ static void *thread_tls_data;
 #endif
 
 /* Basic Thread Control API
- *
  * Many thread cases have an X amount of jobs, and only an Y amount of
  * threads are useful (typically amount of CPU's)
- *
- * This code can be used to start a maximum amount of 'thread slots', which
- * then can be filled in a loop with an idle timer.
+ * This code can be used to start a max amount of 'thread slots', which
+ * then can be filled in a loop w an idle timer.
  *
  * A sample loop can look like this (pseudo c);
- *
- * code{.c}
- *
  *   List lb;
  *   int max_threads = 2;
  *   int cont = 1;
  *
- *   lib_threadpool_init(&lb, do_something_func, max_threads);
+ *   lib_threadpool_init(&list, do_something_fn, max_threads);
  *
  *   while (cont) {
- *     if (lib_available_threads(&lb) && !(escape loop event)) {
- *       // get new job (data pointer)
- *       // tag job 'processed
- *       lib_threadpool_insert(&lb, job);
+ *     if (lib_available_threads(&list) && !(escape loop ev)) {
+ *       // get new job (data ptr)
+ *       // tag job 'processed'
+ *       lib_threadpool_insert(&list, job);
  *     }
  *     else time_sleep_ms(50);
  *
- *     // Find if a job is ready, this the do_something_func() should write in job somewhere.
+ *     // Find if a job is rdy, the do_something_fn() should write in job somewhere.
  *     cont = 0;
- *     for (go over all jobs)
- *       if (job is ready) {
+ *     for (iter all jobs)
+ *       if (job is rdy) {
  *         if (job was not removed) {
  *           lib_threadpool_remove(&lb, job);
  *         }
@@ -78,8 +73,8 @@ static void *thread_tls_data;
  *       else cont = 1;
  *     }
  *     // Conditions to exit loop.
- *     if (if escape loop event) {
- *       if (lib_available_threadslots(&lb) == max_threads) {
+ *     if (if escape loop ev) {
+ *       if (lib_available_threadslots(&list) == max_threads) {
  *         break;
  *       }
  *     }
@@ -145,14 +140,14 @@ void lib_threadpool_init(List *threadbase, void *(*do_thread)(void *), int tot)
   if (level == 0) {
 #ifdef USE_APPLE_OMP_FIX
     /* Workaround for Apple gcc 4.2.1 OMP vs background thread bug,
-     * we copy GOMP thread local storage pointer to setting it again
+     * we copy GOMP thread local storage ptr to setting it again
      * inside the thread that we start. */
     thread_tls_data = pthread_getspecific(gomp_tls_key);
 #endif
   }
 }
 
-int lib_available_threads(ListBase *threadbase)
+int lib_available_threads(List *threadbase)
 {
   int counter = 0;
 
@@ -165,7 +160,7 @@ int lib_available_threads(ListBase *threadbase)
   return counter;
 }
 
-int lib_threadpool_available_thread_index(ListBase *threadbase)
+int lib_threadpool_available_thread_index(List *threadbase)
 {
   int counter = 0;
 
@@ -185,7 +180,7 @@ static void *tslot_thread_start(void *tslot_p)
 
 #ifdef USE_APPLE_OMP_FIX
   /* Workaround for Apple gcc 4.2.1 OMP vs background thread bug,
-   * set GOMP thread local storage pointer which was copied beforehand */
+   * set GOMP thread local storage ptr which was copied beforehand */
   pthread_setspecific(gomp_tls_key, thread_tls_data);
 #endif
 
@@ -207,10 +202,10 @@ void lib_threadpool_insert(List *threadbase, void *callerdata)
       return;
     }
   }
-  printf("ERROR: could not insert thread slot\n");
+  printf("ERR: could not insert thread slot\n");
 }
 
-void lib_threadpool_remove(ListBase *threadbase, void *callerdata)
+void lib_threadpool_remove(List *threadbase, void *callerdata)
 {
   LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->callerdata == callerdata) {
@@ -221,7 +216,7 @@ void lib_threadpool_remove(ListBase *threadbase, void *callerdata)
   }
 }
 
-void lib_threadpool_remove_index(ListBase *threadbase, int index)
+void lib_threadpool_remove_index(List *threadbase, int index)
 {
   int counter = 0;
 
@@ -236,7 +231,7 @@ void lib_threadpool_remove_index(ListBase *threadbase, int index)
   }
 }
 
-void lib_threadpool_clear(ListBase *threadbase)
+void lib_threadpool_clear(List *threadbase)
 {
   LIST_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail == 0) {
@@ -247,7 +242,7 @@ void lib_threadpool_clear(ListBase *threadbase)
   }
 }
 
-void lib_threadpool_end(ListBase *threadbase)
+void lib_threadpool_end(List *threadbase)
 {
 
   /* Only needed if there's actually some stuff to end
@@ -261,11 +256,11 @@ void lib_threadpool_end(ListBase *threadbase)
       pthread_join(tslot->pthread, nullptr);
     }
   }
-  lib_freelistn(threadbase);
+  lib_freelist(threadbase);
 }
 
-/* System Info */
-int lib_system_thread_count()
+/* Sys Info */
+int lib_sys_thread_count()
 {
   static int t = -1;
 
@@ -377,7 +372,7 @@ void lib_mutex_end(ThreadMutex *mutex)
 
 ThreadMutex *lib_mutex_alloc()
 {
-  ThreadMutex *mutex = static_cast<ThreadMutex *>(MEM_callocN(sizeof(ThreadMutex), "ThreadMutex"));
+  ThreadMutex *mutex = static_cast<ThreadMutex *>(mem_calloc(sizeof(ThreadMutex), "ThreadMutex"));
   lib_mutex_init(mutex);
   return mutex;
 }
@@ -456,7 +451,7 @@ void lib_spin_end(SpinLock *spin)
 #elif defined(__APPLE__)
   lib_mutex_end(spin);
 #elif defined(_MSC_VER)
-  /* Nothing to do, spin is a simple integer type. */
+  /* Nothing to do, spin is a simple int type. */
 #else
   pthread_spin_destroy(spin);
 #endif
@@ -491,7 +486,7 @@ void lib_rw_mutex_end(ThreadRWMutex *mutex)
 ThreadRWMutex *lib_rw_mutex_alloc()
 {
   ThreadRWMutex *mutex = static_cast<ThreadRWMutex *>(
-      mem_calloc(sizeof(ThreadRWMutex), "ThreadRWMutex"));
+  mem_calloc(sizeof(ThreadRWMutex), "ThreadRWMutex"));
   lib_rw_mutex_init(mutex);
   return mutex;
 }
