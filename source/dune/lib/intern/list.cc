@@ -4,11 +4,8 @@
 #include <cstring>
 
 #include "mem_guardedalloc.h"
-
 #include "types_list.h"
-
 #include "lib_list.h"
-
 #include "lib_strict_flags.h"
 
 void lib_movelisttolist(List *dst, List *src)
@@ -140,17 +137,17 @@ void lib_remlink(List *list, void *vlink)
   }
 }
 
-bool lib_remlink_safe(ListBase *listbase, void *vlink)
+bool lib_remlink_safe(List *list, void *vlink)
 {
-  if (BLI_findindex(listbase, vlink) != -1) {
-    BLI_remlink(listbase, vlink);
+  if (lib_findindex(list, vlink) != -1) {
+    lib_remlink(listbase, vlink);
     return true;
   }
 
   return false;
 }
 
-void BLI_listbase_swaplinks(ListBase *listbase, void *vlinka, void *vlinkb)
+void lib_list_swaplinks(List *list, void *vlinka, void *vlinkb)
 {
   Link *linka = static_cast<Link *>(vlinka);
   Link *linkb = static_cast<Link *>(vlinkb);
@@ -188,22 +185,22 @@ void BLI_listbase_swaplinks(ListBase *listbase, void *vlinka, void *vlinkb)
     linkb->next->prev = linkb;
   }
 
-  if (listbase->last == linka) {
-    listbase->last = linkb;
+  if (list->last == linka) {
+    list->last = linkb;
   }
-  else if (listbase->last == linkb) {
-    listbase->last = linka;
+  else if (list->last == linkb) {
+    list->last = linka;
   }
 
-  if (listbase->first == linka) {
-    listbase->first = linkb;
+  if (list->first == linka) {
+    list->first = linkb;
   }
-  else if (listbase->first == linkb) {
-    listbase->first = linka;
+  else if (list->first == linkb) {
+    list->first = linka;
   }
 }
 
-void BLI_listbases_swaplinks(ListBase *listbasea, ListBase *listbaseb, void *vlinka, void *vlinkb)
+void lib_list_swaplinks(List *lista, List *listb, void *vlinka, void *vlinkb)
 {
   Link *linka = static_cast<Link *>(vlinka);
   Link *linkb = static_cast<Link *>(vlinkb);
@@ -213,41 +210,41 @@ void BLI_listbases_swaplinks(ListBase *listbasea, ListBase *listbaseb, void *vli
     return;
   }
 
-  /* The reference to `linkc` assigns nullptr, not a dangling pointer so it can be ignored. */
+  /* The ref to `linkc` assigns nullptr, not a dangling ptr so it can be ignored. */
 #if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 1201 /* gcc12.1+ only */
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdangling-pointer"
 #endif
 
-  /* Temporary link to use as placeholder of the links positions */
-  BLI_insertlinkafter(listbasea, linka, &linkc);
+  /* Tmp link to use as placeholder of the links positions */
+  lib_insertlinkafter(lista, linka, &linkc);
 
 #if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 1201 /* gcc12.1+ only */
 #  pragma GCC diagnostic pop
 #endif
 
   /* Bring linka into linkb position */
-  BLI_remlink(listbasea, linka);
-  BLI_insertlinkafter(listbaseb, linkb, linka);
+  lib_remlink(lista, linka);
+  lib_insertlinkafter(listb, linkb, linka);
 
   /* Bring linkb into linka position */
-  BLI_remlink(listbaseb, linkb);
-  BLI_insertlinkafter(listbasea, &linkc, linkb);
+  lib_remlink(listb, linkb);
+  lib_insertlinkafter(lista, &linkc, linkb);
 
-  /* Remove temporary link */
-  BLI_remlink(listbasea, &linkc);
+  /* Remove tmp link */
+  lib_remlink(lista, &linkc);
 }
 
-void *BLI_pophead(ListBase *listbase)
+void *lib_pophead(List *list)
 {
   Link *link;
-  if ((link = static_cast<Link *>(listbase->first))) {
-    BLI_remlink(listbase, link);
+  if ((link = static_cast<Link *>(list->first))) {
+    lib_remlink(list, link);
   }
   return link;
 }
 
-void *BLI_poptail(ListBase *listbase)
+void *lib_poptail(List *list)
 {
   Link *link;
   if ((link = static_cast<Link *>(listbase->last))) {
