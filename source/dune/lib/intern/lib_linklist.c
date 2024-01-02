@@ -242,47 +242,47 @@ void lib_linklist_insert_after(LinkNode **listp, void *ptr)
   }
 }
 
-void lib_linklist_free(LinkNode *list, LinkNodeFreeFP freefunc)
+void lib_linklist_free(LinkNode *list, LinkNodeFreeFP freef )
 {
   while (list) {
     LinkNode *next = list->next;
 
-    if (freefunc) {
-      freefunc(list->link);
+    if (freefn) {
+      freefn(list->link);
     }
-    MEM_freeN(list);
+    mem_free(list);
 
     list = next;
   }
 }
 
-void BLI_linklist_free_pool(LinkNode *list, LinkNodeFreeFP freefunc, BLI_mempool *mempool)
+void lib_linklist_free_pool(LinkNode *list, LinkNodeFreeFP freefb, LibMempool *mempool)
 {
   while (list) {
     LinkNode *next = list->next;
 
-    if (freefunc) {
-      freefunc(list->link);
+    if (freefn) {
+      freefn(list->link);
     }
-    BLI_mempool_free(mempool, list);
+    lib_mempool_free(mempool, list);
 
     list = next;
   }
 }
 
-void lib_linklist_freeN(LinkNode *list)
+void lib_linklist_free(LinkNode *list)
 {
   while (list) {
     LinkNode *next = list->next;
 
-    MEM_free(list->link);
-    MEM_free(list);
+    mem_free(list->link);
+    mem_free(list);
 
     list = next;
   }
 }
 
-void lib_linklist_apply(LinkNode *list, LinkNodeApplyFP applyfunc, void *userdata)
+void lib_linklist_apply(LinkNode *list, LinkNodeApplyFP applyfn, void *userdata)
 {
   for (; list; list = list->next) {
     applyfn(list->link, userdata);
@@ -300,7 +300,7 @@ void lib_linklist_apply(LinkNode *list, LinkNodeApplyFP applyfunc, void *userdat
 
 /* re-entrant call */
 #define SORT_IMPL_USE_THUNK
-#define SORT_IMPL_FUNC linklist_sort_fn_r
+#define SORT_IMPL_FN linklist_sort_fn_r
 #include "list_sort_impl.h"
 #undef SORT_IMPL_FN
 #undef SORT_IMPL_USE_THUNK
@@ -316,7 +316,7 @@ LinkNode *lib_linklist_sort(LinkNode *list, int (*cmp)(const void *, const void 
   return list;
 }
 
-LinkNode *BLI_linklist_sort_r(LinkNode *list,
+LinkNode *lib_linklist_sort_r(LinkNode *list,
                               int (*cmp)(void *, const void *, const void *),
                               void *thunk)
 {
