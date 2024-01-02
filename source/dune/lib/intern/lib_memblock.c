@@ -1,16 +1,10 @@
 /* Dead simple, fast mem allocator for alloc many elements of the same size. */
-
 #include <stdlib.h>
 #include <string.h>
-
 #include "atomic_ops.h"
-
 #include "lib_utildefines.h"
-
 #include "lib_memblock.h" /* own include */
-
 #include "mem_guardedalloc.h"
-
 #include "lib_strict_flags.h" /* keep last */
 
 #define CHUNK_LIST_SIZE 16
@@ -18,11 +12,11 @@
 struct LibMemblock {
   void **chunk_list;
 
-  /* Element size in bytes. */
+  /* Elem size in bytes. */
   int elem_size;
-  /* First unused element index. */
+  /* 1st unused elem index. */
   int elem_next;
-  /* Last "touched" element. */
+  /* Last "touched" elem. */
   int elem_last;
   /* Offset in a chunk of the next elem. */
   int elem_next_ofs;
@@ -95,7 +89,7 @@ void lib_memblock_clear(LibMemblock *mblk, MemblockValFreeFP free_cb)
 
   if (UNLIKELY(last_used_chunk + 1 < mblk->chunk_len - CHUNK_LIST_SIZE)) {
     mblk->chunk_len -= CHUNK_LIST_SIZE;
-    mblk->chunk_list = MEM_recallocN(mblk->chunk_list, sizeof(void *) * (uint)mblk->chunk_len);
+    mblk->chunk_list = mem_recalloc(mblk->chunk_list, sizeof(void *) * (uint)mblk->chunk_len);
   }
 
   mblk->elem_last = mblk->elem_next - 1;
