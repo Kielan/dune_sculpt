@@ -1,19 +1,17 @@
-/* Routines for working with single linked lists of 'links' - pointers to other data.
- *
+/* Routines for working w single linked lists of 'links' - ptrs to other data.
  * For double linked lists see 'lib_list.h'. */
-
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_linklist.h"
-#include "BLI_memarena.h"
-#include "BLI_mempool.h"
-#include "BLI_utildefines.h"
+#include "lib_linklist.h"
+#include "lib_memarena.h"
+#include "lib_mempool.h"
+#include "lib_utildefines.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
-int BLI_linklist_count(const LinkNode *list)
+int lib_linklist_count(const LinkNode *list)
 {
   int len;
 
@@ -24,7 +22,7 @@ int BLI_linklist_count(const LinkNode *list)
   return len;
 }
 
-int BLI_linklist_index(const LinkNode *list, void *ptr)
+int lib_linklist_index(const LinkNode *list, void *ptr)
 {
   int index;
 
@@ -37,7 +35,7 @@ int BLI_linklist_index(const LinkNode *list, void *ptr)
   return -1;
 }
 
-LinkNode *BLI_linklist_find(LinkNode *list, int index)
+LinkNode *lib_linklist_find(LinkNode *list, int index)
 {
   int i;
 
@@ -50,7 +48,7 @@ LinkNode *BLI_linklist_find(LinkNode *list, int index)
   return NULL;
 }
 
-LinkNode *BLI_linklist_find_last(LinkNode *list)
+LinkNode *lib_linklist_find_last(LinkNode *list)
 {
   if (list) {
     while (list->next) {
@@ -60,7 +58,7 @@ LinkNode *BLI_linklist_find_last(LinkNode *list)
   return list;
 }
 
-void BLI_linklist_reverse(LinkNode **listp)
+void lib_linklist_reverse(LinkNode **listp)
 {
   LinkNode *rhead = NULL, *cur = *listp;
 
@@ -76,7 +74,7 @@ void BLI_linklist_reverse(LinkNode **listp)
   *listp = rhead;
 }
 
-void BLI_linklist_move_item(LinkNode **listp, int curr_index, int new_index)
+void lib_linklist_move_item(LinkNode **listp, int curr_index, int new_index)
 {
   LinkNode *lnk, *lnk_psrc = NULL, *lnk_pdst = NULL;
   int i;
@@ -108,7 +106,7 @@ void BLI_linklist_move_item(LinkNode **listp, int curr_index, int new_index)
       lnk_pdst->next = lnk;
     }
     else {
-      /* destination is first element of the list... */
+      /* destination is 1st elem of the list... */
       lnk->next = *listp;
       *listp = lnk;
     }
@@ -134,7 +132,7 @@ void BLI_linklist_move_item(LinkNode **listp, int curr_index, int new_index)
       lnk_psrc->next = lnk->next;
     }
     else {
-      /* source is first element of the list... */
+      /* src is first elem of the list... */
       lnk = *listp;
       *listp = lnk->next;
     }
@@ -162,9 +160,9 @@ void lib_linklist_prepend_arena(LinkNode **listp, void *ptr, MemArena *ma)
   lib_linklist_prepend_nlink(listp, ptr, nlink);
 }
 
-void lib_linklist_prepend_pool(LinkNode **listp, void *ptr, BLI_mempool *mempool)
+void lib_linklist_prepend_pool(LinkNode **listp, void *ptr, alibMempool *mempool)
 {
-  LinkNode *nlink = BLI_mempool_alloc(mempool);
+  LinkNode *nlink = lib_mempool_alloc(mempool);
   lib_linklist_prepend_nlink(listp, ptr, nlink);
 }
 
@@ -178,29 +176,29 @@ void lib_linklist_append_nlink(LinkNodePair *list_pair, void *ptr, LinkNode *nli
     list_pair->last_node->next = nlink;
   }
   else {
-    BLI_assert(list_pair->last_node == NULL);
+    lib_assert(list_pair->last_node == NULL);
     list_pair->list = nlink;
   }
 
   list_pair->last_node = nlink;
 }
 
-void BLI_linklist_append(LinkNodePair *list_pair, void *ptr)
+void lib_linklist_append(LinkNodePair *list_pair, void *ptr)
 {
-  LinkNode *nlink = MEM_mallocN(sizeof(*nlink), __func__);
-  BLI_linklist_append_nlink(list_pair, ptr, nlink);
+  LinkNode *nlink = mem_malloc(sizeof(*nlink), __func__);
+  lib_linklist_append_nlink(list_pair, ptr, nlink);
 }
 
 void lib_linklist_append_arena(LinkNodePair *list_pair, void *ptr, MemArena *ma)
 {
-  LinkNode *nlink = BLI_memarena_alloc(ma, sizeof(*nlink));
-  BLI_linklist_append_nlink(list_pair, ptr, nlink);
+  LinkNode *nlink = lib_memarena_alloc(ma, sizeof(*nlink));
+  lib_linklist_append_nlink(list_pair, ptr, nlink);
 }
 
 void lib_linklist_append_pool(LinkNodePair *list_pair, void *ptr, BLI_mempool *mempool)
 {
-  LinkNode *nlink = BLI_mempool_alloc(mempool);
-  BLI_linklist_append_nlink(list_pair, ptr, nlink);
+  LinkNode *nlink = lib_mempool_alloc(mempool);
+  lib_linklist_append_nlink(list_pair, ptr, nlink);
 }
 
 void *lib_linklist_pop(LinkNode **listp)
@@ -209,7 +207,7 @@ void *lib_linklist_pop(LinkNode **listp)
   void *link = (*listp)->link;
   void *next = (*listp)->next;
 
-  MEM_freeN(*listp);
+  mem_free(*listp);
 
   *listp = next;
   return link;
@@ -229,7 +227,7 @@ void *lib_linklist_pop_pool(LinkNode **listp, BLI_mempool *mempool)
 
 void lib_linklist_insert_after(LinkNode **listp, void *ptr)
 {
-  LinkNode *nlink = mem_mallocN(sizeof(*nlink), __func__);
+  LinkNode *nlink = mem_malloc(sizeof(*nlink), __func__);
   LinkNode *node = *listp;
 
   nlink->link = ptr;
