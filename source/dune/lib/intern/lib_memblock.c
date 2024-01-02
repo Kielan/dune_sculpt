@@ -12,22 +12,14 @@
 struct LibMemblock {
   void **chunk_list;
 
-  /* Elem size in bytes. */
-  int elem_size;
-  /* 1st unused elem index. */
-  int elem_next;
-  /* Last "touched" elem. */
-  int elem_last;
-  /* Offset in a chunk of the next elem. */
-  int elem_next_ofs;
-  /* Max offset in a chunk. */
-  int chunk_max_ofs;
-  /* Id of the chunk used for the next allocation. */
-  int chunk_next;
-  /* Chunk size in bytes. */
-  int chunk_size;
-  /* Num of alloc'd chunk. */
-  int chunk_len;
+  int elem_size; /* Elem size in bytes. */
+  int elem_next; /* 1st unused elem index. */
+  int elem_last; /* Last "touched" elem. */
+  int elem_next_ofs; /* Offset in a chunk of the next elem. */
+  int chunk_max_ofs; /* Max offset in a chunk. */
+  int chunk_next; /* Id of the chunk used for the next alloc. */
+  int chunk_size;   /* Chunk size in bytes. */
+  int chunk_len; /* Num of alloc'd chunk. */
 };
 
 LibMemblock *lib_memblock_create_ex(uint elem_size, uint chunk_size)
