@@ -1,14 +1,13 @@
 #include "lib_timer.h"
 #include "lib_list.h"
-
 #include "mem_guardedalloc.h"
 #include "PIL_time.h"
 
 #define GET_TIME() PIL_check_seconds_timer();
 typedef struct TimedFn {
   struct TimedFn *next, *prev;
-  lib_timer_fn fn;
-  lib_timer_data_free user_data_free;
+  TimerFn fn;
+  TimerDataFree user_data_free;
   void *user_data;
   double next_time;
   uintptr_t uuid;
@@ -23,9 +22,9 @@ typedef struct TimerContainer {
 static TimerContainer GlobalTimer = {{0}};
 
 void lib_timer_register(uintptr_t uuid,
-                        lib_timer_fn fn,
+                        TimerFn fn,
                         void *user_data,
-                        lib_timer_data_free user_data_free,
+                        TimerDataFree user_data_free,
                         double first_interval,
                         bool persistent)
 {
@@ -51,10 +50,10 @@ static void clear_user_data(TimedFn *timed_fn)
 
 bool lib_timer_unregister(uintptr_t uuid)
 {
-  LIST_FOREACH (TimedFn *, timed_fn, &GlobalTimer.funcs) {
+  LIST_FOREACH (TimedFn *, timed_fn, &GlobalTimer.fns) {
     if (timed_fn->uuid == uuid && !timed_fn->tag_removal) {
       timed_fn->tag_removal = true;
-      clear_user_data(timed_func);
+      clear_user_data(timed_fn);
       return true;
     }
   }
@@ -96,13 +95,13 @@ static void ex_fns_if_necessary(void)
 
 static void remove_tagged_fns(void)
 {
-  for (TimedFn *timed_fn = GlobalTimer.fns.first; timed_func;) {
+  for (TimedFn *timed_fn = GlobalTimer.fns.first; timed_fn;) {
     TimedFn *next = timed_fn->next;
     if (timed_fn->tag_removal) {
       clear_user_data(timed_fn);
       lib_freelink(&GlobalTimer.fns, timed_fn);
     }
-    timed_func = next;
+    timed_fn = next;
   }
 }
 
@@ -130,7 +129,7 @@ static void remove_non_persistent_fns(void)
   }
 }
 
-void BLI_timer_on_file_load(void)
+void lib_timer_on_file_load(void)
 {
-  remove_non_persistent_functions();
+  remove_non_persistent_fns();
 }
