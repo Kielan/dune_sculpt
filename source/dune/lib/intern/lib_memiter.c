@@ -1,8 +1,8 @@
-/* Simple, fast mem allocator for alloc many small elements of diff sizes
+/* Simple, fast mem allocator for alloc many small elems of diff sizes
  * in fixed size mem chunks,
- * although allocs bigger than the chunk size are supported.
+ * allocs bigger than the chunk size are supported.
  * They will reduce the efficiency of this data-struct.
- * Elements are ptr aligned.
+ * Elems are ptr aligned.
  *
  * Supports:
  * - Alloc of mixed sizes.
@@ -31,7 +31,7 @@
 typedef uintptr_t data_t;
 typedef intptr_t offset_t;
 
-/* Write the chunk terminator on adding each element.
+/* Write the chunk terminator on adding each elem.
  * typically we rely on the 'count' to avoid iter'ing past the end. */
 // #define USE_TERMINATE_PARANOID
 
@@ -55,7 +55,7 @@ typedef struct LibMemIterChunk {
 } LibMemIterChunk;
 
 typedef struct LibMemIter {
-  /* A ptr to 'head' is needed so we can iterate in the order allocated. */
+  /* A ptr to 'head' is needed so we can iter in the order allocated. */
   lib_memiter_chunk *head, *tail;
   data_t *data_curr;
   data_t *data_last;
@@ -245,7 +245,6 @@ void *lib_memiter_elem_first_size(LibMemIter *mi, uint *r_size)
  * memiter_set_rewind_offset (see USE_TERMINATE_PARANOID).
  * Unless we have a call to finalize alloc (which complicates usage).
  * So use a counter instead. */
-
 void lib_memiter_iter_init(LibMemIter *mi, LibMemIterHandle *iter)
 {
   iter->elem = mi->head ? (LibMemIterElem *)mi->head->data : NULL;
@@ -298,5 +297,3 @@ void *lib_memiter_iter_step(LibMemIterHandle *iter)
   }
   return NULL;
 }
-
-/** \} */
