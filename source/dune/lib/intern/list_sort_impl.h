@@ -5,10 +5,10 @@
  * with defines to control its use.
  *
  * This code requires a `typedef` named `SORT_IMPL_LINKTYPE` for the list node.
- * It is assumed that the list type is the type of a pointer to a list
+ * It is assumed that the list type is the type of a ptr to a list
  * node, and that the node has a field named 'next' that implements to
  * the linked list.  No additional invariant is maintained
- * (e.g. the `prev` pointer of a doubly-linked list node is _not_ updated).
+ * (e.g. the `prev` ptr of a doubly-linked list node is _not_ updated).
  * Any invariant would require a post-processing pass to update `prev`.
  *
  * Src file including this must define:
@@ -16,8 +16,8 @@
  *   Struct type for sorting.
  * - `SORT_IMPL_LINKTYPE_DATA`:
  *   Data pointer or leave undefined to pass the link itself.
- * - `SORT_IMPL_FUNC`:
- *   Function name of the sort function.
+ * - `SORT_IMPL_FN`:
+ *   Function name of the sort fn.
  *
  * Optionally:
  * - `SORT_IMPL_USE_THUNK`:
@@ -30,7 +30,7 @@
 #endif
 
 #define list_node SORT_IMPL_LINKTYPE
-#define list_sort_do SORT_IMPL_FUNC
+#define list_sort_do SORT_IMPL_FN
 
 #ifdef SORT_IMPL_LINKTYPE_DATA
 #  define SORT_ARG(n) ((n)->SORT_IMPL_LINKTYPE_DATA)
@@ -39,25 +39,25 @@
 #endif
 
 #ifdef SORT_IMPL_USE_THUNK
-#  define BLIB_LIST_THUNK_APPEND1(a, thunk) a, thunk
-#  define BLIB_LIST_THUNK_PREPEND2(thunk, a, b) thunk, a, b
+#  define LIB_LIST_THUNK_APPEND1(a, thunk) a, thunk
+#  define LIB_LIST_THUNK_PREPEND2(thunk, a, b) thunk, a, b
 #else
-#  define BLIB_LIST_THUNK_APPEND1(a, thunk) a
-#  define BLIB_LIST_THUNK_PREPEND2(thunk, a, b) a, b
+#  define LIB_LIST_THUNK_APPEND1(a, thunk) a
+#  define LIB_LIST_THUNK_PREPEND2(thunk, a, b) a, b
 #endif
 
-#define _BLIB_LIST_SORT_CONCAT_AUX(MACRO_ARG1, MACRO_ARG2) MACRO_ARG1##MACRO_ARG2
-#define _BLIB_LIST_SORT_CONCAT(MACRO_ARG1, MACRO_ARG2) \
-  _BLIB_LIST_SORT_CONCAT_AUX(MACRO_ARG1, MACRO_ARG2)
-#define _BLIB_LIST_SORT_PREFIX(id) _BLI_LIST_SORT_CONCAT(SORT_IMPL_FUNC, _##id)
+#define _LIB_LIST_SORT_CONCAT_AUX(MACRO_ARG1, MACRO_ARG2) MACRO_ARG1##MACRO_ARG2
+#define _LIB_LIST_SORT_CONCAT(MACRO_ARG1, MACRO_ARG2) \
+  _LIB_LIST_SORT_CONCAT_AUX(MACRO_ARG1, MACRO_ARG2)
+#define _LIB_LIST_SORT_PREFIX(id) _LIB_LIST_SORT_CONCAT(SORT_IMPL_FN, _##id)
 
 /* local ids */
-#define SortInfo _BLIV_LIST_SORT_PREFIX(SortInfo)
-#define CompareFn _BLIB_LIST_SORT_PREFIX(CompareFn)
-#define init_sort_info _BLIB_LIST_SORT_PREFIX(init_sort_info)
-#define merge_lists _BLIB_LIST_SORT_PREFIX(merge_lists)
-#define sweep_up _BLIB_LIST_SORT_PREFIX(sweep_up)
-#define insert_list _BLIB_LIST_SORT_PREFIX(insert_list)
+#define SortInfo _LIB_LIST_SORT_PREFIX(SortInfo)
+#define CompareFn _LIB_LIST_SORT_PREFIX(CompareFn)
+#define init_sort_info _LIB_LIST_SORT_PREFIX(init_sort_info)
+#define merge_lists _LIB_LIST_SORT_PREFIX(merge_lists)
+#define sweep_up _LIB_LIST_SORT_PREFIX(sweep_up)
+#define insert_list _LIB_LIST_SORT_PREFIX(insert_list)
 
 typedef int (*CompareFn)(
 #ifdef SORT_IMPL_USE_THUNK
@@ -87,8 +87,7 @@ typedef int (*CompareFn)(
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:
- *   Raja R Harinath <rharinath@novell.com>
- */
+ *   Raja R Harinath <rharinath@novell.com> */
 
 /* The max possible depth of the merge tree
  * - `ceiling(log2(max num of list nodes))`
@@ -115,7 +114,7 @@ struct SortInfo {
 };
 
 LIB_INLINE void init_sort_info(struct SortInfo *si,
-                              CompareFn fn
+                               CompareFn fn
 #ifdef SORT_IMPL_USE_THUNK
                                ,
                                void *thunk
@@ -123,7 +122,7 @@ LIB_INLINE void init_sort_info(struct SortInfo *si,
 )
 {
   si->min_rank = si->n_ranks = 0;
-  si->func = fn;
+  si->fn = fn;
   /* we don't need to init si->ranks,
    * since we never lookup past si->n_ranks. */
 
@@ -165,7 +164,7 @@ LIB_INLINE list_node *sweep_up(struct SortInfo *si, list_node *list, unsigned in
 {
   unsigned int i;
   for (i = si->min_rank; i < upto; i++) {
-    list = merge_lists(si->ranks[i], list, BLI_LIST_THUNK_APPEND1(si->func, si->thunk));
+    list = merge_lists(si->ranks[i], list, LIB_LIST_THUNK_APPEND1(si->func, si->thunk));
     si->ranks[i] = NULL;
   }
   return list;
@@ -183,7 +182,7 @@ LIB_INLINE list_node *sweep_up(struct SortInfo *si, list_node *list, unsigned in
  * and also eliminate a lot of redundant comparisons when merging two lists
  * that would've been part of the same run.
  * Adding a `rank-i` list is analogous to incrementing a binary integer by
- * `2**i` in one operation, thus sharing a similar speedup.
+ * `2**i` in one op, thus sharing a similar speedup.
  *
  * When inserting higher-ranked lists, we choose to clear out the lower ranks
  * in the interests of keeping the sort stable, but this makes analysis harder.
@@ -206,7 +205,7 @@ LIB_INLINE void insert_list(struct SortInfo *si, list_node *list, unsigned int r
       rank = MAX_RANKS;
     }
     list = merge_lists(
-        sweep_up(si, NULL, si->n_ranks), list, BLI_LIST_THUNK_APPEND1(si->func, si->thunk));
+        sweep_up(si, NULL, si->n_ranks), list, LIB_LIST_THUNK_APPEND1(si->func, si->thunk));
     for (i = si->n_ranks; i < rank; i++) {
       si->ranks[i] = NULL;
     }
@@ -290,6 +289,6 @@ LIB_INLINE list_node *list_sort_do(list_node *list,
 #undef list_node
 #undef list_sort_do
 
-#undef BLIB_LIST_THUNK_APPEND1
-#undef BLIB_LIST_THUNK_PREPEND2
+#undef LIB_LIST_THUNK_APPEND1
+#undef LIB_LIST_THUNK_PREPEND2
 #undef SORT_ARG
