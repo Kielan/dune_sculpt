@@ -140,7 +140,7 @@ void lib_remlink(List *list, void *vlink)
 bool lib_remlink_safe(List *list, void *vlink)
 {
   if (lib_findindex(list, vlink) != -1) {
-    lib_remlink(listbase, vlink);
+    lib_remlink(list, vlink);
     return true;
   }
 
@@ -247,8 +247,8 @@ void *lib_pophead(List *list)
 void *lib_poptail(List *list)
 {
   Link *link;
-  if ((link = static_cast<Link *>(listbase->last))) {
-    BLI_remlink(listbase, link);
+  if ((link = static_cast<Link *>(list->last))) {
+    lib_remlink(list, link);
   }
   return link;
 }
@@ -280,7 +280,7 @@ static void list_double_from_single(Link *iter, List *list)
 #define SORT_IMPL_LINKTYPE Link
 
 /* regular call */
-#define SORT_IMPL_FUNC list_sort_fn
+#define SORT_IMPL_FN list_sort_fn
 #include "list_sort_impl.h"
 #undef SORT_IMPL_FN
 
@@ -438,66 +438,66 @@ bool lib_list_link_move(List *list, void *vlink, int step)
   }
 
   /* reinsert link */
-  BLI_remlink(listbase, vlink);
+  lib_remlink(list, vlink);
   if (is_up) {
-    BLI_insertlinkbefore(listbase, hook, vlink);
+    lib_insertlinkbefore(list, hook, vlink);
   }
   else {
-    BLI_insertlinkafter(listbase, hook, vlink);
+    lib_insertlinkafter(list, hook, vlink);
   }
   return true;
 }
 
-bool BLI_listbase_move_index(ListBase *listbase, int from, int to)
+bool lib_list_move_index(List *list, int from, int to)
 {
   if (from == to) {
     return false;
   }
 
   /* Find the link to move. */
-  void *link = BLI_findlink(listbase, from);
+  void *link = lib_findlink(list, from);
 
   if (!link) {
     return false;
   }
 
-  return BLI_listbase_link_move(listbase, link, to - from);
+  return lib_list_link_move(list, link, to - from);
 }
 
-void BLI_freelist(ListBase *listbase)
+void lib_freelist(List *list)
 {
   Link *link, *next;
 
-  link = static_cast<Link *>(listbase->first);
+  link = static_cast<Link *>(list->first);
   while (link) {
     next = link->next;
     free(link);
     link = next;
   }
 
-  BLI_listbase_clear(listbase);
+  lib_list_clear(list);
 }
 
-void BLI_freelistN(ListBase *listbase)
+void lib_freelistN(List *list)
 {
   Link *link, *next;
 
-  link = static_cast<Link *>(listbase->first);
+  link = static_cast<Link *>(list->first);
   while (link) {
     next = link->next;
-    MEM_freeN(link);
+    mem_free(link);
     link = next;
   }
 
-  BLI_listbase_clear(listbase);
+  lib_list_clear(list);
 }
 
-int BLI_listbase_count_at_most(const ListBase *listbase, const int count_max)
+int lib_list_count_at_most(const List *list, const int count_max)
 {
   Link *link;
   int count = 0;
 
-  for (link = static_cast<Link *>(listbase->first); link && count != count_max; link = link->next)
+  for (link = static_cast<Link *>(list->first); link && count != count_max; link = link->next)
   {
     count++;
   }
@@ -505,23 +505,23 @@ int BLI_listbase_count_at_most(const ListBase *listbase, const int count_max)
   return count;
 }
 
-int BLI_listbase_count(const ListBase *listbase)
+int lib_list_count(const List *list)
 {
   int count = 0;
-  LISTBASE_FOREACH (Link *, link, listbase) {
+  LIST_FOREACH (Link *, link, list) {
     count++;
   }
 
   return count;
 }
 
-void *lib_findlink(const ListBase *listbase, int number)
+void *lib_findlink(const List *list, int num)
 {
   Link *link = nullptr;
 
-  if (number >= 0) {
-    link = static_cast<Link *>(listbase->first);
-    while (link != nullptr && number != 0) {
+  if (num >= 0) {
+    link = static_cast<Link *>(list->first);
+    while (link != nullptr && num != 0) {
       number--;
       link = link->next;
     }
@@ -597,7 +597,7 @@ void *lib_findstring(const List *list, const char *id, const int offset)
     return nullptr;
   }
 
-  LIST_FOREACH (Link *, link, listbase) {
+  LIST_FOREACH (Link *, link, list) {
     id_iter = ((const char *)link) + offset;
 
     if (id[0] == id_iter[0] && STREQ(id, id_iter)) {
@@ -638,7 +638,6 @@ void *lib_findstring_ptr(const List *list, const char *id, const int offset)
 void *lib_rfindstring_ptr(const List *list, const char *id, const int offset)
 {
   /* Same as lib_findstring_ptr but find reverse. */
-
   const char *id_iter;
 
   LIST_FOREACH_BACKWARD (Link *, link, listbase) {
@@ -695,9 +694,9 @@ void *lib_rfindptr(const List *list, const void *ptr, const int offset)
 }
 
 void *lib_list_bytes_find(const List *list,
-                              const void *bytes,
-                              const size_t bytes_size,
-                              const int offset)
+                          const void *bytes,
+                          const size_t bytes_size,
+                          const int offset)
 {
   LIST_FOREACH (Link *, link, list) {
     const void *ptr_iter = (const void *)(((const char *)link) + offset);
@@ -709,9 +708,9 @@ void *lib_list_bytes_find(const List *list,
   return nullptr;
 }
 void *lib_list_bytes_rfind(const List *list,
-                               const void *bytes,
-                               const size_t bytes_size,
-                               const int offset)
+                           const void *bytes,
+                           const size_t bytes_size,
+                           const int offset)
 {
   /* Same as lib_list_bytes_find but find reverse. */
   LIST_FOREACH_BACKWARD (Link *, link, list) {
@@ -732,7 +731,7 @@ void *lib_list_string_or_index_find(const List *list,
   Link *link_at_index = nullptr;
 
   int index_iter;
-  for (link = static_cast<Link *>(listbase->first), index_iter = 0; link;
+  for (link = static_cast<Link *>(list->first), index_iter = 0; link;
        link = link->next, index_iter++)
   {
     if (string != nullptr && string[0] != '\0') {
@@ -776,12 +775,12 @@ List lib_list_from_link(Link *some_link)
     return list;
   }
 
-  /* Find the first element. */
+  /* Find the first elem. */
   while (((Link *)list.first)->prev != nullptr) {
     list.first = ((Link *)list.first)->prev;
   }
 
-  /* Find the last element. */
+  /* Find the last elem. */
   while (((Link *)list.last)->next != nullptr) {
     list.last = ((Link *)list.last)->next;
   }
@@ -805,9 +804,9 @@ void lib_duplist(List *dst, const List *src)
   }
 }
 
-void lib_list_reverse(List *lb)
+void lib_list_reverse(List *lis)
 {
-  Link *curr = static_cast<Link *>(lb->first);
+  Link *curr = static_cast<Link *>(lis->first);
   Link *prev = nullptr;
   Link *next = nullptr;
   while (curr) {
@@ -819,70 +818,69 @@ void lib_list_reverse(List *lb)
   }
 
   /* swap first/last */
-  curr = static_cast<Link *>(lb->first);
-  lb->first = lb->last;
-  lb->last = curr;
+  curr = static_cast<Link *>(lis->first);
+  lis->first = lis->last;
+  lis->last = curr;
 }
 
-void lib_list_rotate_first(List *lb, void *vlink)
+void lib_list_rotate_first(List *lis, void *vlink)
 {
   /* make circular */
-  ((Link *)lb->first)->prev = static_cast<Link *>(lb->last);
-  ((Link *)lb->last)->next = static_cast<Link *>(lb->first);
+  ((Link *)lis->first)->prev = static_cast<Link *>(lis->last);
+  ((Link *)lis->last)->next = static_cast<Link *>(list->first);
 
-  lb->first = vlink;
-  lb->last = ((Link *)vlink)->prev;
+  lis->first = vlink;
+  lis->last = ((Link *)vlink)->prev;
 
-  ((Link *)lb->first)->prev = nullptr;
-  ((Link *)lb->last)->next = nullptr;
+  ((Link *)lis->first)->prev = nullptr;
+  ((Link *)lis->last)->next = nullptr;
 }
 
-void lib_list_rotate_last(ListBase *lb, void *vlink)
+void lib_list_rotate_last(List *lis, void *vlink)
 {
   /* make circular */
-  ((Link *)lb->first)->prev = static_cast<Link *>(lb->last);
-  ((Link *)lb->last)->next = static_cast<Link *>(lb->first);
+  ((Link *)lis>first)->prev = static_cast<Link *>(lis->last);
+  ((Link *)lis->last)->next = static_cast<Link *>(lis->first);
 
-  lb->first = ((Link *)vlink)->next;
-  lb->last = vlink;
+  lis->first = ((Link *)vlink)->next;
+  lis->last = vlink;
 
-  ((Link *)lb->first)->prev = nullptr;
-  ((Link *)lb->last)->next = nullptr;
+  ((Link *)lis->first)->prev = nullptr;
+  ((Link *)lis->last)->next = nullptr;
 }
 
-bool lib_list_validate(ListBase *lb)
+bool lib_list_validate(List *lis)
 {
-  if (lb->first == nullptr && lb->last == nullptr) {
+  if (lis->first == nullptr && lis->last == nullptr) {
     /* Empty list. */
     return true;
   }
-  if (ELEM(nullptr, lb->first, lb->last)) {
-    /* If one of the pointer is null, but not this other, this is a corrupted listbase. */
+  if (ELEM(nullptr, lis->first, lis->last)) {
+    /* If one of the ptr is null, but not this other, this is a corrupted list. */
     return false;
   }
 
-  /* Walk the list in bot directions to ensure all next & prev pointers are valid and consistent.
-   */
-  LIST_FOREACH (Link *, lb_link, lb) {
-    if (lb_link == lb->first) {
-      if (lb_link->prev != nullptr) {
+  /* Walk the list in bot directions to ensure all next & prev ptrs are valid and consistent. */
+  LIST_FOREACH (Link *, lis_link, lis) {
+    if (lis_link == lis->first) {
+      if (lis_link->prev != nullptr) {
         return false;
       }
     }
-    if (lb_link == lb->last) {
-      if (lb_link->next != nullptr) {
+    if (lis_link == lb->last) {
+      if (lis_link->next != nullptr) {
         return false;
       }
     }
   }
-  LIST_FOREACH_BACKWARD (Link *, lb_link, lb) {
-    if (lb_link == lb->last) {
-      if (lb_link->next != nullptr) {
+  LIST_FOREACH_BACKWARD (Link *, lis_link, lis) {
+    if (lis_link == lis->last) {
+      if (lis_link->next != nullptr) {
         return false;
       }
     }
-    if (lb_link == lb->first) {
-      if (lb_link->prev != nullptr) {
+    if (lis_link == lis->first) {
+      if (lis_link->prev != nullptr) {
         return false;
       }
     }
@@ -900,7 +898,7 @@ LinkData *lib_genericNode(void *data)
   }
 
   /* create new link, and make it hold the given data */
-  ld = MEM_cnew<LinkData>(__func__);
+  ld = mem_cnew<LinkData>(__func__);
   ld->data = data;
 
   return ld;
