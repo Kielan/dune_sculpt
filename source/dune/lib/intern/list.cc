@@ -253,7 +253,7 @@ void *lib_poptail(List *list)
   return link;
 }
 
-void BLI_freelinkN(ListBase *listbase, void *vlink)
+void lib_freelink(List *list, void *vlink)
 {
   Link *link = static_cast<Link *>(vlink);
 
@@ -261,61 +261,59 @@ void BLI_freelinkN(ListBase *listbase, void *vlink)
     return;
   }
 
-  BLI_remlink(listbase, link);
-  MEM_freeN(link);
+  lib_remlink(list, link);
+  mem_free(link);
 }
 
-/**
- * Assigns all #Link.prev pointers from #Link.next
- */
-static void listbase_double_from_single(Link *iter, ListBase *listbase)
+/* Assigns all Link.prev ptrs from Link.next */
+static void list_double_from_single(Link *iter, List *list)
 {
   Link *prev = nullptr;
-  listbase->first = iter;
+  list->first = iter;
   do {
     iter->prev = prev;
     prev = iter;
   } while ((iter = iter->next));
-  listbase->last = prev;
+  list->last = prev;
 }
 
 #define SORT_IMPL_LINKTYPE Link
 
 /* regular call */
-#define SORT_IMPL_FUNC listbase_sort_fn
+#define SORT_IMPL_FUNC list_sort_fn
 #include "list_sort_impl.h"
-#undef SORT_IMPL_FUNC
+#undef SORT_IMPL_FN
 
 /* re-entrant call */
 #define SORT_IMPL_USE_THUNK
-#define SORT_IMPL_FUNC listbase_sort_fn_r
+#define SORT_IMPL_FN list_sort_fn_r
 #include "list_sort_impl.h"
-#undef SORT_IMPL_FUNC
+#undef SORT_IMPL_FN
 #undef SORT_IMPL_USE_THUNK
 
 #undef SORT_IMPL_LINKTYPE
 
-void BLI_listbase_sort(ListBase *listbase, int (*cmp)(const void *, const void *))
+void lib_list_sort(List *list, int (*cmp)(const void *, const void *))
 {
-  if (listbase->first != listbase->last) {
-    Link *head = static_cast<Link *>(listbase->first);
-    head = listbase_sort_fn(head, cmp);
-    listbase_double_from_single(head, listbase);
+  if (list->first != list->last) {
+    Link *head = static_cast<Link *>(list->first);
+    head = list_sort_fn(head, cmp);
+    list_double_from_single(head, list);
   }
 }
 
-void BLI_listbase_sort_r(ListBase *listbase,
-                         int (*cmp)(void *, const void *, const void *),
-                         void *thunk)
+void lib_list_sort_r(List *list,
+                     int (*cmp)(void *, const void *, const void *),
+                     void *thunk)
 {
-  if (listbase->first != listbase->last) {
-    Link *head = static_cast<Link *>(listbase->first);
-    head = listbase_sort_fn_r(head, cmp, thunk);
-    listbase_double_from_single(head, listbase);
+  if (list->first != list->last) {
+    Link *head = static_cast<Link *>(list->first);
+    head = list_sort_fn_r(head, cmp, thunk);
+    list_double_from_single(head, list);
   }
 }
 
-void BLI_insertlinkafter(ListBase *listbase, void *vprevlink, void *vnewlink)
+void lib_insertlinkafter(List *list, void *vprevlink, void *vnewlink)
 {
   Link *prevlink = static_cast<Link *>(vprevlink);
   Link *newlink = static_cast<Link *>(vnewlink);
@@ -326,9 +324,9 @@ void BLI_insertlinkafter(ListBase *listbase, void *vprevlink, void *vnewlink)
   }
 
   /* empty list */
-  if (listbase->first == nullptr) {
-    listbase->first = newlink;
-    listbase->last = newlink;
+  if (list->first == nullptr) {
+    list->first = newlink;
+    list->last = newlink;
     return;
   }
 
@@ -337,13 +335,13 @@ void BLI_insertlinkafter(ListBase *listbase, void *vprevlink, void *vnewlink)
     newlink->prev = nullptr;
     newlink->next = static_cast<Link *>(listbase->first);
     newlink->next->prev = newlink;
-    listbase->first = newlink;
+    list->first = newlink;
     return;
   }
 
   /* at end of list */
-  if (listbase->last == prevlink) {
-    listbase->last = newlink;
+  if (list->last == prevlink) {
+    list->last = newlink;
   }
 
   newlink->next = prevlink->next;
@@ -354,7 +352,7 @@ void BLI_insertlinkafter(ListBase *listbase, void *vprevlink, void *vnewlink)
   }
 }
 
-void BLI_insertlinkbefore(ListBase *listbase, void *vnextlink, void *vnewlink)
+void lib_insertlinkbefore(List *list, void *vnextlink, void *vnewlink)
 {
   Link *nextlink = static_cast<Link *>(vnextlink);
   Link *newlink = static_cast<Link *>(vnewlink);
@@ -365,24 +363,24 @@ void BLI_insertlinkbefore(ListBase *listbase, void *vnextlink, void *vnewlink)
   }
 
   /* empty list */
-  if (listbase->first == nullptr) {
-    listbase->first = newlink;
-    listbase->last = newlink;
+  if (list->first == nullptr) {
+    list->first = newlink;
+    list->last = newlink;
     return;
   }
 
   /* insert at end of list */
   if (nextlink == nullptr) {
-    newlink->prev = static_cast<Link *>(listbase->last);
+    newlink->prev = static_cast<Link *>(list->last);
     newlink->next = nullptr;
-    ((Link *)listbase->last)->next = newlink;
-    listbase->last = newlink;
+    ((Link *)list->last)->next = newlink;
+    list->last = newlink;
     return;
   }
 
   /* at beginning of list */
-  if (listbase->first == nextlink) {
-    listbase->first = newlink;
+  if (list->first == nextlink) {
+    list->first = newlink;
   }
 
   newlink->next = nextlink;
@@ -393,7 +391,7 @@ void BLI_insertlinkbefore(ListBase *listbase, void *vnextlink, void *vnewlink)
   }
 }
 
-void BLI_insertlinkreplace(ListBase *listbase, void *vreplacelink, void *vnewlink)
+void lib_insertlinkreplace(ListBase *listbase, void *vreplacelink, void *vnewlink)
 {
   Link *l_old = static_cast<Link *>(vreplacelink);
   Link *l_new = static_cast<Link *>(vnewlink);
@@ -411,15 +409,15 @@ void BLI_insertlinkreplace(ListBase *listbase, void *vreplacelink, void *vnewlin
   l_new->prev = l_old->prev;
 
   /* update list */
-  if (listbase->first == l_old) {
-    listbase->first = l_new;
+  if (list->first == l_old) {
+    list->first = l_new;
   }
-  if (listbase->last == l_old) {
-    listbase->last = l_new;
+  if (list->last == l_old) {
+    list->last = l_new;
   }
 }
 
-bool BLI_listbase_link_move(ListBase *listbase, void *vlink, int step)
+bool lib_list_link_move(List *list, void *vlink, int step)
 {
   Link *link = static_cast<Link *>(vlink);
   Link *hook = link;
@@ -428,7 +426,7 @@ bool BLI_listbase_link_move(ListBase *listbase, void *vlink, int step)
   if (step == 0) {
     return false;
   }
-  BLI_assert(BLI_findindex(listbase, link) != -1);
+  lib_assert_lib_findindex(listbase, link) != -1);
 
   /* find link to insert before/after */
   const int abs_step = abs(step);
