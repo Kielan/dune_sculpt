@@ -697,7 +697,7 @@ void lib_ewa_filter(const int width,
     v2 = (int)V0 + EWA_MAXIDX;
   }
 
-  /* Early output check for cases the whole rgn is outside of the buffer. */
+  /* Early output check for cases the whole rgn is outside of the buf. */
   if ((u2 < 0 || u1 >= width) || (v2 < 0 || v1 >= height)) {
     zero_v4(result);
     return;
