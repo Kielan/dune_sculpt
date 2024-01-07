@@ -10,7 +10,7 @@
 #  define EPS_SATURATION 0.0005f
 #  define EPS_ALPHA 0.0005f
 
-/* Color Blending ********************************
+/* Color Blending
  * - byte colors are assumed to be straight alpha
  * - byte colors uses to do >>8 (same as /256) but actually should do /255,
  *   otherwise get quick darkening due to rounding
@@ -418,7 +418,7 @@ MINLINE void blend_color_vividlight_byte(uchar dst[4], const uchar src1[4], cons
   }
 }
 
-MINLINE void blend_color_difference_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
+MINLINE void blend_color_diff_byte(uchar dst[4], const uchar src1[4], const uchar src2[4])
 {
   const int fac = src2[3];
   if (fac != 0) {
@@ -562,8 +562,8 @@ MINLINE void blend_color_interpolate_byte(uchar dst[4],
                                           const uchar src2[4],
                                           float ft)
 {
-  /* do color interpolation, but in premultiplied space so that RGB colors
-   * from zero alpha regions have no influence */
+  /* do color interpolation in premultiplied space so that RGB colors
+   * from zero alpha rgns have no influence */
   const int t = (int)(255 * ft);
   const int mt = 255 - t;
   int tmp = (mt * src1[3] + t * src2[3]);
@@ -581,7 +581,6 @@ MINLINE void blend_color_interpolate_byte(uchar dst[4],
 }
 
 /* premultiplied alpha float blending modes */
-
 MINLINE void blend_color_mix_float(float dst[4], const float src1[4], const float src2[4])
 {
   if (src2[3] != 0.0f) {
@@ -651,7 +650,7 @@ MINLINE void blend_color_mul_float(float dst[4], const float src1[4], const floa
 MINLINE void blend_color_lighten_float(float dst[4], const float src1[4], const float src2[4])
 {
   if (src2[3] != 0.0f) {
-    /* remap src2 to have same alpha as src1 premultiplied, take maximum of
+    /* remap src2 to have same alpha as src1 premultiplied, take max of
      * src1 and src2, then blend it with src1 */
     const float t = src2[3];
     const float mt = 1.0f - t;
@@ -671,8 +670,8 @@ MINLINE void blend_color_lighten_float(float dst[4], const float src1[4], const 
 MINLINE void blend_color_darken_float(float dst[4], const float src1[4], const float src2[4])
 {
   if (src2[3] != 0.0f) {
-    /* remap src2 to have same alpha as src1 premultiplied, take minimum of
-     * src1 and src2, then blend it with src1 */
+    /* remap src2 to have same alpha as src1 premultiplied,
+     * take min of src1+src2 then blend w src1 */
     const float t = src2[3];
     const float mt = 1.0f - t;
     const float map_alpha = src1[3] / src2[3];
@@ -744,15 +743,15 @@ MINLINE void blend_color_overlay_float(float dst[4], const float src1[4], const 
     int i = 3;
 
     while (i--) {
-      float temp;
+      float tmp;
 
       if (src1[i] > 0.5f) {
-        temp = 1.0f - (1.0f - 2.0f * (src1[i] - 0.5f)) * (1.0f - src2[i]);
+        tmp = 1.0f - (1.0f - 2.0f * (src1[i] - 0.5f)) * (1.0f - src2[i]);
       }
       else {
-        temp = 2.0f * src1[i] * src2[i];
+        tmp = 2.0f * src1[i] * src2[i];
       }
-      dst[i] = min_ff(temp * fac + src1[i] * mfac, 1.0f);
+      dst[i] = min_ff(tmp * fac + src1[i] * mfac, 1.0f);
     }
   }
   else {
@@ -769,13 +768,13 @@ MINLINE void blend_color_hardlight_float(float dst[4], const float src1[4], cons
     int i = 3;
 
     while (i--) {
-      float temp;
+      float tmp;
 
       if (src2[i] > 0.5f) {
-        temp = 1.0f - ((1.0f - 2.0f * (src2[i] - 0.5f)) * (1.0f - src1[i]));
+        tmp = 1.0f - ((1.0f - 2.0f * (src2[i] - 0.5f)) * (1.0f - src1[i]));
       }
       else {
-        temp = 2.0f * src2[i] * src1[i];
+        tmp = 2.0f * src2[i] * src1[i];
       }
       dst[i] = min_ff((temp * fac + src1[i] * mfac) / 1.0f, 1.0f);
     }
@@ -794,9 +793,9 @@ MINLINE void blend_color_burn_float(float dst[4], const float src1[4], const flo
     int i = 3;
 
     while (i--) {
-      const float temp = (src2[i] == 0.0f) ? 0.0f :
+      const float tmp = (src2[i] == 0.0f) ? 0.0f :
                                              max_ff(1.0f - ((1.0f - src1[i]) / src2[i]), 0.0f);
-      dst[i] = (temp * fac + src1[i] * mfac);
+      dst[i] = (tmp * fac + src1[i] * mfac);
     }
   }
   else {
@@ -813,8 +812,8 @@ MINLINE void blend_color_linearburn_float(float dst[4], const float src1[4], con
     int i = 3;
 
     while (i--) {
-      const float temp = max_ff(src1[i] + src2[i] - 1.0f, 0.0f);
-      dst[i] = (temp * fac + src1[i] * mfac);
+      const float tmp = max_ff(src1[i] + src2[i] - 1.0f, 0.0f);
+      dst[i] = (tmp * fac + src1[i] * mfac);
     }
   }
   else {
@@ -831,8 +830,8 @@ MINLINE void blend_color_dodge_float(float dst[4], const float src1[4], const fl
     int i = 3;
 
     while (i--) {
-      const float temp = (src2[i] >= 1.0f) ? 1.0f : min_ff(src1[i] / (1.0f - src2[i]), 1.0f);
-      dst[i] = (temp * fac + src1[i] * mfac);
+      const float tmp = (src2[i] >= 1.0f) ? 1.0f : min_ff(src1[i] / (1.0f - src2[i]), 1.0f);
+      dst[i] = (tmp * fac + src1[i] * mfac);
     }
   }
   else {
@@ -849,8 +848,8 @@ MINLINE void blend_color_screen_float(float dst[4], const float src1[4], const f
     int i = 3;
 
     while (i--) {
-      const float temp = max_ff(1.0f - ((1.0f - src1[i]) * (1.0f - src2[i])), 0.0f);
-      dst[i] = (temp * fac + src1[i] * mfac);
+      const float tmp = max_ff(1.0f - ((1.0f - src1[i]) * (1.0f - src2[i])), 0.0f);
+      dst[i] = (tmp * fac + src1[i] * mfac);
     }
   }
   else {
@@ -886,15 +885,15 @@ MINLINE void blend_color_pinlight_float(float dst[4], const float src1[4], const
     int i = 3;
 
     while (i--) {
-      float temp;
+      float tmp;
 
       if (src2[i] > 0.5f) {
-        temp = max_ff(2.0f * (src2[i] - 0.5f), src1[i]);
+        tmp = max_ff(2.0f * (src2[i] - 0.5f), src1[i]);
       }
       else {
-        temp = min_ff(2.0f * src2[i], src1[i]);
+        tmp = min_ff(2.0f * src2[i], src1[i]);
       }
-      dst[i] = (temp * fac + src1[i] * mfac);
+      dst[i] = (tmp * fac + src1[i] * mfac);
     }
   }
   else {
@@ -911,13 +910,13 @@ MINLINE void blend_color_linearlight_float(float dst[4], const float src1[4], co
     int i = 3;
 
     while (i--) {
-      float temp;
+      float tmp;
 
       if (src2[i] > 0.5f) {
-        temp = min_ff(src1[i] + 2.0f * (src2[i] - 0.5f), 1.0f);
+        tmp = min_ff(src1[i] + 2.0f * (src2[i] - 0.5f), 1.0f);
       }
       else {
-        temp = max_ff(src1[i] + 2.0f * src2[i] - 1.0f, 0.0f);
+        tmp = max_ff(src1[i] + 2.0f * src2[i] - 1.0f, 0.0f);
       }
       dst[i] = (tmp * fac + src1[i] * mfac);
     }
@@ -948,7 +947,7 @@ MINLINE void blend_color_vividlight_float(float dst[4], const float src1[4], con
         tmp = min_ff(((src1[i]) * 1.0f) / (2.0f * (1.0f - src2[i])), 1.0f);
       }
       else {
-        temp = max_ff(1.0f - ((1.0f - src1[i]) * 1.0f / (2.0f * src2[i])), 0.0f);
+        tmp = max_ff(1.0f - ((1.0f - src1[i]) * 1.0f / (2.0f * src2[i])), 0.0f);
       }
       dst[i] = (tmp * fac + src1[i] * mfac);
     }
@@ -1104,7 +1103,7 @@ MINLINE void blend_color_interpolate_float(float dst[4],
                                            const float src2[4],
                                            float t)
 {
-  /* interpolation, colors are premultiplied so it goes fine */
+  /* interpolation: colors are premultiplied for smooth proc. */
   const float mt = 1.0f - t;
 
   dst[0] = mt * src1[0] + t * src2[0];
