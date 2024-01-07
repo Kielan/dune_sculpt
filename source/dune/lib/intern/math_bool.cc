@@ -71,15 +71,15 @@ int orient3d(const mpq3 &a, const mpq3 &b, const mpq3 &c, const mpq3 &d)
 /* For double versions of orient and incircle funs, use robust predicates
  * that give exact answers for double inputs.
  * 1st, encapsulate fns from Jonathan Shewchuk's implementation.
- * After this name-space, see the implementation of the double3 primitives. */
+ * After this name-space, see the implementation of the double3 prims. */
 namespace robust_pred {
 
 /* Using Shewchuk's file here, edited to removed unneeded fns,
  * change REAL to double everywhere, added const to some args,
  * and to export only the following declared non-static fns.
  *
- * Since this is C++, an instantiated singleton class is used to make
- * sure that exactinit() is called once.
+ * Bc this is C++, an instantiated singleton class is used to
+ * ensure exactinit() is called once.
  * (Bc it's undefined when this is called in init of all modules,
  * other modules shouldn't use these fns in init.) */
 void exactinit();
@@ -104,7 +104,7 @@ class RobustInitCaller {
 
 static RobustInitCaller init_caller;
 
-/* Routines for Arbitrary Precision Floating-point Arithmetic
+/* Routines for Arbitrary Precision Floating-point Arith.
  * and Fast Robust Geometric Predicates
  * (predicates.c)
  *
@@ -119,60 +119,58 @@ static RobustInitCaller init_caller;
  * <jrs@cs.cmu.edu>
  *
  * This file contains C implementation of algorithms for exact addition
- * and multiplication of floating-point numbers, and predicates for
- * robustly performing the orientation and incircle tests used in
- * computational geometry.  The algorithms and underlying theory are
- * described in Jonathan Richard Shewchuk.  "Adaptive Precision Floating-
- * Point Arithmetic and Fast Robust Geometric Predicates."  Technical
+ * and mul of floating-point nums, and predicates for
+ * robustly performing the orient and incircle tests used in
+ * computational geometry. The algos and underlying theory are
+ * described in Jonathan Richard Shewchuk. "Adaptive Precision Floating-
+ * Point Arithmetic and Fast Robust Geometric Predicates." Technical
  * Report CMU-CS-96-140, School of Computer Science, Carnegie Mellon
  * University, Pittsburgh, Pennsylvania, May 1996.  (Submitted to
  * Discrete & Computational Geometry.)
  *
- * This file, the paper listed above, and other info are available
+ * This file, the paper listed above and other info are available
  * from the Web page http://www.cs.cmu.edu/~quake/robust.html .
  *
  * Using this code:
  *
- * 1st, read the short or long version of the paper (from the Web page above).
+ * 1st, read the short or long v of the paper (from the Web page above).
  *
- * Be sure to call exactinit() once, before calling any of the arithmetic
- * functions or geometric predicates.  Also be sure to turn on the
+ * Ensure to call exactinit() once, before calling any of the arith.
+ * fns or geometric predicates. Also be sure to turn on the
  * optimizer when compiling this file. */
 
-/* On some machines, the exact arithmetic routines might be defeated by the
- * use of internal extended precision floating-point registers.  Sometimes
- * this problem can be fixed by defining certain values to be volatile,
- * thus forcing them to be stored to memory and rounded off.  This isn't
- * a great solution, though, as it slows the arithmetic down.
+/* On some machines, the exact arith routines might be defeated by the
+ * use of internal extended precision floating-point registers. Sometimes
+ * this problem can be fixed by defining certain vals to be volatile,
+ * thus forcing them to be stored to mem and rounded off.  This isn't
+ * a great solution, though, as it slows the arith down.
  *
  * To try this out, write "#define INEXACT volatile" below. Normally,
- * however, INEXACT should be defined to be nothing.  ("#define INEXACT".)
- */
+ * however, INEXACT should be defined to be nothing.  ("#define INEXACT".)  */
 
 #define INEXACT /* Nothing */
 /* #define INEXACT volatile */
 
-/* Which of the following two methods of finding the absolute values is
- * fastest is compiler-dependent.  A few compilers can inline and optimize
- * the fabs() call; but most will incur the overhead of a function call,
- * which is disastrously slow.  A faster way on IEEE machines might be to
- * mask the appropriate bit, but that's difficult to do in C.
- */
+/* Which of the following two methods of finding the abs vals is
+ * fastest is compiler-dependent. A few compilers can inline and optimize
+ * the fabs() call; but most will incur the overhead of a n call,
+ * which is disastrously slow. A faster way on IEEE machines might be to
+ * mask the appropriate bit, but that's difficult to do in C. */
 
 #define Absolute(a) ((a) >= 0.0 ? (a) : -(a))
 /* #define Absolute(a)  fabs(a) */
 
-/* Many of the operations are broken up into two pieces, a main part that
- * performs an approximate operation, and a "tail" that computes the
- * round-off error of that operation.
+/* Many of the ops are broken up into 2 pieces, a main part that
+ * performs an approx op, and a "tail" that computes the
+ * round-off error of that op.
  *
- * The operations Fast_Two_Sum(), Fast_Two_Diff(), Two_Sum(), Two_Diff(),
+ * The ops Fast_Two_Sum(), Fast_Two_Diff(), Two_Sum(), Two_Diff(),
  * Split(), and Two_Product() are all implemented as described in the
- * reference.  Each of these macros requires certain variables to be
+ * ref.  Each of these macros reqs certain vars to be
  * defined in the calling routine.  The variables `bvirt', `c', `abig',
- * `_i', `_j', `_k', `_l', `_m', and `_n' are declared `INEXACT' because
- * they store the result of an operation that may incur round-off error.
- * The input parameter `x' (or the highest numbered `x_' parameter) must
+ * `_i', `_j', `_k', `_l', `_m', and `_n' are declared `INEXACT' bc
+ * they store the result of an op that may incur round-off err.
+ * The input param `x' (or the highest num'd `x_' param) must
  * also be declared `INEXACT'.
  */
 
@@ -375,27 +373,27 @@ static RobustInitCaller init_caller;
   Square(a1, _j, _1); \
   Two_Two_Sum(_j, _1, _l, _2, x5, x4, x3, x2)
 
-static double splitter; /* = 2^ceiling(p / 2) + 1.  Used to split floats in half. */
-static double epsilon;  /* = 2^(-p).  Used to estimate round-off errors. */
-/* A set of coefficients used to calculate maximum round-off errors. */
+static double splitter; /* = 2^ceiling(p / 2) + 1. Used to split floats in half. */
+static double epsilon;  /* = 2^(-p).  Used to estimate round-off errs. */
+/* A set of coefficients used to calc max round-off errs. */
 static double resulterrbound;
 static double ccwerrboundA, ccwerrboundB, ccwerrboundC;
 static double o3derrboundA, o3derrboundB, o3derrboundC;
 static double iccerrboundA, iccerrboundB, iccerrboundC;
 static double isperrboundA, isperrboundB, isperrboundC;
 
-/* exactinit()   Init the vars used for exact arithmetic.
+/* exactinit() Init the vars used for exact arith.
  *
- *  `epsilon' is the largest power of two such that 1.0 + epsilon = 1.0 in
- *  floating-point arithmetic.  `epsilon' bounds the relative round-off
- *  error.  It is used for floating-point error analysis.
+ *  `epsilon' is the largest power of 2 such that 1.0 + epsilon = 1.0 in
+ *  floating-point arith.`epsilon' bounds the relative round-off
+ *  err. It is used for floating-point err analysis.
  *
- *  `splitter' is used to split floating-point numbers into two half-length
- *  significant for exact multiplication.
+ *  `splitter' is used to split floating-point nums into 2 half-length
+ *  significant for exact multiplicatoon.
  *
- *  I imagine that a highly optimizing compiler might be too smart for its
- *  own good, and somehow cause this routine to fail, if it pretends that
- *  floating-point arithmetic is too much like real arithmetic.
+ *  A highly optimizing compiler may be too smart for its
+ *  own good, causing this routine to fail, if it pretends that
+ *  floating-point arith is too much like real arith.
  *
  *  Don't change this routine unless you fully understand it. */
 void exactinit()
@@ -409,10 +407,10 @@ void exactinit()
   epsilon = 1.0;
   splitter = 1.0;
   check = 1.0;
-  /* Repeatedly divide `epsilon' by two until it is too small to add to
-   * one without causing round-off.  (Also check if the sum is equal to
-   * the previous sum, for machines that round up instead of using exact
-   * rounding.  Not that this library will work on such machines anyway. */
+  /* Repeatedly divide `epsilon' by 2 until its too small to add to
+   * 1 wo causing round-off.  (Also check if the sum is equal to
+   * the prev sum, for machines that round up instead of using exact
+   * rounding.  Not that this lib will work on such machines anyway. */
   do {
     lastcheck = check;
     epsilon *= half;
@@ -424,7 +422,7 @@ void exactinit()
   } while (!ELEM(check, 1.0, lastcheck));
   splitter += 1.0;
 
-  /* Error bounds for orientation and #incircle tests. */
+  /* Err bounds for orientation and #incircle tests. */
   resulterrbound = (3.0 + 8.0 * epsilon) * epsilon;
   ccwerrboundA = (3.0 + 16.0 * epsilon) * epsilon;
   ccwerrboundB = (2.0 + 12.0 * epsilon) * epsilon;
@@ -440,10 +438,10 @@ void exactinit()
   isperrboundC = (71.0 + 1408.0 * epsilon) * epsilon * epsilon;
 }
 
-/* fast_expansion_sum_zeroelim()    Sum two expansions, eliminating zero
- *                                  components from the output expansion.
+/* fast_expansion_sum_zeroelim() Sum 2 expansions, eliminating zero
+ *                               components from the output expansion.
  *
- *  Sets h = e + f.  See the long version of my paper for details.
+ * Sets h = e + f.  See the long v of my paper for details.
  * h cannot be e or f. */
 static int fast_expansion_sum_zeroelim(
     int elen, const double *e, int flen, const double *f, double *h)
@@ -526,11 +524,11 @@ static int fast_expansion_sum_zeroelim(
   return hindex;
 }
 
-/*  scale_expansion_zeroelim()   Multiply an expansion by a scalar,
- *                               eliminating zero components from the
- *                               output expansion.
+/*  scale_expansion_zeroelim() Multiply an expansion by a scalar,
+ *                             eliminating 0 components from the
+ *                             output expansion.
  *
- *  Sets h = be.  See either version of my paper for details.
+ *  Sets h = be. See either v of my paper for details.
  *  e and h cannot be the same. */
 static int scale_expansion_zeroelim(int elen, const double *e, double b, double *h)
 {
@@ -571,7 +569,7 @@ static int scale_expansion_zeroelim(int elen, const double *e, double b, double 
   return hindex;
 }
 
-/*  estimate() m Produce a one-word estimate of an expansion's val. */
+/* estimate() m Produce a 1-word estimate of an expansion's val. */
 static double estimate(int elen, const double *e)
 {
   double Q;
@@ -584,20 +582,20 @@ static double estimate(int elen, const double *e)
   return Q;
 }
 
-/* orient2dfast() Approx 2D orientation test.  Non-robust.
- * orient2d()    Adaptive exact 2D orientation test.  Robust.
- *               Return a positive val if the points pa, pb, and pc occur
- *               in counterclockwise order; a neg val if they occur
- *               in clockwise order; and zero if they are co-linear.  The
- *               result is also a rough approximation of twice the signed
- *               area of the triangle defined by the three points.
+/* orient2dfast() Approx 2D orient test. Non-robust.
+ * orient2d() Adaptive exact 2D orient test. Robust.
+ *            Return a positive val if the points pa, pb, and pc occur
+ *            in counterclockwise order; a neg val if they occur
+ *            in clockwise order; and zero if they are co-linear.  The
+ *            result is also a rough approx of 2x the signed
+ *            area of the triangle defined by the 3 points.
  *
- * The 2nd uses exact arithmetic to ensure a correct answer.  The
- * result returned is the determinant of a matrix.  In orient2d() only,
+ * 2nd uses exact arith ensuring a correct answer. The
+ * result returned is the determinant of a matrix. In orient2d() only,
  * this determinant is computed adaptively, in the sense that exact
  * arithmetic is used only to the degree it is needed to ensure that the
- * returned val has the correct sign.  Hence, orient2d() is usually quite
- * fast, but will run more slowly when the input points are co-linear or
+ * returned val has the correct sign. Hence, orient2d() is usually quite
+ * fast but will run more slowly when the input points are co-linear or
  * nearly so. */
 
 double orient2dfast(const double *pa, const double *pb, const double *pc)
@@ -721,23 +719,23 @@ double orient2d(const double *pa, const double *pb, const double *pc)
   return orient2dadapt(pa, pb, pc, detsum);
 }
 
-/* orient3dfast()   Approximate 3D orientation test.  Non-robust.
- * orient3d()    Adaptive exact 3D orientation test.  Robust.
+/* orient3dfast() Approx 3D orient test. Non-robust.
+ * orient3d() Adaptive exact 3D orient test. Robust.
  *
  *               Return a positive val if the point pd lies below the
  *               plane passing through pa, pb, and pc; "below" is defined so
  *               that pa, pb, and pc appear in counterclockwise order when
- *               viewed from above the plane.  Returns a negative val if
- *               pd lies above the plane.  Returns zero if the points are
- *               co-planar.  The result is also a rough approx of six
+ *               viewed from above the plane. Returns a negative val if
+ *               pd lies above the plane. Returns 0 if the points are
+ *               co-planar. The result is also a rough approx of 6
  *               times the signed volume of the tetrahedron defined by the
- *               four points.
+ *               4 points.
  *
- * The 2nd uses exact arithmetic to ensure a correct answer.  The
- * result returned is the determinant of a matrix.  In orient3d() only,
+ * The 2nd uses exact arith to ensure a correct answer. The
+ * result returned is the determinant of a matrix. In orient3d() only,
  * this determinant is computed adaptively, in the sense that exact
- * arithmetic is used only to the degree it is needed to ensure that the
- * returned val has the correct sign.  Hence, orient3d() is usually quite
+ * arith is used only to the degree it is needed to ensure that the
+ * returned val has the correct sign. Hence, orient3d() is usually quite
  * fast, but will run more slowly when the input points are co-planar or
  * nearly so. */
 double orient3dfast(const double *pa, const double *pb, const double *pc, const double *pd)
@@ -760,7 +758,7 @@ double orient3dfast(const double *pa, const double *pb, const double *pc, const 
          cdx * (ady * bdz - adz * bdy);
 }
 
-/* since this code comes from an external source, prefer not to break it
+/* since this code comes from an external src, prefer not to break it
  * up to fix this clang-tidy warning. */
 /* NOLINTNEXTLINE: readability-function-size */
 static double orient3dadapt(
@@ -1231,20 +1229,20 @@ double orient3d(const double *pa, const double *pb, const double *pc, const doub
   return orient3dadapt(pa, pb, pc, pd, permanent);
 }
 
-/*  incirclefast()   Approximate 2D incircle test.  Non-robust.
+/*  incirclefast()  Approx 2D incircle test.  Non-robust.
  *  incircle()
  *
- *               Return a positive val if the point pd lies inside the
- *               circle passing through pa, pb, and pc; a negative val if
- *               it lies outside; and zero if the four points are co-circular.
- *               The points pa, pb, and pc must be in counterclockwise
- *               order, or the sign of the result will be reversed.
+ *            Return a positive val if the point pd lies inside the
+ *            circle passing through pa, pb, and pc; a negative val if
+ *            it lies outside; and zero if the 4 points are co-circular.
+ *            The points pa, pb, and pc must be in counterclockwise
+ *            order, or the sign of the result will be reversed.
  *
- *  The 2nd uses exact arithmetic to ensure a correct answer.  The
- *  result returned is the determinant of a matrix.  In incircle() only,
+ *  The 2nd uses exact arith to ensure a correct answer. The
+ *  result returned is the determinant of a matrix. In incircle() only,
  *  this determinant is computed adaptively, in the sense that exact
- *  arithmetic is used only to the degree it is needed to ensure that the
- *  returned val has the correct sign.  Hence, incircle() is usually quite
+ *  arith is used only to the degree it is needed to ensure that the
+ *  returned val has the correct sign. Hence, incircle() is usually quite
  *  fast, but will run more slowly when the input points are co-circular or
  *  nearly so. */
 
@@ -1271,7 +1269,7 @@ double incirclefast(const double *pa, const double *pb, const double *pc, const 
   return alift * bcdet + blift * cadet + clift * abdet;
 }
 
-/* since this code comes from an external source, prefer not to break it
+/* bc this code comes from an external src, prefer not to break it
  * up to fix this clang-tidy warning. */
 /* NOLINTNEXTLINE: readability-fn-size */
 static double incircleadapt(
@@ -1837,21 +1835,21 @@ double incircle(const double *pa, const double *pb, const double *pc, const doub
   return incircleadapt(pa, pb, pc, pd, permanent);
 }
 
-/* inspherefast()   Approximate 3D insphere test.  Non-robust.
- * insphere()   Adaptive exact 3D insphere test.  Robust.
+/* inspherefast() Approx 3D insphere test. Non-robust.
+ * insphere()   Adaptive exact 3D insphere test. Robust.
  *
  *              Return a positive val if the point pe lies inside the
- *              sphere passing through pa, pb, pc, and pd; a negative value
+ *              sphere passing through pa, pb, pc, and pd; a negative val
  *              if it lies outside; and zero if the five points are
- *              co-spherical.  The points pa, pb, pc, and pd must be ordered
- *              so that they have a positive orientation (as defined by
- *              orient3d()), or the sign of the result will be reversed.
+ *              co-spherical. The points pa, pb, pc, and pd must be ordered
+ *              so that they have a positive orient (as defined by
+ *              orient3d()), or the sign of the result is reversed.
  *
- * The 2nd uses exact arithmetic to ensure a correct answer.  The
- * result returned is the determinant of a matrix.  In insphere() only,
+ * 2nd uses exact arith to ensure a correct answer. The
+ * result returned is the determinant of a matrix. In insphere() only,
  * this determinant is computed adaptively, in the sense that exact
- * arithmetic is used only to the degree it is needed to ensure that the
- * returned val has the correct sign.  Hence, insphere() is usually quite
+ * arith is used only to the degree it is needed to ensure that the
+ * returned val has the correct sign. Hence, insphere() is usually quite
  * fast, but will run more slowly when the input points are co-spherical or
  * nearly so. */
 
@@ -2476,4 +2474,4 @@ int insphere_fast(
   return sgn(robust_pred::inspherefast(a, b, c, d, e));
 }
 
-}  // namespace blender
+}  // namespace dune
