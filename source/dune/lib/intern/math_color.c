@@ -134,8 +134,8 @@ void rgb_to_ycc(float r, float g, float b, float *r_y, float *r_cb, float *r_cr,
 
 void ycc_to_rgb(float y, float cb, float cr, float *r_r, float *r_g, float *r_b, int colorspace)
 {
-  /* FIXME the following comment must be wrong because:
-   * BLI_YCC_ITU_BT601 y 16.0 cr 16.0 -> r -0.7009. */
+  /* FIXME the following comment must be wrong bc:
+   * LIB_YCC_ITU_BT601 y 16.0 cr 16.0 -> r -0.7009. */
   /* YCC input have a range of 16-235 and 16-240 except w JFIF_0_255 where the range is 0-255
    * RGB outputs are in the range 0 - 1.0f. */
   float r = 128.0f, g = 128.0f, b = 128.0f;
@@ -151,7 +151,7 @@ void ycc_to_rgb(float y, float cb, float cr, float *r_r, float *r_g, float *r_b,
       g = 1.164f * (y - 16.0f) - 0.534f * (cr - 128.0f) - 0.213f * (cb - 128.0f);
       b = 1.164f * (y - 16.0f) + 2.115f * (cb - 128.0f);
       break;
-    case BLI_YCC_JFIF_0_255:
+    case LIB_YCC_JFIF_0_255:
       r = y + 1.402f * cr - 179.456f;
       g = y - 0.34414f * cb - 0.71414f * cr + 135.45984f;
       b = y + 1.772f * cb - 226.816f;
@@ -437,7 +437,7 @@ int constrain_rgb(float *r, float *g, float *b)
   /* Amount of white needed */
   const float w = -min_ffff(0.0f, *r, *g, *b);
 
-  /* Add just enough white to make r, g, b all positive. */
+  /* Add white to make r, g, b all positive. */
   if (w > 0.0f) {
     *r += w;
     *g += w;
@@ -449,7 +449,7 @@ int constrain_rgb(float *r, float *g, float *b)
   return 0; /* Color within RGB gamut */
 }
 
-/* lift/gamma/gain / ASC-CDL conversion ********************************* */
+/* lift/gamma/gain / ASC-CDL conversion */
 void lift_gamma_gain_to_asc_cdl(const float *lift,
                                 const float *gamma,
                                 const float *gain,
@@ -527,7 +527,7 @@ static float index_to_float(const ushort i)
     ushort us[2];
   } tmp;
 
-  /* positive and negative zeros, and all gradual underflow, turn into zero: */
+  /* positive and negative 0s, and all gradual underflow, turn into 0: */
   if (i < 0x80 || (i >= 0x8000 && i < 0x8080)) {
     return 0;
   }
@@ -579,7 +579,7 @@ void lib_init_srgb_conversion(void)
     float f = srgb_to_linearrgb(((float)b) * (1.0f / 255.0f));
     lib_color_from_srgb_table[b] = f;
     i = hipart(f);
-    /* replace entries so byte->float->byte does not change the data: */
+    /* replace entries so byte->float->byte doesnt change the data: */
     lib_color_to_srgb_table[i] = (ushort)(b * 0x100);
   }
 }
