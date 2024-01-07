@@ -3,17 +3,13 @@
 #include "lib_math_solvers.h"
 #include "lib_math_vector.h"
 #include "mem_guardedalloc.h"
-
 #include "lib_utildefines.h"
-
 #include "lib_strict_flags.h"
-
 #include "eigen_capi.h"
 
 #include <string.h>
 
 /* Eigen Solvers */
-
 bool lib_eigen_solve_selfadjoint_m3(const float m3[3][3],
                                     float r_eigen_vals[3],
                                     float r_eigen_vectors[3][3])
