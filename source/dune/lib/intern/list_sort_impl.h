@@ -1,8 +1,8 @@
 /* Common implementation of linked-list a non-recursive merge-sort.
  *
  * Originally from Mono's `eglib`, adapted for portable inclusion.
- * This file is to be directly included in C-source,
- * with defines to control its use.
+ * This file is to be directly included 
+ * in C-src, w defines to ctrl its use.
  *
  * This code requires a `typedef` named `SORT_IMPL_LINKTYPE` for the list node.
  * It is assumed that the list type is the type of a ptr to a list
@@ -15,9 +15,9 @@
  * - `SORT_IMPL_LINKTYPE`:
  *   Struct type for sorting.
  * - `SORT_IMPL_LINKTYPE_DATA`:
- *   Data pointer or leave undefined to pass the link itself.
+ *   Data ptr or leave undefined to pass the link itself.
  * - `SORT_IMPL_FN`:
- *   Function name of the sort fn.
+ *   Fn name of the sort fn.
  *
  * Optionally:
  * - `SORT_IMPL_USE_THUNK`:
@@ -87,7 +87,7 @@ typedef int (*CompareFn)(
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Author:
- *   Raja R Harinath <rharinath@novell.com> */
+ * Raja R Harinath <rharinath@novell.com> */
 
 /* The max possible depth of the merge tree
  * - `ceiling(log2(max num of list nodes))`
@@ -179,7 +179,7 @@ LIB_INLINE list_node *sweep_up(struct SortInfo *si, list_node *list, unsigned in
  * we get the `O(n log n)` time for the sort.
  *
  * Inserting higher-ranked lists reduce the height of the merge tree,
- * and also eliminate a lot of redundant comparisons when merging two lists
+ * and also eliminate a lot of redundant comparisons when merging t2 lists
  * that would've been part of the same run.
  * Adding a `rank-i` list is analogous to incrementing a binary integer by
  * `2**i` in one op, thus sharing a similar speedup.
@@ -213,10 +213,10 @@ LIB_INLINE void insert_list(struct SortInfo *si, list_node *list, unsigned int r
   else {
     if (rank) {
       list = merge_lists(
-          sweep_up(si, NULL, rank), list, BLI_LIST_THUNK_APPEND1(si->func, si->thunk));
+          sweep_up(si, NULL, rank), list, LIB_LIST_THUNK_APPEND1(si->func, si->thunk));
     }
     for (i = rank; i < si->n_ranks && si->ranks[i]; i++) {
-      list = merge_lists(si->ranks[i], list, BLI_LIST_THUNK_APPEND1(si->func, si->thunk));
+      list = merge_lists(si->ranks[i], list, LIB_LIST_THUNK_APPEND1(si->func, si->thunk));
       si->ranks[i] = NULL;
     }
   }
