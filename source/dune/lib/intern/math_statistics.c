@@ -2,10 +2,8 @@
 #include "lib_math_statistics.h"
 #include "lib_math_vector.h"
 #include "mem_guardedalloc.h"
-
 #include "lib_task.h"
 #include "lib_utildefines.h"
-
 #include "lib_strict_flags.h"
 
 /* Covariance Matrices */
@@ -31,11 +29,9 @@ static void covariance_m_vn_ex_task_cb(void *__restrict userdata,
 
   int k;
 
-  /* Covariance matrices are always symmetrical, so we can compute only one half of it,
-   * and mirror it to the other half (at the end of the fn).
-   *
+  /* Covariance matrices are always symmetrical, so we can compute only 1/2 of it,
+   * and mirror it to the other 1/2 (at the end of the fn).
    * This allows using a flat loop of n*n w same results as imbricated one over half the matrix:
-   *
    *     for (i = 0; i < n; i++) {
    *         for (j = i; j < n; j++) {
    *             ...
@@ -72,7 +68,7 @@ void lib_covariance_m_vn_ex(const int n,
                             float *r_covmat)
 {
   /* About that division: see https://en.wikipedia.org/wiki/Bessel%27s_correction.
-   * In a nutshell, it must be 1 / (n - 1) for 'sample data', and 1 / n for 'population data'... */
+   * basically, it must be 1 / (n - 1) for 'sample data', and 1 / n for 'population data'... */
   const float covfac = 1.0f / (float)(use_sample_correction ? cos_vn_num - 1 : cos_vn_num);
 
   memset(r_covmat, 0, sizeof(*r_covmat) * (size_t)(n * n));
@@ -104,7 +100,7 @@ void lib_covariance_m3_v3n(const float (*cos_v3)[3],
 
   zero_v3(center);
   for (i = 0; i < cos_v3_num; i++) {
-    /* Applying mean_fac here rather than once at the end reduce compute errors... */
+    /* Apply mean_fac here rather than 1x at end to reduce compute errs. */
     madd_v3_v3fl(center, cos_v3[i], mean_fac);
   }
 
