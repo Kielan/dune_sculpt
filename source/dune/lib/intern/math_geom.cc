@@ -433,7 +433,7 @@ float dist_squared_to_plane_v3(const float pt[3], const float plane[4])
   const float len_sq = len_squared_v3(plane);
   const float side = plane_point_side_v3(plane, pt);
   const float fac = side / len_sq;
-  /* only diff to code above - no 'copysignf' */
+  /* only diff to code above; no 'copysignf' */
   return len_sq * (fac * fac);
 }
 
@@ -449,7 +449,7 @@ float dist_squared_to_plane3_v3(const float pt[3], const float plane[3])
   const float len_sq = len_squared_v3(plane);
   const float side = dot_v3v3(plane, pt); /* only diff w 'plane[4]' version */
   const float fac = side / len_sq;
-  /* only diff to code above - no 'copysignf' */
+  /* only diff to code above, no 'copysignf' */
   return len_sq * (fac * fac);
 }
 
@@ -1337,10 +1337,8 @@ int isect_line_sphere_v3(const float l1[3],
                          float r_p2[3])
 {
   /* Adapted for use in dune by Campbell Barton, 2011.
-   *
    * http://www.iebele.nl
    * `Atelier Iebele Abel <atelier@iebele.nl>` - 2001.
-   *
    * sphere_line_intersection fn adapted from:
    * http://astronomy.swin.edu.au/pbourke/geometry/sphereline
    * `Paul Bourke <pbourke@swin.edu.au>`. */
@@ -1384,7 +1382,7 @@ int isect_line_sphere_v3(const float l1[3],
     return 2;
   }
 
-  /* math domain error - nan */
+  /* math domain erro: nan */
   return -1;
 }
 
@@ -1431,7 +1429,7 @@ int isect_line_sphere_v2(const float l1[2],
     return 2;
   }
 
-  /* math domain error - nan */
+  /* math domain err: nan */
   return -1;
 }
 
@@ -1640,7 +1638,8 @@ bool isect_ray_tri_v3(const float ray_origin[3],
                       float r_uv[2])
 {
   /* These vals were 0.000001 in 2.4x but for projection snapping on
-   * a human head `(1BU == 1m)`, subdivision-surface level 2, this gave many errors. */
+   * a human head `(1BU == 1m)`, subdivision-surface level 2, 
+   * this gave many errs. */
   const float epsilon = 0.00000001f;
   float p[3], s[3], e1[3], e2[3], q[3];
   float a, f, u, v;
@@ -1869,8 +1868,8 @@ bool isect_ray_tri_watertight_v3_simple(const float ray_origin[3],
 }
 
 #if 0 /* UNUSED */
-/* A version of isect_ray_tri_v3 which takes a threshold argu
- * so rays slightly outside the triangle to be considered as intersecting. */
+/* A v of isect_ray_tri_v3. Takes a threshold
+ * arg, rays slightly outside the triangle to be considered as intersecting. */
 bool isect_ray_tri_threshold_v3(const float ray_origin[3],
                                 const float ray_direction[3],
                                 const float v0[3],
@@ -2083,7 +2082,6 @@ bool isect_plane_plane_plane_v3(const float plane_a[4],
     /* (plane_b.xyz.cross(plane_c.xyz) * -plane_a[3] +
      *  plane_c.xyz.cross(plane_a.xyz) * -plane_b[3] +
      *  plane_a.xyz.cross(plane_b.xyz) * -plane_c[3]) / det; */
-
     cross_v3_v3v3(tmp, plane_c, plane_b);
     mul_v3_v3fl(r_isect_co, tmp, plane_a[3]);
 
@@ -2108,7 +2106,7 @@ bool isect_plane_plane_v3(const float plane_a[4],
 {
   float det, plane_c[3];
 
-  /* direction is simply the cross product */
+  /* direction: the cross product */
   cross_v3_v3v3(plane_c, plane_a, plane_b);
 
   /* in this case we don't need to use 'determinant_m3' */
@@ -2754,7 +2752,6 @@ bool isect_sweeping_sphere_tri_v3(const float p1[3],
   // elen2 = dot_v3v3(e1, e1);  /* UNUSED */
   // edotv = dot_v3v3(e1, vel); /* UNUSED */
   // edotbv = dot_v3v3(e1, bv); /* UNUSED */
-
   sub_v3_v3v3(bv, v1, p1);
   elen2 = dot_v3v3(e3, e3);
   edotv = dot_v3v3(e3, vel);
@@ -2851,7 +2848,7 @@ int isect_line_line_epsilon_v3(const float v1[3],
   div = dot_v3v3(ab, ab);
 
   /* important not to use an epsilon here, see: #45919 */
-  /* test zero length line */
+  /* test 0 length line */
   if (UNLIKELY(div == 0.0f)) {
     return 0;
   }
@@ -2875,7 +2872,7 @@ int isect_line_line_epsilon_v3(const float v1[3],
   cross_v3_v3v3(n, a, b);
   project_v3_v3v3(t, t, n);
 
-  /* for the 1st line, offset the 2nd line until it is coplanar */
+  /* for 1st line, offset 2nd line until it is coplanar */
   add_v3_v3v3(v3t, v3, t);
   add_v3_v3v3(v4t, v4, t);
 
@@ -2926,7 +2923,7 @@ bool isect_line_line_strict_v3(const float v1[3],
   div = dot_v3v3(ab, ab);
 
   /* important not to use an epsilon here, see: #45919 */
-  /* test zero length line */
+  /* test 0 length line */
   if (UNLIKELY(div == 0.0f)) {
     return false;
   }
@@ -2969,7 +2966,7 @@ bool isect_ray_ray_epsilon_v3(const float ray_origin_a[3],
   cross_v3_v3v3(n, ray_direction_b, ray_direction_a);
   const float nlen = len_squared_v3(n);
 
-  /* `nlen` is the square of the area formed by the two vectors. */
+  /* `nlen` is the square of the area formed by the 2 vectors. */
   if (UNLIKELY(nlen < epsilon)) {
     /* The lines are parallel. */
     return false;
@@ -3208,7 +3205,7 @@ float line_point_factor_v3_ex(const float p[3],
   sub_v3_v3v3(u, l2, l1);
   sub_v3_v3v3(h, p, l1);
 
-  /* better check for zero */
+  /* better check for 0 */
   dot = len_squared_v3(u);
   return (dot > epsilon) ? (dot_v3v3(u, h) / dot) : fallback;
 }
@@ -3227,7 +3224,7 @@ float line_point_factor_v2_ex(const float p[2],
   float dot;
   sub_v2_v2v2(u, l2, l1);
   sub_v2_v2v2(h, p, l1);
-  /* better check for zero */
+  /* better check for 0 */
   dot = len_squared_v2(u);
   return (dot > epsilon) ? (dot_v2v2(u, h) / dot) : fallback;
 }
@@ -3296,12 +3293,12 @@ static bool point_in_slice(const float p[3],
    * Some math:
    * a line including (l1, l2) and a point not on the line
    * define a subset of R3 delimited by planes parallel to the line and orthogonal
-   * to the (point --> line) distance vector, one plane on the line one on the point,
+   * to the (point->line) distance vector, one plane on the line one on the point,
    * the room inside usually is rather small compared to R3 though still infinite
    * useful for restricting (speeding up) searches
    * e.g. all points of triangular prism are within the intersection of 3 "slices"
    * Another trivial case is a cube, but see a "spat" which is a deformed cube
-   * with paired parallel planes needs only 3 slices too. */
+   * w paired parallel planes needs only 3 slices too. */
   float h, rp[3], cp[3], q[3];
 
   closest_to_line_v3(cp, v1, l1, l2);
@@ -3310,12 +3307,12 @@ static bool point_in_slice(const float p[3],
   sub_v3_v3v3(rp, p, v1);
   h = dot_v3v3(q, rp) / dot_v3v3(q, q);
   /* When 'h' is nan/-nan, this check returns false
-   * wo explicit check - covering the degenerate case */
+   * wo explicit check - covering the deg case */
   return (h >= 0.0f && h <= 1.0f);
 }
 
 /* Adult sister defining the slice planes by the origin and the normal.
- * NOTE: |normal| may not be 1 but defining the thickness of the slice. */
+ * |normal| may not be 1 but defining the thickness of the slice. */
 static bool point_in_slice_as(const float p[3], const float origin[3], const float normal[3])
 {
   float h, rp[3];
@@ -3515,7 +3512,7 @@ void axis_dominant_v3_to_m3_negate(float r_mat[3][3], const float normal[3])
   lib_assert((dot_m3_v3_row_z(r_mat, normal) < LIB_ASSERT_UNIT_EPSILON) || is_zero_v3(normal));
 }
 
-/* Interpolation ********************************/
+/* Interpolation */
 static float tri_signed_area(
     const float v1[3], const float v2[3], const float v3[3], const int i, const int j)
 {
@@ -3729,10 +3726,10 @@ void barycentric_weights_v2_quad(const float v1[2],
                                  const float co[2],
                                  float w[4])
 {
-  /* NOTE: fabsf() here is not needed for convex quads
+  /* fabsf() here is not needed for convex quads
    * (and not used in interp_weights_poly_v2).
-   * But in the case of concave/bow-tie quads for the mask rasterizer it
-   * gives unreliable results without adding `absf()`. If this becomes an issue for more general
+   * In the case of concave/bow-tie quads for the mask rasterizer it
+   * gives unreliable results wo adding `absf()`. If this becomes an issue for more general
    * usage we could have this optional or use a diff fn. */
 #define MEAN_VAL_HALF_TAN_V2(_area, i1, i2) \
   ((_area = cross_v2v2(dirs[i1], dirs[i2])) != 0.0f ? \
@@ -3824,11 +3821,11 @@ void transform_point_by_tri_v3(float pt_tar[3],
                                const float tri_src_p2[3],
                                const float tri_src_p3[3])
 {
-  /* this works by moving the source triangle so its normal is pointing on the Z
+  /* this works by moving the src triangle so its normal is pointing on the Z
    * axis where its barycentric weights can be calc in 2D and its Z offset can
-   * be re-applied. The weights are applied directly to the targets 3D points and the
+   * be re-applied. Weights are applied directly to the targets 3D points and the
    * z-depth is used to scale the targets normal as an offset.
-   * This saves transforming the target into its Z-Up orientation and back
+   * This saves transforming target into its Z-Up orient and back
    * (which could also work) */
   float no_tar[3], no_src[3];
   float mat_src[3][3];
@@ -3843,7 +3840,7 @@ void transform_point_by_tri_v3(float pt_tar[3],
 
   axis_dominant_v3_to_m3(mat_src, no_src);
 
-  /* make the source tri xy space */
+  /* make the src tri xy space */
   mul_v3_m3v3(pt_src_xy, mat_src, pt_src);
   mul_v3_m3v3(tri_xy_src[0], mat_src, tri_src_p1);
   mul_v3_m3v3(tri_xy_src[1], mat_src, tri_src_p2);
@@ -3870,14 +3867,14 @@ void transform_point_by_seg_v3(float p_dst[3],
   interp_v3_v3v3(p_dst, l_dst_p1, l_dst_p2, t);
 }
 
-int interp_sparse_array(float *array, const int list_size, const float skipval)
+int interp_sparse_arr(float *arr, const int list_size, const float skipval)
 {
   int found_invalid = 0;
   int found_valid = 0;
   int i;
 
   for (i = 0; i < list_size; i++) {
-    if (array[i] == skipval) {
+    if (arr[i] == skipval) {
       found_invalid = 1;
     }
     else {
@@ -3896,15 +3893,15 @@ int interp_sparse_array(float *array, const int list_size, const float skipval)
   float valid_last = skipval;
   int valid_ofs = 0;
 
-  dune::Array<float> array_up(list_size);
-  dune::Array<float> array_down(list_size);
+  dune::Arr<float> array_up(list_size);
+  dune::Arr<float> array_down(list_size);
 
-  dune::Array<int> ofs_tot_up(list_size);
-  dune::Array<int> ofs_tot_down(list_size);
+  dune::Arr<int> ofs_tot_up(list_size);
+  dune::Arr<int> ofs_tot_down(list_size);
 
   for (i = 0; i < list_size; i++) {
-    if (array[i] == skipval) {
-      array_up[i] = valid_last;
+    if (arr[i] == skipval) {
+      arr_up[i] = valid_last;
       ofs_tot_up[i] = ++valid_ofs;
     }
     else {
@@ -3929,17 +3926,17 @@ int interp_sparse_array(float *array, const int list_size, const float skipval)
 
   /* now blend */
   for (i = 0; i < list_size; i++) {
-    if (array[i] == skipval) {
-      if (array_up[i] != skipval && array_down[i] != skipval) {
-        array[i] = ((array_up[i] * float(ofs_tot_down[i])) +
-                    (array_down[i] * float(ofs_tot_up[i]))) /
+    if (arr[i] == skipval) {
+      if (arr_up[i] != skipval && arr_down[i] != skipval) {
+        arr[i] = ((arr_up[i] * float(ofs_tot_down[i])) +
+                    (arr_down[i] * float(ofs_tot_up[i]))) /
                    float(ofs_tot_down[i] + ofs_tot_up[i]);
       }
-      else if (array_up[i] != skipval) {
-        array[i] = array_up[i];
+      else if (arr_up[i] != skipval) {
+        arr[i] = arr_up[i];
       }
-      else if (array_down[i] != skipval) {
-        array[i] = array_down[i];
+      else if (arr_down[i] != skipval) {
+        arr[i] = arr_down[i];
       }
     }
   }
@@ -3973,14 +3970,14 @@ struct Double2_Len {
   double dir[2], len;
 };
 
-/* Mean val weights - smooth interpolation weights for polygons with
+/* Mean val weights - smooth interpolation weights for polygons w
  * more than 3 verts */
 static float mean_val_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *d_next)
 {
   float cross[3];
   cross_v3_v3v3(cross, d_curr->dir, d_next->dir);
   const float area = len_v3(cross);
-  /* Compare against zero since 'FLT_EPSILON' can be too large, see: #73348. */
+  /* Compare against 0 bc 'FLT_EPSILON' can be too large, see: #73348. */
   if (LIKELY(area != 0.0f)) {
     const float dot = dot_v3v3(d_curr->dir, d_next->dir);
     const float len = d_curr->len * d_next->len;
@@ -3993,7 +3990,6 @@ static float mean_val_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *d_
 }
 
 /* Mean val weights same as mean_val_half_tan_v3 but for 2D vectors.
- *
  * When interpolating a 2D polygon, a point can be considered "outside"
  * the polygon's bounds. Thus, when the point is very distant and the vectors
  * have relatively close vals, the precision problems are evident since they
@@ -4001,9 +3997,9 @@ static float mean_val_half_tan_v3(const Float3_Len *d_curr, const Float3_Len *d_
  * To resolve this, doubles are used. */
 static double mean_val_half_tan_v2_db(const Double2_Len *d_curr, const Double2_Len *d_next)
 {
-  /* Diff from the 3d version but still correct. */
+  /* Diff from the 3d v. but still correct. */
   const double area = cross_v2v2_db(d_curr->dir, d_next->dir);
-  /* Compare against zero since 'FLT_EPSILON' can be too large, see: #73348. */
+  /* Compare against 0 bc 'FLT_EPSILON' can be too large, see: #73348. */
   if (LIKELY(area != 0.0)) {
     const double dot = dot_v2v2_db(d_curr->dir, d_next->dir);
     const double len = d_curr->len * d_next->len;
@@ -4017,7 +4013,7 @@ static double mean_val_half_tan_v2_db(const Double2_Len *d_curr, const Double2_L
 
 void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[3])
 {
-  /* Before starting to calc the weight, we need to figure out the floating point precision we
+  /* Prev to start calc'ing weight, must figure out floating point precision we
    * can expect from the supplied data. */
   float max_val = 0;
 
@@ -4027,7 +4023,7 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
     max_val = max_ff(max_val, fabsf(v[i][2] - co[2]));
   }
 
-  /* These to vals we derived by empirically testing different values that works for the test
+  /* These to vals we derived by empirically testing diff vals that works for the test
    * files in D7772. */
   const float eps = 16.0f * FLT_EPSILON * max_value;
   const float eps_sq = eps * eps;
@@ -4050,11 +4046,10 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
   ht_prev = mean_val_half_tan_v3(&d_curr, &d_next);
 
   while (i_next < n) {
-    /* Mark Mayer et al algorithm that is used here does not operate well if vertex is close
+    /* Mark Mayer et al algo that is used here does not op well if vert is close
      * to borders of face.
-     * In that case, do simple linear interpolation between the two edge vertices */
-
-    /* 'd_next.len' is in fact 'd_curr.len', just avoid copy to begin with */
+     * That case: do simple linear interpolation between the 2 edge verts */
+    /* 'd_next.len' is in fact 'd_curr.len', just avoid copy to begin w */
     if (UNLIKELY(d_next.len < eps)) {
       ix_flag = IS_POINT_IX;
       break;
@@ -4102,13 +4097,13 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 
 void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[2])
 {
-  /* Before starting to calc the weight, we need to figure out the floating point precision we
+  /* B4 starting to calc the weight, must figure out floating point precision we
    * can expect from the supplied data. */
-  float max_value = 0;
+  float max_val = 0;
 
   for (int i = 0; i < n; i++) {
-    max_value = max_ff(max_value, fabsf(v[i][0] - co[0]));
-    max_value = max_ff(max_value, fabsf(v[i][1] - co[1]));
+    max_val = max_ff(max_val, fabsf(v[i][0] - co[0]));
+    max_val = max_ff(max_val, fabsf(v[i][1] - co[1]));
   }
 
   /* These to vals we derived by empirically testing diff val that works for the test
@@ -4135,7 +4130,7 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
   ht_prev = mean_val_half_tan_v2_db(&d_curr, &d_next);
 
   while (i_next < n) {
-    /* Mark Mayer et al algo that is used here does not op well if vertex is close
+    /* Mark Mayer et al algo that is used here does not op well if vert is close
      * to borders of face. In that case,
      * do simple linear interpolation between the two edge verts */
 
@@ -4221,7 +4216,7 @@ void interp_cubic_v3(float x[3],
   v[2] = 3 * a[2] * t2 + 2 * b[2] * t + v1[2];
 }
 
-/* unfortunately internal calcs have to be done at double precision
+/* Internal calcs must be done at 2x precision
  * to achieve correct/stable results. */
 #define IS_ZERO(x) ((x > (-DBL_EPSILON) && x < DBL_EPSILON) ? 1 : 0)
 
@@ -4235,7 +4230,7 @@ void resolve_tri_uv_v2(
   const double c = st0[1] - st2[1], d = st1[1] - st2[1];
   const double det = a * d - c * b;
 
-  /* det should never be zero since the determinant is the signed ST area of the triangle. */
+  /* det should never be 0 bc thr determinant is the signed ST area of the triangle. */
   if (IS_ZERO(det) == 0) {
     const double x[2] = {st[0] - st2[0], st[1] - st2[1]};
 
@@ -4265,7 +4260,7 @@ void resolve_tri_uv_v3(
 
   det = d00 * d11 - d01 * d01;
 
-  /* det should never be zero bc the determinant is the signed ST area of the triangle. */
+  /* det should never be 0 bc the determinant is the signed ST area of the triangle. */
   if (IS_ZERO(det) == 0) {
     float w;
 
@@ -4523,7 +4518,7 @@ void perspective_m4_fov(float mat[4][4],
 void window_translate_m4(float winmat[4][4], float perspmat[4][4], const float x, const float y)
 {
   if (winmat[2][3] == -1.0f) {
-    /* in the case of a win-matrix, this means perspective always */
+    /* in case of a win-matrix this means perspective always */
     float v1[3];
     float v2[3];
     float len1, len2;
@@ -4556,7 +4551,7 @@ void planes_from_projmat(const float mat[4][4],
                          float near[4],
                          float far[4])
 {
-  /* References:
+  /* Refs:
    * https://fgiesen.wordpress.com/2012/08/31/frustum-planes-from-the-projection-matrix/
    * http://www8.cs.umu.se/kurser/5DV051/HT12/lab/plane_extraction.pdf */
 
@@ -4846,11 +4841,11 @@ void box_minmax_bounds_m4(float min[3], float max[3], float boundbox[2][3], floa
   copy_v3_v3(max, mx);
 }
 
-/* Mapping **********************************/
+/* Mapping */
 static float snap_coord(float u)
 {
-  /* Adjust a coord val `u` to obtain a value inside the (closed) unit interval.
-   *   i.e. 0.0 <= snap_coord(u) <= 1.0.
+  /* Adjust a coord val `u` to obtain a val inside the (closed) unit interval.
+   * i.e. 0.0 <= snap_coord(u) <= 1.0.
    * Due to round-off err, it is possible that the val of `u` may be close to the boundary of
    * the unit interval, but not exactly on it. In order to handle these cases, `snap_coord`
    * checks whether `u` is within `epsilon` of the boundary, and if so, it snaps the return val
@@ -4878,7 +4873,7 @@ bool map_to_tube(float *r_u, float *r_v, const float x, const float y, const flo
     *r_u = 0.5f;
   }
   else {
-    /* The "Regular" case, just compute the coordinate. */
+    /* The "Regular" case, just compute the coord. */
     *r_u = snap_coordinate(atan2f(x, -y) / float(2.0f * M_PI));
   }
   *r_v = (z + 1.0f) / 2.0f;
@@ -5031,7 +5026,7 @@ void accumulate_vert_normals_poly_v3(float **vertnos,
     for (i = 0; i < nverts; i++) {
       const float *cur_edge = vdiffs[i];
 
-      /* calc angle between the two poly edges incident on
+      /* calc angle between the t2 poly edges incident on
        * this vertex */
       const float fac = dune::math::safe_acos_approx(-dot_v3v3(cur_edge, prev_edge));
 
@@ -5042,7 +5037,7 @@ void accumulate_vert_normals_poly_v3(float **vertnos,
   }
 }
 
-/********************************* Tangents **********************************/
+/* Tangents */
 void tangent_from_uv_v3(const float uv1[2],
                         const float uv2[2],
                         const float uv3[2],
@@ -5085,8 +5080,7 @@ void tangent_from_uv_v3(const float uv1[2],
   }
 }
 
-/** Vector Clouds ********************************/
-/* vector clouds */
+/* Vector Clouds */
 void vcloud_estimate_transform_v3(const int list_size,
                                   const float (*pos)[3],
                                   const float *weight,
@@ -5102,7 +5096,7 @@ void vcloud_estimate_transform_v3(const int list_size,
   const float eps = 1e-6f;
 
   int a;
-  /* first set up a nice default response */
+  /* 1st set up: nice default response */
   if (lloc) {
     zero_v3(lloc);
   }
@@ -5153,9 +5147,10 @@ void vcloud_estimate_transform_v3(const int list_size,
     if (rloc) {
       copy_v3_v3(rloc, accu_rcom);
     }
-    if (lrot || lscale) { /* caller does not want rot nor scale, strange but legal */
-      /* so now do some reverse engineering and see if we can
-       * split rotation from scale -> Polar-decompose. */
+    if (lrot || lscale) { /* caller doesmt want rot nor scale, strange but legal */
+      /* now do reverse engineering,
+       * check if can split rot.
+       * from scale->Polar-decompose. */
       /* build 'projection' matrix */
       float m[3][3], mr[3][3], q[3][3], qi[3][3];
       float va[3], vb[3], stunt[3];
@@ -5184,7 +5179,6 @@ void vcloud_estimate_transform_v3(const int list_size,
 
         /* building the ref matrix on the fly
          * needed to scale properly later */
-
         mr[0][0] += va[0] * va[0];
         mr[0][1] += va[0] * va[1];
         mr[0][2] += va[0] * va[2];
@@ -5204,17 +5198,17 @@ void vcloud_estimate_transform_v3(const int list_size,
       /* Re-normalizing for numeric stability. */
       mul_m3_fl(q, 1.0f / len_v3(stunt));
 
-      /* This is pretty much Polar-decompose 'inline' the algorithm based on Higham's thesis
-       * without the far case ... but seems to work here pretty neat. */
+      /* Similar to Polar-decompose 'inline' algo based on Higham's thesis
+       * wo the far case. Works here. */
       odet = 0.0f;
-      ndet = determinant_m3_array(q);
+      ndet = determinant_m3_arr(q);
       while ((odet - ndet) * (odet - ndet) > eps && i < imax) {
         invert_m3_m3(qi, q);
         transpose_m3(qi);
         add_m3_m3m3(q, q, qi);
         mul_m3_fl(q, 0.5f);
         odet = ndet;
-        ndet = determinant_m3_array(q);
+        ndet = determinant_m3_arr(q);
         i++;
       }
 
@@ -5255,12 +5249,10 @@ bool is_edge_convex_v3(const float v1[3],
 bool is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3])
 {
   /* Method projects points onto a plane and checks its convex using following method:
-   *
    * - Create a plane from the cross-product of both diagonal vectors.
    * - Project all points onto the plane.
    * - Subtract for direction vectors.
    * - Return true if all corners cross-products point the direction of the plane.  */
-
   /* non-unit length normal, used as a projection plane */
   float plane[3];
 
@@ -5372,8 +5364,8 @@ bool is_quad_flip_v3_first_third_fast(const float v1[3],
                                       const float v3[3],
                                       const float v4[3])
 {
-  /* NOTE: if the faces normal has been calculated it's possible to simplify the following checks,
-   * however this means the solution may be different depending on the existence of normals
+  /* If the faces normal has been calc'd it's possible to simplify the following checks,
+   * however this means the solution may be diff depending on the existence of normals
    * causing tessellation to be "unstable" depending on the existence of normals, see #106469. */
   float d_12[3], d_13[3], d_14[3];
   float cross_a[3], cross_b[3];
@@ -5390,12 +5382,12 @@ float cubic_tangent_factor_circle_v3(const float tan_l[3], const float tan_r[3])
   LIB_ASSERT_UNIT_V3(tan_l);
   LIB_ASSERT_UNIT_V3(tan_r);
 
-  /* -7f causes instability/glitches with Bendy Bones + Custom Refs. */
+  /* -7f causes instability/glitches w Bendy Bones+Custom Refs. */
   const float eps = 1e-5f;
 
   const float tan_dot = dot_v3v3(tan_l, tan_r);
   if (tan_dot > 1.0f - eps) {
-    /* no angle diff (use fallback, length won't make any difference) */
+    /* no angle diff (use fallback, length won't make any diff) */
     return (1.0f / 3.0f) * 0.75f;
   }
   if (tan_dot < -1.0f + eps) {
@@ -5421,7 +5413,7 @@ float geodesic_distance_propagate_across_triangle(
   sub_v3_v3v3(v12, v2, v1);
 
   if (dist1 != 0.0f && dist2 != 0.0f) {
-    /* Local coord system in the triangle plane. */
+    /* Local coord sys in the triangle plane. */
     float u[3], v[3], n[3];
     const float d12 = normalize_v3_v3(u, v12);
 
@@ -5433,7 +5425,7 @@ float geodesic_distance_propagate_across_triangle(
       /* v0 in local coords */
       const float v0_[2] = {dot_v3v3(v10, u), fabsf(dot_v3v3(v10, v))};
 
-      /* Compute virtual source point in local coords, that we estimate the geodesic
+      /* Compute virtual src point in local coords, that we estimate the geodesic
        * distance is being computed from. See figure 9 in the paper for the derivation. */
       const float a = 0.5f * (1.0f + (dist1 * dist1 - dist2 * dist2) / (d12 * d12));
       const float hh = dist1 * dist1 - a * a * d12 * d12;
@@ -5442,7 +5434,7 @@ float geodesic_distance_propagate_across_triangle(
         const float h = sqrtf(hh);
         const float S_[2] = {a * d12, -h};
 
-        /* Only valid if the line between the source point and v0 crosses
+        /* Only valid if the line between the src point and v0 crosses
          * the edge between v1 and v2. */
         const float x_intercept = S_[0] + h * (v0_[0] - S_[0]) / (v0_[1] + h);
         if (x_intercept >= 0.0f && x_intercept <= d12) {
@@ -5452,7 +5444,7 @@ float geodesic_distance_propagate_across_triangle(
     }
   }
 
-  /* Fall back to Dijsktra approximation in trivial case, or if no valid source
+  /* Fall back to Dijsktra approx in trivial case, or if no valid src
    * point found that connects to v0 across the triangle. */
   return min_ff(dist1 + len_v3(v10), dist2 + len_v3v3(v0, v2));
 }
