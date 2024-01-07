@@ -19,13 +19,12 @@ int pow_i(int base, int exp)
 double double_round(double x, int ndigits)
 {
   /* From Python 3.1 `floatobject.c`. */
-
   double pow1, pow2, y, z;
   if (ndigits >= 0) {
     pow1 = pow(10.0, (double)ndigits);
     pow2 = 1.0;
     y = (x * pow1) * pow2;
-    /* if y overflows, then rounded value is exactly x */
+    /* if y overflows, then rounded val is exactly x */
     if (!isfinite(y)) {
       return x;
     }
@@ -38,7 +37,7 @@ double double_round(double x, int ndigits)
 
   z = round(y);
   if (fabs(y - z) == 0.5) {
-    /* halfway between two integers; use round-half-even */
+    /* halfway between two ints; use round-half-even */
     z = 2.0 * round(y / 2.0);
   }
 
@@ -64,7 +63,7 @@ float floor_power_of_10(float f)
 
 float ceil_power_of_10(float f)
 {
-  BLI_assert(!(f < 0.0f));
+  lib_assert(!(f < 0.0f));
   if (f != 0.0f) {
     return 1.0f / powf(10.0f, floorf(log10f(1.0f / f)));
   }
