@@ -9,8 +9,8 @@ class MFProcBuilder {
  private:
   /* Procedure that is being build. */
   MFProc *proc_ = nullptr;
-  /* Cursors where the next instruction should be inserted. */
-  Vector<MFInstructionCursor> cursors_;
+  /* Cursors where the next Instruct should be inserted. */
+  Vector<MFInstructCursor> cursors_;
 
  public:
   struct Branch;
@@ -23,26 +23,26 @@ class MFProcBuilder {
 
   MFProcBuilder(Branch &branch);
 
-  void set_cursor(const MFInstructionCursor &cursor);
-  void set_cursor(Span<MFInstructionCursor> cursors);
+  void set_cursor(const MFInstructCursor &cursor);
+  void set_cursor(Span<MFInstructCursor> cursors);
   void set_cursor(Span<MFProcBuilder *> builders);
   void set_cursor_after_branch(Branch &branch);
   void set_cursor_after_loop(Loop &loop);
 
-  void add_destruct(MFVariable &variable);
-  void add_destruct(Span<MFVariable *> variables);
+  void add_destruct(MFVar &var);
+  void add_destruct(Span<MFVar *> var);
 
-  MFReturnInstruction &add_return();
+  MFReturnInstruct &add_return();
 
-  Branch add_branch(MFVariable &condition);
+  Branch add_branch(MFVar &condition);
 
   Loop add_loop();
   void add_loop_continue(Loop &loop);
   void add_loop_break(Loop &loop);
 
-  MFCallInstruction &add_call_with_no_variables(const MultiFn &fn);
-  MFCallInstruction &add_call_with_all_variables(const MultiFn &fn,
-                                                 Span<MFVariable *> param_variables);
+  MFCallInstruct &add_call_with_no_vars(const MultiFn &fn);
+  MFCallInstruct &add_call_with_all_vars(const MultiFn &fn,
+                                         Span<MFVar *> param_vars);
 
   Vector<MFVariable *> add_call(const MultiFn &fn,
                                 Span<MFVariable *> input_and_mutable_variables = {});
