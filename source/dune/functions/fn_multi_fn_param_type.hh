@@ -1,6 +1,6 @@
 #pragma once
 
-/* Multi-fn has an arbitrary amnt of params.
+/* Mfn has an arbitrary amnt of params.
  * Params belongs to 1 of 3 interface types:
  * - Input: An input param is readonly inside the fn.
  *     Vals must be provided by the caller.
@@ -9,7 +9,7 @@
  * - Mutable: A mutable param can be considered to be an input and output
  *     Caller is to init the data. The fn is allowed to modify it.
  *
- * Every param has a MFDataType; describes the kind of data is being passed
+ * MFNParam has a MFNDataType; describes the kind of data is being passed
  * around. */
 #include "fn_multi_data_type.hh"
 
