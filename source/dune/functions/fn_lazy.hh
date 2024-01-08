@@ -1,17 +1,14 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- *
- * A `LazyFunction` encapsulates a computation which has inputs, outputs and potentially side
- * effects. Most importantly, a `LazyFunction` supports laziness in its inputs and outputs:
+/* A `LazyFn` encapsulates a computation which has inputs, outputs and potentially side
+ * effects. Most importantly, a `LazyFn` supports laziness in its inputs and outputs:
  * - Only outputs that are actually used have to be computed.
- * - Inputs can be requested lazily based on which outputs are used or what side effects the
- *   function has.
+ * - Inputs can be requested lazily based on which 
+ *   outputs are used or what side effects the fn has.
  *
- * A lazy-function that uses laziness may be executed more than once. The most common example is
- * the geometry nodes switch node. Depending on a condition input, it decides which one of the
- * other inputs is actually used. From the perspective of the switch node, its execution works as
+ * A lazy-fn that uses laziness may be ex more than once. The most common example is
+ * the geometry nodes switch node. Depending on a condition input, it decides which 1 of the
+ * other inputs is actually used. From the perspective of the switch node, its ex works as
  * follows:
  * 1. The switch node is first executed. It sees that the output is used. Now it requests the
  *    condition input from the caller and exits.
