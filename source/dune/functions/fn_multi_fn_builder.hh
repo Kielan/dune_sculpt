@@ -134,13 +134,13 @@ class CustomMF_SI_SI_SI_SO : public MultiFn {
     this->set_signature(&signature_);
   }
 
-  template<typename ElementFuncT>
-  CustomMF_SI_SI_SI_SO(const char *name, ElementFuncT element_fn)
-      : CustomMF_SI_SI_SI_SO(name, CustomMF_SI_SI_SI_SO::create_function(element_fn))
+  template<typename ElemFnT>
+  CustomMF_SI_SI_SI_SO(const char *name, ElemFnT elem_fn)
+      : CustomMF_SI_SI_SI_SO(name, CustomMF_SI_SI_SI_SO::create_fn(elem_fn))
   {
   }
 
-  template<typename ElementFuncT> static FunctionT create_function(ElementFuncT element_fn)
+  template<typename ElemFnT> static FnT create_fn(ElemFn elem_fn)
   {
     return [=](IndexMask mask,
                const VArray<In1> &in1,
