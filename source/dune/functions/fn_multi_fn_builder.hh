@@ -1,29 +1,26 @@
 #pragma once
 
-/** This file contains several utilities to create multi-functions with less redundant code. */
-
+/* Utils to create multi-fns w less redundant code. */
 #include <functional>
 
 #include "fn_multi_fn.hh"
 
 namespace dune::fn {
 
-/**
- * Generates a multi-function with the following parameters:
+/* Gen a multi-fn w the following params:
  * 1. single input (SI) of type In1
  * 2. single output (SO) of type Out1
  *
- * This example creates a function that adds 10 to the incoming values:
- *  CustomMF_SI_SO<int, int> fn("add 10", [](int value) { return value + 10; });
- */
-template<typename In1, typename Out1> class CustomMF_SI_SO : public MultiFunction {
+ * Example: create a fn that adds 10 to the incoming vals:
+ * CustomMF_SI_SO<int, int> fn("add 10", [](int val) { return val + 10; }); */
+template<typename In1, typename Out1> class CustomMF_SI_SO : public MultiFn {
  private:
-  using FunctionT = std::function<void(IndexMask, const VArray<In1> &, MutableSpan<Out1>)>;
-  FunctionT function_;
+  using FnT = std::fn<void(IndexMask, const VArray<In1> &, MutableSpan<Out1>)>;
+  FnT fn_;
   MFSignature signature_;
 
  public:
-  CustomMF_SI_SO(const char *name, FunctionT function) : function_(std::move(function))
+  CustomMF_SI_SO(const char *name, FnT fn) : fn_(std::move(fn))
   {
     MFSignatureBuilder signature{name};
     signature.single_input<In1>("In1");
@@ -32,16 +29,16 @@ template<typename In1, typename Out1> class CustomMF_SI_SO : public MultiFunctio
     this->set_signature(&signature_);
   }
 
-  template<typename ElementFuncT>
-  CustomMF_SI_SO(const char *name, ElementFuncT element_fn)
-      : CustomMF_SI_SO(name, CustomMF_SI_SO::create_function(element_fn))
+  template<typename ElemFnT>
+  CustomMF_SI_SO(const char *name, ElemFnT elem_fn)
+      : CustomMF_SI_SO(name, CustomMF_SI_SO::create_fn(element_fn))
   {
   }
 
-  template<typename ElementFuncT> static FunctionT create_function(ElementFuncT element_fn)
+  template<typename ElementFnT> static FnT create_fn(ElemFnT elem_fn)
   {
     return [=](IndexMask mask, const VArray<In1> &in1, MutableSpan<Out1> out1) {
-      /* Devirtualization results in a 2-3x speedup for some simple functions. */
+      /* Devirtualization results in a 2-3x speedup for some simple fns. */
       devirtualize_varray(in1, [&](const auto &in1) {
         mask.foreach_index(
             [&](int i) { new (static_cast<void *>(&out1[i])) Out1(element_fn(in1[i])); });
@@ -49,30 +46,28 @@ template<typename In1, typename Out1> class CustomMF_SI_SO : public MultiFunctio
     };
   }
 
-  void call(IndexMask mask, MFParams params, MFContext UNUSED(context)) const override
+  void call(IndexMask mask, MFParams params, MFCxt UNUSED(cxt)) const override
   {
     const VArray<In1> &in1 = params.readonly_single_input<In1>(0);
     MutableSpan<Out1> out1 = params.uninitialized_single_output<Out1>(1);
-    function_(mask, in1, out1);
+    fn_(mask, in1, out1);
   }
 };
 
-/**
- * Generates a multi-function with the following parameters:
+/* Gen a multi-fn w the following params:
  * 1. single input (SI) of type In1
  * 2. single input (SI) of type In2
- * 3. single output (SO) of type Out1
- */
+ * 3. single output (SO) of type Out */
 template<typename In1, typename In2, typename Out1>
-class CustomMF_SI_SI_SO : public MultiFunction {
+class CustomMF_SI_SI_SO : public MultiFn {
  private:
-  using FunctionT =
-      std::function<void(IndexMask, const VArray<In1> &, const VArray<In2> &, MutableSpan<Out1>)>;
-  FunctionT function_;
+  using FnT =
+      std::fn<void(IndexMask, const VArray<In1> &, const VArray<In2> &, MutableSpan<Out1>)>;
+  FnT fn_;
   MFSignature signature_;
 
  public:
-  CustomMF_SI_SI_SO(const char *name, FunctionT function) : function_(std::move(function))
+  CustomMF_SI_SI_SO(const char *name, FnT fn) : fn_(std::move(fn))
   {
     MFSignatureBuilder signature{name};
     signature.single_input<In1>("In1");
@@ -82,13 +77,13 @@ class CustomMF_SI_SI_SO : public MultiFunction {
     this->set_signature(&signature_);
   }
 
-  template<typename ElementFuncT>
-  CustomMF_SI_SI_SO(const char *name, ElementFuncT element_fn)
-      : CustomMF_SI_SI_SO(name, CustomMF_SI_SI_SO::create_function(element_fn))
+  template<typename ElemFnT>
+  CustomMF_SI_SI_SO(const char *name, ElemFnT elem_fn)
+      : CustomMF_SI_SI_SO(name, CustomMF_SI_SI_SO::create_fn(elem_fn))
   {
   }
 
-  template<typename ElementFuncT> static FunctionT create_function(ElementFuncT element_fn)
+  template<typename ElemFnT> static FnT create_fn(ElemFnT elem_fn)
   {
     return [=](IndexMask mask,
                const VArray<In1> &in1,
@@ -111,26 +106,24 @@ class CustomMF_SI_SI_SO : public MultiFunction {
   }
 };
 
-/**
- * Generates a multi-function with the following parameters:
+/* Gen a multi-fn wi the following params:
  * 1. single input (SI) of type In1
  * 2. single input (SI) of type In2
  * 3. single input (SI) of type In3
- * 4. single output (SO) of type Out1
- */
+ * 4. single output (SO) of type Out1 */
 template<typename In1, typename In2, typename In3, typename Out1>
-class CustomMF_SI_SI_SI_SO : public MultiFunction {
+class CustomMF_SI_SI_SI_SO : public MultiFn {
  private:
-  using FunctionT = std::function<void(IndexMask,
+  using FonT = std::function<void(IndexMask,
                                        const VArray<In1> &,
                                        const VArray<In2> &,
                                        const VArray<In3> &,
                                        MutableSpan<Out1>)>;
-  FunctionT function_;
+  FnT fn_;
   MFSignature signature_;
 
  public:
-  CustomMF_SI_SI_SI_SO(const char *name, FunctionT function) : function_(std::move(function))
+  CustomMF_SI_SI_SI_SO(const char *name, FnT fn) : fn_(std::move(fn))
   {
     MFSignatureBuilder signature{name};
     signature.single_input<In1>("In1");
