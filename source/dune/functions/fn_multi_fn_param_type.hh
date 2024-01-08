@@ -1,21 +1,19 @@
 #pragma once
 
-/* A multi-fn has an arbitrary amount of pars. Every param belongs to one of three
+/* A multi-fn has an arbitrary amount of params. Every param belongs to 1 of 3
  * interface types:
- * - Input: An input param is readonly inside the fn. The vals have to be provided by
- *     the caller.
- * - Output: An output param has to be initialized by the fn. However, the caller
- *     provides the mem where the data has to be constructed.
- * - Mutable: A mutable param can be considered to be an input and output. The caller has to
- *     initialize the data, but the function is allowed to modify it.
+ * - Input: An input param is readonly inside the fn.
+ *     Vals must be provided by the caller.
+ * - Output: An output param must be initd by the fn.
+ *     Caller provides the mem where the data is to be constructed.
+ * - Mutable: A mutable param can be considered to be an input and output
+ *     Caller is to init the data. The fn is allowed to modify it.
  *
- * Furthermore, every parameter has a MFDataType that describes what kind of data is being passed
- * around.
- */
+ * Every param has a MFDataType; describes the kind of data is being passed
+ * around. */
+#include "fn_multi_data_type.hh"
 
-#include "FN_multi_function_data_type.hh"
-
-namespace blender::fn {
+namespace dune::fn {
 
 class MFParamType {
  public:
@@ -110,18 +108,18 @@ class MFParamType {
         break;
       }
     }
-    BLI_assert(false);
+    lib_assert(false);
     return SingleInput;
   }
 
   bool is_input_or_mutable() const
   {
-    return ELEM(interface_type_, Input, Mutable);
+    return elem(interface_type_, Input, Mutable);
   }
 
   bool is_output_or_mutable() const
   {
-    return ELEM(interface_type_, Output, Mutable);
+    return elem(interface_type_, Output, Mutable);
   }
 
   bool is_output() const
