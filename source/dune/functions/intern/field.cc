@@ -27,7 +27,7 @@ struct FieldTreeInfo {
 };
 
 /* Collects some info from the field tree that is required by later steps. */
-static FieldTreeInfo preprocess_field_tree(Span<GFieldRef> entry_fields)
+static FieldTreeInfo preproc_field_tree(Span<GFieldRef> entry_fields)
 {
   FieldTreeInfo field_tree_info;
 
@@ -95,8 +95,8 @@ static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
   Set<GFieldRef> found_fields;
   Stack<GFieldRef> fields_to_check;
 
-  /* The varying fields are the ones that depend on inputs that are not constant. Therefore we
-   * start the tree search at the non-constant input fields and traverse through all fields that
+  /* The varying fields are the ones that depend on inputs that are not constant.
+   * Start the tree search at the non-constant input fields and traverse through all fields that
    * depend on them. */
   for (const int i : field_cxt_inputs.index_range()) {
     const GVArray &varray = field_cxt_inputs[i];
@@ -177,84 +177,84 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
             field_with_index.current_input_index++;
           }
           else {
-            /* All inputs vars are rdy, now gather all vars that are used by the
+            /* All inputs vars are rdy, now gather all vars used by the
              * fn and call it. */
-            const mf::MultiFn &multi_fn = op_node.multi_function();
-            Vector<mf::Variable *> variables(multi_function.param_amount());
+            const mf::MultiFn &multi_fn = op_node.multi_fn();
+            Vector<mf::Var *> vars(multi_fn.param_amount());
 
             int param_input_index = 0;
             int param_output_index = 0;
-            for (const int param_index : multi_function.param_indices()) {
-              const mf::ParamType param_type = multi_function.param_type(param_index);
+            for (const int param_index : multi_fn.param_indices()) {
+              const mf::ParamType param_type = multi_fn.param_type(param_index);
               const mf::ParamType::InterfaceType interface_type = param_type.interface_type();
               if (interface_type == mf::ParamType::Input) {
-                const GField &input_field = operation_inputs[param_input_index];
-                variables[param_index] = variable_by_field.lookup(input_field);
+                const GField &input_field = op_inputs[param_input_index];
+                vars[param_index] = var_by_field.lookup(input_field);
                 param_input_index++;
               }
               else if (interface_type == mf::ParamType::Output) {
-                const GFieldRef output_field{operation_node, param_output_index};
+                const GFieldRef output_field{op_node, param_output_index};
                 const bool output_is_ignored =
                     field_tree_info.field_users.lookup(output_field).is_empty() &&
                     !output_fields.contains(output_field);
                 if (output_is_ignored) {
                   /* Ignored outputs don't need a variable. */
-                  variables[param_index] = nullptr;
+                  vars[param_index] = nullptr;
                 }
                 else {
-                  /* Create a new variable for used outputs. */
-                  mf::Variable &new_variable = procedure.new_variable(param_type.data_type());
-                  variables[param_index] = &new_variable;
-                  variable_by_field.add_new(output_field, &new_variable);
+                  /* Create a new var for used outputs. */
+                  mf::Var &new_var = proc.new_var(param_type.data_type());
+                  vars[param_index] = &new_var;
+                  var_by_field.add_new(output_field, &new_var);
                 }
                 param_output_index++;
               }
               else {
-                BLI_assert_unreachable();
+                lib_assert_unreachable();
               }
             }
-            builder.add_call_with_all_variables(multi_function, variables);
+            builder.add_call_with_all_vars(multi_fn, vars);
           }
           break;
         }
         case FieldNodeType::Constant: {
           const FieldConstant &constant_node = static_cast<const FieldConstant &>(field_node);
-          const mf::MultiFunction &fn = procedure.construct_function<mf::CustomMF_GenericConstant>(
-              constant_node.type(), constant_node.value().get(), false);
-          mf::Variable &new_variable = *builder.add_call<1>(fn)[0];
-          variable_by_field.add_new(field, &new_variable);
+          const mf::MultiFn &fn = proc.construct_fn<mf::CustomMF_GenericConstant>(
+              constant_node.type(), constant_node.val().get(), false);
+          mf::Var &new_var = *builder.add_call<1>(fn)[0];
+          var_by_field.add_new(field, &new_var);
           break;
         }
       }
     }
   }
 
-  /* Add output parameters to the procedure. */
-  Set<mf::Variable *> already_output_variables;
+  /* Add output params to the proc. */
+  Set<mf::Var *> already_output_vars;
   for (const GFieldRef &field : output_fields) {
-    mf::Variable *variable = variable_by_field.lookup(field);
-    if (!already_output_variables.add(variable)) {
-      /* One variable can be output at most once. To output the same value twice, we have to make
-       * a copy first. */
-      const mf::MultiFunction &copy_fn = scope.construct<mf::CustomMF_GenericCopy>(
-          variable->data_type());
-      variable = builder.add_call<1>(copy_fn, {variable})[0];
+    mf::Var *var = var_by_field.lookup(field);
+    if (!already_output_vars.add(var)) {
+      /* 1 var can be output at most once.
+       * To output same val 2x must make a copy first. */
+      const mf::MultiFn &copy_fn = scope.construct<mf::CustomMF_GenericCopy>(
+          var->data_type());
+      var = builder.add_call<1>(copy_fn, {var})[0];
     }
-    builder.add_output_parameter(*variable);
+    builder.add_output_param(*var);
   }
 
-  /* Remove the variables that should not be destructed from the map. */
+  /* Remove the vars that should not be destructed from the map. */
   for (const GFieldRef &field : output_fields) {
-    variable_by_field.remove(field);
+    var_by_field.remove(field);
   }
-  /* Add destructor calls for the remaining variables. */
-  for (mf::Variable *variable : variable_by_field.values()) {
-    builder.add_destruct(*variable);
+  /* Add destructor calls for the remaining vars. */
+  for (mf::Var *var : var_by_field.values()) {
+    builder.add_destruct(*var);
   }
 
-  mf::ReturnInstruction &return_instr = builder.add_return();
+  mf::ReturnInstruct &return_instruct = builder.add_return();
 
-  mf::procedure_optimization::move_destructs_up(procedure, return_instr);
+  mf::proc_optimization::move_destructs_up(proc, return_instr);
 
   // std::cout << procedure.to_dot() << "\n";
   BLI_assert(procedure.validate());
