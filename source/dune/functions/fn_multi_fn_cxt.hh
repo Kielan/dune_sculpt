@@ -1,13 +1,11 @@
 #pragma once
 
-/* An MFCxt is passed along with every call to a multi-fn. Right now it does nothig
+/* MFCxt is passed w every call to a multi-fn. Presently it does nothig
  * but it can be used for the following purposes:
- * - Pass debug infor up and down the fn call stack.
+ * - Pass debug info up and down the fn call stack.
  * - Pass reusable mem bufs to sub-fns to increase performance.
  * - Pass cached data to called fns.*/
-
-#include "BLI_utildefines.h"
-
+#include "lib_utildefines.h"
 #include "lib_map.hh"
 
 namespace dune::fn {
@@ -16,31 +14,31 @@ class MFCxt
 
 class MFCxtBuilder {
  private:
-  Map<std::string, const void *> global_contexts_;
+  Map<std::string, const void *> global_cxts_;
 
-  friend MFContext;
+  friend MFCxt;
 
  public:
-  template<typename T> void add_global_context(std::string name, const T *context)
+  template<typename T> void add_global_cxt(std::string name, const T *cxt)
   {
-    global_contexts_.add_new(std::move(name), static_cast<const void *>(context));
+    global_cxts_.add_new(std::move(name), static_cast<const void *>(cxt));
   }
 };
 
-class MFContext {
+class MFCxt {
  private:
-  MFContextBuilder &builder_;
+  MFCxtBuilder &builder_;
 
  public:
-  MFContext(MFContextBuilder &builder) : builder_(builder)
+  MFContext(MFCxtBuilder &builder) : builder_(builder)
   {
   }
 
-  template<typename T> const T *get_global_context(StringRef name) const
+  template<typename T> const T *get_global_cxt(StringRef name) const
   {
-    const void *context = builder_.global_contexts_.lookup_default_as(name, nullptr);
+    const void *cxt = builder_.global_cxts_.lookup_default_as(name, nullptr);
     /* TODO: Implement type checking. */
-    return static_cast<const T *>(context);
+    return static_cast<const T *>(cxt);
   }
 };
 
