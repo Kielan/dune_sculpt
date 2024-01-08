@@ -1,24 +1,20 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- *
- * An #MFContext is passed along with every call to a multi-function. Right now it does nothing,
+/* An MFCxt is passed along with every call to a multi-fn. Right now it does nothig
  * but it can be used for the following purposes:
- * - Pass debug information up and down the function call stack.
- * - Pass reusable memory buffers to sub-functions to increase performance.
- * - Pass cached data to called functions.
- */
+ * - Pass debug infor up and down the fn call stack.
+ * - Pass reusable mem bufs to sub-fns to increase performance.
+ * - Pass cached data to called fns.*/
 
 #include "BLI_utildefines.h"
 
-#include "BLI_map.hh"
+#include "lib_map.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
-class MFContext;
+class MFCxt
 
-class MFContextBuilder {
+class MFCxtBuilder {
  private:
   Map<std::string, const void *> global_contexts_;
 
