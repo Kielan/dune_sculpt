@@ -1,7 +1,6 @@
 #pragma once
 
-/* fn
- * A Field represents a fn that outputs a val based on an arbitrary num of inputs. The
+/* A Field represents a fn that outputs a val based on an arbitrary num of inputs. The
  * inputs for a specific field eval are provided by a FieldCxt.
  *
  * A typical example is a field that computes a displacement vector for every ver on a mesh
