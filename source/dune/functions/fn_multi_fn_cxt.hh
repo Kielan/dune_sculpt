@@ -1,7 +1,7 @@
 #pragma once
 
-/* MFCxt is passed w every call to a multi-fn. Presently it does nothig
- * but it can be used for the following purposes:
+/* MFCxt is passed w every call to a multi-fn.
+ * It does nothing; it could be used for the purposes:
  * - Pass debug info up and down the fn call stack.
  * - Pass reusable mem bufs to sub-fns to increase performance.
  * - Pass cached data to called fns.*/
@@ -30,14 +30,14 @@ class MFCxt {
   MFCxtBuilder &builder_;
 
  public:
-  MFContext(MFCxtBuilder &builder) : builder_(builder)
+  MFCxt(MFCxtBuilder &builder) : builder_(builder)
   {
   }
 
   template<typename T> const T *get_global_cxt(StringRef name) const
   {
     const void *cxt = builder_.global_cxts_.lookup_default_as(name, nullptr);
-    /* TODO: Implement type checking. */
+    /* TODO: Implem type checking. */
     return static_cast<const T *>(cxt);
   }
 };
