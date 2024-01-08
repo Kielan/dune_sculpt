@@ -1,9 +1,8 @@
 #pragma once
 
-/* A MFDataType describes what type of data a multi-fn gets as input, outputs or mutates.
- * Currently, only individual elements or vectors of elements are supported. Adding more data types
+/* MFDataType describes the type of data a multi-fn gets as input/outputs or mutates.
+ * Currently: only individual elems or vectors of elems are supported. Adding more data types
  * is possible when necessary. */
-
 #include "lib_cpp_type.hh"
 
 namespace dune::fn {
