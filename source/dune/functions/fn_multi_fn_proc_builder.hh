@@ -17,7 +17,7 @@ class MFProcBuilder {
   struct Loop;
 
   MFProcBuilder(MFProc &proc,
-                     MFInstructionCursor initial_cursor = MFInstructionCursor::ForEntry());
+                MFInstructCursor initial_cursor = MFInstructCursor::ForEntry());
 
   MFProcBuilder(Span<MFProcBuilder *> builders);
 
@@ -110,10 +110,10 @@ inline void MFProcBuilder::set_cursor_after_branch(Branch &branch)
 
 inline void MFProcBuilder::set_cursor_after_loop(Loop &loop)
 {
-  this->set_cursor(MFInstructionCursor{*loop.end});
+  this->set_cursor(MFInstructCursor{*loop.end});
 }
 
-inline void MFProcBuilder::set_cursor(Span<MFProcedureBuilder *> builders)
+inline void MFProcBuilder::set_cursor(Span<MFProcBuilder *> builders)
 {
   cursors_.clear();
   for (MFProcBuilder *builder : builders) {
@@ -122,14 +122,14 @@ inline void MFProcBuilder::set_cursor(Span<MFProcedureBuilder *> builders)
 }
 
 template<int OutputN>
-inline std::array<MFVariable *, OutputN> MFProcBuilder::add_call(
-    const MultiFn &fn, Span<MFVariable *> input_and_mutable_variables)
+inline std::array<MFVar *, OutputN> MFProcBuilder::add_call(
+    const MultiFn &fn, Span<MFVar *> input_and_mutable_vars)
 {
-  Vector<MFVariable *> output_variables = this->add_call(fn, input_and_mutable_variables);
-  lib_assert(output_variables.size() == OutputN);
+  Vector<MFVar *> output_vars = this->add_call(fn, input_and_mutable_vars);
+  lib_assert(output_vars.size() == OutputN);
 
-  std::array<MFVariable *, OutputN> output_array;
-  initialized_copy_n(output_variables.data(), OutputN, output_array.data());
+  std::array<MFVar *, OutputN> output_array;
+  initialized_copy_n(output_vars.data(), OutputN, output_array.data());
   return output_array;
 }
 
@@ -139,11 +139,11 @@ inline void MFProcBuilder::add_param(MFParamType::InterfaceType interface_type,
   procedure_->add_param(interface_type, variable);
 }
 
-inline MFVariable &MFProcBuilder::add_param(MFParamType param_type, std::string name)
+inline MFVar &MFProcBuilder::add_param(MFParamType param_type, std::string name)
 {
-  MFVariable &variable = procedure_->new_variable(param_type.data_type(), std::move(name));
-  this->add_param(param_type.interface_type(), variable);
-  return variable;
+  MFVar &var = proc_->new_var(param_type.data_type(), std::move(name));
+  this->add_param(param_type.interface_type(), var);
+  return var;
 }
 
 inline MFVariable &MFProcBuilder::add_input_param(MFDataType data_type, std::string name)
@@ -152,25 +152,25 @@ inline MFVariable &MFProcBuilder::add_input_param(MFDataType data_type, std::str
 }
 
 template<typename T>
-inline MFVariable &MFProcBuilder::add_single_input_param(std::string name)
+inline MFVar &MFProcBuilder::add_single_input_param(std::string name)
 {
   return this->add_param(MFParamType::ForSingleInput(CPPType::get<T>()), std::move(name));
 }
 
 template<typename T>
-inline MFVariable &MFProcBuilder::add_single_mutable_param(std::string name)
+inline MFVar &MFProcBuilder::add_single_mutable_param(std::string name)
 {
   return this->add_param(MFParamType::ForMutableSingle(CPPType::get<T>()), std::move(name));
 }
 
-inline void MFProcBuilder::add_output_param(MFVariable &variable)
+inline void MFProcBuilder::add_output_param(MFVar &var)
 {
-  this->add_param(MFParamType::Output, variable);
+  this->add_param(MFParamType::Output, var);
 }
 
-inline void MFProcBuilder::link_to_cursors(MFInstruction *instruction)
+inline void MFProcBuilder::link_to_cursors(MFInstruct *instruction)
 {
-  for (MFInstructionCursor &cursor : cursors_) {
+  for (MFInstructCursor &cursor : cursors_) {
     cursor.set_next(*proc_, instruction);
   }
 }
