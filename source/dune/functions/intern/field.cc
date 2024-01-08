@@ -263,10 +263,10 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
                             Span<GFieldRef> fields_to_eval,
                             const IndexMask &mask,
                             const FieldCxt &cxt,
-                                Span<GVMutableArray> dst_varrays)
+                            Span<GVMutableArray> dst_varrays)
 {
   Vector<GVArray> r_varrays(fields_to_evaluate.size());
-  Array<bool> is_output_written_to_dst(fields_to_evaluate.size(), false);
+  Array<bool> is_output_written_to_dst(fields_to_eval.size(), false);
   const int array_size = mask.min_array_size();
 
   if (mask.is_empty()) {
@@ -306,7 +306,7 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
         const FieldInput &field_input = static_cast<const FieldInput &>(field.node());
         const int field_input_index = field_tree_info.deduplicated_field_inputs.index_of(
             field_input);
-        const GVArray &varray = field_context_inputs[field_input_index];
+        const GVArray &varray = field_cxt_inputs[field_input_index];
         r_varrays[out_index] = varray;
         break;
       }
@@ -324,7 +324,7 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
 
   Set<GFieldRef> varying_fields = find_varying_fields(field_tree_info, field_context_inputs);
 
-  /* Separate fields into two categories. Those that are constant and need to be evald only
+  /* Separate fields into 2 categories. Those that are constant and need to be evald only
    * once, and those that need to be evald for every index. */
   Vector<GFieldRef> varying_fields_to_evaluate;
   Vector<int> varying_field_indices;
@@ -354,10 +354,10 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
         proc, scope, field_tree_info, varying_fields_to_evaluate);
     mf::ProcExecutor proc_executor{procedure};
 
-    mf::ParamsBuilder mf_params{procedure_executor, &mask};
-    mf::ContextBuilder mf_context;
+    mf::ParamsBuilder mf_params{proc_executor, &mask};
+    mf::CxtBuilder mf_cxt;
 
-    /* Provide inputs to the procedure executor. */
+    /* Provide inputs to the proc exec. */
     for (const GVArray &varray : field_context_inputs) {
       mf_params.add_readonly_single_input(varray);
     }
@@ -369,15 +369,15 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
 
       /* Try to get an existing virtual array that the result should be written into. */
       GVMutableArray dst_varray = get_dst_varray(out_index);
-      void *buffer;
+      void *buf;
       if (!dst_varray || !dst_varray.is_span()) {
-        /* Allocate a new buffer for the computed result. */
-        buffer = scope.linear_allocator().allocate(type.size() * array_size, type.alignment());
+        /* Allocate a new buf for the computed result. */
+        buffer = scope.linear_allocator().alloc(type.size() * array_size, type.alignment());
 
         if (!type.is_trivially_destructible()) {
-          /* Destruct values in the end. */
+          /* Destruct vals in the end. */
           scope.add_destruct_call(
-              [buffer, mask, &type]() { type.destruct_indices(buffer, mask); });
+              [buf, mask, &type]() { type.destruct_indices(buffer, mask); });
         }
 
         r_varrays[out_index] = GVArray::ForSpan({type, buffer, array_size});
@@ -390,63 +390,63 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
         is_output_written_to_dst[out_index] = true;
       }
 
-      /* Pass output buffer to the procedure executor. */
-      const GMutableSpan span{type, buffer, array_size};
+      /* Pass output buf to the proc ex. */
+      const GMutableSpan span{type, buf, array_size};
       mf_params.add_uninitialized_single_output(span);
     }
 
-    procedure_executor.call_auto(mask, mf_params, mf_context);
+    proc_executor.call_auto(mask, mf_params, mf_cxt);
   }
 
-  /* Evaluate constant fields if necessary. */
-  if (!constant_fields_to_evaluate.is_empty()) {
-    /* Build the procedure for those fields. */
-    mf::Procedure procedure;
-    build_multi_function_procedure_for_fields(
-        procedure, scope, field_tree_info, constant_fields_to_evaluate);
-    mf::ProcedureExecutor procedure_executor{procedure};
+  /* Eval constant fields if necessary. */
+  if (!constant_fields_to_eval.is_empty()) {
+    /* Build the proc for those fields. */
+    mf::Proc proc;
+    build_multi_fn_proc_for_fields(
+        proc, scope, field_tree_info, constant_fields_to_eval);
+    mf::ProcExecutor proc_executor{proc};
     const IndexMask mask(1);
-    mf::ParamsBuilder mf_params{procedure_executor, &mask};
-    mf::ContextBuilder mf_context;
+    mf::ParamsBuilder mf_params{proc_executor, &mask};
+    mf::CxtBuilder mf_cxt;
 
-    /* Provide inputs to the procedure executor. */
-    for (const GVArray &varray : field_context_inputs) {
+    /* Provide inputs to the proc executor. */
+    for (const GVArray &varray : field_cxt_inputs) {
       mf_params.add_readonly_single_input(varray);
     }
 
-    for (const int i : constant_fields_to_evaluate.index_range()) {
-      const GFieldRef &field = constant_fields_to_evaluate[i];
+    for (const int i : constant_fields_to_eval.index_range()) {
+      const GFieldRef &field = constant_fields_to_eval[i];
       const CPPType &type = field.cpp_type();
-      /* Allocate memory where the computed value will be stored in. */
-      void *buffer = scope.linear_allocator().allocate(type.size(), type.alignment());
+      /* Alloc mem where the computed val will be stored in. */
+      void *buf = scope.linear_allocator().allocate(type.size(), type.alignment());
 
       if (!type.is_trivially_destructible()) {
-        /* Destruct value in the end. */
-        scope.add_destruct_call([buffer, &type]() { type.destruct(buffer); });
+        /* Destruct val in the end. */
+        scope.add_destruct_call([buffer, &type]() { type.destruct(buf); });
       }
 
-      /* Pass output buffer to the procedure executor. */
-      mf_params.add_uninitialized_single_output({type, buffer, 1});
+      /* Pass output buf to the proc executor. */
+      mf_params.add_uninitialized_single_output({type, buf, 1});
 
-      /* Create virtual array that can be used after the procedure has been executed below. */
+      /* Create virtual array that can be used after the proc has been ex below. */
       const int out_index = constant_field_indices[i];
       r_varrays[out_index] = GVArray::ForSingleRef(type, array_size, buffer);
     }
 
-    procedure_executor.call(mask, mf_params, mf_context);
+    proc_executor.call(mask, mf_params, mf_cxt);
   }
 
   /* Copy data to supplied destination arrays if necessary. In some cases the evaluation above
    * has written the computed data in the right place already. */
   if (!dst_varrays.is_empty()) {
-    for (const int out_index : fields_to_evaluate.index_range()) {
+    for (const int out_index : fields_to_eval.index_range()) {
       GVMutableArray dst_varray = get_dst_varray(out_index);
       if (!dst_varray) {
         /* Caller did not provide a destination for this output. */
         continue;
       }
       const GVArray &computed_varray = r_varrays[out_index];
-      BLI_assert(computed_varray.type() == dst_varray.type());
+      lib_assert(computed_varray.type() == dst_varray.type());
       if (is_output_written_to_dst[out_index]) {
         /* The result has been written into the destination provided by the caller already. */
         continue;
@@ -458,10 +458,10 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
                           dst_varray.get_internal_span().take_front(mask.min_array_size()));
       }
       else {
-        /* Slower materialize into a different structure. */
+        /* Slower materialize into a diff structure. */
         const CPPType &type = computed_varray.type();
         threading::parallel_for(mask.index_range(), 2048, [&](const IndexRange range) {
-          BUFFER_FOR_CPP_TYPE_VALUE(type, buffer);
+          BUF_FOR_CPP_TYPE_VAL(type, buf);
           mask.slice(range).foreach_segment([&](auto segment) {
             for (const int i : segment) {
               computed_varray.get_to_uninitialized(i, buffer);
@@ -476,18 +476,18 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
   return r_varrays;
 }
 
-void evaluate_constant_field(const GField &field, void *r_value)
+void eval_constant_field(const GField &field, void *r_val)
 {
   if (field.node().depends_on_input()) {
     const CPPType &type = field.cpp_type();
-    type.value_initialize(r_value);
+    type.val_init(r_val);
     return;
   }
 
   ResourceScope scope;
-  FieldContext context;
-  Vector<GVArray> varrays = evaluate_fields(scope, {field}, IndexRange(1), context);
-  varrays[0].get_to_uninitialized(0, r_value);
+  FieldCxt cxt;
+  Vector<GVArray> varrays = eval_fields(scope, {field}, IndexRange(1), context);
+  varrays[0].get_to_uninitialized(0, r_val);
 }
 
 GField make_field_constant_if_possible(GField field)
@@ -496,34 +496,34 @@ GField make_field_constant_if_possible(GField field)
     return field;
   }
   const CPPType &type = field.cpp_type();
-  BUFFER_FOR_CPP_TYPE_VALUE(type, buffer);
-  evaluate_constant_field(field, buffer);
+  BUF_FOR_CPP_TYPE_VAL(type, buf);
+  eval_constant_field(field, buf);
   GField new_field = make_constant_field(type, buffer);
-  type.destruct(buffer);
+  type.destruct(buf);
   return new_field;
 }
 
-Field<bool> invert_boolean_field(const Field<bool> &field)
+Field<bool> invert_bool_field(const Field<bool> &field)
 {
   static auto not_fn = mf::build::SI1_SO<bool, bool>(
-      "Not", [](bool a) { return !a; }, mf::build::exec_presets::AllSpanOrSingle());
-  auto not_op = FieldOperation::Create(not_fn, {field});
+      "Not", [](bool a) { return !a; }, mf::build::ex_presets::AllSpanOrSingle());
+  auto not_op = FieldOp::Create(not_fn, {field});
   return Field<bool>(not_op);
 }
 
-GField make_constant_field(const CPPType &type, const void *value)
+GField make_constant_field(const CPPType &type, const void *val)
 {
-  auto constant_node = std::make_shared<FieldConstant>(type, value);
+  auto constant_node = std::make_shared<FieldConstant>(type, val);
   return GField{std::move(constant_node)};
 }
 
-GVArray FieldContext::get_varray_for_input(const FieldInput &field_input,
-                                           const IndexMask &mask,
-                                           ResourceScope &scope) const
+GVArray FieldCxt::get_varray_for_input(const FieldInput &field_input,
+                                       const IndexMask &mask,
+                                       ResourceScope &scope) const
 {
-  /* By default ask the field input to create the varray. Another field context might overwrite
-   * the context here. */
-  return field_input.get_varray_for_context(*this, mask, scope);
+  /* By default ask the field input to create the varray. Another field cxt might overwrite
+   * the cxt here. */
+  return field_input.get_varray_for_cxt(*this, mask, scope);
 }
 
 IndexFieldInput::IndexFieldInput() : FieldInput(CPPType::get<int>(), "Index")
@@ -533,13 +533,13 @@ IndexFieldInput::IndexFieldInput() : FieldInput(CPPType::get<int>(), "Index")
 
 GVArray IndexFieldInput::get_index_varray(const IndexMask &mask)
 {
-  auto index_func = [](int i) { return i; };
-  return VArray<int>::ForFunc(mask.min_array_size(), index_func);
+  auto index_fn = [](int i) { return i; };
+  return VArray<int>::ForFn(mask.min_array_size(), index_fn);
 }
 
-GVArray IndexFieldInput::get_varray_for_context(const fn::FieldContext & /*context*/,
-                                                const IndexMask &mask,
-                                                ResourceScope & /*scope*/) const
+GVArray IndexFieldInput::get_varray_for_cxt(const fn::FieldCxt & /*cxt*/,
+                                            const IndexMask &mask,
+                                            ResourceScope & /*scope*/) const
 {
   /* TODO: Investigate a similar method to IndexRange::as_span() */
   return get_index_varray(mask);
@@ -556,16 +556,11 @@ bool IndexFieldInput::is_equal_to(const fn::FieldNode &other) const
   return dynamic_cast<const IndexFieldInput *>(&other) != nullptr;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #FieldNode
- * \{ */
-
+/* FieldNode */
 /* Avoid generating the destructor in every translation unit. */
 FieldNode::~FieldNode() = default;
 
-void FieldNode::for_each_field_input_recursive(FunctionRef<void(const FieldInput &)> fn) const
+void FieldNode::for_each_field_input_recursive(FnRef<void(const FieldInput &)> fn) const
 {
   if (field_inputs_) {
     for (const FieldInput &field_input : field_inputs_->deduplicated_nodes) {
@@ -591,25 +586,23 @@ FieldOperation::FieldOperation(std::shared_ptr<const mf::MultiFunction> function
 }
 
 /* Avoid generating the destructor in every translation unit. */
-FieldOperation::~FieldOperation() = default;
+FieldOp::~FieldOp() = default;
 
-/**
- * Returns the field inputs used by all the provided fields.
- * This tries to reuse an existing #FieldInputs whenever possible to avoid copying it.
- */
+/* Return the field inputs used by all the provided fields.
+ * This tries to reuse an existing FieldInputs whenever possible to avoid copying it. */
 static std::shared_ptr<const FieldInputs> combine_field_inputs(Span<GField> fields)
 {
-  /* The #FieldInputs that we try to reuse if possible. */
+  /* The FieldInputs that we try to reuse if possible. */
   const std::shared_ptr<const FieldInputs> *field_inputs_candidate = nullptr;
   for (const GField &field : fields) {
     const std::shared_ptr<const FieldInputs> &field_inputs = field.node().field_inputs();
-    /* Only try to reuse non-empty #FieldInputs. */
+    /* Only try to reuse non-empty FieldInputs. */
     if (field_inputs && !field_inputs->nodes.is_empty()) {
       if (field_inputs_candidate == nullptr) {
         field_inputs_candidate = &field_inputs;
       }
       else if ((*field_inputs_candidate)->nodes.size() < field_inputs->nodes.size()) {
-        /* Always try to reuse the #FieldInputs that has the most nodes already. */
+        /* Always try to reuse the FieldInputs that has the most nodes alrdy. */
         field_inputs_candidate = &field_inputs;
       }
     }
@@ -638,7 +631,7 @@ static std::shared_ptr<const FieldInputs> combine_field_inputs(Span<GField> fiel
     /* The existing #FieldInputs can be reused, because no other field has additional inputs. */
     return *field_inputs_candidate;
   }
-  /* Create new #FieldInputs that contains all of the inputs that the fields depend on. */
+  /* Create new FieldInputs that contains all of the inputs that the fields depend on. */
   std::shared_ptr<FieldInputs> new_field_inputs = std::make_shared<FieldInputs>(
       **field_inputs_candidate);
   for (const FieldInput *field_input : inputs_not_in_candidate) {
@@ -648,18 +641,13 @@ static std::shared_ptr<const FieldInputs> combine_field_inputs(Span<GField> fiel
   return new_field_inputs;
 }
 
-FieldOperation::FieldOperation(const mf::MultiFunction &function, Vector<GField> inputs)
-    : FieldNode(FieldNodeType::Operation), function_(&function), inputs_(std::move(inputs))
+FieldOp::FieldOp(const mf::MultiFn &fn, Vector<GField> inputs)
+    : FieldNode(FieldNodeType::Op), fn_(&fn), inputs_(std::move(inputs))
 {
   field_inputs_ = combine_field_inputs(inputs_);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #FieldInput
- * \{ */
-
+/* FieldInput */
 FieldInput::FieldInput(const CPPType &type, std::string debug_name)
     : FieldNode(FieldNodeType::Input), type_(&type), debug_name_(std::move(debug_name))
 {
