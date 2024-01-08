@@ -1,5 +1,4 @@
 #pragma once
-
 /* The signature of a multi-fn contains the fns name and expected params. New
  * signatures should be build using the MFSignatureBuilder class. */
 #include "fn_multi_fn_param_type.hh"
