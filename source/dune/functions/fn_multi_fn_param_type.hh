@@ -1,7 +1,7 @@
 #pragma once
 
-/* A multi-fn has an arbitrary amount of params. Every param belongs to 1 of 3
- * interface types:
+/* Multi-fn has an arbitrary amnt of params.
+ * Params belongs to 1 of 3 interface types:
  * - Input: An input param is readonly inside the fn.
  *     Vals must be provided by the caller.
  * - Output: An output param must be initd by the fn.
