@@ -1,27 +1,22 @@
 #pragma once
 
-/** \file
- * \ingroup fn
+/* This file contains a graph data struct that allows composing multiple lazy-fns into a
+ * combined lazy-fn.
  *
- * This file contains a graph data structure that allows composing multiple lazy-functions into a
- * combined lazy-function.
- *
- * There are two types of nodes in the graph:
- * - #FunctionNode: Corresponds to a #LazyFunction. The inputs and outputs of the function become
+ * Are 2 types of nodes in the graph:
+ * - FnNode: Corresponds to a LazyFn. Inputs/outputs of the fn become
  *   input and output sockets of the node.
- * - #InterfaceNode: Is used to indicate inputs and outputs of the entire graph. It can have an
- *   arbitrary number of sockets.
- */
+ * - InterfaceNode: Indicates inputs/outputs of the entire graph.
+ *   Can have an arbitrary num of sockets. */
+#include "lib_linear_allocator.hh"
 
-#include "BLI_linear_allocator.hh"
+#include "fn_lazy_fn.hh"
 
-#include "FN_lazy_function.hh"
-
-namespace blender::dot {
+namespace dune::dot {
 class DirectedEdge;
 }
 
-namespace blender::fn::lazy_function {
+namespace dune::fn::lazy_fn {
 
 class Socket;
 class InputSocket;
@@ -29,27 +24,17 @@ class OutputSocket;
 class Node;
 class Graph;
 
-/**
- * A #Socket is the interface of a #Node. Every #Socket is either an #InputSocket or #OutputSocket.
- * Links can be created from output sockets to input sockets.
- */
+/* A Socket is the interface of a Node. Every Socket is either an InputSocket or OutputSocket.
+ * Links can be created from output sockets to input sockets */
 class Socket : NonCopyable, NonMovable {
  protected:
-  /**
-   * The node the socket belongs to.
-   */
+  /* The node the socket belongs to. */
   Node *node_;
-  /**
-   * Data type of the socket. Only sockets with the same type can be linked.
-   */
+  /* Data type of the socket. Only sockets w the same type can be linked. */
   const CPPType *type_;
-  /**
-   * Indicates whether this is an #InputSocket or #OutputSocket.
-   */
+  /* Indicates whether this is an InputSocket or OutputSocket. */
   bool is_input_;
-  /**
-   * Index of the socket. E.g. 0 for the first input and the first output socket.
-   */
+  /* Index of the socket. E.g. 0 for the first input and the first output socket. */
   int index_in_node_;
   /**
    * Index of the socket in the entire graph. Every socket has a different index.
