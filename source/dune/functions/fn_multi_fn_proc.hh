@@ -4,16 +4,16 @@
 
 namespace dune::fn {
 
-class MFVariable;
-class MFInstruction;
-class MFCallInstruction;
-class MFBranchInstruction;
-class MFDestructInstruction;
-class MFDummyInstruction;
-class MFReturnInstruction;
-class MFProcedure;
+class MFVar;
+class MFInstruct;
+class MFCallInstruct;
+class MFBranchInstruct;
+class MFDestructInstruct;
+class MFDummyInstruct;
+class MFReturnInstruct;
+class MFProc;
 
-/** Every instruction has exactly one of these types. */
+/* Every instruction has exactly 1 of these types. */
 enum class MFInstructionType {
   Call,
   Branch,
@@ -22,10 +22,8 @@ enum class MFInstructionType {
   Return,
 };
 
-/**
- * An MFInstructionCursor points to a position in a multi-function procedure, where an instruction
- * can be inserted.
- */
+/* An MFInstructCursor points to a position in a multi-fn proc
+ * where an Instruct can be inserted. */
 class MFInstructionCursor {
  public:
   enum Type {
@@ -39,18 +37,18 @@ class MFInstructionCursor {
 
  private:
   Type type_ = None;
-  MFInstruction *instruction_ = nullptr;
-  /* Only used when it is a branch instruction. */
+  MFInstruct *instruct_ = nullptr;
+  /* Only used when it is a branch instruct. */
   bool branch_output_ = false;
 
  public:
-  MFInstructionCursor() = default;
-  MFInstructionCursor(MFCallInstruction &instruction);
-  MFInstructionCursor(MFDestructInstruction &instruction);
-  MFInstructionCursor(MFBranchInstruction &instruction, bool branch_output);
-  MFInstructionCursor(MFDummyInstruction &instruction);
+  MFInstructCursor() = default;
+  MFInstructCursor(MFCallInstruct &instruct);
+  MFInstructCursor(MFDestructInstruct &instruct);
+  MFInstructCursor(MFBranchInstruct &instruct, bool branch_output);
+  MFInstructCursor(MFDummyInstruct &instruct);
 
-  static MFInstructionCursor ForEntry();
+  static MFInstructCursor ForEntry();
 
   MFInstruction *next(MFProcedure &procedure) const;
   void set_next(MFProcedure &procedure, MFInstruction *new_instruction) const;
