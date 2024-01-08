@@ -1,55 +1,49 @@
 #pragma once
 
-/** \file
- * \ingroup fn
+/* A `MultiFn` encapsulates a fn that is optimized for throughput (instead of latency).
+ * The throughput is optimized by always proc'ing many elems at once instead of each elem
+ * separately. Ideal for fns that are eval often (e.g. for every particle).
  *
- * A `MultiFunction` encapsulates a function that is optimized for throughput (instead of latency).
- * The throughput is optimized by always processing many elements at once, instead of each element
- * separately. This is ideal for functions that are evaluated often (e.g. for every particle).
- *
- * By processing a lot of data at once, individual functions become easier to optimize for humans
+ * By proc'ing a lot of data at once, individual fns become easier to optimize for humans
  * and for the compiler. Furthermore, performance profiles become easier to understand and show
  * better where bottlenecks are.
  *
- * Every multi-function has a name and an ordered list of parameters. Parameters are used for input
- * and output. In fact, there are three kinds of parameters: inputs, outputs and mutable (which is
+ * Every multi-fn has a name and an ordered list of params. Params are used for input
+ * and output. In fact, there are three kinds of params: inputs, outputs and mutable (which is
  * combination of input and output).
  *
- * To call a multi-function, one has to provide three things:
- * - `MFParams`: This references the input and output arrays that the function works with. The
+ * To call a multi-fn provide 3 things:
+ * - `MFParams`: This refes the input and output arrays that the fn works w. The
  *      arrays are not owned by MFParams.
  * - `IndexMask`: An array of indices indicating which indices in the provided arrays should be
  *      touched/processed.
- * - `MFContext`: Further information for the called function.
+ * - `MFCxt`: Further information for the called function.
  *
- * A new multi-function is generally implemented as follows:
- * 1. Create a new subclass of MultiFunction.
- * 2. Implement a constructor that initialized the signature of the function.
- * 3. Override the `call` function.
- */
+ * A new multi-fn is generally implemented as follows:
+ * 1. Create a new subclass of MultiFn.
+ * 2. Implement a constructor that init'd
+ * the signature of the fn.
+ * 3. Override the `call` fn. */
+#include "lib_hash.hh"
 
-#include "BLI_hash.hh"
+#include "FN_multi_fn_cxt.hh"
+#include "FN_multi_fn_params.hh"
 
-#include "FN_multi_function_context.hh"
-#include "FN_multi_function_params.hh"
+namespace dune::fn {
 
-namespace blender::fn {
-
-class MultiFunction {
+class MultiFn {
  private:
   const MFSignature *signature_ref_ = nullptr;
 
  public:
-  virtual ~MultiFunction()
+  virtual ~MultiFn()
   {
   }
 
-  /**
-   * The result is the same as using #call directly but this method has some additional features.
+  /*The result is the same as using call directly but this method has some additional features.
    * - Automatic multi-threading when possible and appropriate.
-   * - Automatic index mask offsetting to avoid large temporary intermediate arrays that are mostly
-   *   unused.
-   */
+   * - Automatic index mask offsetting to avoid large temp intermediate arrays that are mostly
+   *   unused. */
   void call_auto(IndexMask mask, MFParams params, MFContext context) const;
   virtual void call(IndexMask mask, MFParams params, MFContext context) const = 0;
 
@@ -58,7 +52,7 @@ class MultiFunction {
     return get_default_hash(this);
   }
 
-  virtual bool equals(const MultiFunction &UNUSED(other)) const
+  virtual bool equals(const MultiFn &UNUSED(other)) const
   {
     return false;
   }
