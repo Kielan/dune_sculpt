@@ -4,19 +4,19 @@
 
 namespace dune::fn {
 
-/* A multi-fn that ex a procedure internally. */
+/* Multi-fn that ex a proc internally. */
 class MFProcExecutor : public MultiFn {
  private:
   MFSignature signature_;
-  const MFProcedure &procedure_;
+  const MFProc &proc_;
 
  public:
-  MFProcedureExecutor(const MFProc &proc);
+  MFProcExecutor(const MFProc &proc);
 
-  void call(IndexMask mask, MFParams params, MFCtx ctx) const override;
+  void call(IndexMask mask, MFParams params, MFCxt cxt) const override;
 
  private:
-  ExecutionHints get_execution_hints() const override;
+  ExHints get_ex_hints() const override;
 };
 
 }  // namespace dune::fn
