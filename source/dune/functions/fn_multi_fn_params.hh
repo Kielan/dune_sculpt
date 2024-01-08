@@ -1,24 +1,18 @@
 #pragma once
-
-/** \file
- * \ingroup fn
- *
- * This file provides an MFParams and MFParamsBuilder structure.
- *
- * `MFParamsBuilder` is used by a function caller to be prepare all parameters that are passed into
- * the function. `MFParams` is then used inside the called function to access the parameters.
- */
+/* MFParams and MFParamsBuilder struct.
+ * MFParamsBuilder is used by a fn caller to prep params passed into
+ * the fn. MFParams is then used inside the called fn to access the params. */
 
 #include <mutex>
 
-#include "BLI_generic_pointer.hh"
-#include "BLI_generic_vector_array.hh"
-#include "BLI_generic_virtual_vector_array.hh"
-#include "BLI_resource_scope.hh"
+#include "lib_generic_ptr.hh"
+#include "lib_generic_vector_array.hh"
+#include "lib_generic_virtual_vector_array.hh"
+#include "lib_resource_scope.hh"
 
-#include "FN_multi_function_signature.hh"
+#include "fn_multi_fn_signature.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
 class MFParamsBuilder {
  private:
@@ -42,14 +36,12 @@ class MFParamsBuilder {
   }
 
  public:
-  MFParamsBuilder(const class MultiFunction &fn, int64_t size);
-  /**
-   * The indices referenced by the #mask has to live longer than the params builder. This is
-   * because the it might have to destruct elements for all masked indices in the end.
-   */
-  MFParamsBuilder(const class MultiFunction &fn, const IndexMask *mask);
+  MFParamsBuilder(const class MultiFn &fn, int64_t size);
+  /* The indices refd by the mask has to live longer than the params builder. This is
+   * bc the it might have to destruct elems for all masked indices in the end. */
+  MFParamsBuilder(const class MultiFn &fn, const IndexMask *mask);
 
-  template<typename T> void add_readonly_single_input_value(T value, StringRef expected_name = "")
+  template<typename T> void add_readonly_single_input_value(T val, StringRef expected_name = "")
   {
     this->add_readonly_single_input(VArray<T>::ForSingle(std::move(value), min_array_size_),
                                     expected_name);
@@ -71,7 +63,7 @@ class MFParamsBuilder {
   void add_readonly_single_input(GVArray varray, StringRef expected_name = "")
   {
     this->assert_current_param_type(MFParamType::ForSingleInput(varray.type()), expected_name);
-    BLI_assert(varray.size() >= min_array_size_);
+    lib_assert(varray.size() >= min_array_size_);
     virtual_arrays_.append(varray);
   }
 
@@ -89,19 +81,19 @@ class MFParamsBuilder {
   void add_readonly_vector_input(const GVVectorArray &ref, StringRef expected_name = "")
   {
     this->assert_current_param_type(MFParamType::ForVectorInput(ref.type()), expected_name);
-    BLI_assert(ref.size() >= min_array_size_);
+    lib_assert(ref.size() >= min_array_size_);
     virtual_vector_arrays_.append(&ref);
   }
 
-  template<typename T> void add_uninitialized_single_output(T *value, StringRef expected_name = "")
+  template<typename T> void add_uninitialized_single_output(T *val, StringRef expected_name = "")
   {
-    this->add_uninitialized_single_output(GMutableSpan(CPPType::get<T>(), value, 1),
+    this->add_uninitialized_single_output(GMutableSpan(CPPType::get<T>(), val, 1),
                                           expected_name);
   }
   void add_uninitialized_single_output(GMutableSpan ref, StringRef expected_name = "")
   {
     this->assert_current_param_type(MFParamType::ForSingleOutput(ref.type()), expected_name);
-    BLI_assert(ref.size() >= min_array_size_);
+    lib_assert(ref.size() >= min_array_size_);
     mutable_spans_.append(ref);
   }
   void add_ignored_single_output(StringRef expected_name = "")
@@ -109,7 +101,7 @@ class MFParamsBuilder {
     this->assert_current_param_name(expected_name);
     const int param_index = this->current_param_index();
     const MFParamType &param_type = signature_->param_types[param_index];
-    BLI_assert(param_type.category() == MFParamType::SingleOutput);
+    lib_assert(param_type.category() == MFParamType::SingleOutput);
     const CPPType &type = param_type.data_type().single_type();
     /* An empty span indicates that this is ignored. */
     const GMutableSpan dummy_span{type};
@@ -120,7 +112,7 @@ class MFParamsBuilder {
   {
     this->assert_current_param_type(MFParamType::ForVectorOutput(vector_array.type()),
                                     expected_name);
-    BLI_assert(vector_array.size() >= min_array_size_);
+    lib_assert(vector_array.size() >= min_array_size_);
     vector_arrays_.append(&vector_array);
   }
 
@@ -135,13 +127,13 @@ class MFParamsBuilder {
   {
     this->assert_current_param_type(MFParamType::ForMutableVector(vector_array.type()),
                                     expected_name);
-    BLI_assert(vector_array.size() >= min_array_size_);
+    lib_assert(vector_array.size() >= min_array_size_);
     vector_arrays_.append(&vector_array);
   }
 
   GMutableSpan computed_array(int param_index)
   {
-    BLI_assert(ELEM(signature_->param_types[param_index].category(),
+    lib_assert(elem(signature_->param_types[param_index].category(),
                     MFParamType::SingleOutput,
                     MFParamType::SingleMutable));
     int data_index = signature_->data_index(param_index);
@@ -150,7 +142,7 @@ class MFParamsBuilder {
 
   GVectorArray &computed_vector_array(int param_index)
   {
-    BLI_assert(ELEM(signature_->param_types[param_index].category(),
+    lib_assert(elem(signature_->param_types[param_index].category(),
                     MFParamType::VectorOutput,
                     MFParamType::VectorMutable));
     int data_index = signature_->data_index(param_index);
@@ -171,11 +163,11 @@ class MFParamsBuilder {
 
     if (expected_name != "") {
       StringRef actual_name = signature_->param_names[param_index];
-      BLI_assert(actual_name == expected_name);
+      lib_assert(actual_name == expected_name);
     }
 
     MFParamType expected_type = signature_->param_types[param_index];
-    BLI_assert(expected_type == param_type);
+    lin_assert(expected_type == param_type);
 #endif
   }
 
@@ -188,7 +180,7 @@ class MFParamsBuilder {
     }
     const int param_index = this->current_param_index();
     StringRef actual_name = signature_->param_names[param_index];
-    BLI_assert(actual_name == expected_name);
+    lib_assert(actual_name == expected_name);
 #endif
   }
 
@@ -220,12 +212,10 @@ class MFParams {
     return builder_->virtual_arrays_[data_index];
   }
 
-  /**
-   * \return True when the caller provided a buffer for this output parameter. This allows the
-   * called multi-function to skip some computation. It is still valid to call
-   * #uninitialized_single_output when this returns false. In this case a new temporary buffer is
-   * allocated.
-   */
+  /* return True when caller provided a buf for this output param.
+   * Allows called multi-fn to skip some computation. Still valid to call
+   * uninitialized_single_output when this returns false.
+   * In this case a new tmp buf is allocated. */
   bool single_output_is_required(int param_index, StringRef name = "")
   {
     this->assert_correct_param(param_index, name, MFParamType::SingleOutput);
@@ -246,15 +236,13 @@ class MFParams {
     if (!span.is_empty()) {
       return span;
     }
-    /* The output is ignored by the caller, but the multi-function does not handle this case. So
-     * create a temporary buffer that the multi-function can write to. */
+    /* The output is ignored by the caller, but the multi-fn does not handle this case.
+     * So create a tmp buf that the multi-fn can write to. */
     return this->ensure_dummy_single_output(data_index);
   }
 
-  /**
-   * Same as #uninitialized_single_output, but returns an empty span when the output is not
-   * required.
-   */
+  /* Same as uninitialized_single_output but returns an empty span when the output is not
+   * required. */
   template<typename T>
   MutableSpan<T> uninitialized_single_output_if_required(int param_index, StringRef name = "")
   {
@@ -320,9 +308,9 @@ class MFParams {
   {
     UNUSED_VARS_NDEBUG(param_index, name, param_type);
 #ifdef DEBUG
-    BLI_assert(builder_->signature_->param_types[param_index] == param_type);
+    lib_assert(builder_->signature_->param_types[param_index] == param_type);
     if (name.size() > 0) {
-      BLI_assert(builder_->signature_->param_names[param_index] == name);
+      lib_assert(builder_->signature_->param_names[param_index] == name);
     }
 #endif
   }
@@ -331,9 +319,9 @@ class MFParams {
   {
     UNUSED_VARS_NDEBUG(param_index, name, category);
 #ifdef DEBUG
-    BLI_assert(builder_->signature_->param_types[param_index].category() == category);
+    lib_assert(builder_->signature_->param_types[param_index].category() == category);
     if (name.size() > 0) {
-      BLI_assert(builder_->signature_->param_names[param_index] == name);
+      lib_assert(builder_->signature_->param_names[param_index] == name);
     }
 #endif
   }
