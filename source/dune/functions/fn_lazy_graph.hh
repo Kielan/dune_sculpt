@@ -1,8 +1,6 @@
 #pragma once
-
 /* This file contains a graph data struct that allows composing multiple lazy-fns into a
  * combined lazy-fn.
- *
  * Are 2 types of nodes in the graph:
  * - FnNode: Corresponds to a LazyFn. Inputs/outputs of the fn become
  *   input and output sockets of the node.
@@ -66,20 +64,16 @@ class Socket : NonCopyable, NonMovable {
 
 class InputSocket : public Socket {
  private:
-  /**
-   * An input can have at most one link connected to it. The linked socket is the "origin" because
+  /* An input can have at most one link connected to it. The linked socket is the "origin" bc
    * it's where the data is coming from. The type of the origin must be the same as the type of
-   * this socket.
-   */
+   * this socket. */
   OutputSocket *origin_;
-  /**
-   * Can be null or a non-owning pointer to a value of the type of the socket. This value will be
+  /* Can be null or a non-owning ptt to a val of the type of the socket. This val will be
    * used when the input is used but not linked.
    *
-   * This is technically not needed, because one could just create a separate node that just
-   * outputs the value, but that would have more overhead. Especially because it's commonly the
-   * case that most inputs are unlinked.
-   */
+   * This is technically not needed, bc one could just create a separate node that just
+   * outputs the val, but that would have more overhead. Especially bc it's commonly the
+   * case that most inputs are unlinked. */
   const void *default_value_ = nullptr;
 
   friend Graph;
@@ -88,15 +82,13 @@ class InputSocket : public Socket {
   OutputSocket *origin();
   const OutputSocket *origin() const;
 
-  const void *default_value() const;
-  void set_default_value(const void *value);
+  const void *default_val() const;
+  void set_default_val(const void *val);
 };
 
 class OutputSocket : public Socket {
  private:
-  /**
-   * An output can be linked to an arbitrary number of inputs of the same type.
-   */
+  /* An output can be linked to an arbitrary num of inputs of the same type. */
   Vector<InputSocket *> targets_;
 
   friend Graph;
@@ -106,30 +98,19 @@ class OutputSocket : public Socket {
   Span<const InputSocket *> targets() const;
 };
 
-/**
- * A #Node has input and output sockets. Every node is either a #FunctionNode or an #InterfaceNode.
- */
+/* A Node has input and output sockets. Every node is either a FnNode or an InterfaceNode. */
 class Node : NonCopyable, NonMovable {
  protected:
-  /**
-   * The function this node corresponds to. If this is null, the node is an #InterfaceNode.
-   * The function is not owned by this #Node nor by the #Graph.
-   */
-  const LazyFunction *fn_ = nullptr;
-  /**
-   * Input sockets of the node.
-   */
+  /* The fn this node corresponds to. If this is null the node is an InterfaceNode.
+   * The fn is not owned by this Node nor by the Graph. */
+  const LazyFn *fn_ = nullptr;
+  /* Input sockets of the node. */
   Span<InputSocket *> inputs_;
-  /**
-   * Output sockets of the node.
-   */
+  /* Output sockets of the node. */
   Span<OutputSocket *> outputs_;
-  /**
-   * An index that is set when calling #Graph::update_node_indices. This can be used to create
+  /* An index that is set when calling Graph::update_node_indices. This can be used to create
    * efficient mappings from nodes to other data using just an array instead of a hash map.
-   *
-   * This is technically not necessary but has better performance than always using hash maps.
-   */
+   * This has better performance than always using hash maps.  */
   int index_in_graph_ = -1;
 
   friend Graph;
@@ -152,16 +133,14 @@ class Node : NonCopyable, NonMovable {
   std::string name() const;
 };
 
-/**
- * A #Node that corresponds to a specific LazyFn.
- */
+/* A Node corresponds to a specific LazyFn. */
 class FnNode final : public Node {
  public:
   const LazyFn &fn() const;
 };
 
-/* A Node that does *not* correspond to a #LazyFunction. Instead it can be used to indicate inputs
- * and outputs of the entire graph. It can have an arbitrary number of inputs and outputs. */
+/* A Node that does *not* correspond to a LazyFn. Instead it can be used to indicate inputs
+ * and outputs of the entire graph. It can have an arbitrary num of inputs and outputs. */
 class InterfaceNode final : public Node {
  private:
   friend Node;
@@ -171,22 +150,18 @@ class InterfaceNode final : public Node {
   Vector<std::string> socket_names_;
 };
 
-/* Interface input sockets are actually output sockets on the input node. This renaming makes the
- * code less confusing. */
+/* Interface input sockets are output sockets on the input node.
+ * here renaming for code clarity. */
 using GraphInputSocket = OutputSocket;
 using GraphOutputSocket = InputSocket;
 
-/**
- * A container for an arbitrary number of nodes and links between their sockets.
- */
+/* A container for an arbitrary num of nodes and links between their sockets. */
 class Graph : NonCopyable, NonMovable {
  private:
-  /* Used to allocate nodes and sockets in the graph. */
+  /* Used to alloc nodes and sockets in the graph. */
   LinearAllocator<> allocator_;
-  /**
-   * Contains all nodes in the graph so that it is efficient to iterate over them.
-   * The first two nodes are the interface input and output nodes.
-   */
+  /* Contains all nodes in the graph so that it is efficient to iter over them.
+   * The first two nodes are the interface input and output nodes */
   Vector<Node *> nodes_;
 
   InterfaceNode *graph_input_node_ = nullptr;
@@ -195,7 +170,7 @@ class Graph : NonCopyable, NonMovable {
   Vector<GraphInputSocket *> graph_inputs_;
   Vector<GraphOutputSocket *> graph_outputs_;
 
-  /* Number of sockets in the graph. Can be used as array size when indexing using
+  /* Num of sockets in the graph. Can be used as array size when indexing using
    * `Socket::index_in_graph`.  */
   int socket_num_ = 0;
 
@@ -224,24 +199,24 @@ class Graph : NonCopyable, NonMovable {
   GraphOutputSocket &add_output(const CPPType &type, std::string name = "");
 
   /* Add a link between the two given sockets.
-   * This has undefined behavior when the input is linked to something else already. */
+   * This has undefined behavior when the input is linked to something else alrdy. */
   void add_link(OutputSocket &from, InputSocket &to);
 
   /* If the socket is linked, remove the link. */
   void clear_origin(InputSocket &socket);
 
-  /* Make sure that Node::index_in_graph is up to date */
+  /* Ensuree Node::index_in_graph is up to date */
   void update_node_indices();
-  /* Make sure that Socket::index_in_graph is up to date.  */
+  /* Ensures Socket::index_in_graph is up to date.  */
   void update_socket_indices();
 
-  /* Number of sockets in the graph.  */
+  /* Num of sockets in the graph.  */
   int socket_num() const;
 
   /* Can be used to assert that #update_node_indices has been called. */
   bool node_indices_are_valid() const;
 
-  /* Optional config options for the dot graph generation. This allows creating
+  /* Optional config options for the dot graph generation. Allows creating
    * visualizations for specific purposes. */
   class ToDotOptions {
    public:
@@ -429,7 +404,7 @@ inline Span<const FnNode *> Graph::fn_nodes() const
 
 inline Span<FnNode *> Graph::fn_nodes()
 {
-  return nodes_.as_span().drop_front(2).cast<FunctionNode *>();
+  return nodes_.as_span().drop_front(2).cast<FnNode *>();
 }
 
 inline Span<GraphInputSocket *> Graph::graph_inputs()
@@ -457,6 +432,4 @@ inline int Graph::socket_num() const
   return socket_num_;
 }
 
-/** \} */
-
-}  // namespace blender::fn::lazy_function
+}  // namespace dune::fn::lazy_fn
