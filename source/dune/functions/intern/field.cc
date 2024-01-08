@@ -15,7 +15,6 @@
 namespace dune::fn {
 
 /* Field Eval */
-
 struct FieldTreeInfo {
   /* When fields are built, they only have refs to the fields that they depend on. This map
    * allows traversal of fields in the opposite direction. So for every field it stores the other
@@ -132,23 +131,23 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
 {
   mf::ProcBuilder builder{proc};
   /* Every input, intermediate and output field corresponds to a var in the proc */
-  Map<GFieldRef, mf::Var *> vari_by_field;
+  Map<GFieldRef, mf::Var *> var_by_field;
 
-  /* Start by adding the field inputs as params to the procedure. */
+  /* Start by adding the field inputs as params to the proc. */
   for (const FieldInput &field_input : field_tree_info.deduplicated_field_inputs) {
     mf::Var &var = builder.add_input_param(
         mf::DataType::ForSingle(field_input.cpp_type()), field_input.debug_name());
     var_by_field.add_new({field_input, 0}, &var);
   }
 
-  /* Util struct that is used to do proper depth first search traversal of the tree below. */
+  /* Util struct used to do proper depth 1st search traversal of the tree below. */
   struct FieldWithIndex {
     GFieldRef field;
     int current_input_index = 0;
   };
 
   for (GFieldRef field : output_fields) {
-    /* We start a new stack for each output field to make sure that a field pushed later to the
+    /* Start a new stack for each output field to make sure that a field pushed later to the
      * stack does never depend on a field that was pushed before. */
     Stack<FieldWithIndex> fields_to_check;
     fields_to_check.push({field, 0});
@@ -248,7 +247,7 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
     var_by_field.remove(field);
   }
   /* Add destructor calls for the remaining vars. */
-  for (mf::Var *var : var_by_field.values()) {
+  for (mf::Var *var : var_by_field.vals()) {
     builder.add_destruct(*var);
   }
 
@@ -256,14 +255,14 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
 
   mf::proc_optimization::move_destructs_up(proc, return_instr);
 
-  // std::cout << procedure.to_dot() << "\n";
-  BLI_assert(procedure.validate());
+  // std::cout << proc.to_dot() << "\n";
+  lib_assert(proc.validate());
 }
 
-Vector<GVArray> evaluate_fields(ResourceScope &scope,
-                                Span<GFieldRef> fields_to_evaluate,
-                                const IndexMask &mask,
-                                const FieldContext &context,
+Vector<GVArray> eval_fields(ResourceScope &scope,
+                            Span<GFieldRef> fields_to_eval,
+                            const IndexMask &mask,
+                            const FieldCxt &cxt,
                                 Span<GVMutableArray> dst_varrays)
 {
   Vector<GVArray> r_varrays(fields_to_evaluate.size());
@@ -271,14 +270,14 @@ Vector<GVArray> evaluate_fields(ResourceScope &scope,
   const int array_size = mask.min_array_size();
 
   if (mask.is_empty()) {
-    for (const int i : fields_to_evaluate.index_range()) {
-      const CPPType &type = fields_to_evaluate[i].cpp_type();
+    for (const int i : fields_to_eval.index_range()) {
+      const CPPType &type = fields_to_eval[i].cpp_type();
       r_varrays[i] = GVArray::ForEmpty(type);
     }
     return r_varrays;
   }
 
-  /* Destination arrays are optional. Create a small utility method to access them. */
+  /* Destination arrays are optional. Create a small util method to access them. */
   auto get_dst_varray = [&](int index) -> GVMutableArray {
     if (dst_varrays.is_empty()) {
       return {};
@@ -287,20 +286,20 @@ Vector<GVArray> evaluate_fields(ResourceScope &scope,
     if (!varray) {
       return {};
     }
-    BLI_assert(varray.size() >= array_size);
+    lib_assert(varray.size() >= array_size);
     return varray;
   };
 
   /* Traverse the field tree and prepare some data that is used in later steps. */
-  FieldTreeInfo field_tree_info = preprocess_field_tree(fields_to_evaluate);
+  FieldTreeInfo field_tree_info = preproc_field_tree(fields_to_evaluate);
 
-  /* Get inputs that will be passed into the field when evaluated. */
-  Vector<GVArray> field_context_inputs = get_field_context_inputs(
-      scope, mask, context, field_tree_info.deduplicated_field_inputs);
+  /* Get inputs that will be passed into the field when evald. */
+  Vector<GVArray> field_cxt_inputs = get_field_cxt_inputs(
+      scope, mask, cxt, field_tree_info.deduplicated_field_inputs);
 
-  /* Finish fields that don't need any processing directly. */
-  for (const int out_index : fields_to_evaluate.index_range()) {
-    const GFieldRef &field = fields_to_evaluate[out_index];
+  /* Finish fields that don't need any proc'ing directly. */
+  for (const int out_index : fields_to_eval.index_range()) {
+    const GFieldRef &field = fields_to_eval[out_index];
     const FieldNode &field_node = field.node();
     switch (field_node.node_type()) {
       case FieldNodeType::Input: {
@@ -325,8 +324,8 @@ Vector<GVArray> evaluate_fields(ResourceScope &scope,
 
   Set<GFieldRef> varying_fields = find_varying_fields(field_tree_info, field_context_inputs);
 
-  /* Separate fields into two categories. Those that are constant and need to be evaluated only
-   * once, and those that need to be evaluated for every index. */
+  /* Separate fields into two categories. Those that are constant and need to be evald only
+   * once, and those that need to be evald for every index. */
   Vector<GFieldRef> varying_fields_to_evaluate;
   Vector<int> varying_field_indices;
   Vector<GFieldRef> constant_fields_to_evaluate;
@@ -336,24 +335,24 @@ Vector<GVArray> evaluate_fields(ResourceScope &scope,
       /* Already done. */
       continue;
     }
-    GFieldRef field = fields_to_evaluate[i];
+    GFieldRef field = fields_to_eval[i];
     if (varying_fields.contains(field)) {
-      varying_fields_to_evaluate.append(field);
+      varying_fields_to_eval.append(field);
       varying_field_indices.append(i);
     }
     else {
-      constant_fields_to_evaluate.append(field);
+      constant_fields_to_eval.append(field);
       constant_field_indices.append(i);
     }
   }
 
-  /* Evaluate varying fields if necessary. */
-  if (!varying_fields_to_evaluate.is_empty()) {
-    /* Build the procedure for those fields. */
-    mf::Procedure procedure;
-    build_multi_function_procedure_for_fields(
-        procedure, scope, field_tree_info, varying_fields_to_evaluate);
-    mf::ProcedureExecutor procedure_executor{procedure};
+  /* Eval varying fields if necessary. */
+  if (!varying_fields_to_eval.is_empty()) {
+    /* Build the proc for those fields. */
+    mf::Proc proc;
+    build_multi_fn_proc_for_fields(
+        proc, scope, field_tree_info, varying_fields_to_evaluate);
+    mf::ProcExecutor proc_executor{procedure};
 
     mf::ParamsBuilder mf_params{procedure_executor, &mask};
     mf::ContextBuilder mf_context;
