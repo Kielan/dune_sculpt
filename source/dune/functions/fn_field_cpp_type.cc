@@ -41,7 +41,7 @@ class FieldCPPType : public CPPType {
   }
 };
 
-class ValueOrFieldCPPType : public CPPType {
+class ValOrFieldCPPType : public CPPType {
  private:
   const CPPType &base_type_;
   void (*construct_from_val_)(void *dst, const void *val);
@@ -108,7 +108,7 @@ class ValueOrFieldCPPType : public CPPType {
     return get_field_ptr_(val_or_field);
   }
 
-  bool is_field(const void *value_or_field) const
+  bool is_field(const void *val_or_field) const
   {
     return is_field_(val_or_field);
   }
