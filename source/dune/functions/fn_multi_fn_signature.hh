@@ -1,29 +1,23 @@
 #pragma once
 
-/**
- * The signature of a multi-function contains the functions name and expected parameters. New
- * signatures should be build using the #MFSignatureBuilder class.
- */
-
+/* The signature of a multi-fn contains the fns name and expected params. New
+ * signatures should be build using the MFSignatureBuilder class. */
 #include "fn_multi_fn_param_type.hh"
-
 #include "lib_vector.hh"
 
 namespace dune::fn {
 
 struct MFSignature {
-  /**
-   * The name should be statically allocated so that it lives longer than this signature. This is
-   * used instead of an #std::string because of the overhead when many functions are created.
-   * If the name of the function has to be more dynamic for debugging purposes, override
+  /* The name should be statically alloc so that it lives longer than this signature. This is
+   * This is used instead of an std::string bc of the overhead when many fns are created.
+   * If the name of the fn has to be more dynamic for debugging purposes, override
    * MultiFn::debug_name() instead. Then the dynamic name will only be computed when it is
-   * actually needed.
-   */
+   * actually needed. */
   const char *fn_name;
   Vector<const char *> param_names;
   Vector<MFParamType> param_types;
   Vector<int> param_data_indices;
-  bool depends_on_ctx = false;
+  bool depends_on_cxt = false;
 
   int data_index(int param_index) const
   {
@@ -40,9 +34,9 @@ class MFSignatureBuilder {
   int vector_array_count_ = 0;
 
  public:
-  MFSignatureBuilder(const char *function_name)
+  MFSignatureBuilder(const char *fn_name)
   {
-    signature_.function_name = function_name;
+    signature_.fn_name = fn_name;
   }
 
   MFSignature build() const
@@ -50,8 +44,7 @@ class MFSignatureBuilder {
     return std::move(signature_);
   }
 
-  /* Input Parameter Types */
-
+  /* Input Param Types */
   template<typename T> void single_input(const char *name)
   {
     this->single_input(name, CPPType::get<T>());
@@ -83,8 +76,7 @@ class MFSignatureBuilder {
     }
   }
 
-  /* Output Parameter Types */
-
+  /* Output Param Types */
   template<typename T> void single_output(const char *name)
   {
     this->single_output(name, CPPType::get<T>());
@@ -116,8 +108,7 @@ class MFSignatureBuilder {
     }
   }
 
-  /* Mutable Parameter Types */
-
+  /* Mutable Param Types */
   template<typename T> void single_mutable(const char *name)
   {
     this->single_mutable(name, CPPType::get<T>());
@@ -164,13 +155,11 @@ class MFSignatureBuilder {
     }
   }
 
-  /* Context */
-
-  /** This indicates that the function accesses the context. This disables optimizations that
-   * depend on the fact that the function always performers the same operation. */
-  void depends_on_ctx()
+  /* Indicates that fn accesses the cxt. This disables optimizations that
+   * depend on the fact that the fn always performs the same op. */
+  void depends_on_cxt()
   {
-    signature_.depends_on_ctx = true;
+    signature_.depends_on_cxt = true;
   }
 };
 
