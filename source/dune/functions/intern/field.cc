@@ -572,17 +572,12 @@ void FieldNode::for_each_field_input_recursive(FnRef<void(const FieldInput &)> f
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #FieldOperation
- * \{ */
-
-FieldOperation::FieldOperation(std::shared_ptr<const mf::MultiFunction> function,
-                               Vector<GField> inputs)
-    : FieldOperation(*function, std::move(inputs))
+/* FieldOp */
+FieldOp::FieldOp(std::shared_ptr<const mf::MultiFn> fn,
+                 Vector<GField> inputs)
+    : FieldOp(*fn, std::move(inputs))
 {
-  owned_function_ = std::move(function);
+  owned_function_ = std::move(fn);
 }
 
 /* Avoid generating the destructor in every translation unit. */
@@ -628,7 +623,7 @@ static std::shared_ptr<const FieldInputs> combine_field_inputs(Span<GField> fiel
     }
   }
   if (inputs_not_in_candidate.is_empty()) {
-    /* The existing #FieldInputs can be reused, because no other field has additional inputs. */
+    /* The existing FieldInputs can be reused, bc no other field has additional inputs. */
     return *field_inputs_candidate;
   }
   /* Create new FieldInputs that contains all of the inputs that the fields depend on. */
@@ -660,28 +655,23 @@ FieldInput::FieldInput(const CPPType &type, std::string debug_name)
 /* Avoid generating the destructor in every translation unit. */
 FieldInput::~FieldInput() = default;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #FieldConstant
- * \{ */
-
-FieldConstant::FieldConstant(const CPPType &type, const void *value)
-    : FieldNode(FieldNodeType::Constant), type_(type)
+/* FieldConst */
+FieldConst::FieldConst(const CPPType &type, const void *val)
+    : FieldNode(FieldNodeType::Const), type_(type)
 {
-  value_ = MEM_mallocN_aligned(type.size(), type.alignment(), __func__);
-  type.copy_construct(value, value_);
+  value_ = mem_malloc_aligned(type.size(), type.alignment(), __func__);
+  type.copy_construct(val, val_);
 }
 
 FieldConstant::~FieldConstant()
 {
-  type_.destruct(value_);
-  MEM_freeN(value_);
+  type_.destruct(val_);
+  mem_free(val_);
 }
 
 const CPPType &FieldConstant::output_cpp_type(int output_index) const
 {
-  BLI_assert(output_index == 0);
+  lib_assert(output_index == 0);
   UNUSED_VARS_NDEBUG(output_index);
   return type_;
 }
@@ -691,29 +681,24 @@ const CPPType &FieldConstant::type() const
   return type_;
 }
 
-GPointer FieldConstant::value() const
+GPtr FieldConstant::val() const
 {
-  return {type_, value_};
+  return {type_, val_};
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name #FieldEvaluator
- * \{ */
-
+/* FieldEval */
 static IndexMask index_mask_from_selection(const IndexMask full_mask,
-                                           const VArray<bool> &selection,
+                                           const VArray<bool> &sel,
                                            ResourceScope &scope)
 {
-  return IndexMask::from_bools(full_mask, selection, scope.construct<IndexMaskMemory>());
+  return IndexMask::from_bools(full_mask, sel, scope.construct<IndexMaskMem>());
 }
 
 int FieldEvaluator::add_with_destination(GField field, GVMutableArray dst)
 {
-  const int field_index = fields_to_evaluate_.append_and_get_index(std::move(field));
+  const int field_index = fields_to_eval_.append_and_get_index(std::move(field));
   dst_varrays_.append(dst);
-  output_pointer_infos_.append({});
+  output_ptr_infos_.append({});
   return field_index;
 }
 
@@ -726,7 +711,7 @@ int FieldEvaluator::add(GField field, GVArray *varray_ptr)
 {
   const int field_index = fields_to_evaluate_.append_and_get_index(std::move(field));
   dst_varrays_.append(nullptr);
-  output_pointer_infos_.append(OutputPointerInfo{
+  output_ptr_infos_.append(OutputPtrInfo{
       varray_ptr, [](void *dst, const GVArray &varray, ResourceScope & /*scope*/) {
         *static_cast<GVArray *>(dst) = varray;
       }});
@@ -737,11 +722,11 @@ int FieldEvaluator::add(GField field)
 {
   const int field_index = fields_to_evaluate_.append_and_get_index(std::move(field));
   dst_varrays_.append(nullptr);
-  output_pointer_infos_.append({});
+  output_ptr_infos_.append({});
   return field_index;
 }
 
-static IndexMask evaluate_selection(const Field<bool> &selection_field,
+static IndexMask eval_selection(const Field<bool> &selection_field,
                                     const FieldContext &context,
                                     IndexMask full_mask,
                                     ResourceScope &scope)
@@ -756,18 +741,18 @@ static IndexMask evaluate_selection(const Field<bool> &selection_field,
 
 void FieldEval::eval()
 {
-  lib_assert_msg(!is_eval_, "Cannot evaluate fields twice.");
+  lib_assert_msg(!is_eval_, "Cannot eval fields twice.");
 
-  sel_mask_ = eval_sel(selection_field_, context_, mask_, scope_);
+  sel_mask_ = eval_sel(sel_field_, cxt_, mask_, scope_);
 
-  Array<GFieldRef> fields(fields_to_evaluate_.size());
-  for (const int i : fields_to_evaluate_.index_range()) {
-    fields[i] = fields_to_evaluate_[i];
+  Array<GFieldRef> fields(fields_to_eval_.size());
+  for (const int i : fields_to_eval_.index_range()) {
+    fields[i] = fields_to_eval_[i];
   }
-  eval_varrays_ = evaluate_fields(scope_, fields, selection_mask_, context_, dst_varrays_);
+  eval_varrays_ = eval_fields(scope_, fields, sel_mask_, cxt_, dst_varrays_);
   lib_assert(fields_to_evaluate_.size() == evaluated_varrays_.size());
-  for (const int i : fields_to_evaluate_.index_range()) {
-    OutputPointerInfo &info = output_pointer_infos_[i];
+  for (const int i : fields_to_eval_.index_range()) {
+    OutputPointerInfo &info = output_ptr_infos_[i];
     if (info.dst != nullptr) {
       info.set(info.dst, evaluated_varrays_[i], scope_);
     }
