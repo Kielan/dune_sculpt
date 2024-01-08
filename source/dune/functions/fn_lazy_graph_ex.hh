@@ -1,6 +1,6 @@
 #pragma once
 
-/* This file provides means to create a LazyFn from Graph (which could then e.g. be used in
+/* This file provides means to create a LazyFn from Graph (could then be used in
  * another Graph again). */
 #include "lib_vector.hh"
 #include "lib_vector_set.hh"
@@ -22,8 +22,8 @@ class GraphExLogger {
                                   const Cxt &cxt) const;
 
   virtual void log_after_node_ex(const FnNode &node,
-                                      const Params &params,
-                                      const Cxt &cxt) const;
+                                 const Params &params,
+                                 const Cxt &cxt) const;
 
   virtual void dump_when_outputs_are_missing(const FnNode &node,
                                              Span<const OutputSocket *> missing_sockets,
@@ -34,8 +34,8 @@ class GraphExLogger {
 };
 
 /* Has to be implemented when some of the nodes in the graph may have side effects. The
- * GraphEx has to know about that to make sure that these nodes will be ex even though
- * their outputs are not needed. */
+ * GraphEx must know effects to ensure tagged nodes are ex
+ * though their outputs are not needed. */
 class GraphExSideEffectProvider {
  public:
   virtual ~GraphExSideEffectProvider() = default;
