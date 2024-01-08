@@ -1,35 +1,36 @@
 #pragma once
 
 /* fn
- *
- * A Field represents a fn that outputs a val based on an arbitrary number of inputs. The
+ * A Field represents a fn that outputs a val based on an arbitrary num of inputs. The
  * inputs for a specific field eval are provided by a FieldCxt.
  *
  * A typical example is a field that computes a displacement vector for every ver on a mesh
  * based on its position.
  *
- * Fields can be build, composed and eval at run-time. They are stored in a directed tree
- * graph data structure, whereby each node is a FieldNode and edges are dependencies. A FieldNode
- * has an arbitrary number of inputs and at least one output and a Field refs a specific
+ * Fields; use as build, composed, and eval at run-time
+ * Fields are stored in a directed tree
+ * graph data structure, each node is a FieldNode and edges are deps.
+ * A FieldNode has an arbitrary num of inputs
+ * and at least one output and a Field refs a specific
  * output of a FieldNode. The inputs of a FieldNode are other fields.
  *
- * There are two different types of field nodes:
- *  - FieldInput: Has no input and exactly one output. It represents an input to the entire field
- *    when it is eval. During eval, the val of this input is based on a FieldCxt.
- *  - FieldOp: Has an arbitrary number of field inputs and at least one output. Its main
+ * There are 2 diff types of field nodes:
+ *  - FieldInput: Has no input and exactly 1 output. It represents an input to the entire field
+ *    when it is eval. During eval the val of this input is based on a FieldCxt.
+ *  - FieldOp: Has an arbitrary num of field inputs and at least one output. Its main
  *    use is to compose multiple existing fields into new fields.
  *
- * When fields are eval, they are converted into a multi-function procedure which allows
- * efficient computation. In the future, we might support different field evaluation mechanisms for
+ * When fields are eval, they are converted into a multi-fn proc which allows
+ * efficient computation. In the future we might support diff field eval mechanisms for
  * e.g. the following scenarios:
  *  - Latency of a single eval is more important than throughput.
- *  - Evaluation should happen on other hardware like GPUs.
+ *  - Eval should happen on other hardware like GPUs.
  *
- * Whenever possible, multiple fields should be evaluated together to avoid duplicate work when
- * they share common sub-fields and a common context. */
+ * Whenever possible, multiple fields should be eval'd together to avoid dup work when
+ * they share common sub-fields and a common cxt. */
 
 #include "lib_fn_ref.hh"
-#include "lib_generic_virtual_array.hh"
+#include "lib_generic_virtual_arr.hh"
 #include "lib_string_ref.hh"
 #include "lib_vector.hh"
 #include "lib_vector_set.hh"
@@ -41,7 +42,7 @@ namespace dune::fn {
 class FieldInput;
 struct FieldInputs;
 
-/* Have a fixed set of base node types, because all code that works with field nodes has to
+/* Have a fixed set of base node types bc all code that works w field nodes has to
  * understand those. */
 enum class FieldNodeType {
   Input,
@@ -49,7 +50,7 @@ enum class FieldNodeType {
   Constant,
 };
 
-/* A node in a field-tree. It has at least one output that can be refd by fields. */
+/* A node in a field-tree. It has at least 1 output that can be refd by fields. */
 class FieldNode {
  private:
   FieldNodeType node_type_;
@@ -97,8 +98,8 @@ template<typename NodePtr> class GFieldBase {
 
   friend bool operator==(const GFieldBase &a, const GFieldBase &b)
   {
-    /* Two nodes can compare equal even when their pointer is not the same. For example, two
-     * "Position" nodes are the same. */
+    /* 2 nodes can compare equal even when their ptr is not the same.
+     * For example: 2 "Position" nodes are the same. */
     return *a.node_ == *b.node_ && a.node_output_index_ == b.node_output_index_;
   }
 
@@ -134,8 +135,8 @@ class GField : public GFieldBase<std::shared_ptr<FieldNode>> {
   }
 };
 
-/* Same as GField but is cheaper to copy/move around, because it does not contain a
- * std::shared_ptr. */
+/* Same as GField but is cheaper to copy/move around,
+ * bc it does not contain a std::shared_ptr. */
 class GFieldRef : public GFieldBase<const FieldNode *> {
  public:
   GFieldRef() = default;
@@ -157,7 +158,7 @@ struct TypedFieldBase {
 };
 }  // namespace detail
 
-/* A typed version of #GField. It has the same memory layout as GField. */
+/* A typed version of GField. It has the same mem layout as GField. */
 template<typename T> class Field : public GField, detail::TypedFieldBase {
  public:
   using base_type = T;
@@ -223,9 +224,10 @@ class FieldInput : public FieldNode {
   FieldInput(const CPPType &type, std::string debug_name = "");
   ~FieldInput();
 
-  /* Get the val of this specific input based on the given context. The returned virtual array,
-   * should live at least as long as the passed in #scope. May return null. */
-  virtual GVArray get_varray_for_context(const FieldCxt &context,
+  /* Get the val of this specific input based on the given cxt.
+   * The returned virtual array,
+   * should live at least as long as the passed in scope. May return null. */
+  virtual GVArray get_varray_for_context(const FieldCxt &cxt,
                                          IndexMask mask,
                                          ResourceScope &scope) const = 0;
 
@@ -253,10 +255,10 @@ class FieldConstant : public FieldNode {
 
 /* Keeps track of the inputs of a field. */
 struct FieldInputs {
-  /** All #FieldInput nodes that a field (possibly indirectly) depends on. */
+  /* All FieldInput nodes that a field (possibly indirectly) depends on. */
   VectorSet<const FieldInput *> nodes;
-  /* Same as above but the inputs are deduplicated. For example, when there are two separate index
-   * input nodes, only one will show up in this list. */
+  /* Same as above but the inputs are dedup'd. For example, when there are 2 separate index
+   * input nodes, only 1 will show up in this list. */
   VectorSet<std::reference_wrapper<const FieldInput>> deduplicated_nodes;
 };
 
@@ -270,12 +272,10 @@ class FieldCxt {
                                        ResourceScope &scope) const;
 };
 
-/**
- * Util class that makes it easier to evaluate fields.
- */
+/* Util class that makes it easier to eval fields. */
 class FieldEvaluator : NonMovable, NonCopyable {
  private:
-  struct OutputPointerInfo {
+  struct OutputPtrInfo {
     void *dst = nullptr;
     /* When a destination virtual array is provided for an input, this is
      * unnecessary, otherwise this is used to construct the required virtual array. */
@@ -283,74 +283,67 @@ class FieldEvaluator : NonMovable, NonCopyable {
   };
 
   ResourceScope scope_;
-  const FieldContext &context_;
+  const FieldCxt &cxt_;
   const IndexMask mask_;
   Vector<GField> fields_to_evaluate_;
   Vector<GVMutableArray> dst_varrays_;
   Vector<GVArray> evaluated_varrays_;
-  Vector<OutputPointerInfo> output_pointer_infos_;
+  Vector<OutputPtrInfo> output_ptr_infos_;
   bool is_evaluated_ = false;
 
   Field<bool> selection_field_;
   IndexMask selection_mask_;
 
  public:
-  /** Takes #mask by pointer because the mask has to live longer than the evaluator. */
-  FieldEvaluator(const FieldContext &context, const IndexMask *mask)
-      : context_(context), mask_(*mask)
+  /* Takes mask by ptr bc the mask has to live longer than the evaluator. */
+  FieldEvaluator(const FieldCxt &cxt, const IndexMask *mask)
+      : context_(cxt), mask_(*mask)
   {
   }
 
-  /** Construct a field evaluator for all indices less than #size. */
-  FieldEvaluator(const FieldContext &context, const int64_t size) : context_(context), mask_(size)
+  /* Construct a field evaluator for all indices less than size. */
+  FieldEvaluator(const FieldCxt &cxt, const int64_t size) : cxt_(cxt), mask_(size)
   {
   }
 
   ~FieldEvaluator()
   {
-    /* While this assert isn't strictly necessary, and could be replaced with a warning,
-     * it will catch cases where someone forgets to call #evaluate(). */
-    BLI_assert(is_evaluated_);
+    /* This assert isn't strictly necessary,
+     * could be replaced w a warning,
+     * it will catch cases where someone forgets to call evaluate(). */
+    lib_assert(is_evaluated_);
   }
 
-  /**
-   * The selection field is evaluated first to determine which indices of the other fields should
-   * be evaluated. Calling this method multiple times will just replace the previously set
+  /* The selection field is evald 1st to determine which indices of the other fields should
+   * be evaluated. Calling this method multiple times will replace the prev set
    * selection field. Only the elements selected by both this selection and the selection provided
-   * in the constructor are calculated. If no selection field is set, it is assumed that all
-   * indices passed to the constructor are selected.
-   */
+   * in the constructor are calcd. If no selection field is set, it is assumed that all
+   * indices passed to the constructor are selected. */
   void set_selection(Field<bool> selection)
   {
     selection_field_ = std::move(selection);
   }
 
-  /**
-   * \param field: Field to add to the evaluator.
-   * \param dst: Mutable virtual array that the evaluated result for this field is be written into.
-   */
+  /* param field: Field to add to the evaluator.
+   * param dst: Mutable virtual array that the evaluated result for this field is be written into */
   int add_with_destination(GField field, GVMutableArray dst);
 
-  /** Same as #add_with_destination but typed. */
+  /* Same as add_with_destination but typed. */
   template<typename T> int add_with_destination(Field<T> field, VMutableArray<T> dst)
   {
     return this->add_with_destination(GField(std::move(field)), GVMutableArray(std::move(dst)));
   }
 
-  /**
-   * \param field: Field to add to the evaluator.
-   * \param dst: Mutable span that the evaluated result for this field is be written into.
-   * \note: When the output may only be used as a single value, the version of this function with
-   * a virtual array result array should be used.
-   */
+  /* param field: Field to add to the evaluator.
+   * param dst: Mutable span that the evaluated result for this field is be written into.
+   * note: When the output may only be used as a single val, the version of this function with
+   * a virtual array result array should be used  */
   int add_with_destination(GField field, GMutableSpan dst);
 
-  /**
-   * \param field: Field to add to the evaluator.
-   * \param dst: Mutable span that the evaluated result for this field is be written into.
-   * \note: When the output may only be used as a single value, the version of this function with
-   * a virtual array result array should be used.
-   */
+  /* param field: Field to add to the evaluator.
+   * param dst: Mutable span that the evaluated result for this field is be written into.
+   * note: When the output may only be used as a single val, the v of this fn w
+   * a virtual array result array should be used. */
   template<typename T> int add_with_destination(Field<T> field, MutableSpan<T> dst)
   {
     return this->add_with_destination(std::move(field), VMutableArray<T>::ForSpan(dst));
@@ -358,36 +351,30 @@ class FieldEvaluator : NonMovable, NonCopyable {
 
   int add(GField field, GVArray *varray_ptr);
 
-  /**
-   * \param field: Field to add to the evaluator.
-   * \param varray_ptr: Once #evaluate is called, the resulting virtual array will be will be
-   *   assigned to the given position.
-   * \return Index of the field in the evaluator which can be used in the #get_evaluated methods.
-   */
+  /* param field: Field to add to the evaluator.
+   * param varray_ptr: Once evaluate is called, the resulting virtual array will be will be
+   * assigned to the given position.
+   * return Index of the field in the evaluator which can be used in the get_evaluated methods */
   template<typename T> int add(Field<T> field, VArray<T> *varray_ptr)
   {
     const int field_index = fields_to_evaluate_.append_and_get_index(std::move(field));
     dst_varrays_.append({});
-    output_pointer_infos_.append(OutputPointerInfo{
+    output_pointer_infos_.append(OutputPtrInfo{
         varray_ptr, [](void *dst, const GVArray &varray, ResourceScope &UNUSED(scope)) {
           *(VArray<T> *)dst = varray.typed<T>();
         }});
     return field_index;
   }
 
-  /**
-   * \return Index of the field in the evaluator which can be used in the #get_evaluated methods.
-   */
+  /* return Index of the field in the evaluator which can be used in the get_evaluated methods. */
   int add(GField field);
 
-  /**
-   * Evaluate all fields on the evaluator. This can only be called once.
-   */
+  /* Eval all fields on the evaluator. This can only be called once */
   void evaluate();
 
   const GVArray &get_evaluated(const int field_index) const
   {
-    BLI_assert(is_evaluated_);
+    lib_assert(is_evaluated_);
     return evaluated_varrays_[field_index];
   }
 
@@ -398,43 +385,36 @@ class FieldEvaluator : NonMovable, NonCopyable {
 
   IndexMask get_evaluated_selection_as_mask();
 
-  /**
-   * Retrieve the output of an evaluated boolean field and convert it to a mask, which can be used
-   * to avoid calculations for unnecessary elements later on. The evaluator will own the indices in
-   * some cases, so it must live at least as long as the returned mask.
-   */
+  /* Retrieve the output of an evaluated bool field and convert it to a mask, which can be used
+   * to avoid calcs for unnecessary elements later on. The evaluator will own the indices in
+   * some cases, so it must live at least as long as the returned mask. */
   IndexMask get_evaluated_as_mask(int field_index);
 };
 
-/**
- * Evaluate fields in the given context. If possible, multiple fields should be evaluated together,
- * because that can be more efficient when they share common sub-fields.
+/* Evaluate fields in the given cxt. If possible, multiple fields should be evaluated together,
+ * bc that can be more efficient when they share common sub-fields.
  *
- * \param scope: The resource scope that owns data that makes up the output virtual arrays. Make
+ * param scope: The resource scope that owns data that makes up the output virtual arrays. Make
  *   sure the scope is not destructed when the output virtual arrays are still used.
- * \param fields_to_evaluate: The fields that should be evaluated together.
- * \param mask: Determines which indices are computed. The mask may be referenced by the returned
+ * param fields_to_evaluate: The fields that should be evaluated together.
+ * param mask: Determines which indices are computed. The mask may be referenced by the returned
  *   virtual arrays. So the underlying indices (if applicable) should live longer then #scope.
- * \param context: The context that the field is evaluated in. Used to retrieve data from each
- *   #FieldInput in the field network.
- * \param dst_varrays: If provided, the computed data will be written into those virtual arrays
+ * param cxt: The context that the field is evaluated in. Used to retrieve data from each
+ *   FieldInput in the field network.
+ * param dst_varrays: If provided, the computed data will be written into those virtual arrays
  *   instead of into newly created ones. That allows making the computed data live longer than
  *   #scope and is more efficient when the data will be written into those virtual arrays
  *   later anyway.
- * \return The computed virtual arrays for each provided field. If #dst_varrays is passed, the
- *   provided virtual arrays are returned.
- */
+ * return The computed virtual arrays for each provided field. If dst_varrays is passed, the
+ *   provided virtual arrays are returned. */
 Vector<GVArray> evaluate_fields(ResourceScope &scope,
                                 Span<GFieldRef> fields_to_evaluate,
                                 IndexMask mask,
-                                const FieldContext &context,
+                                const FieldContext &cxt,
                                 Span<GVMutableArray> dst_varrays = {});
 
-/* -------------------------------------------------------------------- */
-/** \name Utility functions for simple field creation and evaluation
- * \{ */
-
-void evaluate_constant_field(const GField &field, void *r_value);
+/* Util fns for simple field creation and evaluation */
+void evaluate_constant_field(const GField &field, void *r_val);
 
 template<typename T> T evaluate_constant_field(const Field<T> &field)
 {
@@ -444,22 +424,20 @@ template<typename T> T evaluate_constant_field(const Field<T> &field)
   return value;
 }
 
-GField make_constant_field(const CPPType &type, const void *value);
+GField make_constant_field(const CPPType &type, const void *val);
 
-template<typename T> Field<T> make_constant_field(T value)
+template<typename T> Field<T> make_constant_field(T val)
 {
-  return make_constant_field(CPPType::get<T>(), &value);
+  return make_constant_field(CPPType::get<T>(), &val);
 }
 
-/**
- * If the field depends on some input, the same field is returned.
- * Otherwise the field is evaluated and a new field is created that just computes this constant.
+/* If the field depends on some input, the same field is returned.
+ * Else the field is evaluated and a new field is created that computes this const.
  *
  * Making the field constant has two benefits:
- * - The field-tree becomes a single node, which is more efficient when the field is evaluated many
+ * - The field-tree becomes a single node, its more efficient when the field is evaluated many
  *   times.
- * - Memory of the input fields may be freed.
- */
+ * - Mem of the input fields may be freed. */
 GField make_field_constant_if_possible(GField field);
 
 class IndexFieldInput final : public FieldInput {
@@ -468,7 +446,7 @@ class IndexFieldInput final : public FieldInput {
 
   static GVArray get_index_varray(IndexMask mask);
 
-  GVArray get_varray_for_context(const FieldContext &context,
+  GVArray get_varray_for_context(const FieldCxt &cxt,
                                  IndexMask mask,
                                  ResourceScope &scope) const final;
 
@@ -476,26 +454,20 @@ class IndexFieldInput final : public FieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override;
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Value or Field Class
- *
- * Utility class that wraps a single value and a field, to simplify accessing both of the types.
- * \{ */
-
-template<typename T> struct ValueOrField {
-  /** Value that is used when the field is empty. */
-  T value{};
+/* Val or Field Class
+ * Util class that wraps a single val and a field, to simplify accessing both of the types. */
+template<typename T> struct ValOrField {
+  /* Val that is used when the field is empty. */
+  T val{};
   Field<T> field;
 
-  ValueOrField() = default;
+  ValOrField() = default;
 
-  ValueOrField(T value) : value(std::move(value))
+  ValOrField(T value) : val(std::move(val))
   {
   }
 
-  ValueOrField(Field<T> field) : field(std::move(field))
+  ValOrField(Field<T> field) : field(std::move(field))
   {
   }
 
@@ -509,20 +481,18 @@ template<typename T> struct ValueOrField {
     if (this->field) {
       return this->field;
     }
-    return make_constant_field(this->value);
+    return make_const_field(this->val);
   }
 
-  T as_value() const
+  T as_val() const
   {
     if (this->field) {
-      /* This returns a default value when the field is not constant. */
+      /* This returns a default val when the field is not const. */
       return evaluate_constant_field(this->field);
     }
     return this->value;
   }
 };
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name #FieldNode Inline Methods
