@@ -1,11 +1,10 @@
 #pragma once
-
-/* A `MultiFn` encapsulates a fn that is optimized for throughput (instead of latency).
- * The throughput is optimized by always proc'ing many elems at once instead of each elem
+/* `MultiFn` encapsulates a fn that is optimized for throughput (instead of latency).
+ * Throughput is optimized by always proc'ing many elems at once instead of each elem
  * separately. Ideal for fns that are eval often (e.g. for every particle).
  *
  * By proc'ing a lot of data at once, individual fns become easier to optimize for humans
- * and for the compiler. Furthermore, performance profiles become easier to understand and show
+ * and for the compiler. Performance profiles become easier to understand and show
  * better where bottlenecks are.
  *
  * Every multi-fn has a name and an ordered list of params. Params are used for input
@@ -26,8 +25,8 @@
  * 3. Override the `call` fn. */
 #include "lib_hash.hh"
 
-#include "FN_multi_fn_cxt.hh"
-#include "FN_multi_fn_params.hh"
+#include "fn_multi_fn_cxt.hh"
+#include "fn_multi_fn_params.hh"
 
 namespace dune::fn {
 
@@ -40,12 +39,12 @@ class MultiFn {
   {
   }
 
-  /*The result is the same as using call directly but this method has some additional features.
+  /* Result: matches call directly but this method has additional features.
    * - Automatic multi-threading when possible and appropriate.
-   * - Automatic index mask offsetting to avoid large temp intermediate arrays that are mostly
+   * - Automatic index mask offsetting to avoid large tmp intermediate arrays that are mostly
    *   unused. */
-  void call_auto(IndexMask mask, MFParams params, MFContext context) const;
-  virtual void call(IndexMask mask, MFParams params, MFContext context) const = 0;
+  void call_auto(IndexMask mask, MFParams params, MFCxt cxt) const;
+  virtual void call(IndexMask mask, MFParams params, MFCxt cxt) const = 0;
 
   virtual uint64_t hash() const
   {
@@ -84,75 +83,68 @@ class MultiFn {
 
   virtual std::string debug_name() const;
 
-  bool depends_on_context() const
+  bool depends_on_cxt() const
   {
-    return signature_ref_->depends_on_context;
+    return signature_ref_->depends_on_cxt;
   }
 
   const MFSignature &signature() const
   {
-    BLI_assert(signature_ref_ != nullptr);
+    lib_assert(signature_ref_ != nullptr);
     return *signature_ref_;
   }
 
-  /**
-   * Information about how the multi-function behaves that help a caller to execute it efficiently.
-   */
-  struct ExecutionHints {
-    /**
-     * Suggested minimum workload under which multi-threading does not really help.
-     * This should be lowered when the multi-function is doing something computationally expensive.
-     */
+  /* Info about how multi-fn behaves that help a caller to ex it efficiently. */
+  struct ExHints {
+    /* Suggested min workload under which multi-threading does not rly help.
+     * This should be lowered when the multi-fn is doing something computationally expensive. */
     int64_t min_grain_size = 10000;
-    /**
-     * Indicates that the multi-function will allocate an array large enough to hold all indices
-     * passed in as mask. This tells the caller that it would be preferable to pass in smaller
-     * indices. Also maybe the full mask should be split up into smaller segments to decrease peak
-     * memory usage.
-     */
-    bool allocates_array = false;
-    /**
-     * Tells the caller that every execution takes about the same time. This helps making a more
-     * educated guess about a good grain size.
-     */
-    bool uniform_execution_time = true;
+    /* Indicates that multi-fn will alloc an array large enough to hold all indices
+     * passed in as mask. 
+     * Tell caller its pref to pass in smaller indices.
+     * Full mask should be split up into smaller segments to decrease peak
+     * mem usage. */
+    bool allocs_array = false;
+    /* Tells caller that every ex takes about the same time. 
+     * To make a more educated guess about a good grain size.  */
+    bool uniform_ex_time = true;
   };
 
-  ExecutionHints execution_hints() const;
+  ExHints ex_hints() const;
 
  protected:
-  /* Make the function use the given signature. This should be called once in the constructor of
-   * child classes. No copy of the signature is made, so the caller has to make sure that the
-   * signature lives as long as the multi function. It is ok to embed the signature into the child
+  /* Make the fn use the given signature. Should be called once in the constructor of
+   * child classes. No copy of the signature is made so caller must ensure that the
+   * signature lives as long as the multi fn. Ok to embed the signature into the child
    * class. */
   void set_signature(const MFSignature *signature)
   {
-    /* Take a pointer as argument, so that it is more obvious that no copy is created. */
-    BLI_assert(signature != nullptr);
+    /* Take a ptr as arg, so that it is more obvious that no copy is created. */
+    lib_assert(signature != nullptr);
     signature_ref_ = signature;
   }
 
-  virtual ExecutionHints get_execution_hints() const;
+  virtual ExHints get_ex_hints() const;
 };
 
-inline MFParamsBuilder::MFParamsBuilder(const MultiFunction &fn, int64_t mask_size)
+inline MFParamsBuilder::MFParamsBuilder(const MultiFn &fn, int64_t mask_size)
     : MFParamsBuilder(fn.signature(), IndexMask(mask_size))
 {
 }
 
-inline MFParamsBuilder::MFParamsBuilder(const MultiFunction &fn, const IndexMask *mask)
+inline MFParamsBuilder::MFParamsBuilder(const MultiFn &fn, const IndexMask *mask)
     : MFParamsBuilder(fn.signature(), *mask)
 {
 }
 
-namespace multi_function_types {
-using fn::MFContext;
-using fn::MFContextBuilder;
+namespace multi_fn_types {
+using fn::MFCxt;
+using fn::MFCxtBuilder;
 using fn::MFDataType;
 using fn::MFParams;
 using fn::MFParamsBuilder;
 using fn::MFParamType;
-using fn::MultiFunction;
-}  // namespace multi_function_types
+using fn::MultiFn;
+}  // namespace multi_fn_types
 
-}  // namespace blender::fn
+}  // namespace dune::fn
