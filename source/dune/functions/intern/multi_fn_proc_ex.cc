@@ -37,7 +37,7 @@ struct VarVal {
   VarVal(ValType type) : type(type) {}
 };
 
-/* This var is the unmodified virtual array from the caller. */
+/* Var is the unmodified virtual array from the caller. */
 struct VarValGVArray : public VarVal {
   static inline constexpr ValType static_type = ValType::GVArray;
   const GVArray &data;
@@ -48,7 +48,7 @@ struct VarValGVArray : public VarVal {
   }
 };
 
-/* This var has a diff val for every index. Some vals may be uninit. The span
+/* Var has a diff val for every index. Some vals may be uninit. The span
  * may be owned by the caller. */
 struct VarValSpan : public VarVal {
   static inline constexpr ValType static_type = ValType::Span;
@@ -60,7 +60,7 @@ struct VarValSpan : public VarVal {
   }
 };
 
-/* This var is the unmodified virtual vector array from the caller. */
+/* Var is the unmodified virtual vector array from the caller. */
 struct VarValGVVectorArray : public VarVal {
   static inline constexpr ValType static_type = ValType::GVVectorArray;
   const GVVectorArray &data;
@@ -70,7 +70,7 @@ struct VarValGVVectorArray : public VarVal {
   }
 };
 
-/* This var has a different vector for every index. */
+/* Var has a diff vector for every index. */
 struct VarValGVectorArray : public VarVal {
   static inline constexpr ValType static_type = ValType::GVectorArray;
   GVectorArray &data;
@@ -82,7 +82,7 @@ struct VarValGVectorArray : public VarVal {
   }
 };
 
-/* This var has the same val for every index. */
+/* Var has the same val for every index. */
 struct VarValOneSingle : public VarVal {
   static inline constexpr ValType static_type = ValType::OneSingle;
   void *data;
@@ -106,44 +106,36 @@ static_assert(std::is_trivially_destructible_v<VarVal_GVectorArray>);
 static_assert(std::is_trivially_destructible_v<VarVal_OneSingle>);
 static_assert(std::is_trivially_destructible_v<VarVal_OneVector>);
 
-class VariableState;
+class VarState;
 
-/**
- * The #ValueAllocator is responsible for providing memory for variables and their values. It also
- * manages the reuse of buffers to improve performance.
- */
-class ValueAllocator : NonCopyable, NonMovable {
+/* ValAllocator: responsible for providing mem for vars and their vals. It also
+ * manages the reuse of bufs to improve performance. */
+class ValAllocator : NonCopyable, NonMovable {
  private:
-  /**
-   * Allocate with 64 byte alignment for better reusability of buffers and improved cache
-   * performance.
-   */
+  /* Alloc w 64 byte alignment for better reusability of bufs and improved cache
+   * performance. */
   static constexpr inline int min_alignment = 64;
 
-  /** All buffers in the free-lists below have been allocated with this allocator. */
+  /* All bufs in the free-lists below have been alloc w this allocator. */
   LinearAllocator<> &linear_allocator_;
 
-  /**
-   * Use stacks so that the most recently used buffers are reused first. This improves cache
-   * efficiency.
-   */
-  std::array<Stack<VariableValue *>, tot_variable_value_types> variable_value_free_lists_;
+  /* Use stacks so that the most recently used bufs are reused 1st. This improves cache
+   * efficiency */
+  std::array<Stack<VarVal *>, tot_var_val_types> var_val_free_lists_;
 
-  /**
-   * The integer key is the size of one element (e.g. 4 for an integer buffer). All buffers are
-   * aligned to #min_alignment bytes.
-   */
+  /* The int key is the size of one elem (e.g. 4 for an int buf). All bufs are
+   * aligned to min_alignment bytes. */
   Stack<void *> small_span_bufs_free_list_;
   Map<int, Stack<void *>> span_bufs_free_lists_;
 
-  /** Cache buffers for single vals of different types. */
+  /* Cache bufs for single vals of dif types. */
   static constexpr inline int small_val_max_size = 16;
   static constexpr inline int small_val_max_alignment = 8;
   Stack<void *> small_single_val_free_list_;
   Map<const CPPType *, Stack<void *>> single_val_free_lists_;
 
  public:
-  ValueAllocator(LinearAllocator<> &linear_allocator) : linear_allocator_(linear_allocator) {}
+  ValAllocator(LinearAllocator<> &linear_allocator) : linear_allocator_(linear_allocator) {}
 
   VarVal_GVArray *obtain_GVArray(const GVArray &varray)
   {
@@ -152,10 +144,10 @@ class ValueAllocator : NonCopyable, NonMovable {
 
   VarVal_GVVectorArray *obtain_GVVectorArray(const GVVectorArray &varray)
   {
-    return this->obtain<VariableValue_GVVectorArray>(varray);
+    return this->obtain<VarVal_GVVectorArray>(varray);
   }
 
-  VarVal_Span *obtain_Span_not_owned(void *buffer)
+  VarVal_Span *obtain_Span_not_owned(void *buf)
   {
     return this->obtain<VarVal_Span>(buffer, false);
   }
@@ -164,17 +156,17 @@ class ValueAllocator : NonCopyable, NonMovable {
   {
     void *buf = nullptr;
 
-    const int64_t element_size = type.size();
+    const int64_t elem_size = type.size();
     const int64_t alignment = type.alignment();
 
     if (alignment > min_alignment) {
-      /* In this rare case we fallback to not reusing existing buffers. */
-      buffer = linear_allocator_.alloc(element_size * size, alignment);
+      /* In this rare case we fallback to not reusing existing bufs. */
+      buf = linear_allocator_.alloc(elem_size * size, alignment);
     }
     else {
       Stack<void *> *stack = type.can_exist_in_buf(small_val_max_size,
                                                    small_val_max_alignment) ?
-                                 &small_span_buffers_free_list_ :
+                                 &small_span_bufs_free_list_ :
                                  span_bufs_free_lists_.lookup_ptr(element_size);
       if (stack == nullptr || stack->is_empty()) {
         buf = linear_allocator_.alloc(
@@ -197,7 +189,7 @@ class ValueAllocator : NonCopyable, NonMovable {
   VarVal_GVectorArray *obtain_GVectorArray(const CPPType &type, int size)
   {
     GVectorArray *vector_array = new GVectorArray(type, size);
-    return this->obtain<VariableValue_GVectorArray>(*vector_array, true);
+    return this->obtain<VarVal_GVectorArray>(*vector_array, true);
   }
 
   VarVal_OneSingle *obtain_OneSingle(const CPPType &type)
@@ -215,7 +207,7 @@ class ValueAllocator : NonCopyable, NonMovable {
     else {
       buf = stack.pop();
     }
-    return this->obtain<VariableValue_OneSingle>(buffer);
+    return this->obtain<VarVal_OneSingle>(buf);
   }
 
   VarVal_OneVector *obtain_OneVector(const CPPType &type)
@@ -239,7 +231,7 @@ class ValueAllocator : NonCopyable, NonMovable {
                                                             small_value_max_alignment) ?
                                        small_span_buffers_free_list_ :
                                        span_buffers_free_lists_.lookup_or_add_default(type.size());
-          buffers.push(value_typed->data);
+          buffers.push(val_typed->data);
         }
         break;
       }
@@ -247,47 +239,47 @@ class ValueAllocator : NonCopyable, NonMovable {
         break;
       }
       case ValueType::GVectorArray: {
-        auto *value_typed = static_cast<VariableValue_GVectorArray *>(value);
-        if (value_typed->owned) {
-          delete &value_typed->data;
+        auto *val_typed = static_cast<VariableValue_GVectorArray *>(value);
+        if (val_typed->owned) {
+          delete &val_typed->data;
         }
         break;
       }
-      case ValueType::OneSingle: {
-        auto *value_typed = static_cast<VariableValue_OneSingle *>(value);
+      case ValType::OneSingle: {
+        auto *val_typed = static_cast<VarVal_OneSingle *>(value);
         const CPPType &type = data_type.single_type();
-        if (value_typed->is_initialized) {
-          type.destruct(value_typed->data);
+        if (val_typed->is_initialized) {
+          type.destruct(val_typed->data);
         }
-        const bool is_small = type.can_exist_in_buffer(small_value_max_size,
-                                                       small_value_max_alignment);
+        const bool is_small = type.can_exist_in_buf(small_val_max_size,
+                                                    small_val_max_alignment);
         if (is_small) {
-          small_single_value_free_list_.push(value_typed->data);
+          small_single_val_free_list_.push(value_typed->data);
         }
         else {
-          single_value_free_lists_.lookup_or_add_default(&type).push(value_typed->data);
+          single_val_free_lists_.lookup_or_add_default(&type).push(val_typed->data);
         }
         break;
       }
-      case ValueType::OneVector: {
-        auto *value_typed = static_cast<VariableValue_OneVector *>(value);
-        delete &value_typed->data;
+      case ValType::OneVector: {
+        auto *val_typed = static_cast<VarVal_OneVector *>(val);
+        delete &val_typed->data;
         break;
       }
     }
 
-    Stack<VariableValue *> &stack = variable_value_free_lists_[int(value->type)];
-    stack.push(value);
+    Stack<VarVal *> &stack = var_val_free_lists_[int(val->type)];
+    stack.push(val);
   }
 
  private:
   template<typename T, typename... Args> T *obtain(Args &&...args)
   {
-    static_assert(std::is_base_of_v<VariableValue, T>);
-    Stack<VariableValue *> &stack = variable_value_free_lists_[int(T::static_type)];
+    static_assert(std::is_base_of_v<VarVal, T>);
+    Stack<VarVal *> &stack = var_val_free_lists_[int(T::static_type)];
     if (stack.is_empty()) {
-      void *buffer = linear_allocator_.allocate(sizeof(T), alignof(T));
-      return new (buffer) T(std::forward<Args>(args)...);
+      void *buf = linear_allocator_.alloc(sizeof(T), alignof(T));
+      return new (buf) T(std::forward<Args>(args)...);
     }
     return new (stack.pop()) T(std::forward<Args>(args)...);
   }
@@ -296,19 +288,19 @@ class ValueAllocator : NonCopyable, NonMovable {
 /**
  * This class keeps track of a single variable during evaluation.
  */
-class VariableState : NonCopyable, NonMovable {
+class VarState : NonCopyable, NonMovable {
  public:
-  /** The current value of the variable. The storage format may change over time. */
+  /* The current value of the var. The storage format may change over time. */
   VariableValue *value_ = nullptr;
-  /** Number of indices that are currently initialized in this variable. */
+  /* Num of indices that are currently initialized in this var. */
   int tot_initialized_ = 0;
-  /* This a non-owning pointer to either span buffer or #GVectorArray or null. */
+  /* This a non-owning ptr to either span buf or GVectorArray or null. */
   void *caller_provided_storage_ = nullptr;
 
-  void destruct_value(ValueAllocator &value_allocator, const DataType &data_type)
+  void destruct_val(ValAllocator &val_allocator, const DataType &data_type)
   {
-    value_allocator.release_value(value_, data_type);
-    value_ = nullptr;
+    val_allocator.release_val(val_, data_type);
+    val_ = nullptr;
   }
 
   /* True if this contains only one value for all indices, i.e. the value for all indices is
@@ -318,42 +310,42 @@ class VariableState : NonCopyable, NonMovable {
     if (value_ == nullptr) {
       return true;
     }
-    switch (value_->type) {
-      case ValueType::GVArray:
-        return this->value_as<VariableValue_GVArray>()->data.is_single();
-      case ValueType::Span:
-        return tot_initialized_ == 0;
-      case ValueType::GVVectorArray:
-        return this->value_as<VariableValue_GVVectorArray>()->data.is_single_vector();
-      case ValueType::GVectorArray:
-        return tot_initialized_ == 0;
-      case ValueType::OneSingle:
+    switch (val_->type) {
+      case ValType::GVArray:
+        return this->val_as<VarVal_GVArray>()->data.is_single();
+      case ValType::Span:
+        return tot_init_ == 0;
+      case ValType::GVVectorArray:
+        return this->val_as<VarVal_GVVectorArray>()->data.is_single_vector();
+      case ValType::GVectorArray:
+        return tot_init_ == 0;
+      case ValType::OneSingle:
         return true;
-      case ValueType::OneVector:
+      case ValType::OneVector:
         return true;
     }
-    BLI_assert_unreachable();
+    lib_assert_unreachable();
     return false;
   }
 
-  bool is_fully_initialized(const IndexMask &full_mask)
+  bool is_fully_init(const IndexMask &full_mask)
   {
     return tot_initialized_ == full_mask.size();
   }
 
-  bool is_fully_uninitialized(const IndexMask &full_mask)
+  bool is_fully_uninit(const IndexMask &full_mask)
   {
     UNUSED_VARS(full_mask);
-    return tot_initialized_ == 0;
+    return tot_init_ == 0;
   }
 
   void add_as_input(ParamsBuilder &params, const IndexMask &mask, const DataType &data_type) const
   {
     /* Sanity check to make sure that enough values are initialized. */
-    BLI_assert(mask.size() <= tot_initialized_);
-    BLI_assert(value_ != nullptr);
+    lib_assert(mask.size() <= tot_initialized_);
+    lib_assert(val_ != nullptr);
 
-    switch (value_->type) {
+    switch (val_->type) {
       case ValueType::GVArray: {
         params.add_readonly_single_input(this->value_as<VariableValue_GVArray>()->data);
         break;
