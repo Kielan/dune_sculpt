@@ -814,14 +814,14 @@ MINLINE void negate_v3_db(double r[3])
 
 MINLINE void invert_v2(float r[2])
 {
-  BLI_assert(!ELEM(0.0f, r[0], r[1]));
+  lib_assert(!ELEM(0.0f, r[0], r[1]));
   r[0] = 1.0f / r[0];
   r[1] = 1.0f / r[1];
 }
 
 MINLINE void invert_v3(float r[3])
 {
-  BLI_assert(!ELEM(0.0f, r[0], r[1], r[2]));
+  lib_assert(!ELEM(0.0f, r[0], r[1], r[2]));
   r[0] = 1.0f / r[0];
   r[1] = 1.0f / r[1];
   r[2] = 1.0f / r[2];
