@@ -455,7 +455,7 @@ class VarState : NonCopyable, NonMovable {
                       const IndexMask &mask,
                       const IndexMask &full_mask,
                       const DataType &data_type,
-                      ValueAllocator &value_allocator)
+                      ValAllocator &val_allocator)
   {
     /* Sanity check to make sure that enough values are initialized. */
     BLI_assert(mask.size() <= tot_initialized_);
@@ -463,22 +463,22 @@ class VarState : NonCopyable, NonMovable {
     this->ensure_is_mutable(full_mask, data_type, value_allocator);
     BLI_assert(value_ != nullptr);
 
-    switch (value_->type) {
-      case ValueType::Span: {
-        void *data = this->value_as<VariableValue_Span>()->data;
+    switch (val_->type) {
+      case ValType::Span: {
+        void *data = this->value_as<VariableVal_Span>()->data;
         const GMutableSpan span{data_type.single_type(), data, mask.min_array_size()};
         params.add_single_mutable(span);
         break;
       }
-      case ValueType::GVectorArray: {
+      case ValType::GVectorArray: {
         params.add_vector_mutable(this->value_as<VariableValue_GVectorArray>()->data);
         break;
       }
-      case ValueType::GVArray:
-      case ValueType::GVVectorArray:
-      case ValueType::OneSingle:
-      case ValueType::OneVector: {
-        BLI_assert_unreachable();
+      case ValType::GVArray:
+      case ValType::GVVectorArray:
+      case ValType::OneSingle:
+      case ValType::OneVector: {
+        lib_assert_unreachable();
         break;
       }
     }
@@ -488,29 +488,29 @@ class VarState : NonCopyable, NonMovable {
                      const IndexMask &mask,
                      const IndexMask &full_mask,
                      const DataType &data_type,
-                     ValueAllocator &value_allocator)
+                     ValAllocator &val_allocator)
   {
-    /* Sanity check to make sure that enough values are not initialized. */
-    BLI_assert(mask.size() <= full_mask.size() - tot_initialized_);
-    this->ensure_is_mutable(full_mask, data_type, value_allocator);
-    BLI_assert(value_ != nullptr);
+    /* Sanity check to make sure that enough vals are not initialized. */
+    lib_assert(mask.size() <= full_mask.size() - tot_initialized_);
+    this->ensure_is_mutable(full_mask, data_type, val_allocator);
+    lib_assert(val_ != nullptr);
 
     switch (value_->type) {
       case ValueType::Span: {
-        void *data = this->value_as<VariableValue_Span>()->data;
+        void *data = this->value_as<VarVal_Span>()->data;
         const GMutableSpan span{data_type.single_type(), data, mask.min_array_size()};
         params.add_uninitialized_single_output(span);
         break;
       }
-      case ValueType::GVectorArray: {
-        params.add_vector_output(this->value_as<VariableValue_GVectorArray>()->data);
+      case ValType::GVectorArray: {
+        params.add_vector_output(this->value_as<VarVal_GVectorArray>()->data);
         break;
       }
-      case ValueType::GVArray:
-      case ValueType::GVVectorArray:
-      case ValueType::OneSingle:
-      case ValueType::OneVector: {
-        BLI_assert_unreachable();
+      case ValType::GVArray:
+      case ValType::GVVectorArray:
+      case ValType::OneSingle:
+      case ValType::OneVector: {
+        lib_assert_unreachable();
         break;
       }
     }
@@ -520,85 +520,85 @@ class VarState : NonCopyable, NonMovable {
 
   void add_as_input__one(ParamsBuilder &params, const DataType &data_type) const
   {
-    BLI_assert(this->is_one());
-    BLI_assert(value_ != nullptr);
+    lib_assert(this->is_one());
+    lib_assert(val_ != nullptr);
 
     switch (value_->type) {
-      case ValueType::GVArray: {
-        params.add_readonly_single_input(this->value_as<VariableValue_GVArray>()->data);
+      case ValType::GVArray: {
+        params.add_readonly_single_input(this->val_as<VarVal_GVArray>()->data);
+        break
+      }
+      case ValType::GVVectorArray: {
+        params.add_readonly_vector_input(this->val_as<VarVal_GVVectorArray>()->data);
         break;
       }
-      case ValueType::GVVectorArray: {
-        params.add_readonly_vector_input(this->value_as<VariableValue_GVVectorArray>()->data);
-        break;
-      }
-      case ValueType::OneSingle: {
-        const auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(value_typed->is_initialized);
-        GPointer ptr{data_type.single_type(), value_typed->data};
+      case ValType::OneSingle: {
+        const auto *val_typed = this->val_as<VarVal_OneSingle>();
+        lib_assert(val_typed->is_initialized);
+        GPointer ptr{data_type.single_type(), val_typed->data};
         params.add_readonly_single_input(ptr);
         break;
       }
-      case ValueType::OneVector: {
-        params.add_readonly_vector_input(this->value_as<VariableValue_OneVector>()->data);
+      case ValType::OneVector: {
+        params.add_readonly_vector_input(this->val_as<VarVal_OneVector>()->data);
         break;
       }
-      case ValueType::Span:
-      case ValueType::GVectorArray: {
-        BLI_assert_unreachable();
+      case ValType::Span:
+      case ValType::GVectorArray: {
+        lib_assert_unreachable();
         break;
       }
     }
   }
 
-  void ensure_is_mutable__one(const DataType &data_type, ValueAllocator &value_allocator)
+  void ensure_is_mutable__one(const DataType &data_type, ValAllocator &val_allocator)
   {
-    BLI_assert(this->is_one());
-    if (value_ != nullptr && ELEM(value_->type, ValueType::OneSingle, ValueType::OneVector)) {
+    lib_assert(this->is_one());
+    if (val_ != nullptr && ELEM(val_->type, ValType::OneSingle, ValType::OneVector)) {
       return;
     }
 
     switch (data_type.category()) {
       case DataType::Single: {
         const CPPType &type = data_type.single_type();
-        VariableValue_OneSingle *new_value = value_allocator.obtain_OneSingle(type);
-        if (value_ != nullptr) {
-          if (value_->type == ValueType::GVArray) {
-            this->value_as<VariableValue_GVArray>()->data.get_internal_single_to_uninitialized(
-                new_value->data);
-            new_value->is_initialized = true;
+        VarVal_OneSingle *new_value = val_allocator.obtain_OneSingle(type);
+        if (val_ != nullptr) {
+          if (val_->type == ValType::GVArray) {
+            this->val_as<VarVal_GVArray>()->data.get_internal_single_to_uninitialized(
+                new_val->data);
+            new_val->is_init = true;
           }
-          else if (value_->type == ValueType::Span) {
-            BLI_assert(tot_initialized_ == 0);
-            /* Nothing to do, the single value is uninitialized already. */
+          else if (val_->type == ValType::Span) {
+            lib_assert(tot_initialized_ == 0);
+            /* Nothing to do, the single val is uninit alrdy. */
           }
           else {
-            BLI_assert_unreachable();
+            lib_assert_unreachable();
           }
-          value_allocator.release_value(value_, data_type);
+          val_allocator.release_val(val_, data_type);
         }
-        value_ = new_value;
+        val_ = new_val;
         break;
       }
       case DataType::Vector: {
         const CPPType &type = data_type.vector_base_type();
-        VariableValue_OneVector *new_value = value_allocator.obtain_OneVector(type);
-        if (value_ != nullptr) {
-          if (value_->type == ValueType::GVVectorArray) {
+        VarVal_OneVector *new_val = val_allocator.obtain_OneVector(type);
+        if (val_ != nullptr) {
+          if (val_->type == ValType::GVVectorArray) {
             const GVVectorArray &old_vector_array =
-                this->value_as<VariableValue_GVVectorArray>()->data;
+                this->val_as<VarVal_GVVectorArray>()->data;
             new_value->data.extend(IndexRange(1), old_vector_array);
           }
-          else if (value_->type == ValueType::GVectorArray) {
-            BLI_assert(tot_initialized_ == 0);
+          else if (val_->type == ValType::GVectorArray) {
+            lib_assert(tot_initialized_ == 0);
             /* Nothing to do. */
           }
           else {
-            BLI_assert_unreachable();
+            lib_assert_unreachable();
           }
-          value_allocator.release_value(value_, data_type);
+          val_allocator.release_val(val_, data_type);
         }
-        value_ = new_value;
+        value_ = new_val;
         break;
       }
     }
@@ -606,28 +606,28 @@ class VarState : NonCopyable, NonMovable {
 
   void add_as_mutable__one(ParamsBuilder &params,
                            const DataType &data_type,
-                           ValueAllocator &value_allocator)
+                           ValAllocator &val_allocator)
   {
-    BLI_assert(this->is_one());
-    this->ensure_is_mutable__one(data_type, value_allocator);
-    BLI_assert(value_ != nullptr);
+    lib_assert(this->is_one());
+    this->ensure_is_mutable__one(data_type, val_allocator);
+    lib_assert(val_ != nullptr);
 
-    switch (value_->type) {
-      case ValueType::OneSingle: {
-        auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(value_typed->is_initialized);
-        params.add_single_mutable(GMutableSpan{data_type.single_type(), value_typed->data, 1});
+    switch (val_->type) {
+      case ValType::OneSingle: {
+        auto *val_typed = this->val_as<VarVal_OneSingle>();
+        lib_assert(val_typed->is_initialized);
+        params.add_single_mutable(GMutableSpan{data_type.single_type(), val_typed->data, 1});
         break;
       }
-      case ValueType::OneVector: {
-        params.add_vector_mutable(this->value_as<VariableValue_OneVector>()->data);
+      case ValType::OneVector: {
+        params.add_vector_mutable(this->val_as<VarVal_OneVector>()->data);
         break;
       }
-      case ValueType::GVArray:
-      case ValueType::Span:
-      case ValueType::GVVectorArray:
-      case ValueType::GVectorArray: {
-        BLI_assert_unreachable();
+      case ValType::GVArray:
+      case ValType::Span:
+      case ValType::GVVectorArray:
+      case ValType::GVectorArray: {
+        lib_assert_unreachable();
         break;
       }
     }
@@ -636,33 +636,33 @@ class VarState : NonCopyable, NonMovable {
   void add_as_output__one(ParamsBuilder &params,
                           const IndexMask &mask,
                           const DataType &data_type,
-                          ValueAllocator &value_allocator)
+                          ValAllocator &val_allocator)
   {
-    BLI_assert(this->is_one());
-    this->ensure_is_mutable__one(data_type, value_allocator);
-    BLI_assert(value_ != nullptr);
+    lib_assert(this->is_one());
+    this->ensure_is_mutable__one(data_type, val_allocator);
+    lib_assert(val_ != nullptr);
 
     switch (value_->type) {
       case ValueType::OneSingle: {
         auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(!value_typed->is_initialized);
+        lib_assert(!value_typed->is_initialized);
         params.add_uninitialized_single_output(
-            GMutableSpan{data_type.single_type(), value_typed->data, 1});
-        /* It becomes initialized when the multi-function is called. */
+            GMutableSpan{data_type.single_type(), val_typed->data, 1});
+        /* It becomes initialized when the multi-fn is called. */
         value_typed->is_initialized = true;
         break;
       }
-      case ValueType::OneVector: {
-        auto *value_typed = this->value_as<VariableValue_OneVector>();
-        BLI_assert(value_typed->data[0].is_empty());
-        params.add_vector_output(value_typed->data);
+      case ValType::OneVector: {
+        auto *val_typed = this->val_as<VarVal_OneVector>();
+        lib_assert(val_typed->data[0].is_empty());
+        params.add_vector_output(val_typed->data);
         break;
       }
-      case ValueType::GVArray:
-      case ValueType::Span:
-      case ValueType::GVVectorArray:
-      case ValueType::GVectorArray: {
-        BLI_assert_unreachable();
+      case ValType::GVArray:
+      case ValType::Span:
+      case ValType::GVVectorArray:
+      case ValType::GVectorArray: {
+        lib_assert_unreachable();
         break;
       }
     }
@@ -670,67 +670,65 @@ class VarState : NonCopyable, NonMovable {
     tot_initialized_ += mask.size();
   }
 
-  /**
-   * Destruct the masked elements in this variable.
-   * \return True when all elements of this variable are initialized and the variable state can be
-   *  released.
-   */
+  /* Destruct the masked elements in this variable.
+   * return True when all elements of this variable are initialized and the variable state can be
+   *  released.  */
   bool destruct(const IndexMask &mask,
                 const IndexMask &full_mask,
                 const DataType &data_type,
                 ValueAllocator &value_allocator)
   {
-    BLI_assert(value_ != nullptr);
+    lib_assert(value_ != nullptr);
     int new_tot_initialized = tot_initialized_ - mask.size();
 
     /* Sanity check to make sure that enough indices can be destructed. */
-    BLI_assert(new_tot_initialized >= 0);
+    lib_assert(new_tot_initialized >= 0);
 
-    switch (value_->type) {
-      case ValueType::GVArray: {
+    switch (val_->type) {
+      case ValType::GVArray: {
         if (mask.size() < full_mask.size()) {
-          /* Not all elements are destructed. Since we can't work on the original array, we have to
-           * create a copy first. */
-          this->ensure_is_mutable(full_mask, data_type, value_allocator);
-          BLI_assert(value_->type == ValueType::Span);
+          /* Not all elems are destructed. Bc we can't work on the original array
+           * must create a copy first. */
+          this->ensure_is_mutable(full_mask, data_type, val_allocator);
+          lib_assert(val_->type == ValType::Span);
           const CPPType &type = data_type.single_type();
-          type.destruct_indices(this->value_as<VariableValue_Span>()->data, mask);
+          type.destruct_indices(this->val_as<VarVal_Span>()->data, mask);
         }
         break;
       }
-      case ValueType::Span: {
+      case ValType::Span: {
         const CPPType &type = data_type.single_type();
         type.destruct_indices(this->value_as<VariableValue_Span>()->data, mask);
         break;
       }
-      case ValueType::GVVectorArray: {
+      case ValType::GVVectorArray: {
         if (mask.size() < full_mask.size()) {
           /* Not all elements are cleared. Since we can't work on the original vector array, we
            * have to create a copy first. A possible future optimization is to create the partial
            * copy directly. */
-          this->ensure_is_mutable(full_mask, data_type, value_allocator);
-          BLI_assert(value_->type == ValueType::GVectorArray);
-          this->value_as<VariableValue_GVectorArray>()->data.clear(mask);
+          this->ensure_is_mutable(full_mask, data_type, val_allocator);
+          lib_assert(value_->type == ValType::GVectorArray);
+          this->value_as<VarVal_GVectorArray>()->data.clear(mask);
         }
         break;
       }
-      case ValueType::GVectorArray: {
-        this->value_as<VariableValue_GVectorArray>()->data.clear(mask);
+      case ValType::GVectorArray: {
+        this->value_as<VarVal_GVectorArray>()->data.clear(mask);
         break;
       }
-      case ValueType::OneSingle: {
-        auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(value_typed->is_initialized);
-        UNUSED_VARS_NDEBUG(value_typed);
+      case ValType::OneSingle: {
+        auto *val_typed = this->val_as<VarVal_OneSingle>();
+        lib_assert(val_typed->is_initialized);
+        UNUSED_VARS_NDEBUG(val_typed);
         if (mask.size() == tot_initialized_) {
           const CPPType &type = data_type.single_type();
-          type.destruct(value_typed->data);
-          value_typed->is_initialized = false;
+          type.destruct(val_typed->data);
+          val_typed->is_initialized = false;
         }
         break;
       }
-      case ValueType::OneVector: {
-        auto *value_typed = this->value_as<VariableValue_OneVector>();
+      case ValType::OneVector: {
+        auto *val_typed = this->value_as<VariableValue_OneVector>();
         if (mask.size() == tot_initialized_) {
           value_typed->data.clear(IndexRange(1));
         }
@@ -747,52 +745,52 @@ class VarState : NonCopyable, NonMovable {
 
   void indices_split(const IndexMask &mask, IndicesSplitVectors &r_indices)
   {
-    BLI_assert(mask.size() <= tot_initialized_);
-    BLI_assert(value_ != nullptr);
+    lib_assert(mask.size() <= tot_initialized_);
+    lib_assert(val_ != nullptr);
 
     switch (value_->type) {
-      case ValueType::GVArray: {
+      case ValType::GVArray: {
         const VArray<bool> varray = this->value_as<VariableValue_GVArray>()->data.typed<bool>();
         mask.foreach_index([&](const int64_t i) { r_indices[varray[i]].append(i); });
         break;
       }
-      case ValueType::Span: {
+      case ValType::Span: {
         const Span<bool> span(
-            static_cast<const bool *>(this->value_as<VariableValue_Span>()->data),
+            static_cast<const bool *>(this->val_as<VarVal_Span>()->data),
             mask.min_array_size());
         mask.foreach_index([&](const int64_t i) { r_indices[span[i]].append(i); });
         break;
       }
-      case ValueType::OneSingle: {
-        auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(value_typed->is_initialized);
-        const bool condition = *static_cast<const bool *>(value_typed->data);
+      case ValType::OneSingle: {
+        auto *val_typed = this->val_as<VarVal_OneSingle>();
+        lib_assert(value_typed->is_initialized);
+        const bool condition = *static_cast<const bool *>(val_typed->data);
         Vector<int64_t> &indices = r_indices[condition];
         indices.reserve(indices.size() + mask.size());
         mask.foreach_index_optimized<int64_t>([&](const int64_t i) { indices.append(i); });
         break;
       }
-      case ValueType::GVVectorArray:
-      case ValueType::GVectorArray:
-      case ValueType::OneVector: {
-        BLI_assert_unreachable();
+      case ValType::GVVectorArray:
+      case ValType::GVectorArray:
+      case ValType::OneVector: {
+        lib_assert_unreachable();
         break;
       }
     }
   }
 
-  template<typename T> T *value_as()
+  template<typename T> T *val_as()
   {
-    BLI_assert(value_ != nullptr);
-    BLI_assert(value_->type == T::static_type);
-    return static_cast<T *>(value_);
+    lib_assert(val_ != nullptr);
+    lib_assert(val_->type == T::static_type);
+    return static_cast<T *>(val_);
   }
 
   template<typename T> const T *value_as() const
   {
-    BLI_assert(value_ != nullptr);
-    BLI_assert(value_->type == T::static_type);
-    return static_cast<T *>(value_);
+    lib_assert(val_ != nullptr);
+    lib_assert(val_->type == T::static_type);
+    return static_cast<T *>(va_);
   }
 };
 
