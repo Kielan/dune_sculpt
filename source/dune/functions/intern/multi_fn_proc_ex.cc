@@ -350,28 +350,28 @@ class VarState : NonCopyable, NonMovable {
         params.add_readonly_single_input(this->value_as<VariableValue_GVArray>()->data);
         break;
       }
-      case ValueType::Span: {
-        const void *data = this->value_as<VariableValue_Span>()->data;
+      case ValType::Span: {
+        const void *data = this->val_as<VarVal_Span>()->data;
         const GSpan span{data_type.single_type(), data, mask.min_array_size()};
         params.add_readonly_single_input(span);
         break;
       }
-      case ValueType::GVVectorArray: {
-        params.add_readonly_vector_input(this->value_as<VariableValue_GVVectorArray>()->data);
+      case ValType::GVVectorArray: {
+        params.add_readonly_vector_input(this->val_as<VarVal_GVVectorArray>()->data);
         break;
       }
-      case ValueType::GVectorArray: {
-        params.add_readonly_vector_input(this->value_as<VariableValue_GVectorArray>()->data);
+      case ValType::GVectorArray: {
+        params.add_readonly_vector_input(this->value_as<VarVal_GVectorArray>()->data);
         break;
       }
-      case ValueType::OneSingle: {
-        const auto *value_typed = this->value_as<VariableValue_OneSingle>();
-        BLI_assert(value_typed->is_initialized);
+      case ValType::OneSingle: {
+        const auto *val_typed = this->value_as<VariableValue_OneSingle>();
+        lib_assert(val_typed->is_initialized);
         const GPointer gpointer{data_type.single_type(), value_typed->data};
         params.add_readonly_single_input(gpointer);
         break;
       }
-      case ValueType::OneVector: {
+      case ValType::OneVector: {
         params.add_readonly_vector_input(this->value_as<VariableValue_OneVector>()->data[0]);
         break;
       }
@@ -380,9 +380,9 @@ class VarState : NonCopyable, NonMovable {
 
   void ensure_is_mutable(const IndexMask &full_mask,
                          const DataType &data_type,
-                         ValueAllocator &value_allocator)
+                         ValAllocator &value_allocator)
   {
-    if (value_ != nullptr && ELEM(value_->type, ValueType::Span, ValueType::GVectorArray)) {
+    if (val_ != nullptr && ELEM(value_->type, ValueType::Span, ValueType::GVectorArray)) {
       return;
     }
 
@@ -391,23 +391,23 @@ class VarState : NonCopyable, NonMovable {
     switch (data_type.category()) {
       case DataType::Single: {
         const CPPType &type = data_type.single_type();
-        VariableValue_Span *new_value = nullptr;
+        VarVal_Span *new_value = nullptr;
         if (caller_provided_storage_ == nullptr) {
-          new_value = value_allocator.obtain_Span(type, array_size);
+          new_val = val_allocator.obtain_Span(type, array_size);
         }
         else {
           /* Reuse the storage provided caller when possible. */
-          new_value = value_allocator.obtain_Span_not_owned(caller_provided_storage_);
+          new_val = val_allocator.obtain_Span_not_owned(caller_provided_storage_);
         }
-        if (value_ != nullptr) {
-          if (value_->type == ValueType::GVArray) {
-            /* Fill new buffer with data from virtual array. */
-            this->value_as<VariableValue_GVArray>()->data.materialize_to_uninitialized(
-                full_mask, new_value->data);
+        if (val_ != nullptr) {
+          if (val_->type == ValType::GVArray) {
+            /* Fill new buf w data from virtual array. */
+            this->val_as<VarVal_GVArray>()->data.materialize_to_uninitialized(
+                full_mask, new_val->data);
           }
-          else if (value_->type == ValueType::OneSingle) {
-            auto *old_value_typed_ = this->value_as<VariableValue_OneSingle>();
-            if (old_value_typed_->is_initialized) {
+          else if (val_->type == ValType::OneSingle) {
+            auto *old_val_typed_ = this->val_as<VarVal_OneSingle>();
+            if (old_val_typed_->is_initialized) {
               /* Fill the buffer with a single value. */
               type.fill_construct_indices(old_value_typed_->data, new_value->data, full_mask);
             }
