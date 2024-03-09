@@ -1,5 +1,8 @@
 ## Dune Sculpt
-> Dune Sculpt, Blender3d in c-lang currently in active development.
+> Dune Sculpt, Blender3d in c-lang currently in active development. Blender without the Python bridge.
+> This project is currently in pre-pre-alpha until buttons and tests are complete use is not reccomended.
+> If you are interested in actively developing please do! This project is as open source as Linux meaning
+> once you fork, it's your version for everyone to use and change as a person desires.
 
 ## Table of Contents
 
