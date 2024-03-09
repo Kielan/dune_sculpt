@@ -6,7 +6,7 @@
 > If you are interested in actively developing please do! This project is as open source as Linux meaning
 > once you fork, it's your version for everyone to use and change as a person desires.
 
-The intent is modularized package management like node vscode or emacs with a self documenting memory management scheme.
+The intent is modularized package management like node vscode or emacs with a self documenting manual memory management scheme.
 Think wave, but with an added dimension, it's like a dune. Originally when studying Blender I wanted to make a desert sand 3d graphics/physics sim generator;
 Then I wanted a fourier transform, then a new garage band, and then I wanted sand and water sim, and now I want open source medical software to be available to everyone.
 All these wants slowed and stalled development.
