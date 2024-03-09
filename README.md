@@ -12,8 +12,8 @@ Then I wanted a fourier transform, then a new garage band, and then I wanted san
 All these wants slowed and stalled development.
 
 A lot of Blender conventions have been modified to be shorthand so that it's easier to code and read from your phone: 'but' change to 'btn' ect.
-I hope that eventually I can stracture a git tree of pull requests so that official Blender3d will adopt some of the more terse conventions and if you
-are part of the core Blender3d team please do so yourself and take all that work into your project before I get a chance to.
+I hope that eventually I can structure a git tree of pull requests so that official Blender3d will adopt some of the more terse conventions and if you
+are part of the core Blender3d team please do so yourself and take all that work into your project before I get the opportunity to do so.
 
 ## Table of Contents
 
