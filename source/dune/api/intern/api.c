@@ -12,8 +12,7 @@
 
 #include "api_internal.h"
 
-/* -------------------------------------------------------------------- */
-/** Generic Enum's **/
+/* Generic Enum's */
 
 /* Reuse for dynamic types. */
 const EnumPropItem DummyApi_NULL_items[] = {
@@ -26,8 +25,7 @@ const EnumPropItem DummyApi_DEFAULT_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-/* -------------------------------------------------------------------- */
-/** Api Enum's **/
+/* Api Enum's */
 
 const EnumPropItem api_enum_prop_type_items[] = {
     {PROP_BOOL, "BOOL", 0, "Bool", ""},
@@ -40,7 +38,7 @@ const EnumPropItem api_enum_prop_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-/* Keep in sync with RNA_types.h PropertySubType and bpy_props.c's property_subtype_xxx_items */
+/* Keep in sync with api_types.h PropertySubType and bpy_props.c's prop_subtype_xxx_items */
 const EnumPropItem api_enum_prop_subtype_items[] = {
     {PROP_NONE, "NONE", 0, "None", ""},
 
@@ -87,13 +85,13 @@ const EnumPropItem api_enum_prop_subtype_items[] = {
     {PROP_COLOR_GAMMA, "COLOR_GAMMA", 0, "Color", ""},
     {PROP_COORDS, "COORDS", 0, "Coordinates", ""},
 
-    /* booleans */
+    /* bools */
     {PROP_LAYER, "LAYER", 0, "Layer", ""},
     {PROP_LAYER_MEMBER, "LAYER_MEMBER", 0, "Layer Member", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_property_unit_items[] = {
+const EnumPropItem api_enum_prop_unit_items[] = {
     {PROP_UNIT_NONE, "NONE", 0, "None", ""},
     {PROP_UNIT_LENGTH, "LENGTH", 0, "Length", ""},
     {PROP_UNIT_AREA, "AREA", 0, "Area", ""},
@@ -134,12 +132,12 @@ static int api_Struct_id_length(ApiPtr *ptr)
 
 static void api_Struct_description_get(ApiPtr *ptr, char *value)
 {
-  strcpy(value, ((StructRNA *)ptr->data)->description);
+  strcpy(value, ((ApiStruct *)ptr->data)->description);
 }
 
 static int api_Struct_description_length(ApiPtr *ptr)
 {
-  return strlen(((StructRNA *)ptr->data)->description);
+  return strlen(((ApiStruct *)ptr->data)->description);
 }
 
 static void api_Struct_name_get(ApiPtr *ptr, char *value)
@@ -154,12 +152,12 @@ static int api_Struct_name_length(ApiPtr *ptr)
 
 static void api_Struct_translation_ctx_get(ApiPtr *ptr, char *value)
 {
-  strcpy(value, ((ApiStruct *)ptr->data)->translation_ctx);
+  strcpy(value, ((ApiStruct *)ptr->data)->translation_cxt);
 }
 
-static int api_Struct_translation_ctx_length(ApiPtr *ptr)
+static int api_Struct_translation_cxt_length(ApiPtr *ptr)
 {
-  return strlen(((ApiStruct *)ptr->data)->translation_ctx);
+  return strlen(((ApiStruct *)ptr->data)->translation_cxt);
 }
 
 static ApiPtr api_Struct_base_get(ApiPtr *ptr)
@@ -177,9 +175,9 @@ static ApiPtr api_Struct_name_prop_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &ApiProp, ((StructRNA *)ptr->data)->nameproperty);
 }
 
-/* Struct property iteration. This is quite complicated, the purpose is to
- * iterate over properties of all inheritance levels, and for each struct to
- * also iterator over id properties not known by RNA. */
+/* Struct prop iter. Is complicated, the purpose is to
+ * iter over props of all inheritance levels, and for each struct to
+ * also iter over id props not known by Api. */
 
 static int api_idprop_known(CollectionPropIter *iter, void *data)
 {
@@ -187,10 +185,10 @@ static int api_idprop_known(CollectionPropIter *iter, void *data)
   ApiProp *prop;
   ApiStruct *ptype = iter->builtin_parent.type;
 
-  /* function to skip any id properties that are already known by RNA,
-   * for the second loop where we go over unknown id properties */
+  /* fn to skip any id props that are alrdy known by Api,
+   * for 2nd loop where we go over unknown id props */
   do {
-    for (prop = ptype->cont.properties.first; prop; prop = prop->next) {
+    for (prop = ptype->cont.props.first; prop; prop = prop->next) {
       if ((prop->flag_internal & PROP_INTERN_BUILTIN) == 0 &&
           STREQ(prop->identifier, idprop->name)) {
         return 1;
@@ -201,12 +199,11 @@ static int api_idprop_known(CollectionPropIter *iter, void *data)
   return 0;
 }
 
-static int api_prop_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_prop_builtin(CollectionPropIter *UNUSED(iter), void *data)
 {
   ApiProp *prop = (ApiProp *)data;
 
-  /* function to skip builtin rna properties */
-
+  /* function to skip builtin api props */
   return (prop->flag_internal & PROP_INTERN_BUILTIN);
 }
 
@@ -214,58 +211,57 @@ static int api_fn_builtin(CollectionPropIter *UNUSED(iter), void *data)
 {
   ApiFn *fn = (ApiFn *)data;
 
-  /* function to skip builtin rna functions */
-
+  /* fn to skip builtin api fns */
   return (fn->flag & FN_BUILTIN);
 }
 
-static void api_inheritance_next_level_restart(CollectionPropertyIterator *iter,
-                                               IteratorSkipFunc skip,
-                                               int funcs)
+static void api_inheritance_next_lvl_restart(CollectionPropIter *iter,
+                                             IterSkipFn skip,
+                                             int fns)
 {
   /* Api struct inheritance */
   while (!iter->valid && iter->level > 0) {
-    ApiStruct *srna;
+    ApiStruct *sapi;
     int i;
 
     srna = (ApiStruct *)iter->parent.data;
     iter->level--;
-    for (i = iter->level; i > 0; i--) {
-      srna = srna->base;
+    for (i = iter->lvl; i > 0; i--) {
+      sapi = sapi->base;
     }
 
     api_iter_list_end(iter);
 
     if (fns) {
-      api_iter_list_begin(iter, &srna->fns, skip);
+      api_iter_list_begin(iter, &sapi->fns, skip);
     }
     else {
-      api_iter_list_begin(iter, &srna->cont.props, skip);
+      api_iter_list_begin(iter, &sapi->cont.props, skip);
     }
   }
 }
 
 static void api_inheritance_props_list_begin(CollectionPropIter *iter,
-                                             List *lb,
+                                             List *list,
                                              IterSkipFn skip)
 {
-  api_iter_list_begin(iter, lb, skip);
-  api_inheritance_next_level_restart(iter, skip, 0);
+  api_iter_list_begin(iter, list, skip);
+  api_inheritance_next_lvl_restart(iter, skip, 0);
 }
 
 static void api_inheritance_props_list_next(CollectionPropIter *iter,
                                             IterSkipFn skip)
 {
   api_iter_list_next(iter);
-  api_inheritance_next_level_restart(iter, skip, 0);
+  api_inheritance_next_lvl_restart(iter, skip, 0);
 }
 
 static void api_inheritance_fns_list_begin(CollectionPropIter *iter,
-                                           List *lb,
+                                           List *list,
                                            IterSkipFn skip)
 {
-  api_iter_list_begin(iter, lb, skip);
-  api_inheritance_next_level_restart(iter, skip, 1);
+  api_iter_list_begin(iter, list, skip);
+  api_inheritance_next_lvl_restart(iter, skip, 1);
 }
 
 static void api_inheritance_fns_list_next(CollectionPropIter *iter,
@@ -281,20 +277,20 @@ static void api_Struct_props_next(CollectionPropIter *iter)
   IdProp *group;
 
   if (internal->flag) {
-    /* id properties */
+    /* id props */
     api_iter_list_next(iter);
   }
   else {
-    /* regular properties */
+    /* regular props */
     api_inheritance_props_list_next(iter, api_prop_builtin);
 
-    /* try id properties */
+    /* try id props */
     if (!iter->valid) {
       group = api_struct_idprops(&iter->builtin_parent, 0);
 
       if (group) {
         api_iter_list_end(iter);
-        api_iter_list_begin(iter, &group->data.group, rna_idproperty_known);
+        api_iter_list_begin(iter, &group->data.group, api_idprop_known);
         internal = &iter->internal.list;
         internal->flag = 1;
       }
@@ -304,25 +300,25 @@ static void api_Struct_props_next(CollectionPropIter *iter)
 
 static void api_Struct_props_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
 
   /* here ptr->data should always be the same as iter->parent.type */
   srna = (ApiStruct *)ptr->data;
 
-  while (srna->base) {
-    iter->level++;
-    srna = srna->base;
+  while (sapi->base) {
+    iter->lvl++;
+    sapi = sapi->base;
   }
 
-  api_inheritance_props_list_begin(iter, &srna->cont.props, api_prop_builtin);
+  api_inheritance_props_list_begin(iter, &sapi->cont.props, api_prop_builtin);
 }
 
 static ApiPtr api_Struct_props_get(CollectionPropIter *iter)
 {
   ListIter *internal = &iter->internal.list;
 
-  /* we return either PropertyRNA* or IDProperty*, the rna_access.c
-   * functions can handle both as PropertyRNA* with some tricks */
+  /* we return either ApiProp* or IdProp*, the api_access.c
+   * fns can handle both as ApiProp* with some tricks */
   return api_ptr_inherit_refine(&iter->parent, &ApiProp, internal->link);
 }
 
@@ -333,48 +329,47 @@ static void api_Struct_fns_next(CollectionPropIter *iter)
 
 static void api_Struct_fns_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
 
   /* here ptr->data should always be the same as iter->parent.type */
-  srna = (StructRNA *)ptr->data;
+  sapi = (ApiStruct *)ptr->data;
 
-  while (srna->base) {
+  while (sapi->base) {
     iter->level++;
-    srna = srna->base;
+    sapi = sapi->base;
   }
 
-  api_inheritance_fns_list_begin(iter, &srna->fns, api_fn_builtin);
+  api_inheritance_fns_list_begin(iter, &sapi->fns, api_fn_builtin);
 }
 
 static ApiPtr api_Struct_fns_get(CollectionPropIter *iter)
 {
   ListIter *internal = &iter->internal.list;
 
-  /* we return either PropertyRNA* or IDProperty*, the rna_access.c
-   * functions can handle both as PropertyRNA* with some tricks */
+  /* we return either ApiProp* or IdProp*, the api_access.c
+   * fns can handle both as ApiProp* with some tricks */
   return api_ptr_inherit_refine(&iter->parent, &ApiFn, internal->link);
 }
 
 static void api_Struct_prop_tags_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   /* here ptr->data should always be the same as iter->parent.type */
-  ApiStruct *srna = (ApiStruct *)ptr->data;
-  const EnumPropItem *tag_defines = api_struct_property_tag_defines(srna);
+  ApiStruct *sapi = (ApiStruct *)ptr->data;
+  const EnumPropItem *tag_defines = api_struct_prop_tag_defines(sapi);
   unsigned int tag_count = tag_defines ? api_enum_items_count(tag_defines) : 0;
 
-  api_iter_array_begin(
-      iter, (void *)tag_defines, sizeof(EnumPropertyItem), tag_count, 0, NULL);
+  api_iter_arr_begin(
+      iter, (void *)tag_defines, sizeof(EnumPropItem), tag_count, 0, NULL);
 }
 
-/* Builtin properties iterator re-uses the Struct properties iterator, only
+/* Builtin props iter re-uses the Struct props iter, only
  * difference is that we need to set the ptr data to the type of the struct
- * whose properties we want to iterate over. */
-
+ * whose props we want to iter over. */
 void api_builtin_props_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   ApiPtr newptr;
 
-  /* we create a new pointer with the type as the data */
+  /* we create a new ptr w the type as the data */
   newptr.type = &ApiStruct;
   newptr.data = ptr->type;
 
@@ -401,17 +396,17 @@ ApiPtr api_builtin_props_get(CollectionPropIter *iter)
   return api_Struct_props_get(iter);
 }
 
-int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, PointerRNA *r_ptr)
+int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_ptr)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
   ApiPtr propptr = {NULL};
 
-  srna = ptr->type;
+  sapi = ptr->type;
 
   do {
-    if (srna->cont.prophash) {
-      prop = lib_ghash_lookup(srna->cont.prophash, (void *)key);
+    if (sapi->cont.prophash) {
+      prop = lib_ghash_lookup(sapi->cont.prophash, (void *)key);
 
       if (prop) {
         propptr.type = &ApiProp;
@@ -422,7 +417,7 @@ int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, PointerRNA *r_
       }
     }
     else {
-      for (prop = srna->cont.properties.first; prop; prop = prop->next) {
+      for (prop = sapi->cont.props.first; prop; prop = prop->next) {
         if (!(prop->flag_internal & PROP_INTERN_BUILTIN) && STREQ(prop->identifier, key)) {
           propptr.type = &ApiProp;
           propptr.data = prop;
@@ -441,11 +436,10 @@ ApiPtr api_builtin_type_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &ApiStruct, ptr->type);
 }
 
-/* Property */
-
+/* Prop */
 static ApiStruct *api_Prop_refine(ApiPtr *ptr)
 {
-  ApiProp *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
 
   switch (api_prop_type(prop)) {
     case PROP_BOOL:
@@ -493,7 +487,7 @@ static int api_prop_name_length(ApiPtr *ptr)
   return name ? strlen(name) : 0;
 }
 
-static void api_Prop_description_get(ApiPtr *ptr, char *value)
+static void api_Prop_description_get(ApiPtr *ptr, char *val)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   const char *description = api_prop_ui_description_raw(prop);
@@ -506,16 +500,16 @@ static int api_prop_description_length(ApiPtr *ptr)
   return description ? strlen(description) : 0;
 }
 
-static void api_prop_translation_context_get(PointerRNA *ptr, char *value)
+static void api_prop_translation_cxt_get(ApiPtr *ptr, char *val)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
-  strcpy(value, api_prop_translation_context(prop));
+  strcpy(val, api_prop_translation_cxt(prop));
 }
 
-static int api_prop_translation_ctx_length(ApiPtr *ptr)
+static int api_prop_translation_cxt_length(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
-  return strlen(api_prop_translation_ctx(prop));
+  return strlen(api_prop_translation_cxt(prop));
 }
 
 static int api_prop_type_get(ApiPtr *ptr)
@@ -530,11 +524,11 @@ static int api_prop_subtype_get(ApiPtr *ptr)
   return api_prop_subtype(prop);
 }
 
-static ApiPtr api_prop_srna_get(ApiPtr *ptr)
+static ApiPtr api_prop_sapi_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   prop = api_ensure_prop(prop);
-  return api_ptr_inherit_refine(ptr, &ApiStruct, prop->srna);
+  return api_ptr_inherit_refine(ptr, &ApiStruct, prop->sapi);
 }
 
 static int api_prop_unit_get(ApiPtr *ptr)
@@ -549,32 +543,32 @@ static int api_prop_icon_get(ApiPtr *ptr)
   return api_prop_ui_icon(prop);
 }
 
-static bool api_prop_readonly_get(PointerRNA *ptr)
+static bool api_prop_readonly_get(ApipPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
 
-  /* don't use this because it will call functions that check the internal
+  /* don't use this bc it will call fns that check the internal
    * data for introspection we only need to know if it can be edited so the
    * flag is better for this */
-  /*  return RNA_property_editable(ptr, prop); */
+  /*  return apip_prop_editable(ptr, prop); */
   return (prop->flag & PROP_EDITABLE) == 0;
 }
 
-static bool api_prop_animatable_get(PointerRNA *ptr)
+static bool api_prop_animatable_get(ApiPtr *ptr)
 {
-  ApiProp *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
 
   return (prop->flag & PROP_ANIMATABLE) != 0;
 }
 
-static bool rna_Property_overridable_get(PointerRNA *ptr)
+static bool api_Prop_overridable_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
 
   IdProp *idprop = api_idprop_check(&prop, ptr);
 
-  return idprop != NULL ? (idprop->flag & IDP_FLAG_OVERRIDABLE_LIBRARY) != 0 :
-                          (prop->flag_override & PROPOVERRIDE_OVERRIDABLE_LIBRARY) != 0;
+  return idprop != NULL ? (idprop->flag & IDP_FLAG_OVERRIDABLE_LIB) != 0 :
+                          (prop->flag_override & PROPOVERRIDE_OVERRIDABLE_LIB) != 0;
 }
 
 static bool api_prop_use_output_get(ApiPotr *ptr)
@@ -583,19 +577,19 @@ static bool api_prop_use_output_get(ApiPotr *ptr)
   return (prop->flag_param & PARM_OUTPUT) != 0;
 }
 
-static bool rna_Property_is_required_get(PointerRNA *ptr)
+static bool api_Prop_is_required_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return (prop->flag_parameter & PARM_REQUIRED) != 0;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return (prop->flag_param & PARM_REQUIRED) != 0;
 }
 
-static bool rna_Property_is_argument_optional_get(PointerRNA *ptr)
+static bool api_Prop_is_arg_optional_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return (prop->flag_parameter & PARM_PYFUNC_OPTIONAL) != 0;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return (prop->flag_param & PARM_PYFUNC_OPTIONAL) != 0;
 }
 
-static bool rna_Property_is_never_none_get(PointerRNA *ptr)
+static bool api_Prop_is_never_none_get(ApiPtr *ptr)
 {
   PropertyRNA *prop = (PropertyRNA *)ptr->data;
   return (prop->flag & PROP_NEVER_NULL) != 0;
