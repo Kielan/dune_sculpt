@@ -319,7 +319,7 @@ int main(int argc,
 
   lib_threadapi_init();
 
-  STRUCTS_sdna_current_init();
+  STRUCTS_types_current_init();
 
   dune_globals_init(); /* dune.c */
 
@@ -365,7 +365,7 @@ int main(int argc,
   lib_task_scheduler_init();
 
   /* Initialize sub-systems that use `dune_appdir.h`. */
-  IMB_init();
+  imbuf_init();
 
   /* First test for background-mode (Global.background) */
   lib_args_parse(args, ARG_PASS_SETTINGS, NULL, NULL);
@@ -373,11 +373,11 @@ int main(int argc,
   main_signal_setup();
 
 #ifdef WITH_FFMPEG
-  /* Keep after #ARG_PASS_SETTINGS since debug flags are checked. */
-  IMB_ffmpeg_init();
+  /* Keep after ARG_PASS_SETTINGS since debug flags are checked. */
+  imbuf_ffmpeg_init();
 #endif
 
-  /* After ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
+  /* After ARG_PASS_SETTINGS arguments, this is so win_main_playanim skips #RNA_init. */
   api_init();
 
   render_engines_init();
@@ -402,9 +402,9 @@ int main(int argc,
   wm_init(C, argc, (const char **)argv);
 
   /* Need to be after WM init so that userpref are loaded. */
-  RE_engines_init_experimental();
+  render_engines_init_experimental();
 
-  ctx_py_init_set(C, true);
+  cxt_py_init_set(C, true);
   wm_keyconfig_init(C);
 
 #ifdef WITH_FREESTYLE
@@ -418,8 +418,7 @@ int main(int argc,
 
   /* Explicitly free data allocated for argument parsing:
    * - 'ba'
-   * - 'argv' on WIN32.
-   */
+   * - 'argv' on WIN32 */
   cb_main_atexit(&app_init_data);
   dune_atexit_unregister(cb_main_atexit, &app_init_data);
 
