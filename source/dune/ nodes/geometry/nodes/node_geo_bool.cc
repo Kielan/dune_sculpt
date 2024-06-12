@@ -1,27 +1,27 @@
-#include "BKE_geometry_set_instances.hh"
-#include "BKE_instances.hh"
-#include "BKE_mesh_boolean_convert.hh"
+#include "dune_geometry_set_instances.hh"
+#include "dune_instances.hh"
+#include "dune_mesh_bool_convert.hh"
 
-#include "DNA_mesh_types.h"
-#include "DNA_object_types.h"
+#include "types_mesh.h"
+#include "types_object.h"
 
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "GEO_randomize.hh"
+#include "gro_rand.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_boolean_cc {
+namespace dune::nodes::node_geo_bool_cc {
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  b.add_input<decl::Geometry>("Mesh 1").only_realized_data().supported_type(
-      GeometryComponent::Type::Mesh);
-  b.add_input<decl::Geometry>("Mesh 2")
-      .supported_type(GeometryComponent::Type::Mesh)
+  b.add_input<decl::Geo>("Mesh 1").only_realized_data().supported_type(
+      GeoComponent::Type::Mesh);
+  b.add_input<decl::Geo>("Mesh 2")
+      .supported_type(GeoComponent::Type::Mesh)
       .multi_input();
   b.add_input<decl::Bool>("Self Intersection");
   b.add_input<decl::Bool>("Hole Tolerant");
