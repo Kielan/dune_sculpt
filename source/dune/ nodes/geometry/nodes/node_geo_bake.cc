@@ -107,15 +107,15 @@ static const CPPType &get_item_cpp_type(const eNodeSocketDatatype socket_type)
   return *typeinfo->geo_nodes_cpp_type;
 }
 
-static bake::BakeSocketConfig make_bake_socket_config(const Span<NodeGeometryBakeItem> bake_items)
+static bake::BakeSocketConfig make_bake_socket_config(const Span<NodeGeoBakeItem> bake_items)
 {
   bake::BakeSocketConfig config;
   const int items_num = bake_items.size();
   config.domains.resize(items_num);
   config.types.resize(items_num);
-  config.geometries_by_attribute.resize(items_num);
+  config.geo_by_attribute.resize(items_num);
 
-  int last_geometry_index = -1;
+  int last_geo_index = -1;
   for (const int item_i : bake_items.index_range()) {
     const NodeGeoBakeItem &item = bake_items[item_i];
     config.types[item_i] = eNodeSocketDatatype(item.socket_type);
@@ -140,18 +140,18 @@ class LazyFnForBakeNode final : public LazyFn {
       : node_(node)
   {
     debug_name_ = "Bake";
-    const NodeGeometryBake &storage = node_storage(node);
+    const NodeGeoBake &storage = node_storage(node);
     bake_items_ = {storage.items, storage.items_num};
 
     MutableSpan<int> lf_index_by_bsocket = lf_graph_info.mapping.lf_index_by_bsocket;
 
     for (const int i : bake_items_.index_range()) {
-      const NodeGeometryBakeItem &item = bake_items_[i];
-      const bNodeSocket &input_bsocket = node.input_socket(i);
-      const bNodeSocket &output_bsocket = node.output_socket(i);
+      const NodeGeoBakeItem &item = bake_items_[i];
+      const NodeSocket &input_bsocket = node.input_socket(i);
+      const NodeSocket &output_bsocket = node.output_socket(i);
       const CPPType &type = get_item_cpp_type(eNodeSocketDatatype(item.socket_type));
       lf_index_by_bsocket[input_bsocket.index_in_tree()] = inputs_.append_and_get_index_as(
-          item.name, type, lf::ValueUsage::Maybe);
+          item.name, type, lf::ValUsage::Maybe);
       lf_index_by_bsocket[output_bsocket.index_in_tree()] = outputs_.append_and_get_index_as(
           item.name, type);
     }
@@ -159,7 +159,7 @@ class LazyFnForBakeNode final : public LazyFn {
     bake_socket_config_ = make_bake_socket_config(bake_items_);
   }
 
-  void execute_impl(lf::Params &params, const lf::Context &context) const final
+  void ex_impl(lf::Params &params, const lf::Cxt &cxt) const final
   {
     GeoNodesLFUserData &user_data = *static_cast<GeoNodesLFUserData *>(context.user_data);
     GeoNodesLFLocalUserData &local_user_data = *static_cast<GeoNodesLFLocalUserData *>(
