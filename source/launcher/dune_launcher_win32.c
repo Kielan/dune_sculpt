@@ -32,7 +32,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     return -1;
   }
 
-  /* Add dune.exe to path, resulting in the full path to the blender executable. */
+  /* Add dune.exe to path, resulting in the full path to the dune executable. */
   if (PathCchCombine(path, MAX_PATH, path, L"dune.exe") != S_OK) {
     return -1;
   }
