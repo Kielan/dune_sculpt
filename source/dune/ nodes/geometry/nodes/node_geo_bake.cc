@@ -1,52 +1,52 @@
 #include <fmt/format.h>
 
-#include "NOD_node_extra_info.hh"
-#include "NOD_rna_define.hh"
-#include "NOD_zone_socket_items.hh"
+#include "node_extra_info.hh"
+#include "node_api_define.hh"
+#include "node_zone_socket_items.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "BLI_string.h"
+#include "lib_string.h"
 
-#include "BKE_bake_geometry_nodes_modifier.hh"
-#include "BKE_bake_items_socket.hh"
-#include "BKE_context.hh"
+#include "dune_bake_geo_nodes_mod.hh"
+#include "dune_bake_items_socket.hh"
+#include "dune_cxt.hh"
 
-#include "ED_node.hh"
+#include "ed_node.hh"
 
-#include "DNA_modifier_types.h"
+#include "types_mod.h"
 
-#include "RNA_access.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_prototypes.h"
 
-#include "MOD_nodes.hh"
+#include "mod_nodes.hh"
 
-#include "WM_api.hh"
+#include "win_api.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_bake_cc {
+namespace dune::nodes::node_geo_bake_cc {
 
-namespace bake = bke::bake;
+namespace bake = dune::bake;
 
-NODE_STORAGE_FUNCS(NodeGeometryBake)
+NODE_STORAGE_FNS(NodeGeoBake)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  const bNode *node = b.node_or_null();
+  const Node *node = b.node_or_null();
   if (!node) {
     return;
   }
-  const NodeGeometryBake &storage = node_storage(*node);
+  const NodeGeoBake &storage = node_storage(*node);
 
   for (const int i : IndexRange(storage.items_num)) {
-    const NodeGeometryBakeItem &item = storage.items[i];
+    const NodeGeoBakeItem &item = storage.items[i];
     const eNodeSocketDatatype socket_type = eNodeSocketDatatype(item.socket_type);
     const StringRef name = item.name;
-    const std::string identifier = BakeItemsAccessor::socket_identifier_for_item(item);
-    auto &input_decl = b.add_input(socket_type, name, identifier);
-    auto &output_decl = b.add_output(socket_type, name, identifier);
+    const std::string id = BakeItemsAccessor::socket_id_for_item(item);
+    auto &input_decl = b.add_input(socket_type, name, id);
+    auto &output_decl = b.add_output(socket_type, name, id);
     if (socket_type_supports_fields(socket_type)) {
       input_decl.supports_field();
       if (item.flag & GEO_NODE_BAKE_ITEM_IS_ATTRIBUTE) {
@@ -61,11 +61,11 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_output<decl::Extend>("", "__extend__");
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryBake *data = MEM_cnew<NodeGeometryBake>(__func__);
+  NodeGeoBake *data = mem_cnew<NodeGeoBake>(__func__);
 
-  data->items = MEM_cnew_array<NodeGeometryBakeItem>(1, __func__);
+  data->items = mem_cnew_array<NodeGeoBakeItem>(1, __func__);
   data->items_num = 1;
 
   NodeGeometryBakeItem &item = data->items[0];
