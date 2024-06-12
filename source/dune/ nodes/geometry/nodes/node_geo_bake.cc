@@ -69,15 +69,15 @@ static void node_init(NodeTree * /*tree*/, Node *node)
   data->items_num = 1;
 
   NodeGeometryBakeItem &item = data->items[0];
-  item.name = BLI_strdup("Geometry");
-  item.identifier = data->next_identifier++;
-  item.attribute_domain = int16_t(AttrDomain::Point);
-  item.socket_type = SOCK_GEOMETRY;
+  item.name = lib_strdup("Geo");
+  item.id = data->next_id++;
+  item.attr_domain = int16_t(AttrDomain::Point);
+  item.socket_type = SOCK_GEO;
 
   node->storage = data;
 }
 
-static void node_free_storage(bNode *node)
+static void node_free_storage(Node *node)
 {
   socket_items::destruct_array<BakeItemsAccessor>(*node);
   mem_freen(node->storage);
@@ -113,7 +113,7 @@ static bake::BakeSocketConfig make_bake_socket_config(const Span<NodeGeoBakeItem
   const int items_num = bake_items.size();
   config.domains.resize(items_num);
   config.types.resize(items_num);
-  config.geo_by_attribute.resize(items_num);
+  config.geo_by_attr.resize(items_num);
 
   int last_geo_index = -1;
   for (const int item_i : bake_items.index_range()) {
@@ -163,7 +163,7 @@ class LazyFnForBakeNode final : public LazyFn {
   {
     GeoNodesLFUserData &user_data = *static_cast<GeoNodesLFUserData *>(context.user_data);
     GeoNodesLFLocalUserData &local_user_data = *static_cast<GeoNodesLFLocalUserData *>(
-        context.local_user_data);
+        cxt.local_user_data);
     if (!user_data.call_data->self_object()) {
       /* The self object is currently required for generating anonymous attribute names. */
       this->set_default_outputs(params);
@@ -173,7 +173,7 @@ class LazyFnForBakeNode final : public LazyFn {
       this->set_default_outputs(params);
       return;
     }
-    std::optional<FoundNestedNodeID> found_id = find_nested_node_id(user_data, node_.identifier);
+    std::optional<FoundNestedNodeId> found_id = find_nested_node_id(user_data, node_.identifier);
     if (!found_id) {
       this->set_default_outputs(params);
       return;
@@ -193,7 +193,7 @@ class LazyFnForBakeNode final : public LazyFn {
     else if (auto *info = std::get_if<sim_output::ReadInterpolated>(behavior)) {
       this->output_mixed_cached_state(params,
                                       *user_data.call_data->self_object(),
-                                      *user_data.compute_context,
+                                      *user_data.compute_cxt,
                                       info->prev_state,
                                       info->next_state,
                                       info->mix_factor);
@@ -209,12 +209,12 @@ class LazyFnForBakeNode final : public LazyFn {
               user_data))
       {
         tree_logger->node_warnings.append(
-            {node_.identifier, {NodeWarningType::Error, info->message}});
+            {node_.id, {NodeWarningType::Error, info->msg}});
       }
       this->set_default_outputs(params);
     }
     else {
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
     }
   }
 
@@ -230,14 +230,14 @@ class LazyFnForBakeNode final : public LazyFn {
       /* Wait for inputs to be computed. */
       return;
     }
-    Array<void *> output_values(bake_items_.size());
+    Array<void *> output_vals(bake_items_.size());
     for (const int i : bake_items_.index_range()) {
       output_values[i] = params.get_output_data_ptr(i);
     }
-    this->move_bake_state_to_values(std::move(*bake_state),
+    this->move_bake_state_to_vals(std::move(*bake_state),
                                     *user_data.call_data->self_object(),
-                                    *user_data.compute_context,
-                                    output_values);
+                                    *user_data.compute_cxt,
+                                    output_vals);
     for (const int i : bake_items_.index_range()) {
       params.output_set(i);
     }
@@ -260,14 +260,14 @@ class LazyFnForBakeNode final : public LazyFn {
                            GeoNodesLFUserData &user_data,
                            const bake::BakeStateRef &bake_state) const
   {
-    Array<void *> output_values(bake_items_.size());
+    Array<void *> output_vals(bake_items_.size());
     for (const int i : bake_items_.index_range()) {
-      output_values[i] = params.get_output_data_ptr(i);
+      output_vals[i] = params.get_output_data_ptr(i);
     }
-    this->copy_bake_state_to_values(bake_state,
+    this->copy_bake_state_to_vals(bake_state,
                                     *user_data.call_data->self_object(),
                                     *user_data.compute_context,
-                                    output_values);
+                                    output_vals);
     for (const int i : bake_items_.index_range()) {
       params.output_set(i);
     }
@@ -275,12 +275,12 @@ class LazyFnForBakeNode final : public LazyFn {
 
   void output_mixed_cached_state(lf::Params &params,
                                  const Object &self_object,
-                                 const ComputeContext &compute_context,
+                                 const ComputeCxt &compute_cxt,
                                  const bake::BakeStateRef &prev_state,
                                  const bake::BakeStateRef &next_state,
                                  const float mix_factor) const
   {
-    Array<void *> output_values(bake_items_.size());
+    Array<void *> output_vals(bake_items_.size());
     for (const int i : bake_items_.index_range()) {
       output_values[i] = params.get_output_data_ptr(i);
     }
