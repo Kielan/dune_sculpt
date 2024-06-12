@@ -284,9 +284,9 @@ class LazyFnForBakeNode final : public LazyFn {
     for (const int i : bake_items_.index_range()) {
       output_values[i] = params.get_output_data_ptr(i);
     }
-    this->copy_bake_state_to_values(prev_state, self_object, compute_context, output_values);
+    this->copy_bake_state_to_vals(prev_state, self_object, compute_context, output_values);
 
-    Array<void *> next_values(bake_items_.size());
+    Array<void *> next_vals(bake_items_.size());
     LinearAllocator<> allocator;
     for (const int i : bake_items_.index_range()) {
       const CPPType &type = *outputs_[i].type;
@@ -296,8 +296,8 @@ class LazyFnForBakeNode final : public LazyFn {
 
     for (const int i : bake_items_.index_range()) {
       mix_baked_data_item(eNodeSocketDatatype(bake_items_[i].socket_type),
-                          output_values[i],
-                          next_values[i],
+                          output_vals[i],
+                          next_vals[i],
                           mix_factor);
     }
 
@@ -322,15 +322,15 @@ class LazyFnForBakeNode final : public LazyFn {
       return std::nullopt;
     }
 
-    Array<std::unique_ptr<bake::BakeItem>> bake_items = bake::move_socket_values_to_bake_items(
+    Array<std::unique_ptr<bake::BakeItem>> bake_items = bake::move_socket_vals_to_bake_items(
         input_values, bake_socket_config_);
 
     bake::BakeState bake_state;
     for (const int i : bake_items_.index_range()) {
-      const NodeGeometryBakeItem &item = bake_items_[i];
+      const NodeGeoBakeItem &item = bake_items_[i];
       std::unique_ptr<bake::BakeItem> &bake_item = bake_items[i];
       if (bake_item) {
-        bake_state.items_by_id.add_new(item.identifier, std::move(bake_item));
+        bake_state.items_by_id.add_new(item.id, std::move(bake_item));
       }
     }
     return bake_state;
