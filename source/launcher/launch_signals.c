@@ -239,7 +239,7 @@ void main_signal_setup_background(void)
  lib_assert(G.background);
 
 #  if !defined(WITH_HEADLESS)
-  /* Support pressing `Ctrl-C` to close Blender in background-mode.
+  /* Support pressing `Ctrl-C` to close Dune in background-mode.
    * Useful to be able to cancel a render operation. */
   signal(SIGINT, sig_handle_blender_esc);
 #  endif
