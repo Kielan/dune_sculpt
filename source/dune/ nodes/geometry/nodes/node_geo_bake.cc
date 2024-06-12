@@ -80,19 +80,19 @@ static void node_init(NodeTree * /*tree*/, Node *node)
 static void node_free_storage(bNode *node)
 {
   socket_items::destruct_array<BakeItemsAccessor>(*node);
-  MEM_freeN(node->storage);
+  mem_freen(node->storage);
 }
 
-static void node_copy_storage(bNodeTree * /*tree*/, bNode *dst_node, const bNode *src_node)
+static void node_copy_storage(NodeTree * /*tree*/, bNode *dst_node, const bNode *src_node)
 {
-  const NodeGeometryBake &src_storage = node_storage(*src_node);
-  auto *dst_storage = MEM_new<NodeGeometryBake>(__func__, src_storage);
+  const NodeGeoBake &src_storage = node_storage(*src_node);
+  auto *dst_storage = mem_new<NodeGeoBake>(__func__, src_storage);
   dst_node->storage = dst_storage;
 
   socket_items::copy_array<BakeItemsAccessor>(*src_node, *dst_node);
 }
 
-static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
+static bool node_insert_link(NodeTree *ntree, Node *node, NodeLink *link)
 {
   return socket_items::try_add_item_via_any_extend_socket<BakeItemsAccessor>(
       *ntree, *node, *node, *link);
@@ -101,10 +101,10 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
 static const CPPType &get_item_cpp_type(const eNodeSocketDatatype socket_type)
 {
   const char *socket_idname = nodeStaticSocketType(socket_type, 0);
-  const bNodeSocketType *typeinfo = nodeSocketTypeFind(socket_idname);
-  BLI_assert(typeinfo);
-  BLI_assert(typeinfo->geometry_nodes_cpp_type);
-  return *typeinfo->geometry_nodes_cpp_type;
+  const NodeSocketType *typeinfo = nodeSocketTypeFind(socket_idname);
+  lib_assert(typeinfo);
+  lib_assert(typeinfo->geo_nodes_cpp_type);
+  return *typeinfo->geo_nodes_cpp_type;
 }
 
 static bake::BakeSocketConfig make_bake_socket_config(const Span<NodeGeometryBakeItem> bake_items)
