@@ -3,7 +3,7 @@
 
 #include "types_collection.h"
 
-#include "NOD_api_define.hh"
+#include "node_api_define.hh"
 
 #include "ui.hh"
 #include "ui_resources.hh"
@@ -11,15 +11,15 @@
 #include "dune_collection.h"
 #include "dune_instances.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
 #include <algorithm>
 
 namespace dune::nodes::node_geo_collection_info_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCollectionInfo)
+NODE_STORAGE_FNS(NodeGeoCollectionInfo)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
   b.add_input<decl::Collection>("Collection").hide_label();
   b.add_input<decl::Bool>("Separate Children")
@@ -29,17 +29,17 @@ static void node_declare(NodeDeclarationBuilder &b)
       .description(
           "Reset the transforms of every child instance in the output. Only used when Separate "
           "Children is enabled");
-  b.add_output<decl::Geometry>("Instances");
+  b.add_output<decl::Geo>("Instances");
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "transform_space", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryCollectionInfo *data = MEM_cnew<NodeGeometryCollectionInfo>(__func__);
+  NodeGeoCollectionInfo *data = mem_cnew<NodeGeoCollectionInfo>(__func__);
   data->transform_space = GEO_NODE_TRANSFORM_SPACE_ORIGINAL;
   node->storage = data;
 }
@@ -58,20 +58,20 @@ static void node_geo_ex(GeoNodeExParams params)
     params.set_default_remaining_outputs();
     return;
   }
-  const Object *self_object = params.self_object();
-  const bool is_recursive = BKE_collection_has_object_recursive_instanced(
-      collection, const_cast<Object *>(self_object));
+  const Ob *self_ob = params.self_ob();
+  const bool is_recursive = dune_collection_has_object_recursive_instanced(
+      collection, const_cast<Ob *>(self_object));
   if (is_recursive) {
-    params.err_msg_add(NodeWarningType::Error, TIP_("Collection contains current object"));
+    params.err_msg_add(NodeWarningType::Error, TIP_("Collection contains current ob"));
     params.set_default_remaining_outputs();
     return;
   }
 
-  const NodeGeometryCollectionInfo &storage = node_storage(params.node());
+  const NodeGeoCollectionInfo &storage = node_storage(params.node());
   const bool use_relative_transform = (storage.transform_space ==
                                        GEO_NODE_TRANSFORM_SPACE_RELATIVE);
 
-  std::unique_ptr<bke::Instances> instances = std::make_unique<bke::Instances>();
+  std::unique_ptr<dune::Instances> instances = std::make_unique<dune::Instances>();
 
   const bool separate_children = params.get_input<bool>("Separate Children");
   if (separate_children) {
@@ -86,25 +86,25 @@ static void node_geo_ex(GeoNodeExParams params)
     }
 
     Vector<InstanceListEntry> entries;
-    entries.reserve(children_collections.size() + children_objects.size());
+    entries.reserve(children_collections.size() + children_obs.size());
 
     for (Collection *child_collection : children_collections) {
-      float4x4 transform = float4x4::identity();
+      float4x4 transform = float4x4::id();
       if (!reset_children) {
         transform.location() += float3(child_collection->instance_offset);
         if (use_relative_transform) {
-          transform = float4x4(self_object->world_to_object) * transform;
+          transform = float4x4(self_ob->world_to_ob) * transform;
         }
         else {
           transform.location() -= float3(collection->instance_offset);
         }
       }
-      const int handle = instances->add_reference(*child_collection);
+      const int handle = instances->add_ref(*child_collection);
       entries.append({handle, &(child_collection->id.name[2]), transform});
     }
     for (Ob *child_ob : children_obs) {
       const int handle = instances->add_ref(*child_ob);
-      float4x4 transform = float4x4::identity();
+      float4x4 transform = float4x4::id();
       if (!reset_children) {
         if (use_relative_transform) {
           transform = float4x4(self_ob->world_to_ob);
@@ -127,13 +127,13 @@ static void node_geo_ex(GeoNodeExParams params)
     }
   }
   else {
-    float4x4 transform = float4x4::identity();
+    float4x4 transform = float4x4::id();
     if (use_relative_transform) {
       transform.location() = collection->instance_offset;
       transform = float4x4_view(self_object->world_to_object) * transform;
     }
 
-    const int handle = instances->add_reference(*collection);
+    const int handle = instances->add_ref(*collection);
     instances->add_instance(handle, transform);
   }
 
@@ -142,7 +142,7 @@ static void node_geo_ex(GeoNodeExParams params)
 
 static void node_api(ApiStruct *sapi)
 {
-  static const EnumPropertyItem rna_node_geometry_collection_info_transform_space_items[] = {
+  static const EnumPropItem rna_node_geometry_collection_info_transform_space_items[] = {
       {GEO_NODE_TRANSFORM_SPACE_ORIGINAL,
        "ORIGINAL",
        0,
@@ -152,7 +152,7 @@ static void node_api(ApiStruct *sapi)
        "RELATIVE",
        0,
        "Relative",
-       "Bring the input collection geometry into the modified object, maintaining the relative "
+       "Bring the input collection geo into the modified ob, maintaining the relative "
        "position between the objects in the scene"},
       {0, nullptr, 0, nullptr, nullptr},
   };
@@ -161,29 +161,29 @@ static void node_api(ApiStruct *sapi)
       sapi,
       "transform_space",
       "Transform Space",
-      "The transformation of the instances output. Does not affect the internal geometry",
-      rna_node_geometry_collection_info_transform_space_items,
-      NOD_storage_enum_accessors(transform_space),
+      "The transformation of the instances output. Does not affect the internal geo",
+      api_node_geo_collection_info_transform_space_items,
+      node_storage_enum_accessors(transform_space),
       GEO_NODE_TRANSFORM_SPACE_ORIGINAL);
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
 
   geo_node_type_base(&ntype, GEO_NODE_COLLECTION_INFO, "Collection Info", NODE_CLASS_INPUT);
-  ntype.declare = node_declare;
-  ntype.initfunc = node_node_init;
+  ntype.dec = node_decl;
+  ntype.initfn = node_node_init;
   node_type_storage(&ntype,
-                    "NodeGeometryCollectionInfo",
+                    "NodeGeoCollectionInfo",
                     node_free_standard_storage,
                     node_copy_standard_storage);
-  ntype.geometry_node_execute = node_geo_exec;
-  ntype.draw_buttons = node_layout;
+  ntype.geo_node_ex = node_geo_ex;
+  ntype.draw_btns = node_layout;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_api(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_collection_info_cc
+}  // namespace dune::nodes::node_geo_collection_info_cc
