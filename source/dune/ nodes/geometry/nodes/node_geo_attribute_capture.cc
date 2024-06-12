@@ -1,38 +1,38 @@
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "BKE_attribute_math.hh"
+#include "dune_attr_math.hh"
 
-#include "NOD_socket_search_link.hh"
+#include "node_socket_search_link.hh"
 
-#include "RNA_enum_types.hh"
+#include "api_enum_types.hh"
 
 #include "node_geometry_util.hh"
 
-namespace blender::nodes::node_geo_attribute_capture_cc {
+namespace dune::nodes::node_geo_attr_capture_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryAttributeCapture)
+NODE_STORAGE_FNS(NodeGeometryAttrCapture)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  const bNode *node = b.node_or_null();
+  const Node *node = b.node_or_null();
 
   b.add_input<decl::Geometry>("Geometry");
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node_storage(*node).data_type);
-    b.add_input(data_type, "Value").field_on_all();
+    b.add_input(data_type, "Val").field_on_all();
   }
 
   b.add_output<decl::Geometry>("Geometry").propagate_all();
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node_storage(*node).data_type);
-    b.add_output(data_type, "Attribute").field_on_all();
+    b.add_output(data_type, "Attr").field_on_all();
   }
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -40,9 +40,9 @@ static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
   uiItemR(layout, ptr, "domain", UI_ITEM_NONE, "", ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryAttributeCapture *data = MEM_cnew<NodeGeometryAttributeCapture>(__func__);
+  NodeGeometryAttrCapture *data = mem_cnew<NodeGeometryAttrCapture>(__func__);
   data->data_type = CD_PROP_FLOAT;
   data->domain = int8_t(AttrDomain::Point);
 
@@ -51,49 +51,49 @@ static void node_init(bNodeTree * /*tree*/, bNode *node)
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
 {
-  const NodeDeclaration &declaration = *params.node_type().static_declaration;
-  search_link_ops_for_declarations(params, declaration.inputs);
-  search_link_ops_for_declarations(params, declaration.outputs);
+  const NodeDeclaration &decl = *params.node_type().static_decl;
+  search_link_ops_for_declarations(params, decl.inputs);
+  search_link_ops_for_declarations(params, decl.outputs);
 
-  const bNodeType &node_type = params.node_type();
-  const std::optional<eCustomDataType> type = bke::socket_type_to_custom_data_type(
+  const NodeType &node_type = params.node_type();
+  const std::optional<eCustomDataType> type = dune::socket_type_to_custom_data_type(
       eNodeSocketDatatype(params.other_socket().type));
   if (type && *type != CD_PROP_STRING) {
     if (params.in_out() == SOCK_OUT) {
-      params.add_item(IFACE_("Attribute"), [node_type, type](LinkSearchOpParams &params) {
-        bNode &node = params.add_node(node_type);
+      params.add_item(IFACE_("Attr"), [node_type, type](LinkSearchOpParams &params) {
+        Node &node = params.add_node(node_type);
         node_storage(node).data_type = *type;
-        params.update_and_connect_available_socket(node, "Attribute");
+        params.update_and_connect_available_socket(node, "Attr");
       });
     }
     else {
-      params.add_item(IFACE_("Value"), [node_type, type](LinkSearchOpParams &params) {
-        bNode &node = params.add_node(node_type);
+      params.add_item(IFACE_("Val"), [node_type, type](LinkSearchOpParams &params) {
+        Node &node = params.add_node(node_type);
         node_storage(node).data_type = *type;
-        params.update_and_connect_available_socket(node, "Value");
+        params.update_and_connect_available_socket(node, "Val");
       });
     }
   }
 }
 
-static void clean_unused_attributes(const AnonymousAttributePropagationInfo &propagation_info,
-                                    const Set<AttributeIDRef> &skip,
+static void clean_unused_attrs(const AnonymousAttrPropInfo &prop_info,
+                                    const Set<AttrIdRef> &skip,
                                     GeometryComponent &component)
 {
-  std::optional<MutableAttributeAccessor> attributes = component.attributes_for_write();
-  if (!attributes.has_value()) {
+  std::optional<MutableAttrAccessor> attrs = component.attributes_for_write();
+  if (!attrs.has_val()) {
     return;
   }
 
   Vector<std::string> unused_ids;
-  attributes->for_all([&](const AttributeIDRef &id, const AttributeMetaData /*meta_data*/) {
+  attrs->for_all([&](const AttrIdRef &id, const AttrMetaData /*meta_data*/) {
     if (!id.is_anonymous()) {
       return true;
     }
     if (skip.contains(id)) {
       return true;
     }
-    if (propagation_info.propagate(id.anonymous_id())) {
+    if (prop_info.propagate(id.anonymous_id())) {
       return true;
     }
     unused_ids.append(id.name());
@@ -101,107 +101,107 @@ static void clean_unused_attributes(const AnonymousAttributePropagationInfo &pro
   });
 
   for (const std::string &unused_id : unused_ids) {
-    attributes->remove(unused_id);
+    attrs->remove(unused_id);
   }
 }
 
-static void node_geo_exec(GeoNodeExecParams params)
+static void node_geo_ex(GeoNodeExParams params)
 {
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry");
+  GeoSet geo_set = params.extract_input<GeoSet>("Geo");
 
-  if (!params.output_is_required("Geometry")) {
-    params.error_message_add(
+  if (!params.output_is_required("Geo")) {
+    params.err_msg_add(
         NodeWarningType::Info,
-        TIP_("The attribute output can not be used without the geometry output"));
+        TIP_("The attr output can not be used wo the geo output"));
     params.set_default_remaining_outputs();
     return;
   }
 
-  const NodeGeometryAttributeCapture &storage = node_storage(params.node());
+  const NodeGeoAttrCapture &storage = node_storage(params.node());
   const AttrDomain domain = AttrDomain(storage.domain);
 
-  AnonymousAttributeIDPtr attribute_id = params.get_output_anonymous_attribute_id_if_needed(
-      "Attribute");
-  if (!attribute_id) {
-    params.set_output("Geometry", geometry_set);
+  AnonymousAttrIdPtr attr_id = params.get_output_anonymous_attr_id_if_needed(
+      "Attr");
+  if (!attr_id) {
+    params.set_output("Geo", geo_set);
     params.set_default_remaining_outputs();
     return;
   }
 
-  const GField field = params.extract_input<GField>("Value");
+  const GField field = params.extract_input<GField>("Val");
 
-  const auto capture_on = [&](GeometryComponent &component) {
-    bke::try_capture_field_on_geometry(component, *attribute_id, domain, field);
-    /* Changing of the anonymous attributes may require removing attributes that are no longer
+  const auto capture_on = [&](GeoComponent &component) {
+    dune::try_capture_field_on_geo(component, *attr_id, domain, field);
+    /* Changing of the anonymous attrs may require removing attrs that are no longer
      * needed. */
-    clean_unused_attributes(
-        params.get_output_propagation_info("Geometry"), {*attribute_id}, component);
+    clean_unused_attrs(
+        params.get_output_prop_info("Geo"), {*attr_id}, component);
   };
 
   /* Run on the instances component separately to only affect the top level of instances. */
   if (domain == AttrDomain::Instance) {
-    if (geometry_set.has_instances()) {
-      capture_on(geometry_set.get_component_for_write(GeometryComponent::Type::Instance));
+    if (geo_set.has_instances()) {
+      capture_on(geo_set.get_component_for_write(GeoComponent::Type::Instance));
     }
   }
   else {
-    static const Array<GeometryComponent::Type> types = {GeometryComponent::Type::Mesh,
-                                                         GeometryComponent::Type::PointCloud,
-                                                         GeometryComponent::Type::Curve,
-                                                         GeometryComponent::Type::GreasePencil};
+    static const Array<GeoComponent::Type> types = {GeoComponent::Type::Mesh,
+                                                    GeoComponent::Type::PointCloud,
+                                                    GeoComponent::Type::Curve,
+                                                    GeoComponent::Type::Pen};
 
-    geometry_set.modify_geometry_sets([&](GeometrySet &geometry_set) {
-      for (const GeometryComponent::Type type : types) {
-        if (geometry_set.has(type)) {
-          capture_on(geometry_set.get_component_for_write(type));
+    geo_set.modify_geo_sets([&](GeoSet &geo_set) {
+      for (const GeoComponent::Type type : types) {
+        if (geo_set.has(type)) {
+          capture_on(geo_set.get_component_for_write(type));
         }
       }
     });
   }
 
-  params.set_output("Geometry", geometry_set);
+  params.set_output("Geo", geo_set);
 }
 
-static void node_rna(StructRNA *srna)
+static void node_api(ApiStruct *sapi)
 {
-  RNA_def_node_enum(srna,
+  api_def_node_enum(sapi,
                     "data_type",
                     "Data Type",
-                    "Type of data stored in attribute",
-                    rna_enum_attribute_type_items,
-                    NOD_storage_enum_accessors(data_type),
+                    "Type of data stored in attr",
+                    api_enum_attr_type_items,
+                    node_storage_enum_accessors(data_type),
                     CD_PROP_FLOAT,
-                    enums::attribute_type_type_with_socket_fn);
+                    enums::attr_type_type_with_socket_fn);
 
-  RNA_def_node_enum(srna,
+  api_def_node_enum(sapi,
                     "domain",
                     "Domain",
                     "Which domain to store the data in",
-                    rna_enum_attribute_domain_items,
-                    NOD_storage_enum_accessors(domain),
+                    api_enum_attr_domain_items,
+                    node_storage_enum_accessors(domain),
                     int8_t(AttrDomain::Point),
-                    enums::domain_experimental_grease_pencil_version3_fn);
+                    enums::domain_experimental_pen_version3_fn);
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
 
   geo_node_type_base(
-      &ntype, GEO_NODE_CAPTURE_ATTRIBUTE, "Capture Attribute", NODE_CLASS_ATTRIBUTE);
+      &ntype, GEO_NODE_CAPTURE_ATTRIBUTE, "Capture Attr", NODE_CLASS_ATTRIBUTE);
   node_type_storage(&ntype,
-                    "NodeGeometryAttributeCapture",
+                    "NodeGeoAttrCapture",
                     node_free_standard_storage,
                     node_copy_standard_storage);
   ntype.initfn = node_init;
   ntype.declare = node_declare;
-  ntype.geometry_node_ex = node_geo_ex;
-  ntype.draw_buttons = node_layout;
+  ntype.geo_node_ex = node_geo_ex;
+  ntype.drw_btns = node_layout;
   ntype.gather_link_search_ops = node_gather_link_searches;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_api(ntype.api_ext.sapi);
 }
 NOD_REGISTER_NODE(node_register)
 
-}  // namespace dune::nodes::node_geo_attribute_capture_cc
+}  // namespace dune::nodes::node_geo_attr_capture_cc
