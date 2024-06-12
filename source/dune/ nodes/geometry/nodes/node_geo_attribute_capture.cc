@@ -9,17 +9,17 @@
 
 #include "api_enum_types.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
 namespace dune::nodes::node_geo_attr_capture_cc {
 
-NODE_STORAGE_FNS(NodeGeometryAttrCapture)
+NODE_STORAGE_FNS(NodeGeoAttrCapture)
 
 static void node_decl(NodeDeclBuilder &b)
 {
   const Node *node = b.node_or_null();
 
-  b.add_input<decl::Geometry>("Geometry");
+  b.add_input<decl::Geo>("Geo");
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node_storage(*node).data_type);
     b.add_input(data_type, "Val").field_on_all();
@@ -42,7 +42,7 @@ static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 
 static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryAttrCapture *data = mem_cnew<NodeGeometryAttrCapture>(__func__);
+  NodeGeoAttrCapture *data = mem_cnew<NodeGeoAttrCapture>(__func__);
   data->data_type = CD_PROP_FLOAT;
   data->domain = int8_t(AttrDomain::Point);
 
@@ -51,7 +51,7 @@ static void node_init(NodeTree * /*tree*/, Node *node)
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
 {
-  const NodeDeclaration &decl = *params.node_type().static_decl;
+  const NodeDecl &decl = *params.node_type().static_decl;
   search_link_ops_for_declarations(params, decl.inputs);
   search_link_ops_for_declarations(params, decl.outputs);
 
@@ -77,10 +77,10 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
 }
 
 static void clean_unused_attrs(const AnonymousAttrPropInfo &prop_info,
-                                    const Set<AttrIdRef> &skip,
-                                    GeometryComponent &component)
+                               const Set<AttrIdRef> &skip,
+                               GeometryComponent &component)
 {
-  std::optional<MutableAttrAccessor> attrs = component.attributes_for_write();
+  std::optional<MutableAttrAccessor> attrs = component.attrs_for_write();
   if (!attrs.has_val()) {
     return;
   }
@@ -180,7 +180,7 @@ static void node_api(ApiStruct *sapi)
                     api_enum_attr_domain_items,
                     node_storage_enum_accessors(domain),
                     int8_t(AttrDomain::Point),
-                    enums::domain_experimental_pen_version3_fn);
+                    enums::domain_experimental_pen_v3_fn);
 }
 
 static void node_register()
@@ -188,7 +188,7 @@ static void node_register()
   static NodeType ntype;
 
   geo_node_type_base(
-      &ntype, GEO_NODE_CAPTURE_ATTRIBUTE, "Capture Attr", NODE_CLASS_ATTRIBUTE);
+      &ntype, GEO_NODE_CAPTURE_ATTRIBUTE, "Capture Attr", NODE_CLASS_ATTR);
   node_type_storage(&ntype,
                     "NodeGeoAttrCapture",
                     node_free_standard_storage,
