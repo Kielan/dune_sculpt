@@ -7,7 +7,7 @@
 #include "lib_vector.hh"
 #include "lib_virtual_array.hh"
 
-#include "dune_attribute_math.hh"
+#include "dune_attr_math.hh"
 #include "dune_curves.hh"
 #include "dune_geo_fields.hh"
 #include "dune_pen.hh"
@@ -88,10 +88,10 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
     /* This node does not support boolean sockets, use integer instead. */
     fixed_data_type = CD_PROP_INT32;
   }
-  params.add_item(IFACE_("Value"), [node_type, fixed_data_type](LinkSearchOpParams &params) {
-    bNode &node = params.add_node(node_type);
+  params.add_item(IFACE_("Val"), [node_type, fixed_data_type](LinkSearchOpParams &params) {
+    Node &node = params.add_node(node_type);
     node.custom1 = fixed_data_type;
-    params.update_and_connect_available_socket(node, "Value");
+    params.update_and_connect_available_socket(node, "Val");
   });
 }
 
@@ -100,13 +100,13 @@ static void build_vert_to_vert_by_edge_map(const Span<int2> edges,
                                            Array<int> &r_offsets,
                                            Array<int> &r_indices)
 {
-  bke::mesh::build_vert_to_edge_map(edges, verts_num, r_offsets, r_indices);
+  dune::mesh::build_vert_to_edge_map(edges, verts_num, r_offsets, r_indices);
   const OffsetIndices<int> offsets(r_offsets);
   threading::parallel_for(IndexRange(verts_num), 2048, [&](const IndexRange range) {
     for (const int vert : range) {
       MutableSpan<int> neighbors = r_indices.as_mutable_span().slice(offsets[vert]);
       for (const int i : neighbors.index_range()) {
-        neighbors[i] = bke::mesh::edge_other_vert(edges[neighbors[i]], vert);
+        neighbors[i] = dune::mesh::edge_other_vert(edges[neighbors[i]], vert);
       }
     }
   });
@@ -211,27 +211,27 @@ static GroupedSpan<int> create_mesh_map(const Mesh &mesh,
           mesh.faces(), mesh.corner_edges(), mesh.edges_num, r_offsets, r_indices);
       break;
     default:
-      BLI_assert_unreachable();
+      lib_assert_unreachable();
       break;
   }
   return {OffsetIndices<int>(r_offsets), r_indices};
 }
 
 template<typename T>
-static Span<T> blur_on_mesh_exec(const Span<float> neighbor_weights,
-                                 const GroupedSpan<int> neighbors_map,
-                                 const int iterations,
-                                 const MutableSpan<T> buffer_a,
-                                 const MutableSpan<T> buffer_b)
+static Span<T> blur_on_mesh_ex(const Span<float> neighbor_weights,
+                               const GroupedSpan<int> neighbors_map,
+                               const int iters,
+                               const MutableSpan<T> buf_a,
+                               const MutableSpan<T> buf_b)
 {
-  /* Source is set to buffer_b even though it is actually in buffer_a because the loop below starts
+  /* Src is set to buf_b even tho it is actually in buf_a bc the loop below starts
    * with swapping both. */
-  MutableSpan<T> src = buffer_b;
-  MutableSpan<T> dst = buffer_a;
+  MutableSpan<T> src = buf_b;
+  MutableSpan<T> dst = buf_a;
 
-  for ([[maybe_unused]] const int64_t iteration : IndexRange(iterations)) {
+  for ([[maybe_unused]] const int64_t iter : IndexRange(iters)) {
     std::swap(src, dst);
-    bke::attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
+    dune::attr_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
     threading::parallel_for(dst.index_range(), 1024, [&](const IndexRange range) {
       for (const int64_t index : range) {
         const Span<int> neighbors = neighbors_map[index];
@@ -250,43 +250,43 @@ static Span<T> blur_on_mesh_exec(const Span<float> neighbor_weights,
 
 static GSpan blur_on_mesh(const Mesh &mesh,
                           const AttrDomain domain,
-                          const int iterations,
+                          const int iters,
                           const Span<float> neighbor_weights,
-                          const GMutableSpan buffer_a,
-                          const GMutableSpan buffer_b)
+                          const GMutableSpan buf_a,
+                          const GMutableSpan buf_b)
 {
   Array<int> neighbor_offsets;
   Array<int> neighbor_indices;
   const GroupedSpan<int> neighbors_map = create_mesh_map(
       mesh, domain, neighbor_offsets, neighbor_indices);
 
-  GSpan result_buffer;
-  bke::attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
+  GSpan result_buf;
+  dune::attr_math::convert_to_static_type(buf_a.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_same_v<T, bool>) {
-      result_buffer = blur_on_mesh_exec<T>(
-          neighbor_weights, neighbors_map, iterations, buffer_a.typed<T>(), buffer_b.typed<T>());
+      result_buf = blur_on_mesh_ex<T>(
+          neighbor_weights, neighbors_map, iters, buf_a.typed<T>(), buf_b.typed<T>());
     }
   });
-  return result_buffer;
+  return result_buf;
 }
 
 template<typename T>
-static Span<T> blur_on_curve_exec(const bke::CurvesGeometry &curves,
-                                  const Span<float> neighbor_weights,
-                                  const int iterations,
-                                  const MutableSpan<T> buffer_a,
-                                  const MutableSpan<T> buffer_b)
+static Span<T> blur_on_curve_ex(const dune::CurvesGeo &curves,
+                                const Span<float> neighbor_weights,
+                                const int iters,
+                                const MutableSpan<T> buf_a,
+                                const MutableSpan<T> buf_b)
 {
-  MutableSpan<T> src = buffer_b;
-  MutableSpan<T> dst = buffer_a;
+  MutableSpan<T> src = buf_b;
+  MutableSpan<T> dst = buf_a;
 
   const OffsetIndices points_by_curve = curves.points_by_curve();
   const VArray<bool> cyclic = curves.cyclic();
 
-  for ([[maybe_unused]] const int iteration : IndexRange(iterations)) {
+  for ([[maybe_unused]] const int iter : IndexRange(iters)) {
     std::swap(src, dst);
-    bke::attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
+    dune::attr_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
     threading::parallel_for(curves.curves_range(), 256, [&](const IndexRange range) {
       for (const int curve_i : range) {
         const IndexRange points = points_by_curve[curve_i];
@@ -329,79 +329,79 @@ static Span<T> blur_on_curve_exec(const bke::CurvesGeometry &curves,
   return dst;
 }
 
-static GSpan blur_on_curves(const bke::CurvesGeometry &curves,
-                            const int iterations,
+static GSpan blur_on_curves(const dune::CurvesGeo &curves,
+                            const int iters,
                             const Span<float> neighbor_weights,
-                            const GMutableSpan buffer_a,
-                            const GMutableSpan buffer_b)
+                            const GMutableSpan buf_a,
+                            const GMutableSpan buf_b)
 {
-  GSpan result_buffer;
-  bke::attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
+  GSpan result_buf;
+  dune::attr_math::convert_to_static_type(buf_a.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_same_v<T, bool>) {
-      result_buffer = blur_on_curve_exec<T>(
-          curves, neighbor_weights, iterations, buffer_a.typed<T>(), buffer_b.typed<T>());
+      result_buf = blur_on_curve_ex<T>(
+          curves, neighbor_weights, iters, buf_a.typed<T>(), buf_b.typed<T>());
     }
   });
-  return result_buffer;
+  return result_buf;
 }
 
-class BlurAttributeFieldInput final : public bke::GeometryFieldInput {
+class BlurAttrFieldInput final : public dune::GeoFieldInput {
  private:
   const Field<float> weight_field_;
-  const GField value_field_;
-  const int iterations_;
+  const GField val_field_;
+  const int iters_;
 
  public:
-  BlurAttributeFieldInput(Field<float> weight_field, GField value_field, const int iterations)
-      : bke::GeometryFieldInput(value_field.cpp_type(), "Blur Attribute"),
+  BlurAttrFieldInput(Field<float> weight_field, GField val_field, const int iterations)
+      : dune::GeoFieldInput(val_field.cpp_type(), "Blur Attr"),
         weight_field_(std::move(weight_field)),
-        value_field_(std::move(value_field)),
-        iterations_(iterations)
+        value_field_(std::move(val_field)),
+        iters_(iters)
   {
   }
 
-  GVArray get_varray_for_context(const bke::GeometryFieldContext &context,
-                                 const IndexMask & /*mask*/) const final
+  GVArray get_varray_for_cxt(const dune::GeoFieldCxt &cxt,
+                             const IndexMask & /*mask*/) const final
   {
-    const int64_t domain_size = context.attributes()->domain_size(context.domain());
+    const int64_t domain_size = cxt.attrs()->domain_size(cxt.domain());
 
-    GArray<> buffer_a(*type_, domain_size);
+    GArray<> buf_a(*type_, domain_size);
 
-    FieldEvaluator evaluator(context, domain_size);
+    FieldEval eval(cxt, domain_size);
 
-    evaluator.add_with_destination(value_field_, buffer_a.as_mutable_span());
+    evaluator.add_with_destination(val_field_, buf_a.as_mutable_span());
     evaluator.add(weight_field_);
-    evaluator.evaluate();
+    evaluator.eval();
 
     /* Blurring does not make sense with a less than 2 elements. */
     if (domain_size <= 1) {
-      return GVArray::ForGArray(std::move(buffer_a));
+      return GVArray::ForGArray(std::move(buf_a));
     }
 
-    if (iterations_ <= 0) {
-      return GVArray::ForGArray(std::move(buffer_a));
+    if (iters_ <= 0) {
+      return GVArray::ForGArray(std::move(buf_a));
     }
 
-    VArraySpan<float> neighbor_weights = evaluator.get_evaluated<float>(1);
-    GArray<> buffer_b(*type_, domain_size);
+    VArraySpan<float> neighbor_weights = evaluator.get_eval<float>(1);
+    GArray<> buf_b(*type_, domain_size);
 
-    GSpan result_buffer = buffer_a.as_span();
-    switch (context.type()) {
-      case GeometryComponent::Type::Mesh:
-        if (ELEM(context.domain(), AttrDomain::Point, AttrDomain::Edge, AttrDomain::Face)) {
-          if (const Mesh *mesh = context.mesh()) {
-            result_buffer = blur_on_mesh(
-                *mesh, context.domain(), iterations_, neighbor_weights, buffer_a, buffer_b);
+    GSpan result_buf = buf_a.as_span();
+    switch (cxt.type()) {
+      case GeoComponent::Type::Mesh:
+        if (elem(cxt.domain(), AttrDomain::Point, AttrDomain::Edge, AttrDomain::Face)) {
+          if (const Mesh *mesh = cxt.mesh()) {
+            result_buf = blur_on_mesh(
+                *mesh, cxt.domain(), iters_, neighbor_weights, buf_a, buf_b);
           }
         }
         break;
-      case GeometryComponent::Type::Curve:
-      case GeometryComponent::Type::GreasePencil:
-        if (context.domain() == AttrDomain::Point) {
-          if (const bke::CurvesGeometry *curves = context.curves_or_strokes()) {
-            result_buffer = blur_on_curves(
-                *curves, iterations_, neighbor_weights, buffer_a, buffer_b);
+      case GeoComponent::Type::Curve:
+      case GeoComponent::Type::Pen:
+        if (cxt.domain() == AttrDomain::Point) {
+          if (const dune::CurvesGeo *curves = cxt.curves_or_strokes()) {
+            result_buf = blur_on_curves(
+                *curves, iters_, neighbor_weights, buf_a, buf_b);
           }
         }
         break;
@@ -409,27 +409,27 @@ class BlurAttributeFieldInput final : public bke::GeometryFieldInput {
         break;
     }
 
-    BLI_assert(ELEM(result_buffer.data(), buffer_a.data(), buffer_b.data()));
-    if (result_buffer.data() == buffer_a.data()) {
-      return GVArray::ForGArray(std::move(buffer_a));
+    lib_assert(elem(result_buf.data(), buf_a.data(), buf_b.data()));
+    if (result_buf.data() == buf_a.data()) {
+      return GVArray::ForGArray(std::move(buf_a));
     }
-    return GVArray::ForGArray(std::move(buffer_b));
+    return GVArray::ForGArray(std::move(buf_b));
   }
 
-  void for_each_field_input_recursive(FunctionRef<void(const FieldInput &)> fn) const override
+  void for_each_field_input_recursive(FnRef<void(const FieldInput &)> fn) const override
   {
     weight_field_.node().for_each_field_input_recursive(fn);
-    value_field_.node().for_each_field_input_recursive(fn);
+    val_field_.node().for_each_field_input_recursive(fn);
   }
 
   uint64_t hash() const override
   {
-    return get_default_hash_3(iterations_, weight_field_, value_field_);
+    return get_default_hash_3(iters_, weight_field_, val_field_);
   }
 
   bool is_equal_to(const fn::FieldNode &other) const override
   {
-    if (const BlurAttributeFieldInput *other_blur = dynamic_cast<const BlurAttributeFieldInput *>(
+    if (const BlurAttrFieldInput *other_blur = dynamic_cast<const BlurAttrFieldInput *>(
             &other))
     {
       return weight_field_ == other_blur->weight_field_ &&
@@ -438,7 +438,7 @@ class BlurAttributeFieldInput final : public bke::GeometryFieldInput {
     return false;
   }
 
-  std::optional<AttrDomain> preferred_domain(const GeometryComponent &component) const override
+  std::optional<AttrDomain> preferred_domain(const GeoComponent &component) const override
   {
     const std::optional<AttrDomain> domain = dune::try_detect_field_domain(component, val_field_);
     if (domain.has_val() && *domain == AttrDomain::Corner) {
@@ -454,12 +454,12 @@ static void node_geo_ex(GeoNodeExParams params)
   Field<float> weight_field = params.extract_input<Field<float>>("Weight");
 
   GField val_field = params.extract_input<GField>("Val");
-  GField output_field{std::make_shared<BlurAttributeFieldInput>(
+  GField output_field{std::make_shared<BlurAttrFieldInput>(
       std::move(weight_field), std::move(val_field), iters)};
   params.set_output<GField>("Val", std::move(output_field));
 }
 
-static void node_rna(ApiStruct *sapi)
+static void node_api(ApiStruct *sapi)
 {
   api_def_node_enum(
       sapi,
@@ -467,29 +467,29 @@ static void node_rna(ApiStruct *sapi)
       "Data Type",
       "",
       api_enum_attribute_type_items,
-      NOD_inline_enum_accessors(custom1),
+      node_inline_enum_accessors(custom1),
       CD_PROP_FLOAT,
       [](Cxt * /*C*/, ApiPtr * /*ptr*/, ApiProp * /*prop*/, bool *r_free) {
         *r_free = true;
-        return enum_items_filter(api_enum_attribute_type_items, [](const EnumPropertyItem &item) {
-          return ELEM(item.value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_COLOR, CD_PROP_INT32);
+        return enum_items_filter(api_enum_attr_type_items, [](const EnumPropItem &item) {
+          return elem(item.val, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_COLOR, CD_PROP_INT32);
         });
       });
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
-  geo_node_type_base(&ntype, GEO_NODE_BLUR_ATTRIBUTE, "Blur Attribute", NODE_CLASS_ATTRIBUTE);
-  ntype.initfunc = node_init;
-  ntype.declare = node_declare;
-  ntype.draw_buttons = node_layout;
-  ntype.geometry_node_execute = node_geo_exec;
+  static NodeType ntype;
+  geo_node_type_base(&ntype, GEO_NODE_BLUR_ATTR, "Blur Attribute", NODE_CLASS_ATTR);
+  ntype.initfn = node_init;
+  ntype.decl = node_decl;
+  ntype.draw_btns = node_layout;
+  ntype.geo_node_ex = node_geo_ex;
   ntype.gather_link_search_ops = node_gather_link_searches;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_api(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_blur_attribute_cc
+}  // namespace dune::nodes::node_geo_blur_attribute_cc
