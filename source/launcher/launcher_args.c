@@ -61,9 +61,7 @@
 
 #  include "launcher_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Utility String Parsing */
-
+/* Utility String Parsing */
 static bool parse_int_relative(const char *str,
                                const char *str_end_test,
                                int pos,
@@ -120,7 +118,7 @@ static const char *parse_int_range_sep_search(const char *str, const char *str_e
   return str_end_range;
 }
 
-/** Parse a number as a range, eg: `1..4`.
+/* Parse a number as a range, eg: `1..4`.
   * The a str_end_range argument is a result of parse_int_range_sep_search. */
 static bool parse_int_range_relative(const char *str,
                                      const char *str_end_range,
@@ -173,7 +171,7 @@ static bool parse_int_range_relative_clamp(const char *str,
   return false;
 }
 
-/** No clamping, fails with any number outside the range. */
+/* No clamping, fails with any number outside the range. */
 static bool parse_int_strict_range(const char *str,
                                    const char *str_end_test,
                                    const int min,
@@ -224,7 +222,7 @@ static bool parse_int_clamp(const char *str,
 }
 
 #  if 0
-/** Version of parse_int_relative_clamp
+/* Version of parse_int_relative_clamp
  * that parses a comma separated list of numbers. **/
 static int *parse_int_relative_clamp_n(
     const char *str, int pos, int neg, int min, int max, int *r_value_len, const char **r_err_msg)
@@ -271,12 +269,10 @@ fail:
 
 #  endif
 
-/**
- * Version of parse_int_relative_clamp & parse_int_range_relative_clamp
+/* Version of parse_int_relative_clamp & parse_int_range_relative_clamp
  * that parses a comma separated list of numbers.
  *
- * note msingle values are evaluated as a range with matching start/end.
- */
+ * note msingle values are evaluated as a range with matching start/end. */
 static int (*parse_int_range_relative_clamp_n(const char *str,
                                               int pos,
                                               int neg,
@@ -333,9 +329,7 @@ fail:
   return NULL;
 }
 
-
-/* -------------------------------------------------------------------- */
-/** Handle Argument Callbacks
+/* Handle Argument Callbacks
  *
  * note Doc strings here are used in differently:
  *
@@ -344,9 +338,7 @@ fail:
  *   see: `doc/manpage/dune.1.py`
  * - Parsed and extracted for the manual,
  *   which converts our ad-hoc formatting to reStructuredText.
- *   see: https://docs.dune_sculpt.org/manual/en/dev/advanced/command_line.html
- *
- **/
+ *   see: https://docs.dune_sculpt.org/manual/en/dev/advanced/command_line.html */
 
 static void print_version_full(void)
 {
@@ -1077,7 +1069,7 @@ static int arg_handle_playback_mode(int argc, const char **argv, void *UNUSED(da
   if (G.background == 0) {
 #  ifdef WITH_FFMPEG
     /* Setup FFmpeg with current debug flags. */
-    IMB_ffmpeg_init();
+    imbuf_ffmpeg_init();
 #  endif
 
     /* This function knows to skip this argument ('-a'). */
@@ -1243,9 +1235,9 @@ static const char arg_handle_output_set_doc[] =
     "\t'//render_' becomes '//render_####', writing frames as '//render_0001.png'";
 static int arg_handle_output_set(int argc, const char **argv, void *data)
 {
-  Ctx *C = data;
+  Cxt *C = data;
   if (argc > 1) {
-    Scene *scene = ctx_data_scene(C);
+    Scene *scene = cxt_data_scene(C);
     if (scene) {
       lib_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
       graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
@@ -1265,7 +1257,7 @@ static const char arg_handle_engine_set_doc[] =
     "\tUse '-E help' to list available engines.";
 static int arg_handle_engine_set(int argc, const char **argv, void *data)
 {
-  Ctx *C = data;
+  Cxt *C = data;
   if (argc >= 2) {
     if (STREQ(argv[1], "help")) {
       RenderEngineType *type = NULL;
@@ -1276,7 +1268,7 @@ static int arg_handle_engine_set(int argc, const char **argv, void *data)
       exit(0);
     }
     else {
-      Scene *scene = ctx_data_scene(C);
+      Scene *scene = cxt_data_scene(C);
       if (scene) {
         if (lib_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
           lib_strncpy_utf8(scene->r.engine, argv[1], sizeof(scene->r.engine));
@@ -1310,10 +1302,10 @@ static const char arg_handle_image_type_set_doc[] =
     "\t'HDR' 'TIFF' 'OPEN_EXR' 'OPEN_EXR_MULTILAYER' 'MPEG' 'CINEON' 'DPX' 'DDS' 'JP2'";
 static int arg_handle_image_type_set(int argc, const char **argv, void *data)
 {
-  Ctx *C = data;
+  Cxt *C = data;
   if (argc > 1) {
     const char *imtype = argv[1];
-    Scene *scene = ctx_data_scene(C);
+    Scene *scene = cxt_data_scene(C);
     if (scene) {
       const char imtype_new = dune_imtype_from_arg(imtype);
 
@@ -1400,7 +1392,7 @@ static int arg_handle_extension_set(int argc, const char **argv, void *data)
 {
   Ctx *C = data;
   if (argc > 1) {
-    Scene *scene = ctx_data_scene(C);
+    Scene *scene = cxt_data_scene(C);
     if (scene) {
       if (argv[1][0] == '0') {
         scene->r.scemode &= ~R_EXTENSION;
@@ -1436,10 +1428,10 @@ static const char arg_handle_render_frame_doc[] =
 static int arg_handle_render_frame(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-f / --render-frame";
-  Ctx *C = data;
-  Scene *scene = ctx_data_scene(C);
+  Cxt *C = data;
+  Scene *scene = cxt_data_scene(C);
   if (scene) {
-    Main *main = ctx_data_main(C);
+    Main *main = cxt_data_main(C);
 
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1489,8 +1481,8 @@ static const char arg_handle_render_animation_doc[] =
     "Render frames from start to end (inclusive).";
 static int arg_handle_render_animation(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  Ctx *C = data;
-  Scene *scene = ctx_data_scene(C);
+  Cxt *C = data;
+  Scene *scene = cxt_data_scene(C);
   if (scene) {
     Main *dune_main = ctx_data_main(C);
     Render *re = render_NewSceneRender(scene);
@@ -1513,19 +1505,19 @@ static const char arg_handle_scene_set_doc[] =
 static int arg_handle_scene_set(int argc, const char **argv, void *data)
 {
   if (argc > 1) {
-    Ctx *C = data;
+    Cxt *C = data;
     Scene *scene = dune_scene_set_name(ctx_data_main(C), argv[1]);
     if (scene) {
-      ctx_data_scene_set(C, scene);
+      cxt_data_scene_set(C, scene);
 
       /* Set the scene of the first window, see: T55991,
        * otherwise scrips that run later won't get this scene back from the context. */
-      Window *win = ctx_wm_window(C);
+      Window *win = cxt_wm_window(C);
       if (win == NULL) {
-        win = ctx_wm_manager(C)->windows.first;
+        win = cxt_wm_manager(C)->windows.first;
       }
       if (win != NULL) {
-        wn_window_set_active_scene(ctx_data_main(C), C, win, scene);
+        win_set_active_scene(ctx_data_main(C), C, win, scene);
       }
     }
     return 1;
@@ -1540,8 +1532,8 @@ static const char arg_handle_frame_start_set_doc[] =
 static int arg_handle_frame_start_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-s / --frame-start";
-  Ctx *C = data;
-  Scene *scene = ctx_data_scene(C);
+  Cxt *C = data;
+  Scene *scene = cxt_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1573,8 +1565,8 @@ static const char arg_handle_frame_end_set_doc[] =
 static int arg_handle_frame_end_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-e / --frame-end";
-  Ctx *C = data;
-  Scene *scene = ctx_data_scene(C);
+  Cxt *C = data;
+  Scene *scene = cxt_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1606,8 +1598,8 @@ static const char arg_handle_frame_skip_set_doc[] =
 static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-j / --frame-jump";
-  Ctx *C = data;
-  Scene *scene = ctx_data_scene(C);
+  Cxt *C = data;
+  Scene *scene = cxt_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1628,14 +1620,14 @@ static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
 
 static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
 {
-  Ctx *C = data;
+  Cxt *C = data;
   ReportList reports;
   bool success;
 
   /* Make the path absolute because its needed for relative linked blends to be found */
   char filename[FILE_MAX];
 
-  /* NOTE: we could skip these, but so far we always tried to load these files. */
+  /* we could skip these, but so far we always tried to load these files. */
   if (argv[0][0] == '-') {
     fprintf(stderr, "unknown argument, loading as file: %s\n", argv[0]);
   }
@@ -1647,14 +1639,14 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
 
   /* load the file */
   dune_reports_init(&reports, RPT_PRINT);
-  wm_file_autoexec_init(filename);
-  success = wm_file_read(C, filename, &reports);
+  win_file_autoexec_init(filename);
+  success = win_file_read(C, filename, &reports);
   dune_reports_clear(&reports);
 
   if (success) {
     if (G.background) {
       /* Ensure we use 'C->data.scene' for background render. */
-      ctx_wm_window_set(C, NULL);
+      cxt_win_set(C, NULL);
     }
   }
   else {
@@ -1680,7 +1672,7 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
           "Error: argument has no '.blend' file extension, not using as new file, exiting! %s\n",
           filename);
       G.is_break = true;
-      wm_exit(C);
+      win_exit(C);
     }
   }
 
@@ -1702,7 +1694,7 @@ static int arg_handle_load_last_file(int UNUSED(argc), const char **UNUSED(argv)
   return arg_handle_load_file(ARRAY_SIZE(fake_argv), fake_argv, data);
 }
 
-void main_args_setup(Ctx *C, Args *ba)
+void main_args_setup(Cxt *C, Args *ba)
 {
 
 #  define CB(a) a##_doc, a
@@ -1739,7 +1731,6 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
 
   /* Pass: Background Mode & Settings
-   *
    * Also and commands that exit after usage. */
   lib_args_pass_set(args, ARG_PASS_SETTINGS);
   lib_args_add(args, "-h", "--help", CB(arg_handle_print_help), ba);
@@ -1927,8 +1918,8 @@ void main_args_setup(Ctx *C, Args *ba)
 #  undef CB_EX
 }
 
-/** Needs to be added separately. **/
-void main_args_setup_post(Ctx *C, Args *dune_args)
+/* Needs to be added separately. */
+void main_args_setup_post(Cxt *C, Args *dune_args)
 {
   lib_args_parse(dune_args, ARG_PASS_FINAL, arg_handle_load_file, C);
 }
