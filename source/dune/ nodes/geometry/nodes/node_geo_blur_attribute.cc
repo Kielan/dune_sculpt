@@ -1,74 +1,74 @@
-#include "BLI_array.hh"
-#include "BLI_generic_array.hh"
-#include "BLI_index_mask.hh"
-#include "BLI_index_range.hh"
-#include "BLI_span.hh"
-#include "BLI_task.hh"
-#include "BLI_vector.hh"
-#include "BLI_virtual_array.hh"
+#include "lib_array.hh"
+#include "lib_generic_array.hh"
+#include "lib_index_mask.hh"
+#include "lib_index_range.hh"
+#include "lib_span.hh"
+#include "lib_task.hh"
+#include "lib_vector.hh"
+#include "lib_virtual_array.hh"
 
-#include "BKE_attribute_math.hh"
-#include "BKE_curves.hh"
-#include "BKE_geometry_fields.hh"
-#include "BKE_grease_pencil.hh"
-#include "BKE_mesh.hh"
-#include "BKE_mesh_mapping.hh"
+#include "dune_attribute_math.hh"
+#include "dune_curves.hh"
+#include "dune_geo_fields.hh"
+#include "dune_pen.hh"
+#include "dune_mesh.hh"
+#include "dune_mesh_mapping.hh"
 
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "RNA_enum_types.hh"
+#include "api_enum_types.hh"
 
-#include "NOD_socket_search_link.hh"
+#include "node_socket_search_link.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_blur_attribute_cc {
+namespace dune::nodes::node_geo_blur_attr_cc {
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  const bNode *node = b.node_or_null();
+  const Node *node = b.node_or_null();
 
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node->custom1);
-    b.add_input(data_type, "Value").supports_field().hide_value().is_default_link_socket();
+    b.add_input(data_type, "Val").supports_field().hide_value().is_default_link_socket();
   }
-  b.add_input<decl::Int>("Iterations")
-      .default_value(1)
+  b.add_input<decl::Int>("Iters")
+      .default_val(1)
       .min(0)
-      .description("How many times to blur the values for all elements");
+      .description("How many times to blur the vals for all elems");
   b.add_input<decl::Float>("Weight")
-      .default_value(1.0f)
+      .default_val(1.0f)
       .subtype(PROP_FACTOR)
       .min(0.0f)
       .max(1.0f)
       .supports_field()
-      .description("Relative mix weight of neighboring elements");
+      .description("Relative mix weight of neighboring elems");
 
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node->custom1);
-    b.add_output(data_type, "Value").field_source_reference_all().dependent_field();
+    b.add_output(data_type, "Val").field_src_ref_all().dependent_field();
   }
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "data_type", UI_ITEM_NONE, "", ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
   node->custom1 = CD_PROP_FLOAT;
 }
 
 static void node_gather_link_searches(GatherLinkSearchOpParams &params)
 {
-  const bNodeType &node_type = params.node_type();
-  const NodeDeclaration &declaration = *node_type.static_declaration;
+  const NodeType &node_type = params.node_type();
+  const NodeDecl &decl = *node_type.static_decl;
 
-  /* Weight and Iterations inputs don't change based on the data type. */
+  /* Weight and Iters inputs don't change based on the data type. */
   search_link_ops_for_declarations(params, declaration.inputs);
 
   const std::optional<eCustomDataType> new_node_type = bke::socket_type_to_custom_data_type(
