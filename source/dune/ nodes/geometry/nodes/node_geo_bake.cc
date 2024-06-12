@@ -83,7 +83,7 @@ static void node_free_storage(bNode *node)
   mem_freen(node->storage);
 }
 
-static void node_copy_storage(NodeTree * /*tree*/, bNode *dst_node, const bNode *src_node)
+static void node_copy_storage(NodeTree * /*tree*/, Node *dst_node, const bNode *src_node)
 {
   const NodeGeoBake &src_storage = node_storage(*src_node);
   auto *dst_storage = mem_new<NodeGeoBake>(__func__, src_storage);
@@ -117,26 +117,26 @@ static bake::BakeSocketConfig make_bake_socket_config(const Span<NodeGeometryBak
 
   int last_geometry_index = -1;
   for (const int item_i : bake_items.index_range()) {
-    const NodeGeometryBakeItem &item = bake_items[item_i];
+    const NodeGeoBakeItem &item = bake_items[item_i];
     config.types[item_i] = eNodeSocketDatatype(item.socket_type);
-    config.domains[item_i] = AttrDomain(item.attribute_domain);
-    if (item.socket_type == SOCK_GEOMETRY) {
-      last_geometry_index = item_i;
+    config.domains[item_i] = AttrDomain(item.attr_domain);
+    if (item.socket_type == SOCK_GEO) {
+      last_geo_index = item_i;
     }
-    else if (last_geometry_index != -1) {
-      config.geometries_by_attribute[item_i].append(last_geometry_index);
+    else if (last_geo_index != -1) {
+      config.geo_by_attr[item_i].append(last_geo_index);
     }
   }
   return config;
 }
 
-class LazyFunctionForBakeNode final : public LazyFunction {
-  const bNode &node_;
-  Span<NodeGeometryBakeItem> bake_items_;
+class LazyFnForBakeNode final : public LazyFn {
+  const Node &node_;
+  Span<NodeGeoBakeItem> bake_items_;
   bake::BakeSocketConfig bake_socket_config_;
 
  public:
-  LazyFunctionForBakeNode(const bNode &node, GeometryNodesLazyFunctionGraphInfo &lf_graph_info)
+  LazyFnForBakeNode(const Node &node, GeoNodesLazyFnGraphInfo &lf_graph_info)
       : node_(node)
   {
     debug_name_ = "Bake";
