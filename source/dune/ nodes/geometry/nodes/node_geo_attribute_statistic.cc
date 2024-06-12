@@ -22,7 +22,7 @@ static void node_decl(NodeDeclBuilder &b)
   const Node *node = b.node_or_null();
 
   b.add_input<decl::Geo>("Geo");
-  b.add_input<decl::Bool>("Selection").default_val(true).field_on_all().hide_val();
+  b.add_input<decl::Bool>("Sel").default_val(true).field_on_all().hide_val();
 
   if (node != nullptr) {
     const eCustomDataType data_type = eCustomDataType(node->custom1);
@@ -55,7 +55,7 @@ static std::optional<eCustomDataType> node_type_from_other_socket(const NodeSock
 {
   switch (socket.type) {
     case SOCK_FLOAT:
-    case SOCK_BOOLEAN:
+    case SOCK_BOOL:
     case SOCK_INT:
       return CD_PROP_FLOAT;
     case SOCK_VECTOR:
@@ -340,7 +340,7 @@ static void node_api(ApiStruct *sapi)
       CD_PROP_FLOAT,
       [](Cxt * /*C*/, ApiPtr * /*ptr*/, ApiProp * /*prop*/, bool *r_free) {
         *r_free = true;
-        return enum_items_filter(api_enum_attribute_type_items, [](const EnumPropItem &item) {
+        return enum_items_filter(api_enum_attr_type_items, [](const EnumPropItem &item) {
           return elem(item.val, CD_PROP_FLOAT, CD_PROP_FLOAT3);
         });
       });
@@ -373,4 +373,4 @@ static void node_register()
 }
 REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_attribute_statistic_cc
+}  // namespace dune::nodes::node_geo_attr_statistic_cc
