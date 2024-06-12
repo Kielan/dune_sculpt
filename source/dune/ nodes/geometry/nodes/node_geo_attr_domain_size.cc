@@ -1,34 +1,34 @@
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "RNA_enum_types.hh"
+#include "api_enum_types.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_attribute_domain_size_cc {
+namespace dune::nodes::node_geo_attr_domain_size_cc {
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  b.add_input<decl::Geometry>("Geometry");
-  b.add_output<decl::Int>("Point Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Mesh);
+  b.add_input<decl::Geo>("Geo");
+  b.add_output<decl::Int>("Point Count").make_available([](Node &node) {
+    node.custom1 = int16_t(GeoComponent::Type::Mesh);
   });
-  b.add_output<decl::Int>("Edge Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Mesh);
+  b.add_output<decl::Int>("Edge Count").make_available([](Node &node) {
+    node.custom1 = int16_t(GeoComponent::Type::Mesh);
   });
-  b.add_output<decl::Int>("Face Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Mesh);
+  b.add_output<decl::Int>("Face Count").make_available([](Node &node) {
+    node.custom1 = int16_t(GeoComponent::Type::Mesh);
   });
-  b.add_output<decl::Int>("Face Corner Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Mesh);
+  b.add_output<decl::Int>("Face Corner Count").make_available([](Node &node) {
+    node.custom1 = int16_t(GeoComponent::Type::Mesh);
   });
   b.add_output<decl::Int>("Spline Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Curve);
+    node.custom1 = int16_t(GeoComponent::Type::Curve);
   });
   b.add_output<decl::Int>("Instance Count").make_available([](bNode &node) {
-    node.custom1 = int16_t(GeometryComponent::Type::Instance);
+    node.custom1 = int16_t(GeoComponent::Type::Instance);
   });
   b.add_output<decl::Int>("Layer Count").make_available([](bNode &node) {
     node.custom1 = int16_t(GeometryComponent::Type::GreasePencil);
