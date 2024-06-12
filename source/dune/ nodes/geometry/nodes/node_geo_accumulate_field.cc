@@ -4,8 +4,8 @@
 #include "lib_generic_virtual_array.hh"
 #include "lib_virtual_array.hh"
 
-#include "NOD_api_define.hh"
-#include "NOD_socket_search_link.hh"
+#include "node_api_define.hh"
+#include "node_socket_search_link.hh"
 
 #include "api_enum_types.hh"
 
@@ -16,7 +16,7 @@
 
 namespace dune::nodes::node_geo_accumulate_field_cc {
 
-NODE_STORAGE_FUNCS(NodeAccumulateField)
+NODE_STORAGE_FNS(NodeAccumulateField)
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
@@ -27,19 +27,19 @@ static void node_declare(NodeDeclarationBuilder &b)
     BaseSocketDeclarationBuilder *val_declaration = nullptr;
     switch (data_type) {
       case CD_PROP_FLOAT3:
-        value_declaration = &b.add_input<decl::Vector>("Val").default_val({1.0f, 1.0f, 1.0f});
+        val_declaration = &b.add_input<decl::Vector>("Val").default_val({1.0f, 1.0f, 1.0f});
         break;
       case CD_PROP_FLOAT:
-        value_declaration = &b.add_input<decl::Float>("Val").default_val(1.0f);
+        val_declaration = &b.add_input<decl::Float>("Val").default_val(1.0f);
         break;
       case CD_PROP_INT32:
-        value_declaration = &b.add_input<decl::Int>("Val").default_val(1);
+        val_declaration = &b.add_input<decl::Int>("Val").default_val(1);
         break;
       default:
         lib_assert_unreachable();
         break;
     }
-    value_declaration->supports_field().description(N_("The values to be accumulated"));
+    val_declaration->supports_field().description(N_("The values to be accumulated"));
   }
 
   b.add_input<decl::Int>("Group Id", "Group Index")
@@ -78,7 +78,7 @@ static void node_init(bNodeTree * /*tree*/, bNode *node)
 
 enum class AccumulationMode { Leading = 0, Trailing = 1 };
 
-static std::optional<eCustomDataType> node_type_from_other_socket(const bNodeSocket &socket)
+static std::optional<eCustomDataType> node_type_from_other_socket(const NodeSocket &socket)
 {
   switch (socket.type) {
     case SOCK_FLOAT:
@@ -115,7 +115,7 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
     params.add_item(
         IFACE_("Trailing"),
         [type](LinkSearchOpParams &params) {
-          bNode &node = params.add_node("GeometryNodeAccumulateField");
+          Node &node = params.add_node("GeometryNodeAccumulateField");
           node_storage(node).data_type = *type;
           params.update_and_connect_available_socket(node, "Trailing");
         },
@@ -133,15 +133,15 @@ static void node_gather_link_searches(GatherLinkSearchOpParams &params)
     params.add_item(
         IFACE_("Value"),
         [type](LinkSearchOpParams &params) {
-          bNode &node = params.add_node("GeometryNodeAccumulateField");
+          Node &node = params.add_node("GeometryNodeAccumulateField");
           node_storage(node).data_type = *type;
-          params.update_and_connect_available_socket(node, "Value");
+          params.update_and_connect_available_socket(node, "Val");
         },
         0);
   }
 }
 
-class AccumulateFieldInput final : public bke::GeometryFieldInput {
+class AccumulateFieldInput final : public dune::GeometryFieldInput {
  private:
   GField input_;
   Field<int> group_index_;
@@ -153,7 +153,7 @@ class AccumulateFieldInput final : public bke::GeometryFieldInput {
                        GField input,
                        Field<int> group_index,
                        AccumulationMode accumulation_mode)
-      : bke::GeometryFieldInput(input.cpp_type(), "Accumulation"),
+      : dube::GeometryFieldInput(input.cpp_type(), "Accumulation"),
         input_(input),
         group_index_(group_index),
         source_domain_(source_domain),
@@ -161,30 +161,30 @@ class AccumulateFieldInput final : public bke::GeometryFieldInput {
   {
   }
 
-  GVArray get_varray_for_context(const bke::GeometryFieldContext &context,
-                                 const IndexMask & /*mask*/) const final
+  GVArray get_var_for_cxt(const dune::GeometryFieldCxt &cxt,
+                          const IndexMask & /*mask*/) const final
   {
-    const AttributeAccessor attributes = *context.attributes();
-    const int64_t domain_size = attributes.domain_size(source_domain_);
+    const AttrAccessor attrs = *cxt.attrs();
+    const int64_t domain_size = attrs.domain_size(src_domain_);
     if (domain_size == 0) {
       return {};
     }
 
-    const bke::GeometryFieldContext source_context{context, source_domain_};
-    fn::FieldEvaluator evaluator{source_context, domain_size};
-    evaluator.add(input_);
-    evaluator.add(group_index_);
-    evaluator.evaluate();
-    const GVArray g_values = evaluator.get_evaluated(0);
-    const VArray<int> group_indices = evaluator.get_evaluated<int>(1);
+    const dune::GeometryFieldCxt src_cxt{cxt, src_domain_};
+    fn::FieldEval eval{src_cxt, domain_size};
+    eval.add(input_);
+    eval.add(group_index_);
+    eval.eval();
+    const GVArray g_vals = eval.get_eval(0);
+    const VArray<int> group_indices = evaluator.get_eval<int>(1);
 
     GVArray g_output;
 
-    bke::attribute_math::convert_to_static_type(g_values.type(), [&](auto dummy) {
+    dune::attr_math::convert_to_static_type(g_vals.type(), [&](auto dummy) {
       using T = decltype(dummy);
       if constexpr (is_same_any_v<T, int, float, float3>) {
         Array<T> outputs(domain_size);
-        const VArray<T> values = g_values.typed<T>();
+        const VArray<T> vals = g_vals.typed<T>();
 
         if (group_indices.is_single()) {
           T accumulation = T();
@@ -259,36 +259,36 @@ class TotalFieldInput final : public bke::GeometryFieldInput {
 
  public:
   TotalFieldInput(const AttrDomain source_domain, GField input, Field<int> group_index)
-      : bke::GeometryFieldInput(input.cpp_type(), "Total Value"),
+      : dube::GeometryFieldInput(input.cpp_type(), "Total Value"),
         input_(input),
         group_index_(group_index),
         source_domain_(source_domain)
   {
   }
 
-  GVArray get_varray_for_context(const bke::GeometryFieldContext &context,
-                                 const IndexMask & /*mask*/) const final
+  GVArray get_varray_for_cxt(const dune::GeometryFieldCxt &cxt,
+                             const IndexMask & /*mask*/) const final
   {
-    const AttributeAccessor attributes = *context.attributes();
-    const int64_t domain_size = attributes.domain_size(source_domain_);
+    const AttrAccessor attrs = *cxt.attrs();
+    const int64_t domain_size = attrs.domain_size(src_domain_);
     if (domain_size == 0) {
       return {};
     }
 
-    const bke::GeometryFieldContext source_context{context, source_domain_};
-    fn::FieldEvaluator evaluator{source_context, domain_size};
-    evaluator.add(input_);
-    evaluator.add(group_index_);
-    evaluator.evaluate();
-    const GVArray g_values = evaluator.get_evaluated(0);
-    const VArray<int> group_indices = evaluator.get_evaluated<int>(1);
+    const dune::GeometryFieldCxt src_cxt{cxt, src_domain_};
+    fn::FieldEval eval{src_cxt, domain_size};
+    eval.add(input_);
+    eval.add(group_index_);
+    eval.eval();
+    const GVArray g_vals = eval.get_eval(0);
+    const VArray<int> group_indices = eval.get_eval<int>(1);
 
     GVArray g_outputs;
 
-    bke::attribute_math::convert_to_static_type(g_values.type(), [&](auto dummy) {
+    dune::attribute_math::convert_to_static_type(g_vals.type(), [&](auto dummy) {
       using T = decltype(dummy);
       if constexpr (is_same_any_v<T, int, float, float3>) {
-        const VArray<T> values = g_values.typed<T>();
+        const VArray<T> vals = g_vals.typed<T>();
         if (group_indices.is_single()) {
           T accumulation = {};
           for (const int i : values.index_range()) {
@@ -298,12 +298,12 @@ class TotalFieldInput final : public bke::GeometryFieldInput {
         }
         else {
           Map<int, T> accumulations;
-          for (const int i : values.index_range()) {
+          for (const int i : vals.index_range()) {
             T &value = accumulations.lookup_or_add_default(group_indices[i]);
             value = value + values[i];
           }
           Array<T> outputs(domain_size);
-          for (const int i : values.index_range()) {
+          for (const int i : vals.index_range()) {
             outputs[i] = accumulations.lookup(group_indices[i]);
           }
           g_outputs = VArray<T>::ForContainer(std::move(outputs));
@@ -311,7 +311,7 @@ class TotalFieldInput final : public bke::GeometryFieldInput {
       }
     });
 
-    return attributes.adapt_domain(std::move(g_outputs), source_domain_, context.domain());
+    return attrs.adapt_domain(std::move(g_outputs), src_domain_, cxt.domain());
   }
 
   uint64_t hash() const override
@@ -335,13 +335,13 @@ class TotalFieldInput final : public bke::GeometryFieldInput {
   }
 };
 
-static void node_geo_exec(GeoNodeExecParams params)
+static void node_geo_exec(GeoNodeExParams params)
 {
   const NodeAccumulateField &storage = node_storage(params.node());
   const AttrDomain source_domain = AttrDomain(storage.domain);
 
   const Field<int> group_index_field = params.extract_input<Field<int>>("Group Index");
-  const GField input_field = params.extract_input<GField>("Value");
+  const GField input_field = params.extract_input<GField>("Val");
   if (params.output_is_required("Leading")) {
     params.set_output<GField>(
         "Leading",
@@ -367,14 +367,14 @@ static void node_api(ApiStruct *sapi)
       sapi,
       "data_type",
       "Data Type",
-      "Type of data stored in attribute",
+      "Type of data stored in attr",
       api_enum_attribute_type_items,
-      NOD_storage_enum_accessors(data_type),
+      node_storage_enum_accessors(data_type),
       CD_PROP_FLOAT,
-      [](bContext * /*C*/, ApiPtr * /*ptr*/, ApiProp * /*prop*/, bool *r_free) {
+      [](Cxt * /*C*/, ApiPtr * /*ptr*/, ApiProp * /*prop*/, bool *r_free) {
         *r_free = true;
-        return enum_items_filter(rna_enum_attribute_type_items, [](const EnumPropItem &item) {
-          return ELEM(item.value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_INT32);
+        return enum_items_filter(rna_enum_attr_type_items, [](const EnumPropItem &item) {
+          return elem(item.val, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_INT32);
         });
       });
 
@@ -382,10 +382,10 @@ static void node_api(ApiStruct *sapi)
                     "domain",
                     "Domain",
                     "",
-                    api_enum_attribute_domain_items,
+                    api_enum_attr_domain_items,
                     NOD_storage_enum_accessors(domain),
                     int(AttrDomain::Point),
-                    enums::domain_experimental_pen_version3_fn);
+                    enums::domain_experimental_pen_v3_fn);
 }
 
 static void node_register()
@@ -393,9 +393,9 @@ static void node_register()
   static NodeType ntype;
 
   geo_node_type_base(&ntype, GEO_NODE_ACCUMULATE_FIELD, "Accumulate Field", NODE_CLASS_CONVERTER);
-  ntype.geometry_node_ex = node_geo_exec;
+  ntype.geometry_node_ex = node_geo_ex;
   ntype.initfn = node_init;
-  ntype.draw_btns = node_layout;
+  ntype.drw_btns = node_layout;
   ntype.declare = node_declare;
   ntype.gather_link_search_ops = node_gather_link_searches;
   node_type_storage(
@@ -404,6 +404,6 @@ static void node_register()
 
   node_api(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_accumulate_field_cc
+}  // namespace dune::nodes::node_geo_accumulate_field_cc
