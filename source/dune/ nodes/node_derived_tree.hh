@@ -1,121 +1,111 @@
 #pragma once
 
-/** \file
- * \ingroup nodes
- *
- * DerivedNodeTree makes working with (nested) node groups more convenient and safe. It does so by
- * pairing nodes and sockets with a context. The context contains information about the current
+/* DerivedNodeTree makes working with (nested) node groups more convenient and safe. It does so by
+ * pairing nodes and sockets with a context. The cxt contains info about the current
  * "instance" of the node or socket. A node might be "instanced" multiple times when it is in a
- * node group that is used multiple times.
- */
+ * node group that is used multiple times. */
 
-#include "BLI_function_ref.hh"
-#include "BLI_linear_allocator.hh"
-#include "BLI_vector_set.hh"
+#include "lib_fn_ref.hh"
+#include "lib_linear_allocator.hh"
+#include "lib_vector_set.hh"
 
-#include "BKE_node_runtime.hh"
+#include "dune_node_runtime.hh"
 
-namespace blender::nodes {
+namespace dune::nodes {
 
-class DTreeContext;
+class TreeCxt;
 class DerivedNodeTree;
 
-class DNode;
-class DSocket;
-class DInputSocket;
-class DOutputSocket;
+class Node;
+class Socket;
+class InputSocket;
+class OutputSocket;
 
-/**
- * The context attached to every node or socket in a derived node tree. It can be used to determine
+/* The cxt attached to every node or socket in a derived node tree. It can be used to determine
  * the place of a node in a hierarchy of node groups.
  *
- * Contexts are organized in a tree data structure to avoid having to store the entire path to the
- * root node group for every node/socket.
- */
-class DTreeContext {
+ * Cxts are organized in a tree data structure to avoid having to store the entire path to the
+ * root node group for every node/socket. */
+class TreeCxt {
  private:
   /* Null when this context is for the root node group. Otherwise it points to the context one
    * level up. */
-  DTreeContext *parent_context_;
+  TreeCxt *parent_cxt_;
   /* Null when this context is for the root node group. Otherwise it points to the group node in
    * the parent node group that contains this context. */
-  const bNode *parent_node_;
+  const Node *parent_node_;
   /* The current node tree. */
-  const bNodeTree *btree_;
+  const NodeTree *tree_;
   /* The instance key of the parent node. NODE_INSTANCE_KEY_BASE for root contexts. */
-  bNodeInstanceKey instance_key_;
-  /* All the children contexts of this context. */
-  Map<const bNode *, DTreeContext *> children_;
+  NodeInstanceKey instance_key_;
+  /* All the children cxts of this cxt. */
+  Map<const Node *, TreeCxt *> children_;
   DerivedNodeTree *derived_tree_;
 
   friend DerivedNodeTree;
 
  public:
-  const bNodeTree &btree() const;
-  const DTreeContext *parent_context() const;
-  const bNode *parent_node() const;
-  const bNodeInstanceKey instance_key() const;
-  const DTreeContext *child_context(const bNode &node) const;
+  const NodeTree &btree() const;
+  const TreeCxt *parent_cxt() const;
+  const Node *parent_node() const;
+  const NodeInstanceKey instance_key() const;
+  const TreeCxt *child_cxt(const Node &node) const;
   const DerivedNodeTree &derived_tree() const;
   bool is_root() const;
 };
 
-/**
- * A (nullable) reference to a node and the context it is in. It is unique within an entire nested
- * node group hierarchy. This type is small and can be passed around by value.
- */
-class DNode {
+/* A (nullable) ref to a node and the context it is in. It is unique w/in an entire nested
+ * node group hierarchy. Small type and can be passed around by val. */
+class Node {
  private:
-  const DTreeContext *context_ = nullptr;
-  const bNode *bnode_ = nullptr;
+  const TreeCxt *cxt_ = nullptr;
+  const Node *node_ = nullptr;
 
  public:
-  DNode() = default;
-  DNode(const DTreeContext *context, const bNode *node);
+  Node() = default;
+  Node(const TreeCxt *cxt, const Node *node);
 
-  const DTreeContext *context() const;
-  const bNode *bnode() const;
-  const bNodeInstanceKey instance_key() const;
-  const bNode *operator->() const;
-  const bNode &operator*() const;
+  const TreeCxt *context() const;
+  const Node *bnode() const;
+  const NodeInstanceKey instance_key() const;
+  const Node *operator->() const;
+  const Node &operator*() const;
 
-  BLI_STRUCT_EQUALITY_OPERATORS_2(DNode, context_, bnode_)
+  LIB_STRUCT_EQUALITY_OPS_2(Node, cxt_, bnode_)
 
   operator bool() const;
 
   uint64_t hash() const;
 
-  DInputSocket input(int index) const;
-  DOutputSocket output(int index) const;
+  InputSocket input(int index) const;
+  OutputSocket output(int index) const;
 
-  DInputSocket input_by_identifier(StringRef identifier) const;
-  DOutputSocket output_by_identifier(StringRef identifier) const;
+  InputSocket input_by_id(StringRef id) const;
+  OutputSocket output_by_id(StringRef id) const;
 };
 
-/**
- * A (nullable) reference to a socket and the context it is in. It is unique within an entire
+/* A (nullable) ref to a socket and the context it is in. It is unique within an entire
  * nested node group hierarchy. This type is small and can be passed around by value.
  *
- * A #DSocket can represent an input or an output socket. If the type of a socket is known at
- * compile time is preferable to use #DInputSocket or #DOutputSocket instead.
- */
+ * A Socket can represent an input or an output socket. If the type of a socket is known at
+ * compile time is preferable to use InputSocket or OutputSocket instead. */
 class DSocket {
  protected:
-  const DTreeContext *context_ = nullptr;
-  const bNodeSocket *bsocket_ = nullptr;
+  const TreeCxt *cxt_ = nullptr;
+  const NodeSocket *socket_ = nullptr;
 
  public:
   DSocket() = default;
-  DSocket(const DTreeContext *context, const bNodeSocket *socket);
+  DSocket(const DTreeCxt *cxt, const NodeSocket *socket);
   DSocket(const DInputSocket &input_socket);
   DSocket(const DOutputSocket &output_socket);
 
-  const DTreeContext *context() const;
-  const bNodeSocket *bsocket() const;
-  const bNodeSocket *operator->() const;
-  const bNodeSocket &operator*() const;
+  const DTreeCxt *cxt() const;
+  const NodeSocket *socket() const;
+  const NodeSocket *operator->() const;
+  const NodeSocket &operator*() const;
 
-  BLI_STRUCT_EQUALITY_OPERATORS_2(DSocket, context_, bsocket_)
+  LIB_STRUCT_EQUALITY_OPS_2(DSocket, cxt_, socket_)
 
   operator bool() const;
 
@@ -124,44 +114,41 @@ class DSocket {
   DNode node() const;
 };
 
-/** A (nullable) reference to an input socket and the context it is in. */
+/* A (nullable) ref to an input socket and the cxt it is in. */
 class DInputSocket : public DSocket {
  public:
   DInputSocket() = default;
-  DInputSocket(const DTreeContext *context, const bNodeSocket *socket);
+  DInputSocket(const DTreeCxt *cxt, const NodeSocket *socket);
   explicit DInputSocket(const DSocket &base_socket);
 
   DOutputSocket get_corresponding_group_node_output() const;
   Vector<DOutputSocket, 4> get_corresponding_group_input_sockets() const;
 
-  /**
-   * Call `origin_fn` for every "real" origin socket. "Real" means that reroutes, muted nodes
-   * and node groups are handled by this function. Origin sockets are ones where a node gets its
-   * inputs from.
-   */
-  void foreach_origin_socket(FunctionRef<void(DSocket)> origin_fn) const;
+  /* Call `origin_fn` for every "real" origin socket. "Real" means that reroutes, muted nodes
+   * and node groups are handled by this fn. Origin sockets are ones where a node gets its
+   * inputs from. */
+  void foreach_origin_socket(FnRef<void(DSocket)> origin_fn) const;
 };
 
-/** A (nullable) reference to an output socket and the context it is in. */
+/* A (nullable) ref to an output socket and the cxt it is in. */
 class DOutputSocket : public DSocket {
  public:
   DOutputSocket() = default;
-  DOutputSocket(const DTreeContext *context, const bNodeSocket *socket);
+  DOutputSocket(const DTreeCxt *cxt, const NodeSocket *socket);
   explicit DOutputSocket(const DSocket &base_socket);
 
   DInputSocket get_corresponding_group_node_input() const;
   DInputSocket get_active_corresponding_group_output_socket() const;
 
   struct TargetSocketPathInfo {
-    /** All sockets on the path from the current to the final target sockets, excluding `this`. */
+    /* All sockets on the path from the current to the final target sockets, excluding `this`. */
     Vector<DSocket, 16> sockets;
   };
 
   using ForeachTargetSocketFn =
-      FunctionRef<void(DInputSocket, const TargetSocketPathInfo &path_info)>;
+      FnRef<void(DInputSocket, const TargetSocketPathInfo &path_info)>;
 
-  /**
-   * Calls `target_fn` for every "real" target socket. "Real" means that reroutes, muted nodes
+  /* Calls `target_fn` for every "real" target socket. "Real" means that reroutes, muted nodes
    * and node groups are handled by this function. Target sockets are on the nodes that use the
    * value from this socket.
    */
@@ -175,21 +162,19 @@ class DOutputSocket : public DSocket {
 class DerivedNodeTree {
  private:
   LinearAllocator<> allocator_;
-  DTreeContext *root_context_;
-  VectorSet<const bNodeTree *> used_btrees_;
+  DTreeCxt *root_cxt_;
+  VectorSet<const NodeTree *> used_trees_;
 
  public:
-  /**
-   * Construct a new derived node tree for a given root node tree. The generated derived node tree
+  /* Construct a new derived node tree for a given root node tree. The generated derived node tree
    * does not own the used node tree refs (so that those can be used by others as well). The caller
-   * has to make sure that the node tree refs added to #node_tree_refs live at least as long as the
-   * derived node tree.
-   */
-  DerivedNodeTree(const bNodeTree &btree);
+   * has to make sure that the node tree refs added to node_tree_refs live at least as long as the
+   * derived node tree. */
+  DerivedNodeTree(const NodeTree &btree);
   ~DerivedNodeTree();
 
-  const DTreeContext &root_context() const;
-  Span<const bNodeTree *> used_btrees() const;
+  const DTreeCxt &root_cxt() const;
+  Span<const NodeTree *> used_trees() const;
 
   /** Returns the active context for the node tree. The active context represents the node tree
    * currently being edited. In most cases, that would be the top level node tree itself, but in
@@ -199,13 +184,11 @@ class DerivedNodeTree {
    * particular instance of the node group. */
   const DTreeContext &active_context() const;
 
-  /**
-   * \return True when there is a link cycle. Unavailable sockets are ignored.
-   */
+  /* return True when there is a link cycle. Unavailable sockets are ignored. */
   bool has_link_cycles() const;
   bool has_undefined_nodes_or_sockets() const;
-  /** Calls the given callback on all nodes in the (possibly nested) derived node tree. */
-  void foreach_node(FunctionRef<void(DNode)> callback) const;
+  /* Calls the given cb on all nodes in the (possibly nested) derived node tree. */
+  void foreach_node(FnRef<void(Node)> cback) const;
 
   /** Generates a graph in dot format. The generated graph has all node groups inlined. */
   std::string to_dot() const;
