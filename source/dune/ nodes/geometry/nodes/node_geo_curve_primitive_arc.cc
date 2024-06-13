@@ -1,84 +1,84 @@
 #include <numeric>
 
-#include "BLI_math_base_safe.h"
-#include "BLI_math_geom.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
+#include "lib_math_base_safe.h"
+#include "lib_math_geo.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
 
-#include "BKE_curves.hh"
+#include "dune_curves.hh"
 
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_curve_primitive_arc_cc {
+namespace dune::nodes::node_geo_curve_primitive_arc_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCurvePrimitiveArc)
+NODE_STORAGE_FNS(NodeGeoCurvePrimitiveArc)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  auto enable_points = [](bNode &node) {
+  auto enable_points = [](Node &node) {
     node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_POINTS;
   };
-  auto enable_radius = [](bNode &node) {
+  auto enable_radius = [](Node &node) {
     node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_RADIUS;
   };
 
   b.add_input<decl::Int>("Resolution")
-      .default_value(16)
+      .default_val(16)
       .min(2)
       .max(256)
       .subtype(PROP_UNSIGNED)
       .description("The number of points on the arc");
   b.add_input<decl::Vector>("Start")
-      .default_value({-1.0f, 0.0f, 0.0f})
+      .default_val({-1.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description("Position of the first control point")
       .make_available(enable_points);
   b.add_input<decl::Vector>("Middle")
-      .default_value({0.0f, 2.0f, 0.0f})
+      .default_val({0.0f, 2.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description("Position of the middle control point")
       .make_available(enable_points);
   b.add_input<decl::Vector>("End")
-      .default_value({1.0f, 0.0f, 0.0f})
+      .default_val({1.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description("Position of the last control point")
       .make_available(enable_points);
   b.add_input<decl::Float>("Radius")
-      .default_value(1.0f)
+      .default_val(1.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
       .description("Distance of the points from the origin")
       .make_available(enable_radius);
   b.add_input<decl::Float>("Start Angle")
-      .default_value(0.0f)
+      .default_val(0.0f)
       .subtype(PROP_ANGLE)
       .description("Starting angle of the arc")
       .make_available(enable_radius);
   b.add_input<decl::Float>("Sweep Angle")
-      .default_value(1.75f * M_PI)
+      .default_val(1.75f * M_PI)
       .min(-2 * M_PI)
       .max(2 * M_PI)
       .subtype(PROP_ANGLE)
       .description("Length of the arc")
       .make_available(enable_radius);
   b.add_input<decl::Float>("Offset Angle")
-      .default_value(0.0f)
+      .default_val(0.0f)
       .subtype(PROP_ANGLE)
       .description("Offset angle of the arc")
       .make_available(enable_points);
   b.add_input<decl::Bool>("Connect Center")
-      .default_value(false)
+      .default_val(false)
       .description("Connect the arc at the center");
   b.add_input<decl::Bool>("Invert Arc")
-      .default_value(false)
+      .default_val(false)
       .description("Invert and draw opposite arc");
 
-  b.add_output<decl::Geometry>("Curve");
+  b.add_output<decl::Geo>("Curve");
   b.add_output<decl::Vector>("Center")
       .description("The center of the circle described by the three points")
       .make_available(enable_points);
@@ -92,54 +92,54 @@ static void node_declare(NodeDeclarationBuilder &b)
       .make_available(enable_points);
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryCurvePrimitiveArc *data = MEM_cnew<NodeGeometryCurvePrimitiveArc>(__func__);
+  NodeGeoCurvePrimitiveArc *data = mem_cnew<NodeGeoCurvePrimitiveArc>(__func__);
 
   data->mode = GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_RADIUS;
   node->storage = data;
 }
 
-static void node_update(bNodeTree *ntree, bNode *node)
+static void node_update(NodeTree *ntree, Node *node)
 {
-  const NodeGeometryCurvePrimitiveArc &storage = node_storage(*node);
-  const GeometryNodeCurvePrimitiveArcMode mode = (GeometryNodeCurvePrimitiveArcMode)storage.mode;
+  const NodeGeoCurvePrimitiveArc &storage = node_storage(*node);
+  const GeoNodeCurvePrimitiveArcMode mode = (GeoNodeCurvePrimitiveArcMode)storage.mode;
 
-  bNodeSocket *start_socket = static_cast<bNodeSocket *>(node->inputs.first)->next;
-  bNodeSocket *middle_socket = start_socket->next;
-  bNodeSocket *end_socket = middle_socket->next;
+  NodeSocket *start_socket = static_cast<NodeSocket *>(node->inputs.first)->next;
+  NodeSocket *middle_socket = start_socket->next;
+  NodeSocket *end_socket = middle_socket->next;
 
-  bNodeSocket *radius_socket = end_socket->next;
-  bNodeSocket *start_angle_socket = radius_socket->next;
-  bNodeSocket *sweep_angle_socket = start_angle_socket->next;
+  NodeSocket *radius_socket = end_socket->next;
+  NodeSocket *start_angle_socket = radius_socket->next;
+  NodeSocket *sweep_angle_socket = start_angle_socket->next;
 
-  bNodeSocket *offset_angle_socket = sweep_angle_socket->next;
+  NodeSocket *offset_angle_socket = sweep_angle_socket->next;
 
-  bNodeSocket *center_out_socket = static_cast<bNodeSocket *>(node->outputs.first)->next;
-  bNodeSocket *normal_out_socket = center_out_socket->next;
-  bNodeSocket *radius_out_socket = normal_out_socket->next;
+  NodeSocket *center_out_socket = static_cast<NodeSocket *>(node->outputs.first)->next;
+  NodeSocket *normal_out_socket = center_out_socket->next;
+  NodeSocket *radius_out_socket = normal_out_socket->next;
 
   const bool radius_mode = (mode == GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_RADIUS);
   const bool points_mode = (mode == GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_POINTS);
 
-  bke::nodeSetSocketAvailability(ntree, start_socket, points_mode);
-  bke::nodeSetSocketAvailability(ntree, middle_socket, points_mode);
-  bke::nodeSetSocketAvailability(ntree, end_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, start_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, middle_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, end_socket, points_mode);
 
-  bke::nodeSetSocketAvailability(ntree, radius_socket, radius_mode);
-  bke::nodeSetSocketAvailability(ntree, start_angle_socket, radius_mode);
-  bke::nodeSetSocketAvailability(ntree, sweep_angle_socket, radius_mode);
+  dune::nodeSetSocketAvailability(ntree, radius_socket, radius_mode);
+  dune::nodeSetSocketAvailability(ntree, start_angle_socket, radius_mode);
+  dune::nodeSetSocketAvailability(ntree, sweep_angle_socket, radius_mode);
 
-  bke::nodeSetSocketAvailability(ntree, offset_angle_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, offset_angle_socket, points_mode);
 
-  bke::nodeSetSocketAvailability(ntree, center_out_socket, points_mode);
-  bke::nodeSetSocketAvailability(ntree, normal_out_socket, points_mode);
-  bke::nodeSetSocketAvailability(ntree, radius_out_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, center_out_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, normal_out_socket, points_mode);
+  dune::nodeSetSocketAvailability(ntree, radius_out_socket, points_mode);
 }
 
 static float3 rotate_vector_around_axis(const float3 vector, const float3 axis, const float angle)
@@ -155,7 +155,7 @@ static bool colinear_f3_f3_f3(const float3 p1, const float3 p2, const float3 p3)
 {
   const float3 a = math::normalize(p2 - p1);
   const float3 b = math::normalize(p3 - p1);
-  return ELEM(a, b, b * -1.0f);
+  return elem(a, b, b * -1.0f);
 }
 
 static Curves *create_arc_curve_from_points(const int resolution,
@@ -170,8 +170,8 @@ static Curves *create_arc_curve_from_points(const int resolution,
                                             float &r_radius)
 {
   const int size = connect_center ? resolution + 1 : resolution;
-  Curves *curves_id = bke::curves_new_nomain_single(size, CURVE_TYPE_POLY);
-  bke::CurvesGeometry &curves = curves_id->geometry.wrap();
+  Curves *curves_id = dune::curves_new_nomain_single(size, CURVE_TYPE_POLY);
+  dune::CurvesGeo &curves = curves_id->geo.wrap();
 
   const int stepcount = resolution - 1;
   const int centerpoint = resolution;
@@ -288,8 +288,8 @@ static Curves *create_arc_curve_from_radius(const int resolution,
                                             const bool invert_arc)
 {
   const int size = connect_center ? resolution + 1 : resolution;
-  Curves *curves_id = bke::curves_new_nomain_single(size, CURVE_TYPE_POLY);
-  bke::CurvesGeometry &curves = curves_id->geometry.wrap();
+  Curves *curves_id = dune::curves_new_nomain_single(size, CURVE_TYPE_POLY);
+  dune::CurvesGeometry &curves = curves_id->geo.wrap();
 
   const int stepcount = resolution - 1;
   const int centerpoint = resolution;
@@ -313,11 +313,11 @@ static Curves *create_arc_curve_from_radius(const int resolution,
   return curves_id;
 }
 
-static void node_geo_exec(GeoNodeExecParams params)
+static void node_geo_ex(GeoNodeExParams params)
 {
-  const NodeGeometryCurvePrimitiveArc &storage = node_storage(params.node());
+  const NodeGeoCurvePrimitiveArc &storage = node_storage(params.node());
 
-  const GeometryNodeCurvePrimitiveArcMode mode = (GeometryNodeCurvePrimitiveArcMode)storage.mode;
+  const GeoNodeCurvePrimitiveArcMode mode = (GeoNodeCurvePrimitiveArcMode)storage.mode;
 
   switch (mode) {
     case GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_POINTS: {
@@ -334,7 +334,7 @@ static void node_geo_exec(GeoNodeExecParams params)
           r_center,
           r_normal,
           r_radius);
-      params.set_output("Curve", GeometrySet::from_curves(curves));
+      params.set_output("Curve", GeoSet::from_curves(curves));
       params.set_output("Center", r_center);
       params.set_output("Normal", r_normal);
       params.set_output("Radius", r_radius);
@@ -349,15 +349,15 @@ static void node_geo_exec(GeoNodeExecParams params)
           params.extract_input<bool>("Connect Center"),
           params.extract_input<bool>("Invert Arc"));
 
-      params.set_output("Curve", GeometrySet::from_curves(curves));
+      params.set_output("Curve", GeoSet::from_curves(curves));
       break;
     }
   }
 }
 
-static void node_rna(StructRNA *srna)
+static void node_rna(ApiStruct *sapi)
 {
-  static const EnumPropertyItem mode_items[] = {
+  static const EnumPropItem mode_items[] = {
       {GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_POINTS,
        "POINTS",
        ICON_NONE,
@@ -371,19 +371,19 @@ static void node_rna(StructRNA *srna)
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  RNA_def_node_enum(srna,
+  api_def_node_enum(sapi,
                     "mode",
                     "Mode",
                     "Method used to determine radius and placement",
                     mode_items,
-                    NOD_storage_enum_accessors(mode),
+                    node_storage_enum_accessors(mode),
                     GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_RADIUS);
 }
 
 static void node_register()
 {
   static bNodeType ntype;
-  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_ARC, "Arc", NODE_CLASS_GEOMETRY);
+  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_ARC, "Arc", NODE_CLASS_GEO);
   ntype.initfunc = node_init;
   ntype.updatefunc = node_update;
   node_type_storage(&ntype,
