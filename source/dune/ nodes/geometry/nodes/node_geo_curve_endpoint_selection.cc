@@ -1,45 +1,45 @@
-#include "BLI_task.hh"
+#include "lib_task.hh"
 
-#include "BKE_curves.hh"
+#include "dune_curves.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_curve_endpoint_selection_cc {
+namespace dune::nodes::node_geo_curve_endpoint_sel_cc {
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
   b.add_input<decl::Int>("Start Size")
       .min(0)
-      .default_value(1)
+      .default_val(1)
       .supports_field()
-      .description("The amount of points to select from the start of each spline");
+      .description("The amount of points to sel from the start of each spline");
   b.add_input<decl::Int>("End Size")
       .min(0)
-      .default_value(1)
+      .default_val(1)
       .supports_field()
-      .description("The amount of points to select from the end of each spline");
-  b.add_output<decl::Bool>("Selection")
-      .field_source_reference_all()
-      .description("The selection from the start and end of the splines based on the input sizes");
+      .description("The amount of points to sel from the end of each spline");
+  b.add_output<decl::Bool>("Sel")
+      .field_src_ref_all()
+      .description("The sel from the start and end of the splines based on the input sizes");
 }
 
-class EndpointFieldInput final : public bke::CurvesFieldInput {
+class EndpointFieldInput final : public dune::CurvesFieldInput {
   Field<int> start_size_;
   Field<int> end_size_;
 
  public:
   EndpointFieldInput(Field<int> start_size, Field<int> end_size)
-      : bke::CurvesFieldInput(CPPType::get<bool>(), "Endpoint Selection node"),
+      : dune::CurvesFieldInput(CPPType::get<bool>(), "Endpoint Sel node"),
         start_size_(start_size),
         end_size_(end_size)
   {
     category_ = Category::Generated;
   }
 
-  GVArray get_varray_for_context(const bke::CurvesGeometry &curves,
+  GVArray get_varray_for_cxt(const dune::CurvesGeo &curves,
                                  const AttrDomain domain,
                                  const IndexMask & /*mask*/) const final
   {
@@ -50,16 +50,16 @@ class EndpointFieldInput final : public bke::CurvesFieldInput {
       return {};
     }
 
-    const bke::CurvesFieldContext size_context{curves, AttrDomain::Curve};
-    fn::FieldEvaluator evaluator{size_context, curves.curves_num()};
+    const dune::CurvesFieldCxt size_cxt{curves, AttrDomain::Curve};
+    fn::FieldEval evaluator{size_cxt, curves.curves_num()};
     evaluator.add(start_size_);
     evaluator.add(end_size_);
-    evaluator.evaluate();
-    const VArray<int> start_size = evaluator.get_evaluated<int>(0);
-    const VArray<int> end_size = evaluator.get_evaluated<int>(1);
+    evaluator.eval();
+    const VArray<int> start_size = eval.get_eval<int>(0);
+    const VArray<int> end_size = eval.get_eval<int>(1);
 
-    Array<bool> selection(curves.points_num(), false);
-    MutableSpan<bool> selection_span = selection.as_mutable_span();
+    Array<bool> sel(curves.points_num(), false);
+    MutableSpan<bool> sel_span = sel.as_mutable_span();
     const OffsetIndices points_by_curve = curves.points_by_curve();
     devirtualize_varray2(start_size, end_size, [&](const auto &start_size, const auto &end_size) {
       threading::parallel_for(curves.curves_range(), 1024, [&](IndexRange curves_range) {
@@ -77,7 +77,7 @@ class EndpointFieldInput final : public bke::CurvesFieldInput {
     return VArray<bool>::ForContainer(std::move(selection));
   };
 
-  void for_each_field_input_recursive(FunctionRef<void(const FieldInput &)> fn) const override
+  void for_each_field_input_recursive(FnRef<void(const FieldInput &)> fn) const override
   {
     start_size_.node().for_each_field_input_recursive(fn);
     end_size_.node().for_each_field_input_recursive(fn);
@@ -98,31 +98,31 @@ class EndpointFieldInput final : public bke::CurvesFieldInput {
     return false;
   }
 
-  std::optional<AttrDomain> preferred_domain(const CurvesGeometry & /*curves*/) const
+  std::optional<AttrDomain> preferred_domain(const CurvesGeo & /*curves*/) const
   {
     return AttrDomain::Point;
   }
 };
 
-static void node_geo_ex(GeoNodeExecParams params)
+static void node_geo_ex(GeoNodeExParams params)
 {
   Field<int> start_size = params.extract_input<Field<int>>("Start Size");
   Field<int> end_size = params.extract_input<Field<int>>("End Size");
-  Field<bool> selection_field{std::make_shared<EndpointFieldInput>(start_size, end_size)};
-  params.set_output("Selection", std::move(selection_field));
+  Field<bool> sel_field{std::make_shared<EndpointFieldInput>(start_size, end_size)};
+  params.set_output("Sel", std::move(sel_field));
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
 
   geo_node_type_base(
-      &ntype, GEO_NODE_CURVE_ENDPOINT_SELECTION, "Endpoint Selection", NODE_CLASS_INPUT);
-  ntype.declare = node_declare;
-  ntype.geometry_node_execute = node_geo_exec;
+      &ntype, GEO_NODE_CURVE_ENDPOINT_SEL, "Endpoint Sel", NODE_CLASS_INPUT);
+  ntype.decl = node_decl;
+  ntype.geo_node_ex = node_geo_ex;
 
   nodeRegisterType(&ntype);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_endpoint_selection_cc
+}  // namespace dune::nodes::node_geo_curve_endpoint_sel_cc
