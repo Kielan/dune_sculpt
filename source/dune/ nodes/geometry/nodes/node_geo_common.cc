@@ -1,40 +1,39 @@
-#include "BKE_node.hh"
+#include "dune_node.hh"
 
-#include "NOD_geometry.hh"
-#include "NOD_node_declaration.hh"
+#include "node_geo.hh"
+#include "node_decl.hh"
 
-#include "NOD_common.h"
 #include "node_common.h"
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-#include "RNA_access.hh"
+#include "api_access.hh"
 
-namespace blender::nodes {
+namespace dune::nodes {
 
 static void register_node_type_geo_group()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
 
-  node_type_base_custom(&ntype, "GeometryNodeGroup", "Group", "GROUP", NODE_CLASS_GROUP);
+  node_type_base_custom(&ntype, "GeoNodeGroup", "Group", "GROUP", NODE_CLASS_GROUP);
   ntype.type = NODE_GROUP;
   ntype.poll = geo_node_poll_default;
   ntype.poll_instance = node_group_poll_instance;
   ntype.insert_link = node_insert_link_default;
-  ntype.rna_ext.srna = RNA_struct_find("GeometryNodeGroup");
-  BLI_assert(ntype.rna_ext.srna != nullptr);
-  RNA_struct_blender_type_set(ntype.rna_ext.srna, &ntype);
+  ntype.api_ext.sapi = api_struct_find("GeoNodeGroup");
+  lib_assert(ntype.api_ext.sapi != nullptr);
+  api_struct_dune_type_set(ntype.api_ext.sapi, &ntype);
 
-  bke::node_type_size(&ntype, 140, 60, 400);
-  ntype.labelfunc = node_group_label;
-  ntype.declare = node_group_declare;
+  dune::node_type_size(&ntype, 140, 60, 400);
+  ntype.labelfn = node_group_label;
+  ntype.decl = node_group_decl;
 
   nodeRegisterType(&ntype);
 }
-NOD_REGISTER_NODE(register_node_type_geo_group)
+REGISTER_NODE(register_node_type_geo_group)
 
 }  // namespace dune::nodes
 
-void register_node_type_geo_custom_group(bNodeType *ntype)
+void register_node_type_geo_custom_group(NodeType *ntype)
 {
   /* These methods can be overridden but need a default implementation otherwise. */
   if (ntype->poll == nullptr) {
@@ -43,5 +42,5 @@ void register_node_type_geo_custom_group(bNodeType *ntype)
   if (ntype->insert_link == nullptr) {
     ntype->insert_link = node_insert_link_default;
   }
-  ntype->declare = blender::nodes::node_group_declare;
+  ntype->declare = dune::nodes::node_group_declare;
 }
