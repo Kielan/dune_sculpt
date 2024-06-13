@@ -1,128 +1,128 @@
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "DNA_grease_pencil_types.h"
+#include "types_pen.h"
 
-#include "BKE_grease_pencil.hh"
+#include "dune_pen.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "GEO_fillet_curves.hh"
+#include "geo_fillet_curves.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_curve_fillet_cc {
+namespace dune::nodes::node_geo_curve_fillet_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCurveFillet)
+NODE_STORAGE_FNS(NodeGeoCurveFillet)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  b.add_input<decl::Geometry>("Curve").supported_type(
-      {GeometryComponent::Type::Curve, GeometryComponent::Type::GreasePencil});
-  b.add_input<decl::Int>("Count").default_value(1).min(1).max(1000).field_on_all().make_available(
-      [](bNode &node) { node_storage(node).mode = GEO_NODE_CURVE_FILLET_POLY; });
+  b.add_input<decl::Geo>("Curve").supported_type(
+      {GeoComponent::Type::Curve, GeoComponent::Type::Pen});
+  b.add_input<decl::Int>("Count").default_val(1).min(1).max(1000).field_on_all().make_available(
+      [](Node &node) { node_storage(node).mode = GEO_NODE_CURVE_FILLET_POLY; });
   b.add_input<decl::Float>("Radius")
       .min(0.0f)
       .max(FLT_MAX)
-      .subtype(PropertySubType::PROP_DISTANCE)
-      .default_value(0.25f)
+      .subtype(PropSubType::PROP_DISTANCE)
+      .default_val(0.25f)
       .field_on_all();
   b.add_input<decl::Bool>("Limit Radius")
-      .description("Limit the maximum value of the radius in order to avoid overlapping fillets");
-  b.add_output<decl::Geometry>("Curve").propagate_all();
+      .description("Limit the max val of the radius in order to avoid overlapping fillets");
+  b.add_output<decl::Geo>("Curve").propagate_all();
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryCurveFillet *data = MEM_cnew<NodeGeometryCurveFillet>(__func__);
+  NodeGeoCurveFillet *data = mem_cnew<NodeGeometryCurveFillet>(__func__);
   data->mode = GEO_NODE_CURVE_FILLET_BEZIER;
   node->storage = data;
 }
 
-static void node_update(bNodeTree *ntree, bNode *node)
+static void node_update(NodeTree *ntree, Node *node)
 {
-  const NodeGeometryCurveFillet &storage = node_storage(*node);
-  const GeometryNodeCurveFilletMode mode = (GeometryNodeCurveFilletMode)storage.mode;
-  bNodeSocket *poly_socket = static_cast<bNodeSocket *>(node->inputs.first)->next;
-  bke::nodeSetSocketAvailability(ntree, poly_socket, mode == GEO_NODE_CURVE_FILLET_POLY);
+  const NodeGeoCurveFillet &storage = node_storage(*node);
+  const GeoNodeCurveFilletMode mode = (GeoNodeCurveFilletMode)storage.mode;
+  NodeSocket *poly_socket = static_cast<NodeSocket *>(node->inputs.first)->next;
+  dunee::nodeSetSocketAvailability(ntree, poly_socket, mode == GEO_NODE_CURVE_FILLET_POLY);
 }
 
-static bke::CurvesGeometry fillet_curve(const bke::CurvesGeometry &src_curves,
-                                        const GeometryNodeCurveFilletMode mode,
-                                        const fn::FieldContext &field_context,
+static bke::CurvesGeometry fillet_curve(const dunee::CurvesGeo &src_curves,
+                                        const GeoNodeCurveFilletMode mode,
+                                        const fn::FieldCxt &field_cxt,
                                         const std::optional<Field<int>> &count_field,
                                         const Field<float> &radius_field,
                                         const bool limit_radius,
                                         const AnonymousAttributePropagationInfo &propagation_info)
 {
-  fn::FieldEvaluator evaluator{field_context, src_curves.points_num()};
+  fn::FieldEvaluator evaluator{field_cxt, src_curves.points_num()};
   evaluator.add(radius_field);
 
   switch (mode) {
     case GEO_NODE_CURVE_FILLET_BEZIER: {
-      evaluator.evaluate();
-      return geometry::fillet_curves_bezier(src_curves,
-                                            src_curves.curves_range(),
-                                            evaluator.get_evaluated<float>(0),
-                                            limit_radius,
-                                            propagation_info);
+      evaluator.eval();
+      return geo::fillet_curves_bezier(src_curves,
+                                       src_curves.curves_range(),
+                                       evaluator.get_eval<float>(0),
+                                       limit_radius,
+                                       propagation_info);
     }
     case GEO_NODE_CURVE_FILLET_POLY: {
       evaluator.add(*count_field);
-      evaluator.evaluate();
-      return geometry::fillet_curves_poly(src_curves,
-                                          src_curves.curves_range(),
-                                          evaluator.get_evaluated<float>(0),
-                                          evaluator.get_evaluated<int>(1),
-                                          limit_radius,
-                                          propagation_info);
+      evaluator.eval();
+      return geo::fillet_curves_poly(src_curves,
+                                     src_curves.curves_range(),
+                                     evaluator.get_eval<float>(0),
+                                     evaluator.get_eval<int>(1),
+                                     limit_radius,
+                                     propagation_info);
     }
   }
-  return bke::CurvesGeometry();
+  return dune::CurvesGeo();
 }
 
-static void fillet_grease_pencil(GreasePencil &grease_pencil,
-                                 const GeometryNodeCurveFilletMode mode,
-                                 const std::optional<Field<int>> &count_field,
-                                 const Field<float> &radius_field,
-                                 const bool limit_radius,
-                                 const AnonymousAttributePropagationInfo &propagation_info)
+static void fillet_pen(Pen &pen,
+                       const GeoNodeCurveFilletMode mode,
+                       const std::optional<Field<int>> &count_field,
+                       const Field<float> &radius_field,
+                       const bool limit_radius,
+                       const AnonymousAttrPropagationInfo &propagation_info)
 {
-  using namespace blender::bke::greasepencil;
-  for (const int layer_index : grease_pencil.layers().index_range()) {
-    Drawing *drawing = get_eval_grease_pencil_layer_drawing_for_write(grease_pencil, layer_index);
+  using namespace dune::pen;
+  for (const int layer_index : pen.layers().index_range()) {
+    Drawing *drawing = get_eval_pen_layer_drawing_for_write(pen, layer_index);
     if (drawing == nullptr) {
       continue;
     }
-    const bke::CurvesGeometry &src_curves = drawing->strokes();
+    const dune::CurvesGeo &src_curves = drawing->strokes();
     if (src_curves.points_num() == 0) {
       continue;
     }
-    const bke::GreasePencilLayerFieldContext field_context(
-        grease_pencil, AttrDomain::Curve, layer_index);
-    bke::CurvesGeometry dst_curves = fillet_curve(src_curves,
-                                                  mode,
-                                                  field_context,
-                                                  count_field,
-                                                  radius_field,
-                                                  limit_radius,
-                                                  propagation_info);
+    const dune::PenLayerFieldContext field_cxt(
+        pen, AttrDomain::Curve, layer_index);
+    dune::CurvesGeo dst_curves = fillet_curve(src_curves,
+                                              mode,
+                                              field_context,
+                                              count_field,
+                                              radius_field,
+                                              limit_radius,
+                                              propagation_info);
     drawing->strokes_for_write() = std::move(dst_curves);
     drawing->tag_topology_changed();
   }
 }
 
-static void node_geo_exec(GeoNodeExecParams params)
+static void node_geo_ex(GeoNodeExParams params)
 {
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Curve");
+  GeoSet geo_set = params.extract_input<GeoSet>("Curve");
 
-  const NodeGeometryCurveFillet &storage = node_storage(params.node());
-  const GeometryNodeCurveFilletMode mode = (GeometryNodeCurveFilletMode)storage.mode;
+  const NodeGeoCurveFillet &storage = node_storage(params.node());
+  const GeoNodeCurveFilletMode mode = (GeoNodeCurveFilletMode)storage.mode;
 
   Field<float> radius_field = params.extract_input<Field<float>>("Radius");
   const bool limit_radius = params.extract_input<bool>("Limit Radius");
@@ -132,27 +132,27 @@ static void node_geo_exec(GeoNodeExecParams params)
     count_field.emplace(params.extract_input<Field<int>>("Count"));
   }
 
-  const AnonymousAttributePropagationInfo &propagation_info = params.get_output_propagation_info(
+  const AnonymousAttrPropInfo &prop_info = params.get_output_prop_info(
       "Curve");
 
-  geometry_set.modify_geometry_sets([&](GeometrySet &geometry_set) {
-    if (geometry_set.has_curves()) {
-      const Curves &curves_id = *geometry_set.get_curves();
-      const bke::CurvesGeometry &src_curves = curves_id.geometry.wrap();
-      const bke::CurvesFieldContext field_context{src_curves, AttrDomain::Point};
-      bke::CurvesGeometry dst_curves = fillet_curve(src_curves,
-                                                    mode,
-                                                    field_context,
-                                                    count_field,
-                                                    radius_field,
+  geo_set.mod_geo_sets([&](GeoSet &geo_set) {
+    if (geo_set.has_curves()) {
+      const Curves &curves_id = *geo_set.get_curves();
+      const dune::CurvesGeo &src_curves = curves_id.geometry.wrap();
+      const dune::CurvesFieldCxt field_cxt{src_curves, AttrDomain::Point};
+      dune::CurvesGeo dst_curves = fillet_curve(src_curves,
+                                                mode,
+                                                field_context,
+                                                count_field,
+                                                radius_field,
                                                     limit_radius,
                                                     propagation_info);
-      Curves *dst_curves_id = bke::curves_new_nomain(std::move(dst_curves));
-      bke::curves_copy_parameters(curves_id, *dst_curves_id);
-      geometry_set.replace_curves(dst_curves_id);
+      Curves *dst_curves_id = dune::curves_new_nomain(std::move(dst_curves));
+      dunee::curves_copy_params(curves_id, *dst_curves_id);
+      geo_set.replace_curves(dst_curves_id);
     }
     if (geometry_set.has_grease_pencil()) {
-      GreasePencil &grease_pencil = *geometry_set.get_grease_pencil_for_write();
+      Pen &grease_pencil = *geometry_set.get_grease_pencil_for_write();
       fillet_grease_pencil(
           grease_pencil, mode, count_field, radius_field, limit_radius, propagation_info);
     }
