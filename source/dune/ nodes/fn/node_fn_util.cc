@@ -1,14 +1,14 @@
 #include "node_fn_util.hh"
 #include "node_util.hh"
 
-#include "NOD_socket_search_link.hh"
+#include "node_socket_search_link.hh"
 
 static bool fn_node_poll_default(const NodeType * /*ntype*/,
                                  const NodeTree *ntree,
                                  const char **r_disabled_hint)
 {
   /* Fn nodes are only supported in simulation node trees so far. */
-  if (!STREQ(ntree->idname, "GeometryNodeTree")) {
+  if (!STREQ(ntree->idname, "GeoNodeTree")) {
     *r_disabled_hint = RPT_("Not a geometry node tree");
     return false;
   }
