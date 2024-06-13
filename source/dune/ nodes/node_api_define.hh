@@ -7,7 +7,7 @@
 #include "win_types.hh" /* For notifier defines */
 
 void api_Node_update(Main *main, Scene *scene, ApiPtr *ptr);
-void aou_Node_socket_update(Main *main, Scene *scene, ApiPtr *ptr);
+void api_Node_socket_update(Main *main, Scene *scene, ApiPtr *ptr);
 
 namespace dune::nodes {
 
@@ -22,15 +22,15 @@ struct EnumApiAccessors {
 };
 
  /* Generates accessor methods for a prop stored directly in the `bNode`, typically
- * `bNode->custom1` or similar. */
-#define NOD_inline_enum_accessors(member) \
-  EnumRNAAccessors( \
+ * `Node->custom1` or similar. */
+#define node_inline_enum_accessors(member) \
+  EnumApiAccessors( \
       [](ApiPtr *ptr, ApiProp * /*prop*/) -> int { \
         const Node &node = *static_cast<const Node *>(ptr->data); \
         return node.member; \
       }, \
       [](ApiPtr *ptr, ApiProp * /*prop*/, const int val) { \
-        Node &node = *static_cast<bNode *>(ptr->data); \
+        Node &node = *static_cast<Node *>(ptr->data); \
         node.member = val; \
       })
 
@@ -39,7 +39,7 @@ struct EnumApiAccessors {
 #define NOD_storage_enum_accessors(member) \
   EnumApiAccessors( \
       [](ApiPtr *ptr, ApiProp * /*prop*/) -> int { \
-        const Node &node = *static_cast<const bNode *>(ptr->data); \
+        const Node &node = *static_cast<const Node *>(ptr->data); \
         return node_storage(node).member; \
       }, \
       [](ApiPtr *ptr, ApiProp * /*prop*/, const int val) { \
@@ -47,16 +47,16 @@ struct EnumApiAccessors {
         node_storage(node).member = val; \
       })
 
-const EnumPropertyItem *enum_items_filter(const EnumPropertyItem *original_item_array,
-                                          FunctionRef<bool(const EnumPropertyItem &item)> fn);
+const EnumPropItem *enum_items_filter(const EnumPropItem *original_item_arr,
+                                      FnRef<bool(const EnumPropItem &item)> fn);
 
-PropertyRNA *RNA_def_node_enum(StructRNA *srna,
-                               const char *identifier,
+ApiProp *api_def_node_enum(ApiStruct *sapi,
+                               const char *id,
                                const char *ui_name,
                                const char *ui_description,
-                               const EnumPropertyItem *static_items,
-                               const EnumRNAAccessors accessors,
-                               std::optional<int> default_value = std::nullopt,
-                               const EnumPropertyItemFunc item_func = nullptr);
+                               const EnumPropItem *static_items,
+                               const EnumApiAccessors accessors,
+                               std::optional<int> default_val = std::nullopt,
+                               const EnumPropItemFn item_fn = nullptr);
 
-}  // namespace blender::nodes
+}  // namespace dune::nodes
