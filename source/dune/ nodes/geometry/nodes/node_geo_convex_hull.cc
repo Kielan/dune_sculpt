@@ -6,9 +6,9 @@
 #include "dune_material.h"
 #include "dune_mesh.hh"
 
-#include "GEO_randomize.hh"
+#include "geo_randomize.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
 #ifdef WITH_BULLET
 #  include "RBI_hull_api.h"
@@ -16,9 +16,9 @@
 
 namespace dune::nodes::node_geo_convex_hull_cc {
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  b.add_input<decl::Geometry>("Geometry");
+  b.add_input<decl::Geometry>("Geo");
   b.add_output<decl::Geometry>("Convex Hull");
 }
 
@@ -31,7 +31,7 @@ static Mesh *hull_from_bullet(const Mesh *mesh, Span<float3> coords)
   const int verts_num = plConvexHullNumVerts(hull);
   const int faces_num = verts_num <= 2 ? 0 : plConvexHullNumFaces(hull);
   const int loops_num = verts_num <= 2 ? 0 : plConvexHullNumLoops(hull);
-  /* Half as many edges as loops, because the mesh is manifold. */
+  /* Half as many edges as loops, bc the mesh is manifold. */
   const int edges_num = verts_num == 2 ? 1 : verts_num < 2 ? 0 : loops_num / 2;
 
   /* Create Mesh *result with proper capacity. */
@@ -127,7 +127,7 @@ static Mesh *hull_from_bullet(const Mesh *mesh, Span<float3> coords)
   return result;
 }
 
-static Mesh *compute_hull(const GeometrySet &geometry_set)
+static Mesh *compute_hull(const GeoSet &geo_set)
 {
   int span_count = 0;
   int count = 0;
@@ -146,7 +146,7 @@ static Mesh *compute_hull(const GeometrySet &geometry_set)
     }
   }
 
-  if (const PointCloud *points = geometry_set.get_pointcloud()) {
+  if (const PointCloud *points = geo_set.get_pointcloud()) {
     count++;
     if (const VArray positions = *points->attributes().lookup<float3>("position")) {
       if (positions.is_span()) {
@@ -157,11 +157,11 @@ static Mesh *compute_hull(const GeometrySet &geometry_set)
     }
   }
 
-  if (const Curves *curves_id = geometry_set.get_curves()) {
+  if (const Curves *curves_id = geo_set.get_curves()) {
     count++;
     span_count++;
-    const bke::CurvesGeometry &curves = curves_id->geometry.wrap();
-    positions_span = curves.evaluated_positions();
+    const dune::CurvesGeo &curves = curves_id->geo.wrap();
+    positions_span = curves.eval_positions();
     total_num += positions_span.size();
   }
 
@@ -172,41 +172,41 @@ static Mesh *compute_hull(const GeometrySet &geometry_set)
   /* If there is only one positions virtual array and it is already contiguous, avoid copying
    * all of the positions and instead pass the span directly to the convex hull function. */
   if (span_count == 1 && count == 1) {
-    return hull_from_bullet(geometry_set.get_mesh(), positions_span);
+    return hull_from_bullet(geo_set.get_mesh(), positions_span);
   }
 
   Array<float3> positions(total_num);
   int offset = 0;
 
-  if (const Mesh *mesh = geometry_set.get_mesh()) {
-    if (const VArray varray = *mesh->attributes().lookup<float3>("position")) {
+  if (const Mesh *mesh = geo_set.get_mesh()) {
+    if (const VArray varray = *mesh->attrs().lookup<float3>("position")) {
       varray.materialize(positions.as_mutable_span().slice(offset, varray.size()));
       offset += varray.size();
     }
   }
 
-  if (const PointCloud *points = geometry_set.get_pointcloud()) {
-    if (const VArray varray = *points->attributes().lookup<float3>("position")) {
+  if (const PointCloud *points = geo_set.get_pointcloud()) {
+    if (const VArray varray = *points->attrs().lookup<float3>("position")) {
       varray.materialize(positions.as_mutable_span().slice(offset, varray.size()));
       offset += varray.size();
     }
   }
 
-  if (const Curves *curves_id = geometry_set.get_curves()) {
-    const dune::CurvesGeometry &curves = curves_id->geometry.wrap();
-    Span<float3> array = curves.evaluated_positions();
+  if (const Curves *curves_id = geo_set.get_curves()) {
+    const dune::CurvesGeo &curves = curves_id->geo.wrap();
+    Span<float3> array = curves.eval_positions();
     positions.as_mutable_span().slice(offset, array.size()).copy_from(array);
     offset += array.size();
   }
 
-  return hull_from_bullet(geometry_set.get_mesh(), positions);
+  return hull_from_bullet(geo_set.get_mesh(), positions);
 }
 
-static void convex_hull_pen(GeometrySet &geometry_set)
+static void convex_hull_pen(GeoSet &geo_set)
 {
   using namespace dune::pen;
 
-  const Pen &pen = *geometry_set.get_grease_pen();
+  const Pen &pen = *geo_set.get_pen();
   Array<Mesh *> mesh_by_layer(pen.layers().size(), nullptr);
 
   for (const int layer_index : pen.layers().index_range()) {
@@ -214,8 +214,8 @@ static void convex_hull_pen(GeometrySet &geometry_set)
     if (drawing == nullptr) {
       continue;
     }
-    const dune::CurvesGeometry &curves = drawing->strokes();
-    const Span<float3> positions_span = curves.evaluated_positions();
+    const dune::CurvesGeo &curves = drawing->strokes();
+    const Span<float3> positions_span = curves.eval_positions();
     if (positions_span.is_empty()) {
       continue;
     }
@@ -227,10 +227,10 @@ static void convex_hull_pen(GeometrySet &geometry_set)
   }
 
   InstancesComponent &instances_component =
-      geometry_set.get_component_for_write<InstancesComponent>();
+      geo_set.get_component_for_write<InstancesComponent>();
   dune::Instances *instances = instances_component.get_for_write();
   if (instances == nullptr) {
-    instances = new bke::Instances();
+    instances = new dune::Instances();
     instances_component.replace(instances);
   }
   for (Mesh *mesh : mesh_by_layer) {
@@ -238,13 +238,13 @@ static void convex_hull_pen(GeometrySet &geometry_set)
       /* Add an empty ref so the num of layers and instances match.
        * This makes it easy to reconstruct the layers afterwards and keep their attributes.
        * In this particular case we don't propagate attributes. */
-      const int handle = instances->add_reference(dune::InstanceRef());
-      instances->add_instance(handle, float4x4::identity());
+      const int handle = instances->add_ref(dune::InstanceRef());
+      instances->add_instance(handle, float4x4::id());
       continue;
     }
-    GeometrySet tmp_set = GeometrySet::from_mesh(mesh);
+    GeoSet tmp_set = GeoSet::from_mesh(mesh);
     const int handle = instances->add_ref(dune::InstanceRef{tmp_set});
-    instances->add_instance(handle, float4x4::identity());
+    instances->add_instance(handle, float4x4::id());
   }
   geometry_set.replace_pen(nullptr);
 }
@@ -253,39 +253,39 @@ static void convex_hull_pen(GeometrySet &geometry_set)
 
 static void node_geo_ex(GeoNodeExParams params)
 {
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Geometry");
+  GeoSet geo_set = params.extract_input<GeoSet>("Geo");
 
 #ifdef WITH_BULLET
 
-  geometry_set.modify_geometry_sets([&](GeometrySet &geometry_set) {
-    Mesh *mesh = compute_hull(geometry_set);
+  geo_set.mod_geo_sets([&](GeoSet &geo_set) {
+    Mesh *mesh = compute_hull(geo_set);
     if (mesh) {
-      geometry::debug_randomize_mesh_order(mesh);
+      geo::debug_randomize_mesh_order(mesh);
     }
-    geometry_set.replace_mesh(mesh);
-    if (geometry_set.has_pen()) {
-      convex_hull_pen(geometry_set);
+    geo_set.replace_mesh(mesh);
+    if (geo_set.has_pen()) {
+      convex_hull_pen(geo_set);
     }
-    geometry_set.keep_only_during_modify({GeometryComponent::Type::Mesh});
+    geo_set.keep_only_during_modify({GeoComponent::Type::Mesh});
   });
 
-  params.set_output("Convex Hull", std::move(geometry_set));
+  params.set_output("Convex Hull", std::move(geo_set));
 #else
   params.err_msg_add(NodeWarningType::Err,
-                           TIP_("Disabled, Blender was compiled without Bullet"));
+                           TIP_("Disabled, Dune was compiled without Bullet"));
   params.set_default_remaining_outputs();
 #endif /* WITH_BULLET */
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
 
-  geo_node_type_base(&ntype, GEO_NODE_CONVEX_HULL, "Convex Hull", NODE_CLASS_GEOMETRY);
-  ntype.declare = node_declare;
-  ntype.geometry_node_execute = node_geo_exec;
+  geo_node_type_base(&ntype, GEO_NODE_CONVEX_HULL, "Convex Hull", NODE_CLASS_GEO);
+  ntype.decl = node_declare;
+  ntype.geo_node_ex = node_geo_ex;
   nodeRegisterType(&ntype);
 }
 NOD_REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_convex_hull_cc
+}  // namespace dune::nodes::node_geo_convex_hull_cc
