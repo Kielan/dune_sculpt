@@ -1,43 +1,43 @@
-#include "BLI_array.hh"
-#include "BLI_delaunay_2d.hh"
-#include "BLI_math_vector_types.hh"
+#include "lib_array.hh"
+#include "lib_delaunay_2d.hh"
+#include "lib_math_vector_types.hh"
 
-#include "BKE_curves.hh"
-#include "BKE_grease_pencil.hh"
-#include "BKE_instances.hh"
-#include "BKE_mesh.hh"
+#include "lib_curves.hh"
+#include "lib_pen.hh"
+#include "dune_instances.hh"
+#include "dune_mesh.hh"
 
-#include "BLI_task.hh"
+#include "lib_task.hh"
 
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
 #include "node_geometry_util.hh"
 
-namespace blender::nodes::node_geo_curve_fill_cc {
+namespace dune::nodes::node_geo_curve_fill_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCurveFill)
+NODE_STORAGE_FNS(NodeGeoCurveFill)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  b.add_input<decl::Geometry>("Curve").supported_type(
-      {GeometryComponent::Type::Curve, GeometryComponent::Type::GreasePencil});
-  b.add_input<decl::Int>("Group ID")
+  b.add_input<decl::Geo>("Curve").supported_type(
+      {GeoComponent::Type::Curve, GeoComponent::Type::Pen});
+  b.add_input<decl::Int>("Group Id")
       .supports_field()
-      .hide_value()
+      .hide_val()
       .description(
           "An index used to group curves together. Filling is done separately for each group");
-  b.add_output<decl::Geometry>("Mesh");
+  b.add_output<decl::Geo>("Mesh");
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
   NodeGeometryCurveFill *data = MEM_cnew<NodeGeometryCurveFill>(__func__);
 
@@ -56,11 +56,11 @@ static void fill_curve_vert_indices(const OffsetIndices<int> offsets,
   });
 }
 
-static meshintersect::CDT_result<double> do_cdt(const bke::CurvesGeometry &curves,
+static meshintersect::CDT_result<double> do_cdt(const dune::CurvesGeo &curves,
                                                 const CDT_output_type output_type)
 {
-  const OffsetIndices points_by_curve = curves.evaluated_points_by_curve();
-  const Span<float3> positions = curves.evaluated_positions();
+  const OffsetIndices points_by_curve = curves.eval_points_by_curve();
+  const Span<float3> positions = curves.eval_positions();
 
   Array<double2> positions_2d(positions.size());
   threading::parallel_for(positions.index_range(), 2048, [&](const IndexRange range) {
@@ -80,15 +80,15 @@ static meshintersect::CDT_result<double> do_cdt(const bke::CurvesGeometry &curve
   return delaunay_2d_calc(input, output_type);
 }
 
-static meshintersect::CDT_result<double> do_cdt_with_mask(const bke::CurvesGeometry &curves,
+static meshintersect::CDT_result<double> do_cdt_with_mask(const dune::CurvesGeo &curves,
                                                           const CDT_output_type output_type,
                                                           const IndexMask &mask)
 {
-  const OffsetIndices points_by_curve = curves.evaluated_points_by_curve();
-  const Span<float3> positions = curves.evaluated_positions();
+  const OffsetIndices points_by_curve = curves.eval_points_by_curve();
+  const Span<float3> positions = curves.eval_positions();
 
   Array<int> offsets_data(mask.size() + 1);
-  const OffsetIndices points_by_curve_masked = offset_indices::gather_selected_offsets(
+  const OffsetIndices points_by_curve_masked = offset_indices::gather_sel_offsets(
       points_by_curve, mask, offsets_data);
 
   Array<double2> positions_2d(points_by_curve_masked.total_size());
@@ -114,15 +114,15 @@ static meshintersect::CDT_result<double> do_cdt_with_mask(const bke::CurvesGeome
 }
 
 static Array<meshintersect::CDT_result<double>> do_group_aware_cdt(
-    const bke::CurvesGeometry &curves,
+    const dune::CurvesGeo &curves,
     const CDT_output_type output_type,
     const Field<int> &group_index_field)
 {
-  const bke::GeometryFieldContext field_context{curves, AttrDomain::Curve};
-  fn::FieldEvaluator data_evaluator{field_context, curves.curves_num()};
+  const dune::GeoFieldCxt field_cxt{curves, AttrDomain::Curve};
+  fn::FieldEval data_evaluator{field_cxt, curves.curves_num()};
   data_evaluator.add(group_index_field);
-  data_evaluator.evaluate();
-  const VArray<int> curve_group_ids = data_evaluator.get_evaluated<int>(0);
+  data_evaluator.eval();
+  const VArray<int> curve_group_ids = data_evaluator.get_eval<int>(0);
 
   if (curve_group_ids.is_single()) {
     return {do_cdt(curves, output_type)};
@@ -134,11 +134,11 @@ static Array<meshintersect::CDT_result<double>> do_group_aware_cdt(
   VectorSet<int> group_indexing(group_ids_span);
   const int groups_num = group_indexing.size();
 
-  IndexMaskMemory mask_memory;
+  IndexMaskMem mask_mem;
   Array<IndexMask> group_masks(groups_num);
   IndexMask::from_groups<int>(
       IndexMask(domain_size),
-      mask_memory,
+      mask_mem,
       [&](const int i) {
         const int group_id = group_ids_span[i];
         return group_indexing.index_of(group_id);
@@ -196,7 +196,7 @@ static Mesh *cdts_to_mesh(const Span<meshintersect::CDT_result<double>> results)
   const OffsetIndices face_groups = offset_indices::accumulate_counts_to_offsets(face_groups_data);
   const OffsetIndices loop_groups = offset_indices::accumulate_counts_to_offsets(loop_groups_data);
 
-  Mesh *mesh = BKE_mesh_new_nomain(vert_groups.total_size(),
+  Mesh *mesh = dune_mesh_new_nomain(vert_groups.total_size(),
                                    edge_groups.total_size(),
                                    face_groups.total_size(),
                                    loop_groups.total_size());
@@ -240,43 +240,43 @@ static Mesh *cdts_to_mesh(const Span<meshintersect::CDT_result<double>> results)
 
   /* The delaunay triangulation doesn't seem to return all of the necessary all_edges, even in
    * triangulation mode. */
-  bke::mesh_calc_edges(*mesh, true, false);
-  bke::mesh_smooth_set(*mesh, false);
+  dune::mesh_calc_edges(*mesh, true, false);
+  dune::mesh_smooth_set(*mesh, false);
 
   mesh->tag_overlapping_none();
 
   return mesh;
 }
 
-static void curve_fill_calculate(GeometrySet &geometry_set,
-                                 const GeometryNodeCurveFillMode mode,
-                                 const Field<int> &group_index)
+static void curve_fill_calc(GeoSet &geo_set,
+                            const GeoNodeCurveFillMode mode,
+                            const Field<int> &group_index)
 {
   const CDT_output_type output_type = (mode == GEO_NODE_CURVE_FILL_MODE_NGONS) ?
                                           CDT_CONSTRAINTS_VALID_BMESH_WITH_HOLES :
                                           CDT_INSIDE_WITH_HOLES;
-  if (geometry_set.has_curves()) {
-    const Curves &curves_id = *geometry_set.get_curves();
-    const bke::CurvesGeometry &curves = curves_id.geometry.wrap();
+  if (geo_set.has_curves()) {
+    const Curves &curves_id = *geo_set.get_curves();
+    const dune::CurvesGeo &curves = curves_id.geo.wrap();
     if (curves.curves_num() > 0) {
       const Array<meshintersect::CDT_result<double>> results = do_group_aware_cdt(
           curves, output_type, group_index);
       Mesh *mesh = cdts_to_mesh(results);
-      geometry_set.replace_mesh(mesh);
+      geo_set.replace_mesh(mesh);
     }
-    geometry_set.replace_curves(nullptr);
+    geo_set.replace_curves(nullptr);
   }
 
-  if (geometry_set.has_grease_pencil()) {
+  if (geo_set.has_pen()) {
     using namespace dune::pen;
-    const Pen &pen = *geometry_set.get_grease_pencil();
-    Vector<Mesh *> mesh_by_layer(grease_pencil.layers().size(), nullptr);
-    for (const int layer_index : grease_pencil.layers().index_range()) {
-      const Drawing *drawing = get_eval_grease_pencil_layer_drawing(grease_pencil, layer_index);
+    const Pen &pen = *geo_set.get_pen();
+    Vector<Mesh *> mesh_by_layer(pen.layers().size(), nullptr);
+    for (const int layer_index : pen.layers().index_range()) {
+      const Drawing *drawing = get_eval_pen_layer_drawing(pen, layer_index);
       if (drawing == nullptr) {
         continue;
       }
-      const dune::CurvesGeometry &src_curves = drawing->strokes();
+      const dune::CurvesGeo &src_curves = drawing->strokes();
       if (src_curves.curves_num() == 0) {
         continue;
       }
@@ -286,7 +286,7 @@ static void curve_fill_calculate(GeometrySet &geometry_set,
     }
     if (!mesh_by_layer.is_empty()) {
       InstancesComponent &instances_component =
-          geometry_set.get_component_for_write<InstancesComponent>();
+          geo_set.get_component_for_write<InstancesComponent>();
       dune::Instances *instances = instances_component.get_for_write();
       if (instances == nullptr) {
         instances = new dune::Instances();
@@ -301,9 +301,9 @@ static void curve_fill_calculate(GeometrySet &geometry_set,
           instances->add_instance(handle, float4x4::identity());
           continue;
         }
-        GeometrySet temp_set = GeometrySet::from_mesh(mesh);
+        GeoSet tmp_set = GeoSet::from_mesh(mesh);
         const int handle = instances->add_ref(dune::InstanceRef{tmp_set});
-        instances->add_instance(handle, float4x4::identity());
+        instances->add_instance(handle, float4x4::id());
       }
     }
     geometry_set.replace_pen(nullptr);
@@ -312,19 +312,19 @@ static void curve_fill_calculate(GeometrySet &geometry_set,
 
 static void node_geo_ex(GeoNodeExParams params)
 {
-  GeometrySet geometry_set = params.extract_input<GeometrySet>("Curve");
+  GeoSet geo_set = params.extract_input<GeoSet>("Curve");
   Field<int> group_index = params.extract_input<Field<int>>("Group ID");
 
-  const NodeGeometryCurveFill &storage = node_storage(params.node());
-  const GeometryNodeCurveFillMode mode = (GeometryNodeCurveFillMode)storage.mode;
+  const NodeGeoCurveFill &storage = node_storage(params.node());
+  const GeoNodeCurveFillMode mode = (GeoNodeCurveFillMode)storage.mode;
 
-  geometry_set.modify_geometry_sets(
-      [&](GeometrySet &geometry_set) { curve_fill_calc(geometry_set, mode, group_index); });
+  geo_set.mod_geo_sets(
+      [&](GeoSet &geo_set) { curve_fill_calc(geo_set, mode, group_index); });
 
-  params.set_output("Mesh", std::move(geometry_set));
+  params.set_output("Mesh", std::move(geo_set));
 }
 
-static void node_rna(StructRNA *srna)
+static void node_api(ApiStruct *sapi)
 {
   static const EnumPropItem mode_items[] = {
       {GEO_NODE_CURVE_FILL_MODE_TRIANGULATED, "TRIANGLES", 0, "Triangles", ""},
@@ -337,7 +337,7 @@ static void node_rna(StructRNA *srna)
                     "Mode",
                     "",
                     mode_items,
-                    NOD_storage_enum_accessors(mode),
+                    node_storage_enum_accessors(mode),
                     GEO_NODE_CURVE_FILL_MODE_TRIANGULATED);
 }
 
@@ -345,18 +345,18 @@ static void node_register()
 {
   static NodeType ntype;
 
-  geo_node_type_base(&ntype, GEO_NODE_FILL_CURVE, "Fill Curve", NODE_CLASS_GEOMETRY);
+  geo_node_type_base(&ntype, GEO_NODE_FILL_CURVE, "Fill Curve", NODE_CLASS_GEO);
 
   ntype.initfunc = node_init;
   node_type_storage(
-      &ntype, "NodeGeometryCurveFill", node_free_standard_storage, node_copy_standard_storage);
-  ntype.declare = node_declare;
-  ntype.geometry_node_execute = node_geo_exec;
-  ntype.draw_buttons = node_layout;
+      &ntype, "NodeGeoCurveFill", node_free_standard_storage, node_copy_standard_storage);
+  ntype.decl = node_declare;
+  ntype.geo_node_ex = node_geo_ex;
+  ntype.draw_btns = node_layout;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_api(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_fill_cc
+}  // namespace dune::nodes::node_geo_curve_fill_cc
