@@ -1,98 +1,98 @@
-#include "BKE_curves.hh"
+#include "dune_curves.hh"
 
-#include "BLI_math_geom.h"
+#include "lib_math_geom.h"
 
-#include "NOD_rna_define.hh"
+#include "node_api_define.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "node_geometry_util.hh"
+#include "node_geo_util.hh"
 
-namespace blender::nodes::node_geo_curve_primitive_circle_cc {
+namespace dune::nodes::node_geo_curve_primitive_circle_cc {
 
-NODE_STORAGE_FUNCS(NodeGeometryCurvePrimitiveCircle)
+NODE_STORAGE_FNS(NodeGeoCurvePrimitiveCircle)
 
-static void node_declare(NodeDeclarationBuilder &b)
+static void node_decl(NodeDeclBuilder &b)
 {
-  auto endable_points = [](bNode &node) {
+  auto endable_points = [](Node &node) {
     node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS;
   };
-  auto enable_radius = [](bNode &node) {
+  auto enable_radius = [](Node &node) {
     node_storage(node).mode = GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_RADIUS;
   };
 
   b.add_input<decl::Int>("Resolution")
-      .default_value(32)
+      .default_val(32)
       .min(3)
       .max(512)
       .description("Number of points on the circle");
   b.add_input<decl::Vector>("Point 1")
-      .default_value({-1.0f, 0.0f, 0.0f})
+      .default_val({-1.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description(
           "One of the three points on the circle. The point order determines the circle's "
           "direction")
       .make_available(endable_points);
   b.add_input<decl::Vector>("Point 2")
-      .default_value({0.0f, 1.0f, 0.0f})
+      .default_val({0.0f, 1.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description(
           "One of the three points on the circle. The point order determines the circle's "
           "direction")
       .make_available(endable_points);
   b.add_input<decl::Vector>("Point 3")
-      .default_value({1.0f, 0.0f, 0.0f})
+      .default_val({1.0f, 0.0f, 0.0f})
       .subtype(PROP_TRANSLATION)
       .description(
           "One of the three points on the circle. The point order determines the circle's "
           "direction")
       .make_available(endable_points);
   b.add_input<decl::Float>("Radius")
-      .default_value(1.0f)
+      .default_val(1.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
       .description("Distance of the points from the origin")
       .make_available(enable_radius);
-  b.add_output<decl::Geometry>("Curve");
+  b.add_output<decl::Geo>("Curve");
   b.add_output<decl::Vector>("Center").make_available(endable_points);
 }
 
-static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
+static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
 
-static void node_init(bNodeTree * /*tree*/, bNode *node)
+static void node_init(NodeTree * /*tree*/, Node *node)
 {
-  NodeGeometryCurvePrimitiveCircle *data = MEM_cnew<NodeGeometryCurvePrimitiveCircle>(__func__);
+  NodeGeoCurvePrimitiveCircle *data = mem_cnew<NodeGeoCurvePrimitiveCircle>(__func__);
 
   data->mode = GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_RADIUS;
   node->storage = data;
 }
 
-static void node_update(bNodeTree *ntree, bNode *node)
+static void node_update(NodeTree *ntree, Node *node)
 {
-  const NodeGeometryCurvePrimitiveCircle &storage = node_storage(*node);
-  const GeometryNodeCurvePrimitiveCircleMode mode = (GeometryNodeCurvePrimitiveCircleMode)
+  const NodeGeoCurvePrimitiveCircle &storage = node_storage(*node);
+  const GeoNodeCurvePrimitiveCircleMode mode = (GeoNodeCurvePrimitiveCircleMode)
                                                         storage.mode;
 
-  bNodeSocket *start_socket = static_cast<bNodeSocket *>(node->inputs.first)->next;
-  bNodeSocket *middle_socket = start_socket->next;
-  bNodeSocket *end_socket = middle_socket->next;
-  bNodeSocket *radius_socket = end_socket->next;
+  NodeSocket *start_socket = static_cast<NodeSocket *>(node->inputs.first)->next;
+  NodeSocket *middle_socket = start_socket->next;
+  NodeSocket *end_socket = middle_socket->next;
+  NodeSocket *radius_socket = end_socket->next;
 
-  bNodeSocket *center_socket = static_cast<bNodeSocket *>(node->outputs.first)->next;
+  NodeSocket *center_socket = static_cast<NodeSocket *>(node->outputs.first)->next;
 
-  bke::nodeSetSocketAvailability(
+  dune::nodeSetSocketAvailability(
       ntree, start_socket, mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS);
-  bke::nodeSetSocketAvailability(
+  dune::nodeSetSocketAvailability(
       ntree, middle_socket, mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS);
-  bke::nodeSetSocketAvailability(
+  dune::nodeSetSocketAvailability(
       ntree, end_socket, mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS);
-  bke::nodeSetSocketAvailability(
+  dune::nodeSetSocketAvailability(
       ntree, center_socket, mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS);
-  bke::nodeSetSocketAvailability(
+  dune::nodeSetSocketAvailability(
       ntree, radius_socket, mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_RADIUS);
 }
 
@@ -100,7 +100,7 @@ static bool colinear_f3_f3_f3(const float3 p1, const float3 p2, const float3 p3)
 {
   const float3 a = math::normalize(p2 - p1);
   const float3 b = math::normalize(p3 - p1);
-  return ELEM(a, b, b * -1.0f);
+  return elem(a, b, b * -1.0f);
 }
 
 static Curves *create_point_circle_curve(
@@ -132,14 +132,14 @@ static Curves *create_point_circle_curve(
   plane_from_point_normal_v3(plane_2, q1, v1);
   plane_from_point_normal_v3(plane_3, q2, v2);
 
-  /* If the 3 planes do not intersect at one point, just return empty geometry. */
+  /* If the 3 planes do not intersect at one point, just return empty geo. */
   if (!isect_plane_plane_plane_v3(plane_1, plane_2, plane_3, center)) {
     r_center = float3(0);
     return nullptr;
   }
 
-  Curves *curves_id = bke::curves_new_nomain_single(resolution, CURVE_TYPE_POLY);
-  bke::CurvesGeometry &curves = curves_id->geometry.wrap();
+  Curves *curves_id = dune::curves_new_nomain_single(resolution, CURVE_TYPE_POLY);
+  dune::CurvesGeometry &curves = curves_id->geo.wrap();
   curves.cyclic_for_write().first() = true;
 
   MutableSpan<float3> positions = curves.positions_for_write();
@@ -151,8 +151,7 @@ static Curves *create_point_circle_curve(
 
     /* Formula for a circle around a point and 2 unit vectors perpendicular
      * to each other and the axis of the circle from:
-     * https://math.stackexchange.com/questions/73237/parametric-equation-of-a-circle-in-3d-space
-     */
+     * https://math.stackexchange.com/questions/73237/parametric-equation-of-a-circle-in-3d-space */
 
     const float theta = theta_step * i;
     positions[i] = center + r * sin(theta) * v1 + r * cos(theta) * v4;
@@ -164,8 +163,8 @@ static Curves *create_point_circle_curve(
 
 static Curves *create_radius_circle_curve(const int resolution, const float radius)
 {
-  Curves *curves_id = bke::curves_new_nomain_single(resolution, CURVE_TYPE_POLY);
-  bke::CurvesGeometry &curves = curves_id->geometry.wrap();
+  Curves *curves_id = dune::curves_new_nomain_single(resolution, CURVE_TYPE_POLY);
+  dune::CurvesGeo &curves = curves_id->geo.wrap();
   curves.cyclic_for_write().first() = true;
 
   MutableSpan<float3> positions = curves.positions_for_write();
@@ -181,11 +180,11 @@ static Curves *create_radius_circle_curve(const int resolution, const float radi
   return curves_id;
 }
 
-static void node_geo_exec(GeoNodeExecParams params)
+static void node_geo_ex(GeoNodeExParams params)
 {
-  const NodeGeometryCurvePrimitiveCircle &storage = node_storage(params.node());
-  const GeometryNodeCurvePrimitiveCircleMode mode = (GeometryNodeCurvePrimitiveCircleMode)
-                                                        storage.mode;
+  const NodeGeoCurvePrimitiveCircle &storage = node_storage(params.node());
+  const GeoNodeCurvePrimitiveCircleMode mode = (GeoNodeCurvePrimitiveCircleMode)
+                                                storage.mode;
 
   Curves *curves = nullptr;
   if (mode == GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS) {
@@ -203,16 +202,16 @@ static void node_geo_exec(GeoNodeExecParams params)
   }
 
   if (curves) {
-    params.set_output("Curve", GeometrySet::from_curves(curves));
+    params.set_output("Curve", GeoSet::from_curves(curves));
   }
   else {
     params.set_default_remaining_outputs();
   }
 }
 
-static void node_rna(StructRNA *srna)
+static void node_api(ApiStruct *sapi)
 {
-  static const EnumPropertyItem mode_items[] = {
+  static const EnumPropItem mode_items[] = {
       {GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_POINTS,
        "POINTS",
        ICON_NONE,
@@ -226,33 +225,33 @@ static void node_rna(StructRNA *srna)
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  RNA_def_node_enum(srna,
+  api_def_node_enum(sapi,
                     "mode",
                     "Mode",
                     "Method used to determine radius and placement",
                     mode_items,
-                    NOD_storage_enum_accessors(mode),
+                    node_storage_enum_accessors(mode),
                     GEO_NODE_CURVE_PRIMITIVE_CIRCLE_TYPE_RADIUS);
 }
 
 static void node_register()
 {
-  static bNodeType ntype;
-  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_CIRCLE, "Curve Circle", NODE_CLASS_GEOMETRY);
+  static NodeType ntype;
+  geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_CIRCLE, "Curve Circle", NODE_CLASS_GEO);
 
-  ntype.initfunc = node_init;
-  ntype.updatefunc = node_update;
+  ntype.initfn = node_init;
+  ntype.updatefn = node_update;
   node_type_storage(&ntype,
                     "NodeGeometryCurvePrimitiveCircle",
                     node_free_standard_storage,
                     node_copy_standard_storage);
-  ntype.declare = node_declare;
-  ntype.geometry_node_execute = node_geo_exec;
-  ntype.draw_buttons = node_layout;
+  ntype.decl = node_decl;
+  ntype.geo_node_ex = node_geo_ex;
+  ntype.drw_btns = node_layout;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_api(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_primitive_circle_cc
+}  // namespace dune::nodes::node_geo_curve_primitive_circle_cc
