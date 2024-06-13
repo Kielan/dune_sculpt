@@ -31,18 +31,18 @@ const FloatMathOpInfo *get_float_compare_op_info(int op);
  * 2. A FloatMathOpInfo struct ref.
  * Returns true when the cb has been called, otherwise false.
  *
- * The math fn that is passed to the cb is actually a lambda function that is different
- * for every op. Therefore, if the cb is templated on the math function, it will get
+ * The math fn that is passed to the cb is actually a lambda fn that is diff
+ * for every op. Therefore, if the cb is templated on the math fn, it will get
  * instantiated for every op separately. This has two benefits:
  * - The compiler can optimize the cb for every op separately.
- * - A static var declared in the cb will be generated for every operation separately.
+ * - A static var declared in the cb will be generated for every op separately.
  *
- * If separate instantiations are not desired, the callback can also take a function pointer with
+ * If separate instantiations are not desired, the cb can also take a fn ptr w
  * the following signature as input instead: float (*math_function)(float a). */
-template<typename Callback>
-inline bool try_dispatch_float_math_fl_to_fl(const int operation, Callback &&callback)
+template<typename Cb>
+inline bool try_dispatch_float_math_fl_to_fl(const int op, Cb &&cb)
 {
-  const FloatMathOpInfo *info = get_float_math_op_info(operation);
+  const FloatMathOpInfo *info = get_float_math_op_info(op);
   if (info == nullptr) {
     return false;
   }
@@ -50,9 +50,9 @@ inline bool try_dispatch_float_math_fl_to_fl(const int operation, Callback &&cal
   static auto ex_preset_fast = mf::build::ex_presets::AllSpanOrSingle();
   static auto ex_preset_slow = mf::build::ex_presets::Materialized();
 
-  /* This is just an utility function to keep the individual cases smaller. */
-  auto dispatch = [&](auto exec_preset, auto math_fn) -> bool {
-    callback(ex_preset, math_function, *info);
+  /* This is just an util fn to keep the individual cases smaller. */
+  auto dispatch = [&](auto ex_preset, auto math_fn) -> bool {
+    cb(ex_preset, math_fn, *info);
     return true;
   };
 
@@ -103,74 +103,71 @@ inline bool try_dispatch_float_math_fl_to_fl(const int operation, Callback &&cal
   return false;
 }
 
-/**
- * This is similar to try_dispatch_float_math_fl_to_fl, just with a different callback signature. */
-template<typename Callback>
-inline bool try_dispatch_float_math_fl_fl_to_fl(const int operation, Callback &&callback)
+/* This is similar to try_dispatch_float_math_fl_to_fl, just with a diff cb signature. */
+template<typename Cb>
+inline bool try_dispatch_float_math_fl_fl_to_fl(const int op, Callback &&cb)
 {
-  const FloatMathOpInfo *info = get_float_math_operation_info(op);
+  const FloatMathOpInfo *info = get_float_math_op_info(op);
   if (info == nullptr) {
     return false;
   }
 
-  static auto exec_preset_fast = mf::build::exec_presets::AllSpanOrSingle();
-  static auto exec_preset_slow = mf::build::exec_presets::Materialized();
+  static auto ex_preset_fast = mf::build::ex_presets::AllSpanOrSingle();
+  static auto ex_preset_slow = mf::build::ex_presets::Materialized();
 
-  /* This is just an utility function to keep the individual cases smaller. */
-  auto dispatch = [&](auto exec_preset, auto math_function) -> bool {
-    callback(exec_preset, math_function, *info);
+  /* This is just an util fn to keep the individual cases smaller. */
+  auto dispatch = [&](auto ex_preset, auto math_fn) -> bool {
+    cb(ex_preset, math_fn, *info);
     return true;
   };
 
-  switch (operation) {
+  switch (op) {
     case NODE_MATH_ADD:
-      return dispatch(exec_preset_fast, [](float a, float b) { return a + b; });
+      return dispatch(ex_preset_fast, [](float a, float b) { return a + b; });
     case NODE_MATH_SUBTRACT:
-      return dispatch(exec_preset_fast, [](float a, float b) { return a - b; });
+      return dispatch(ex_preset_fast, [](float a, float b) { return a - b; });
     case NODE_MATH_MULTIPLY:
-      return dispatch(exec_preset_fast, [](float a, float b) { return a * b; });
+      return dispatch(ex_preset_fast, [](float a, float b) { return a * b; });
     case NODE_MATH_DIVIDE:
-      return dispatch(exec_preset_fast, [](float a, float b) { return safe_divide(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return safe_divide(a, b); });
     case NODE_MATH_POWER:
-      return dispatch(exec_preset_slow, [](float a, float b) { return safe_powf(a, b); });
+      return dispatch(ex_preset_slow, [](float a, float b) { return safe_powf(a, b); });
     case NODE_MATH_LOGARITHM:
-      return dispatch(exec_preset_slow, [](float a, float b) { return safe_logf(a, b); });
+      return dispatch(ex_preset_slow, [](float a, float b) { return safe_logf(a, b); });
     case NODE_MATH_MINIMUM:
-      return dispatch(exec_preset_fast, [](float a, float b) { return std::min(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return std::min(a, b); });
     case NODE_MATH_MAXIMUM:
-      return dispatch(exec_preset_fast, [](float a, float b) { return std::max(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return std::max(a, b); });
     case NODE_MATH_LESS_THAN:
-      return dispatch(exec_preset_fast, [](float a, float b) { return (float)(a < b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return (float)(a < b); });
     case NODE_MATH_GREATER_THAN:
-      return dispatch(exec_preset_fast, [](float a, float b) { return (float)(a > b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return (float)(a > b); });
     case NODE_MATH_MODULO:
-      return dispatch(exec_preset_fast, [](float a, float b) { return safe_modf(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return safe_modf(a, b); });
     case NODE_MATH_FLOORED_MODULO:
-      return dispatch(exec_preset_fast, [](float a, float b) { return safe_floored_modf(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return safe_floored_modf(a, b); });
     case NODE_MATH_SNAP:
-      return dispatch(exec_preset_fast,
+      return dispatch(ex_preset_fast,
                       [](float a, float b) { return floorf(safe_divide(a, b)) * b; });
     case NODE_MATH_ARCTAN2:
-      return dispatch(exec_preset_slow, [](float a, float b) { return atan2f(a, b); });
+      return dispatch(ex_preset_slow, [](float a, float b) { return atan2f(a, b); });
     case NODE_MATH_PINGPONG:
-      return dispatch(exec_preset_fast, [](float a, float b) { return pingpongf(a, b); });
+      return dispatch(ex_preset_fast, [](float a, float b) { return pingpongf(a, b); });
   }
   return false;
 }
 
-/**
- * This is similar to try_dispatch_float_math_fl_to_fl, just with a different callback signature.
- */
-template<typename Callback>
-inline bool try_dispatch_float_math_fl_fl_fl_to_fl(const int operation, Callback &&callback)
+/* This is similar to try_dispatch_float_math_fl_to_fl, just with a diff cb signature. */
+template<typename Cb>
+inline bool try_dispatch_float_math_fl_fl_fl_to_fl(const int op, Cb &&cb)
 {
-  const FloatMathOperationInfo *info = get_float_math_operation_info(operation);
+  const FloatMathOpInfo *info = get_float_math_op_info(op);
   if (info == nullptr) {
     return false;
   }
 
-  /* This is just an utility function to keep the individual cases smaller. */
-  auto dispatch = [&](auto exec_preset, auto math_function) -> bool {
+  /* This is just an util fn to keep the individual cases smaller. */
+  auto dispatch = [&](auto ex_preset, auto math_function) -> bool {
     callback(exec_preset, math_function, *info);
     return true;
   };
