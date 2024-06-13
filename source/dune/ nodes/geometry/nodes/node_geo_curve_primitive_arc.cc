@@ -232,7 +232,7 @@ static Curves *create_arc_curve_from_points(const int resolution,
     plane_from_point_normal_v3(plane_2, mid_ab, nba);
     plane_from_point_normal_v3(plane_3, mid_bc, ncb);
 
-    /* If the 3 planes do not intersect at one point, just return empty geometry. */
+    /* If the 3 planes do not intersect at one point, just return empty geo. */
     if (!isect_plane_plane_plane_v3(plane_1, plane_2, plane_3, center)) {
       r_center = mid_ac;
       r_normal = normal;
@@ -355,7 +355,7 @@ static void node_geo_ex(GeoNodeExParams params)
   }
 }
 
-static void node_rna(ApiStruct *sapi)
+static void node_api(ApiStruct *sapi)
 {
   static const EnumPropItem mode_items[] = {
       {GEO_NODE_CURVE_PRIMITIVE_ARC_TYPE_POINTS,
@@ -382,21 +382,21 @@ static void node_rna(ApiStruct *sapi)
 
 static void node_register()
 {
-  static bNodeType ntype;
+  static NodeType ntype;
   geo_node_type_base(&ntype, GEO_NODE_CURVE_PRIMITIVE_ARC, "Arc", NODE_CLASS_GEO);
-  ntype.initfunc = node_init;
-  ntype.updatefunc = node_update;
+  ntype.initfn = node_init;
+  ntype.updatefn = node_update;
   node_type_storage(&ntype,
-                    "NodeGeometryCurvePrimitiveArc",
+                    "NodeGeoCurvePrimitiveArc",
                     node_free_standard_storage,
                     node_copy_standard_storage);
-  ntype.declare = node_declare;
-  ntype.geometry_node_execute = node_geo_exec;
-  ntype.draw_buttons = node_layout;
+  ntype.decl = node_decl;
+  ntype.geo_node_ex = node_geo_ex;
+  ntype.draw_btns = node_layout;
   nodeRegisterType(&ntype);
 
-  node_rna(ntype.rna_ext.srna);
+  node_rna(ntype.api_ext.sapi);
 }
-NOD_REGISTER_NODE(node_register)
+REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_primitive_arc_cc
+}  // namespace dune::nodes::node_geo_curve_primitive_arc_cc
