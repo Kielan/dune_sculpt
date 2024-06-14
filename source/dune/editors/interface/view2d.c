@@ -27,9 +27,9 @@
 #include "gpu_matrix.h"
 #include "gpu_state.h"
 
-#include "wm_api.h"
+#include "win_api.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
 #include "ed_screen.h"
 
@@ -40,7 +40,7 @@
 
 static void view2d_curRect_validate_resize(View2D *v2d, bool resize);
 
-/** Internal Utilities **/
+/* Internal Utils */
 LIB_INLINE int clamp_float_to_int(const float f)
 {
   const float min = (float)INT_MIN;
@@ -68,7 +68,7 @@ LIB_INLINE void clamp_rctf_to_rcti(rcti *dst, const rctf *src)
 /* still unresolved: scrolls hide/unhide vs region mask handling */
 /* there's V2D_SCROLL_HORIZONTAL_HIDE and V2D_SCROLL_HORIZONTAL_FULLR ... */
 
-/* Internal Scroll & Mask Utilities **/
+/* Internal Scroll & Mask Utils **/
 
 /* helper to allow scrollbars to dynamically hide
  * - returns a copy of the scrollbar settings with the flags to display
@@ -130,7 +130,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 
   scroll = view2d_scroll_mapped(v2d->scroll);
 
-  /* Scrollers are based off region-size:
+  /* Scrollers are based off rgn-size:
    * - they can only be on one to two edges of the region they define
    * - if they overlap, they must not occupy the corners (which are reserved for other widgets) */
   if (scroll) {
@@ -140,7 +140,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 
     /* vertical scroller */
     if (scroll & V2D_SCROLL_LEFT) {
-      /* on left-hand edge of region */
+      /* on left-hand edge of rgn */
       v2d->vert = *mask_scroll;
       v2d->vert.xmax = scroll_width;
     }
@@ -185,7 +185,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 }
 
 /* View2D Refresh and Validation (Spatial) **/
-void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
+void view2d_rgn_reinit(View2D *v2d, short type, int winx, int winy)
 {
   bool tot_changed = false, do_init;
   const uiStyle *style = ui_style_get();
@@ -205,8 +205,8 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
       v2d->maxzoom = 1000.0f;
 
       /* View2D tot rect and cur should be same size,
-       * and aligned using 'standard' OpenGL coordinates for now:
-       * - region can resize 'tot' later to fit other data
+       * and aligned using 'standard' OpenGL coords for now:
+       * - rgn can resize 'tot' later to fit other data
        * - keeptot is only within bounds, as strict locking is not that critical
        * - view is aligned for (0,0) -> (winx-1, winy-1) setup */
       v2d->align = (V2D_ALIGN_NO_NEG_X | V2D_ALIGN_NO_NEG_Y);
@@ -281,7 +281,7 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
       v2d->scroll = 0;
       break;
     }
-    /* panels view, with horizontal/vertical align */
+    /* pnls view, with horizontal/vertical align */
     case V2D_COMMONVIEW_PANELS_UI: {
 
       /* for now, aspect ratio should be maintained,
