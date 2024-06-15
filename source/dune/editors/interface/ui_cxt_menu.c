@@ -1160,7 +1160,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEv *ev)
                   NULL);
     }
     else if (rgn->rgntype == RGN_TYPE_FOOTER) {
-      uiItemMenuF(layout, IFACE_("Footer"), ICON_NONE, ED_screens_footer_tools_menu_create, NULL);
+      uiItemMenuF(layout, IFACE_("Footer"), ICON_NONE, ed_screens_footer_tools_menu_create, NULL);
     }
   }
 
@@ -1171,9 +1171,9 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEv *ev)
                                      ui_list_row_find_mouse_over(rgn, ev->xy) != NULL :
                                      false;
   if (is_inside_listrow) {
-    MenuType *mt = win_menutype_find("UI_MT_list_item_cxt_menu", true);
+    MenuType *mt = win_menutype_find("ui_mt_list_item_cxt_menu", true);
     if (mt) {
-      ui_menutype_draw(C, mt, uiLayoutColumn(layout, false));
+      ui_menutype_drw(C, mt, uiLayoutColumn(layout, false));
     }
   }
 
@@ -1209,7 +1209,7 @@ void ui_popup_cxt_menu_for_pnl(Cxt *C, ARgn *rgn, Pnl *pnl)
   ApiPtr ptr;
   api_ptr_create(&screen->id, &ApiPnl, pnl, &ptr);
 
-  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Panel"), ICON_NONE);
+  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Pnl"), ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
 
   if (has_pnl_category) {
