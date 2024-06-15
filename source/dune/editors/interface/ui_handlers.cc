@@ -108,15 +108,15 @@
  * the log minimum (lower limit), it will snap to 0. */
 #define UI_PROP_SCALE_LOG_MIN 0.5e-8f
 /* This constant defines an offset for the precision change in
- * snap rounding, when going to higher values. It is set to
- * `0.5 - log10(3) = 0.03` to make the switch at `0.3` values. */
+ * snap rounding, when going to higher vals. It is set to
+ * `0.5 - log10(3) = 0.03` to make the switch at `0.3` vals. */
 #define UI_PROP_SCALE_LOG_SNAP_OFFSET 0.03f
 
 /* When USER_CONTINUOUS_MOUSE is disabled or tablet input is used,
  * Use this as a max soft range for mapping cursor motion to the value.
  * Otherwise min/max of FLT_MAX, INT_MAX cause small adjustments to jump to large numbers.
  *
- * This is needed for values such as location & dimensions which don't have a meaningful min/max,
+ * This is needed for vals such as location & dimensions which don't have a meaningful min/max,
  * Instead of mapping cursor motion to the min/max, map the motion to the click-step.
  *
  * This value is multiplied by the click step to calculate a range to clamp the soft-range by.
@@ -228,10 +228,10 @@ struct uiSelCxtStore {
   int elems_len;
   bool do_free;
   bool is_enabled;
-  /* When set, simply copy values (don't apply difference).
+  /* When set, simply copy vals (don't apply diff).
    * Rules are:
    * - dragging numbers uses delta.
-   * - typing in values will assign to all. */
+   * - typing in vals will assign to all. */
   bool is_copy;
 };
 
@@ -310,7 +310,7 @@ struct uiHandleBtnMulti {
    * here so we can tell if this is a vertical motion or not. */
   float drag_dir[2];
 
-  /* values copied direct from event->xy
+  /* vals copied direct from event->xy
    * used to detect btns between the current and initial mouse position */
   int drag_start[2];
 
@@ -486,7 +486,7 @@ static bool btn_do_extra_op_icon(Cxt *C,
 static void btn_do_extra_op_icons_mousemove(Btn *btn,
                                             BtnHandleData *data,
                                             const WinEv *ev);
-static void ui_numedit_begin_set_values(Btn *btn, BtnHandleData *data);
+static void ui_numedit_begin_set_vals(Btn *btn, BtnHandleData *data);
 
 #ifdef USE_DRAG_MULTINUM
 static void multibtn_restore(Cxt *C, BtnHandleData *data, uiBlock *block);
@@ -659,7 +659,7 @@ static void ui_afterfn_update_prefs_dirty(uiAfterFn *after)
   ui_api_update_prefs_dirty(&after->apiptr, after->apiprop);
 }
 
-/* Btn Snap Values */
+/* Btn Snap Vals */
 enum eSnapType {
   SNAP_OFF = 0,
   SNAP_ON,
@@ -2195,7 +2195,7 @@ static void btn_apply(
 #endif
   }
 
-  /* ensures we are writing actual values */
+  /* ensures we are writing actual vals */
   char *editstr = btn->editstr;
   double *editval = btn->editval;
   float *editvec = btn->editvec;
@@ -2364,7 +2364,7 @@ static void btn_apply(
 }
 
 /* Btn Copy & Paste */
-static void btn_get_pasted_text_from_clipboard(const bool ensure_utf8,
+static void btn_get_pasted_txt_from_clipboard(const bool ensure_utf8,
                                                char **r_buf_paste,
                                                int *r_buf_len)
 {
@@ -2388,59 +2388,59 @@ static int btn_prop_array_length(Btn *btn)
 }
 
 static void btn_set_float_array(
-    Cxt *C, Btn *btn, BtnHandleData *data, const float *values, const int values_len)
+    Cxt *C, Btn *btn, BtnHandleData *data, const float *vals, const int vals_len)
 {
   btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
 
-  for (int i = 0; i < values_len; i++) {
-    api_prop_float_set_index(&btn->apiptr, btn->apiprop, i, values[i]);
+  for (int i = 0; i < vals_len; i++) {
+    api_prop_float_set_index(&btn->apiptr, btn->apiprop, i, vals[i]);
   }
   if (data) {
     if (btn->type == BTYPE_UNITVEC) {
-      lib_assert(values_len == 3);
-      copy_v3_v3(data->vec, values);
+      lib_assert(vals_len == 3);
+      copy_v3_v3(data->vec, vals);
     }
     else {
-      data->value = values[but->apiindex];
+      data->value = vals[btn->apiindex];
     }
   }
 
   btn_activate_state(C, btn, BTN_STATE_EXIT);
 }
 
-static void float_array_to_string(const float *values,
-                                  const int values_len,
+static void float_array_to_string(const float *vals,
+                                  const int vals_len,
                                   char *output,
                                   int output_maxncpy)
 {
-  const int values_end = values_len - 1;
+  const int vals_end = vals_len - 1;
   int ofs = 0;
   output[ofs++] = '[';
-  for (int i = 0; i < values_len; i++) {
+  for (int i = 0; i < vals_len; i++) {
     ofs += lib_snprintf_rlen(
-        output + ofs, output_maxncpy - ofs, (i != values_end) ? "%f, " : "%f]", values[i]);
+        output + ofs, output_maxncpy - ofs, (i != vals_end) ? "%f, " : "%f]", vals[i]);
   }
 }
 
 static void btn_copy_numeric_array(Btn *btn, char *output, int output_maxncpy)
 {
-  const int values_len = btn_get_prop_array_length(btn);
-  dune::Array<float, 16> values(values_len);
-  api_prop_float_get_array(&btn->apiptr, btn->apiprop, values.data());
-  float_array_to_string(values.data(), values_len, output, output_maxncpy);
+  const int vals_len = btn_get_prop_array_length(btn);
+  dune::Array<float, 16> vals(vals_len);
+  api_prop_float_get_array(&btn->apiptr, btn->apiprop, vals.data());
+  float_array_to_string(vals.data(), vals_len, output, output_maxncpy);
 }
 
-static bool parse_float_array(char *text, float *values, int values_len_expected)
+static bool parse_float_array(char *text, float *vals, int vals_len_expected)
 {
   /* can parse max 4 floats for now */
-  lib_assert(0 <= values_len_expected && values_len_expected <= 4);
+  lib_assert(0 <= vals_len_expected && vals_len_expected <= 4);
 
   float v[5];
-  const int values_len_actual = sscanf(
+  const int vals_len_actual = sscanf(
       text, "[%f, %f, %f, %f, %f]", &v[0], &v[1], &v[2], &v[3], &v[4]);
 
-  if (values_len_actual == values_len_expected) {
-    memcpy(values, v, sizeof(float) * values_len_expected);
+  if (vals_len_actual == vals_len_expected) {
+    memcpy(vals, v, sizeof(float) * vals_len_expected);
     return true;
   }
   return false;
@@ -2451,37 +2451,37 @@ static void btn_paste_numeric_array(Cxt *C,
                                     BtnHandleData *data,
                                     char *buf_paste)
 {
-  const int values_len = btn_get_prop_array_length(btn);
-  if (values_len > 4) {
+  const int vals_len = btn_get_prop_array_length(btn);
+  if (vals_len > 4) {
     /* not supported for now */
     return;
   }
 
-  dune::Array<float, 16> values(values_len);
+  dune::Array<float, 16> vals(vals_len);
 
-  if (parse_float_array(buf_paste, values.data(), values_len)) {
-    btn_set_float_array(C, btn, data, values.data(), values_len);
+  if (parse_float_array(buf_paste, vals.data(), vals_len)) {
+    btn_set_float_array(C, btn, data, vals.data(), vals_len);
   }
   else {
     win_report(RPT_ERROR, "Expected an array of numbers: [n, n, ...]");
   }
 }
 
-static void btn_copy_numeric_value(Btn *btn, char *output, int output_maxncpy)
+static void btn_copy_numeric_val(Btn *btn, char *output, int output_maxncpy)
 {
   /* Get many decimal places, then strip trailing zeros.
-   * NOTE: too high values start to give strange results. */
+   * NOTE: too high vals start to give strange results. */
   btn_string_get_ex(btn, output, output_maxncpy, UI_PRECISION_FLOAT_MAX, false, nullptr);
   lib_str_rstrip_float_zero(output, '\0');
 }
 
-static void btn_paste_numeric_value(Cxt *C,
+static void btn_paste_numeric_val(Cxt *C,
                                     Btn *btn,
                                     BtnHandleData *data,
                                     char *buf_paste)
 {
   double value;
-  if (btn_string_eval_number(C, btn, buf_paste, &value)) {
+  if (btn_string_eval_num(C, btn, buf_paste, &val)) {
     btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
     data->value = value;
     btn_string_set(C, btn, buf_paste);
@@ -2552,7 +2552,7 @@ static void btn_paste_color(Cxt *C, Btn *btn, char *buf_paste)
   }
 }
 
-static void btn_copy_text(Btn *btn, char *output, int output_maxncpy)
+static void btn_copy_txt(Btn *btn, char *output, int output_maxncpy)
 {
   btn_string_get(btn, output, output_maxncpy);
 }
@@ -2652,9 +2652,9 @@ static bool btn_copy_menu(Btn *btn, char *output, int output_maxncpy)
 
 static bool btn_copy_popover(Btn *btn, char *output, int output_maxncpy)
 {
-  PanelType *pt = btn_paneltype_get(btn);
+  PnlType *pt = btn_pnltype_get(btn);
   if (pt) {
-    lib_snprintf(output, output_maxncpy, "bpy.ops.win.call_panel(name=\"%s\")", pt->idname);
+    lib_snprintf(output, output_maxncpy, "bpy.ops.win.call_pnl(name=\"%s\")", pt->idname);
     return true;
   }
   return false;
@@ -2666,7 +2666,7 @@ static void btn_copy(Cxt *C, Btn *btn, const bool copy_array)
     return;
   }
 
-  /* Arbitrary large value (allow for paths: 'PATH_MAX') */
+  /* Arbitrary large val (allow for paths: 'PATH_MAX') */
   char buf[4096] = {0};
   const int buf_maxncpy = sizeof(buf);
 
@@ -2681,11 +2681,11 @@ static void btn_copy(Cxt *C, Btn *btn, const bool copy_array)
       if (!has_required_data) {
         break;
       }
-      if (copy_array && btn_has_array_value(btn)) {
-        btn_copy_numeric_array(btn, buf, buf_maxncpy);
+      if (copy_array && btn_has_array_val(btn)) {
+        btn_copy_num_array(btn, buf, buf_maxncpy);
       }
       else {
-        btn_copy_numeric_value(btn, buf, buf_maxncpy);
+        btn_copy_num_val(btn, buf, buf_maxncpy);
       }
       is_buf_set = true;
       break;
@@ -2694,7 +2694,7 @@ static void btn_copy(Cxt *C, Btn *btn, const bool copy_array)
       if (!has_required_data) {
         break;
       }
-      btn_copy_numeric_array(btn, buf, buf_maxncpy);
+      btn_copy_num_array(btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
@@ -2711,7 +2711,7 @@ static void btn_copy(Cxt *C, Btn *btn, const bool copy_array)
       if (!has_required_data) {
         break;
       }
-      btn_copy_text(btn, buf, buf_maxncpy);
+      btn_copy_txt(btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
@@ -2762,7 +2762,7 @@ static void btn_paste(Cxt *C, Btn *btn, BtnHandleData *data, const bool paste_ar
 
   int buf_paste_len = 0;
   char *buf_paste;
-  btn_get_pasted_text_from_clipboard(btn_is_utf8(btn), &buf_paste, &buf_paste_len);
+  btn_get_pasted_txt_from_clipboard(btn_is_utf8(btn), &buf_paste, &buf_paste_len);
 
   const bool has_required_data = !(btn->ptr == nullptr && btn->apiptr.data == nullptr);
 
@@ -2772,11 +2772,11 @@ static void btn_paste(Cxt *C, Btn *btn, BtnHandleData *data, const bool paste_ar
       if (!has_required_data) {
         break;
       }
-      if (paste_array && btn_has_array_value(btn)) {
+      if (paste_array && btn_has_array_val(btn)) {
         btn_paste_numeric_array(C, btn, data, buf_paste);
       }
       else {
-        btn_paste_numeric_value(C, btn, data, buf_paste);
+        btn_paste_numeric_val(C, btn, data, buf_paste);
       }
       break;
 
@@ -2794,7 +2794,7 @@ static void btn_paste(Cxt *C, Btn *btn, BtnHandleData *data, const bool paste_ar
       btn_paste_color(C, btn, buf_paste);
       break;
 
-    case BTYPE_TEXT:
+    case BTYPE_TXT:
     case BTYPE_SEARCH_MENU:
       if (!has_required_data) {
         break;
@@ -2827,20 +2827,20 @@ void btn_clipboard_free()
   dune_curveprofile_free_data(&btn_copypaste_profile);
 }
 
-/* Btn Text Password
+/* Btn Txt Password
  * Fns to convert password strings that should not be displayed
  * to asterisk representation (e.g. 'mysecretpasswd' -> '*************')
  *
  * It converts every UTF-8 character to an asterisk, and also remaps
  * the cursor position and selection start/end.
  *
- * \note remapping is used, because password could contain UTF-8 characters. */
+ * remapping is used, because password could contain UTF-8 characters. */
 
 static int ui_txt_position_from_hidden(Btn *btn, int pos)
 {
-  const char *btnstr = (btn->editstr) ? but->editstr : btn->drawstr;
-  const char *strpos = butstr;
-  const char *str_end = butstr + strlen(butstr);
+  const char *btnstr = (btn->editstr) ? btn->editstr : btn->drawstr;
+  const char *strpos = btnstr;
+  const char *str_end = btnstr + strlen(btnstr);
   for (int i = 0; i < pos; i++) {
     strpos = lib_str_find_next_char_utf8(strpos, str_end);
   }
@@ -2855,8 +2855,8 @@ static int ui_txt_pos_to_hidden(Btn *btn, int pos)
 }
 
 void btn_txt_password_hide(char password_str[UI_MAX_PASSWORD_STR],
-                               Btn *btn,
-                               const bool restore)
+                           Btn *btn,
+                           const bool restore)
 {
   if (!(btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_PASSWORD)) {
     return;
@@ -2870,13 +2870,13 @@ void btn_txt_password_hide(char password_str[UI_MAX_PASSWORD_STR],
 
     /* remap cursor positions */
     if (btn->pos >= 0) {
-      btn->pos = ui_text_pos_from_hidden(btn, btn->pos);
+      btn->pos = ui_txt_pos_from_hidden(btn, btn->pos);
       btn->selsta = ui_txt_pos_from_hidden(btn, btn->selsta);
       btn->selend = ui_txt_pos_from_hidden(btn, btn->selend);
     }
   }
   else {
-    /* convert text to hidden text using asterisks (e.g. pass -> ****) */
+    /* convert txt to hidden txt using asterisks (e.g. pass -> ****) */
     const size_t len = lib_strlen_utf8(btnstr);
 
     /* remap cursor positions */
@@ -2893,15 +2893,15 @@ void btn_txt_password_hide(char password_str[UI_MAX_PASSWORD_STR],
   }
 }
 
-/* Btn Text Selection/Editing */
+/* Btn Txt Sel/Editing */
 
-void btn_set_string_interactive(Cxt *C, Btn *btn, const char *value)
+void btn_set_string_interactive(Cxt *C, Btn *btn, const char *val)
 {
   /* Caller should check. */
   lib_assert((btn->flag & BTN_DISABLED) == 0);
 
   btn_activate_state(C, btn, BTN_STATE_TXT_EDITING);
-  ui_textedit_string_set(btn, btn->active, value);
+  ui_txtedit_string_set(btn, btn->active, val);
 
   if (btn->type == BTYPE_SEARCH_MENU && btn->active) {
     btn->changed = true;
@@ -2955,7 +2955,7 @@ static void ui_txtedit_string_set(Btn *btn, BtnHandleData *data, const char *str
   }
 }
 
-static bool ui_txtedit_delete_selection(Btn *btn, BtnHandleData *data)
+static bool ui_txtedit_del_sel(Btn *btn, BtnHandleData *data)
 {
   char *str = data->str;
   const int len = strlen(str);
@@ -2971,8 +2971,8 @@ static bool ui_txtedit_delete_selection(Btn *btn, BtnHandleData *data)
 
 /* param x: Screen space cursor location - WinEv.x
  *
- * `btn->block->aspect` is used here, so drawing btn style is getting scaled too. */
-static void ui_txtedit_set_cursor_pos(Btn *btn, BtnHandleData *data, const float x)
+ * `btn->block->aspect` is used here, so drwing btn style is getting scaled too. */
+static void ui_txted_set_cursor_pos(Btn *btn, BtnHandleData *data, const float x)
 {
   /* pass on as arg. */
   uiFontStyle fstyle = ui_style_get()->widget;
@@ -2992,7 +2992,7 @@ static void ui_txtedit_set_cursor_pos(Btn *btn, BtnHandleData *data, const float
 
   btn_txt_password_hide(password_str, btn, false);
 
-  if (ELEM(btn->type, BTYPE_TEXT, BTYPE_SEARCH_MENU)) {
+  if (ELEM(btn->type, BTYPE_TXT, BTYPE_SEARCH_MENU)) {
     if (btn->flag & UI_HAS_ICON) {
       startx += UI_ICON_SIZE / aspect;
     }
@@ -3025,12 +3025,12 @@ static void ui_txtedit_set_cursor_pos(Btn *btn, BtnHandleData *data, const float
                               fstyle.uifont_id, str + btn->ofs, INT_MAX, int(x - startx));
   }
 
-  btn_text_password_hide(password_str, btn, true);
+  btn_txt_password_hide(password_str, btn, true);
 }
 
-static void ui_txtedit_set_cursor_sel(Btn *btn, BtnHandleData *data, const float x)
+static void ui_txted_set_cursor_sel(Btn *btn, BtnHandleData *data, const float x)
 {
-  ui_txtedit_set_cursor_pos(btn, data, x);
+  ui_txted_set_cursor_pos(btn, data, x);
 
   btn->selsta = btn->pos;
   btn->selend = data->sel_pos_init;
@@ -3042,28 +3042,27 @@ static void ui_txtedit_set_cursor_sel(Btn *btn, BtnHandleData *data, const float
 }
 
 /* This is used for both utf8 and ascii
- *
  * For unicode btns, buf is treated as unicode. */
-static bool ui_txtedit_insert_buf(Btn *btn,
-                                  BtnHandleData *data,
-                                  const char *buf,
-                                  int buf_len)
+static bool ui_txted_insert_buf(Btn *btn,
+                                BtnHandleData *data,
+                                const char *buf,
+                                int buf_len)
 {
   int len = strlen(data->str);
   const int str_maxncpy_new = len - (btn->selend - btn->selsta) + 1;
   bool changed = false;
 
   if (data->is_str_dynamic) {
-    ui_txtedit_string_ensure_max_length(btn, data, str_maxncpy_new + buf_len);
+    ui_txted_string_ensure_max_length(btn, data, str_maxncpy_new + buf_len);
   }
 
   if (str_maxncpy_new <= data->str_maxncpy) {
     char *str = data->str;
     size_t step = buf_len;
 
-    /* type over the current selection */
+    /* type over the current sel */
     if ((btn->selend - btn->selsta) > 0) {
-      changed = ui_textedit_delete_sel(btn, data);
+      changed = ui_txted_del_sel(btn, data);
       len = strlen(str);
     }
 
@@ -3089,19 +3088,19 @@ static bool ui_txtedit_insert_buf(Btn *btn,
 }
 
 #ifdef WITH_INPUT_IME
-static bool ui_txtedit_insert_ascii(Btn *btn, BtnHandleData *data, const char ascii)
+static bool ui_txted_insert_ascii(Btn *btn, BtnHandleData *data, const char ascii)
 {
   lib_assert(isascii(ascii));
   const char buf[2] = {ascii, '\0'};
-  return ui_txtedit_insert_buf(btn, data, buf, sizeof(buf) - 1);
+  return ui_txted_insert_buf(btn, data, buf, sizeof(buf) - 1);
 }
 #endif
 
-static void ui_txtedit_move(Btn *btn,
-                             BtnHandleData *data,
-                             eStrCursorJumpDirection direction,
-                             const bool sel,
-                             eStrCursorJumpType jump)
+static void ui_txted_move(Btn *btn,
+                          BtnHandleData *data,
+                          eStrCursorJumpDirection direction,
+                          const bool sel,
+                          eStrCursorJumpType jump)
 {
   const char *str = data->str;
   const int len = strlen(str);
@@ -3110,7 +3109,7 @@ static void ui_txtedit_move(Btn *btn,
 
   btn_update(but);
 
-  /* special case, quit selection and set cursor */
+  /* special case, quit sel and set cursor */
   if (has_sel && !sel) {
     if (jump == STRCUR_JUMP_ALL) {
       btn->selsta = btn->selend = btn->pos = direction ? len : 0;
@@ -3130,18 +3129,18 @@ static void ui_txtedit_move(Btn *btn,
     lib_str_cursor_step_utf8(str, len, &pos_i, direction, jump, true);
     but->pos = pos_i;
 
-    if (select) {
+    if (sel) {
       if (has_sel == false) {
-        /* Holding shift but with no previous selection. */
+        /* Holding shift, w no prev sel. */
         btn->selsta = btn->pos;
         btn->selend = pos_prev;
       }
       else if (btn->selsta == pos_prev) {
-        /* Previous sel, extending start position. */
+        /* Prev sel, extending start position. */
         btn->selsta = btn->pos;
       }
       else {
-        /* Previous sel, extending end position. */
+        /* Prev sel, extending end position. */
         btn->selend = btn->pos;
       }
     }
@@ -3151,10 +3150,10 @@ static void ui_txtedit_move(Btn *btn,
   }
 }
 
-static bool ui_txtedit_delete(Btn *btn,
-                               BtnHandleData *data,
-                               eStrCursorJumpDirection direction,
-                               eStrCursorJumpType jump)
+static bool ui_txted_del(Btn *btn,
+                         BtnHandleData *data,
+                         eStrCursorJumpDirection direction,
+                         eStrCursorJumpType jump)
 {
   char *str = data->str;
   const int len = strlen(str);
@@ -3168,9 +3167,9 @@ static bool ui_txtedit_delete(Btn *btn,
     str[0] = '\0';
     btn->pos = 0;
   }
-  else if (direction) { /* delete */
+  else if (direction) { /* del */
     if ((btn->selend - btn->selsta) > 0) {
-      changed = ui_txtedit_delete_sel(btn, data);
+      changed = ui_txted_del_sel(btn, data);
     }
     else if (btn->pos >= 0 && btn->pos < len) {
       int pos = btn->pos;
@@ -3202,7 +3201,7 @@ static bool ui_txtedit_delete(Btn *btn,
   return changed;
 }
 
-static int ui_txtedit_autocomplete(Ctxt *C, Btn *btn, BtnHandleData *data)
+static int ui_txted_autocomplete(Ctxt *C, Btn *btn, BtnHandleData *data)
 {
   char *str = data->str;
 
@@ -3220,25 +3219,25 @@ static int ui_txtedit_autocomplete(Ctxt *C, Btn *btn, BtnHandleData *data)
   return changed;
 }
 
-/* mode for ui_txtedit_copypaste() */
+/* mode for ui_txted_copypaste() */
 enum {
-  UI_TXTEDIT_PASTE = 1,
-  UI_TXTEDIT_COPY,
-  UI_TXTEDIT_CUT,
+  UI_TXTED_PASTE = 1,
+  UI_TXTED_COPY,
+  UI_TXTED_CUT,
 };
 
-static bool ui_txtedit_copypaste(Btn *btn, BtnHandleData *data, const int mode)
+static bool ui_txted_copypaste(Btn *btn, BtnHandleData *data, const int mode)
 {
   bool changed = false;
 
   /* paste */
-  if (mode == UI_TXTEDIT_PASTE) {
+  if (mode == UI_TXTED_PASTE) {
     /* extract the first line from the clipboard */
     int buf_len;
     char *pbuf = win_clipboard_txt_get_firstline(false, btn_is_utf8(btn), &buf_len);
 
     if (pbuf) {
-      ui_txtedit_insert_buf(btn, data, pbuf, buf_len);
+      ui_txted_insert_buf(btn, data, pbuf, buf_len);
 
       changed = true;
 
@@ -3246,11 +3245,11 @@ static bool ui_txtedit_copypaste(Btn *btn, BtnHandleData *data, const int mode)
     }
   }
   /* cut & copy */
-  else if (ELEM(mode, UI_TXTEDIT_COPY, UI_TXTEDIT_CUT)) {
-    /* copy the contents to the copypaste buffer */
+  else if (ELEM(mode, UI_TXTED_COPY, UI_TXTED_CUT)) {
+    /* copy the contents to the copypaste buf */
     const int sellen = btn->selend - btn->selsta;
     char *buf = static_cast<char *>(
-        mem_malloc(sizeof(char) * (sellen + 1), "ui_txtedit_copypaste"));
+        mem_malloc(sizeof(char) * (sellen + 1), "ui_txted_copypaste"));
 
     memcpy(buf, data->str + btn->selsta, sellen);
     buf[sellen] = '\0';
@@ -3258,10 +3257,10 @@ static bool ui_txtedit_copypaste(Btn *btn, BtnHandleData *data, const int mode)
     win_clipboard_txt_set(buf, false);
     mem_free(buf);
 
-    /* for cut only, delete the selection afterwards */
-    if (mode == UI_TXTEDIT_CUT) {
+    /* for cut only, del the sel after */
+    if (mode == UI_TXTED_CUT) {
       if ((btn->selend - btn->selsta) > 0) {
-        changed = ui_txtedit_delete_sel(btn, data);
+        changed = ui_txted_del_sel(btn, data);
       }
     }
   }
@@ -3271,23 +3270,23 @@ static bool ui_txtedit_copypaste(Btn *btn, BtnHandleData *data, const int mode)
 
 #ifdef WITH_INPUT_IME
 /* Enable IME, and setup Btn IME data. */
-static void ui_txtedit_ime_begin(Win *win, Btn * /*btn*/)
+static void ui_txted_ime_begin(Win *win, Btn * /*btn*/)
 {
-  /* Is this really needed? */
+  /* Is this rly needed? */
   int x, y;
 
   lib_assert(win->ime_data == nullptr);
 
   /* enable IME and position to cursor, it's a trick */
   x = win->evstate->xy[0];
-  /* flip y and move down a bit, prevent the IME panel cover the edit button */
+  /* flip y and move down a bit, prevent the IME pnl cover the edit btn */
   y = win->evstate->xy[1] - 12;
 
   win_IME_begin(win, x, y, 0, 0, true);
 }
 
 /* Disable IME, and clear Btn IME data. */
-static void ui_txtedit_ime_end(Win *win, Btn * /*btn*/)
+static void ui_txted_ime_end(Win *win, Btn * /*btn*/)
 {
   win_IME_end(win);
 }
@@ -3311,7 +3310,7 @@ const WinIMEData *btn_ime_data_get(Btn *btn)
 }
 #endif /* WITH_INPUT_IME */
 
-static void ui_txtedit_begin(Cxt *C, Btn *btn, BtnHandleData *data)
+static void ui_txted_begin(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   Win *win = data->win;
   const bool is_num_btn = ELEM(btn->type, BTYPE_NUM, BTYPE_NUM_SLIDER);
@@ -3331,30 +3330,30 @@ static void ui_txtedit_begin(Cxt *C, Btn *btn, BtnHandleData *data)
   }
 #endif
 
-#ifdef USE_ALLSELECT
+#ifdef USE_ALLSEL
   if (is_num_btn) {
-    if (IS_ALLSELECT_EV(win->eventstate)) {
-      data->select_others.is_enabled = true;
-      data->select_others.is_copy = true;
+    if (IS_ALLSEL_EV(win->evstate)) {
+      data->sel_others.is_enabled = true;
+      data->sel_others.is_copy = true;
     }
   }
 #endif
 
   /* retrieve string */
-  data->str_maxncpy = ui_but_string_get_maxncpy(but);
+  data->str_maxncpy = ui_btn_string_get_maxncpy(btn);
   if (data->str_maxncpy != 0) {
-    data->str = static_cast<char *>(MEM_callocN(sizeof(char) * data->str_maxncpy, "textedit str"));
-    /* We do not want to truncate precision to default here, it's nice to show value,
+    data->str = static_cast<char *>(mem_calloc(sizeof(char) * data->str_maxncpy, "texted str"));
+    /* We do not want to truncate precision to default here, it's nice to show val,
      * not to edit it - way too much precision is lost then. */
-    ui_but_string_get_ex(
-        but, data->str, data->str_maxncpy, UI_PRECISION_FLOAT_MAX, true, &no_zero_strip);
+    ui_btn_string_get_ex(
+        btn, data->str, data->str_maxncpy, UI_PRECISION_FLOAT_MAX, true, &no_zero_strip);
   }
   else {
     data->is_str_dynamic = true;
-    data->str = ui_but_string_get_dynamic(but, &data->str_maxncpy);
+    data->str = ui_btn_string_get_dynamic(btn, &data->str_maxncpy);
   }
 
-  if (ui_but_is_float(but) && !ui_but_is_unit(but) &&
+  if (ui_but_is_float(btn) && !ui_btn_is_unit(btn) &&
       !ui_but_anim_expression_get(but, nullptr, 0) && !no_zero_strip)
   {
     BLI_str_rstrip_float_zero(data->str, '\0');
