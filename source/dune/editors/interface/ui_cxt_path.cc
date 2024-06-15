@@ -15,9 +15,9 @@
 namespace dune::ui {
 
 void cxt_path_add_generic(Vector<CxtPathItem> &path,
-                              ApiStruct &api_type,
-                              void *ptr,
-                              const BIFIconId icon_override)
+                          ApiStruct &api_type,
+                          void *ptr,
+                          const BIFIconId icon_override)
 {
   /* Add the null check here to make calling fns less verbose. */
   if (!ptr) {
@@ -43,7 +43,7 @@ void template_breadcrumbs(uiLayout &layout, Span<CxtPathItem> cxt_path)
   uiLayout *row = uiLayoutRow(&layout, true);
   uiLayoutSetAlignment(&layout, UI_LAYOUT_ALIGN_LEFT);
 
-  for (const int i : context_path.index_range()) {
+  for (const int i : cxt_path.index_range()) {
     uiLayout *sub_row = uiLayoutRow(row, true);
     uiLayoutSetAlignment(sub_row, UI_LAYOUT_ALIGN_LEFT);
 
