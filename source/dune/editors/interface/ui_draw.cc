@@ -45,7 +45,7 @@
 
 static int roundboxtype = UI_CNR_ALL;
 
-void ui_draw_roundbox_corner_set(int type)
+void ui_drw_roundbox_corner_set(int type)
 {
   /* Not sure the roundbox fn is the best place to change this
    * if this is undone, it's not that big a deal, only makes curves edges square. */
@@ -53,13 +53,13 @@ void ui_draw_roundbox_corner_set(int type)
 }
 
 #if 0 /* unused */
-int ui_draw_roundbox_corner_get()
+int ui_drw_roundbox_corner_get()
 {
   return roundboxtype;
 }
 #endif
 
-void ui_draw_roundbox_4fv_ex(const rctf *rect,
+void ui_drw_roundbox_4fv_ex(const rctf *rect,
                              const float inner1[4],
                              const float inner2[4],
                              float shade_dir,
@@ -100,11 +100,11 @@ void ui_draw_roundbox_4fv_ex(const rctf *rect,
   gpu_batch_program_set_builtin(batch, GPU_SHADER_2D_WIDGET_BASE);
   gpu_batch_uniform_4fv_array(batch, "parameters", 11, (const float(*)[4]) & widget_params);
   gpu_blend(GPU_BLEND_ALPHA);
-  gpu_batch_draw(batch);
+  gpu_batch_drw(batch);
   gpi_blend(GPU_BLEND_NONE);
 }
 
-void ui_draw_roundbox_3ub_alpha(
+void ui_drw_roundbox_3ub_alpha(
     const rctf *rect, bool filled, float rad, const uchar col[3], uchar alpha)
 {
   const float colv[4] = {
@@ -113,35 +113,35 @@ void ui_draw_roundbox_3ub_alpha(
       float(col[2]) / 255.0f,
       float(alpha) / 255.0f,
   };
-  ui_draw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
+  ui_drw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
 }
 
-void ui_draw_roundbox_3fv_alpha(
+void ui_drw_roundbox_3fv_alpha(
     const rctf *rect, bool filled, float rad, const float col[3], float alpha)
 {
   const float colv[4] = {col[0], col[1], col[2], alpha};
-  ui_draw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
+  ui_drw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
 }
 
-void ui_draw_roundbox_aa(const rctf *rect, bool filled, float rad, const float color[4])
+void ui_drw_roundbox_aa(const rctf *rect, bool filled, float rad, const float color[4])
 {
-  /* this is to emulate previous behavior of semitransparent fills but that's was a side effect
+  /* this is to emulate prev behavior of semitransparent fills but that's was a side effect
    * of the previous AA method. Better fix the callers. */
   float colv[4] = {color[0], color[1], color[2], color[3]};
   if (filled) {
     colv[3] *= 0.65f;
   }
 
-  ui_draw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
+  ui_drw_roundbox_4fv_ex(rect, (filled) ? colv : nullptr, nullptr, 1.0f, colv, U.pixelsize, rad);
 }
 
-void ui_draw_roundbox_4fv(const rctf *rect, bool filled, float rad, const float col[4])
+void ui_drw_roundbox_4fv(const rctf *rect, bool filled, float rad, const float col[4])
 {
-  /* Exactly the same as ui_draw_roundbox_aa but does not do the legacy transparency. */
-  ui_draw_roundbox_4fv_ex(rect, (filled) ? col : nullptr, nullptr, 1.0f, col, U.pixelsize, rad);
+  /* Exactly the same as ui_drw_roundbox_aa but does not do the legacy transparency. */
+  ui_drw_roundbox_4fv_ex(rect, (filled) ? col : nullptr, nullptr, 1.0f, col, U.pixelsize, rad);
 }
 
-void ui_draw_rounded_corners_inverted(const rcti &rect,
+void ui_drw_rounded_corners_inverted(const rcti &rect,
                                       const float rad,
                                       const dune::float4 color)
 {
@@ -208,7 +208,7 @@ void ui_draw_rounded_corners_inverted(const rcti &rect,
   immUnbindProgram();
 }
 
-void ui_draw_text_underline(int pos_x, int pos_y, int len, int height, const float color[4])
+void ui_drw_txt_underline(int pos_x, int pos_y, int len, int height, const float color[4])
 {
   const int ofs_y = 4 * U.pixelsize;
 
