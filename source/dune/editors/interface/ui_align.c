@@ -315,7 +315,7 @@ static int ui_block_align_btnal_cmp(const void *a, const void *b)
   return 0;
 }
 
-static void blockalign_btn_to_region(uiBtn *btn, const ARegion *region)
+static void blockalign_btn_to_rgn(uiBtn *btn, const ARgn *rgn)
 {
   rctf *rect = &btn->rect;
   const float btn_width = lib_rctf_size_x(rect);
@@ -324,7 +324,7 @@ static void blockalign_btn_to_region(uiBtn *btn, const ARegion *region)
 
   switch (btn->drawflag & UI_BTN_ALIGN) {
     case UI_BTN_ALIGN_TOP:
-      rect->ymax = region->winy + outline_px;
+      rect->ymax = rgn->winy + outline_px;
       rect->ymin = btn->rect.ymax - btn_height;
       break;
     case UI_BTN_ALIGN_DOWN:
@@ -336,16 +336,16 @@ static void blockalign_btn_to_region(uiBtn *btn, const ARegion *region)
       rect->xmax = rect->xmin + btn_width;
       break;
     case UI_BTN_ALIGN_RIGHT:
-      rect->xmax = region->winx + outline_px;
+      rect->xmax = rgn->winx + outline_px;
       rect->xmin = rect->xmax - btn_width;
       break;
     default:
-      /* Tabs may be shown in unaligned regions too, they just appear as regular btns then. */
+      /* Tabs may be shown in unaligned rgns too, they just appear as regular btns then. */
       break;
   }
 }
 
-void blockalign_calc(uiBlock *block, const ARegion *region)
+void blockalign_calc(uiBlock *block, const ARgn *rgn)
 {
   int num_btns = 0;
 
@@ -357,11 +357,11 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
 
   /* First loop: we count number of btns belonging to an align group,
    * and clear their align flag.
-   * Tabs get some special treatment here, they get aligned to region border. */
+   * Tabs get some special treatment here, they get aligned to rgn border. */
   LIST_FOREACH (uiBtn *, btn, &block->btns) {
-    /* special case: tabs need to be aligned to a region border, drawflag tells which one */
+    /* special case: tabs need to be aligned to a rgn border, drwflag tells which one */
     if (btn->type == UI_BTYPE_TAB) {
-      ui_block_align_btn_to_region(btn, region);
+      ui_block_align_btn_to_rgn(btn, rgn);
     }
     else {
       /* Clear old align flags. */
@@ -687,7 +687,7 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
   }
 }
 
-void blockalign_calc(uiBlock *block, const struct ARegion *UNUSED(region))
+void blockalign_calc(uiBlock *block, const struct ARgn *UNUSED(rgn))
 {
   short nr;
 
@@ -714,13 +714,13 @@ void blockalign_calc(uiBlock *block, const struct ARegion *UNUSED(region))
 
 #endif /* !USE_UIBTN_SPATIAL_ALIGN */
 
-int btnalign_opposite_to_areaalign_get(const ARegion *region)
+int btnalign_opposite_to_areaalign_get(const ARgn *rgn)
 {
-  const ARegion *align_region = (region->alignment & RGN_SPLIT_PREV && region->prev) ?
-                                    region->prev :
-                                    region;
+  const ARgn *align_rgn = (rgn->alignment & RGN_SPLIT_PREV && rgn->prev) ?
+                                    rgn->prev :
+                                    rgn;
 
-  switch (RGN_ALIGN_ENUM_FROM_MASK(align_region->alignment)) {
+  switch (RGN_ALIGN_ENUM_FROM_MASK(align_rgn->alignment)) {
     case RGN_ALIGN_TOP:
       return UI_BTN_ALIGN_DOWN;
     case RGN_ALIGN_BOTTOM:
