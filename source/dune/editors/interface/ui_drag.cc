@@ -12,7 +12,7 @@ void btn_drag_set_id(Btn *btn, Id id)
   btn->dragpoint = (void *)id;
 }
 
-void btn_drag_attach_image(Btn btn, const Imbuf *imbuf, const float scale)
+void btn_drag_attach_img(Btn btn, const Imbuf *imbuf, const float scale)
 {
   btn->imbuf = imbuf;
   btn->imbuf_scale = scale;
@@ -69,15 +69,15 @@ void btn_drag_set_name(Btn *btn, const char *name)
   btn->dragpoint = (void *)name;
 }
 
-void btn_drag_set_value(Btn *btn)
+void btn_drag_set_val(Btn *btn)
 {
-  btn->dragtype = WIN_DRAG_VALUE;
+  btn->dragtype = WIN_DRAG_VAL;
 }
-void btn_drag_set_image(Btn *btn, const char *path, int icon, const ImBuf *imb, float scale)
+void btn_drag_set_img(Btn *btn, const char *path, int icon, const ImBuf *imb, float scale)
 {
   ui_def_btn_icon(btn, icon, 0); /* no flag UI_HAS_ICON, so icon doesn't draw in btn */
   btn_drag_set_path(btn, path);
-  btn_drag_attach_image(btn, imb, scale);
+  btn_drag_attach_img(btn, imb, scale);
 }
 
 void btn_drag_free(Btn *btn)
@@ -98,22 +98,22 @@ void btn_drag_start(Cxt *C, Btn *btn)
                                      btn->icon,
                                      btn->dragtype,
                                      btn->dragpoint,
-                                     btn_value_get(btn),
+                                     btn_val_get(btn),
                                      (btn->dragflag & UI_BTN_DRAGPOINT_FREE) ? WIN_DRAG_FREE_DATA :
                                                                               WIN_DRAG_NOP);
   /* WinDrag has ownership over dragpoint now, stop messing with it. */
   btn->dragpoint = nullptr;
 
   if (btn->imb) {
-    win_event_drag_image(drag, btn->imb, btn->imb_scale);
+    win_ev_drag_img(drag, btn->imb, btn->imb_scale);
   }
 
-  win_event_start_prepared_drag(C, drag);
+  win_ev_start_prepared_drag(C, drag);
 
   /* Special feature for assets: We add another drag item that supports multiple assets. It
    * gets the assets from cxt. */
-  if (ELEM(btn->dragtype, WIN_DRAG_ASSET, WIN_DRAG_ID)) {
-    win_event_start_drag(C, ICON_NONE, WIN_DRAG_ASSET_LIST, nullptr, 0, WIN_DRAG_NOP);
+  if (elem(btn->dragtype, WIN_DRAG_ASSET, WIN_DRAG_ID)) {
+    win_ev_start_drag(C, ICON_NONE, WIN_DRAG_ASSET_LIST, nullptr, 0, WIN_DRAG_NOP);
   }
 }
 
