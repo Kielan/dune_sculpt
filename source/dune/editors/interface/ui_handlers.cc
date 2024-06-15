@@ -4779,12 +4779,12 @@ static int ui_do_but_SLI(
 #if 0
       if (but->type == SLI) {
         /* same as below */
-        f = float(mx - but->rect.xmin) / (BLI_rctf_size_x(&but->rect));
+        f = float(mx - but->rect.xmin) / (lib_rctf_size_x(&but->rect));
       }
       else
 #endif
       {
-        f = float(mx - but->rect.xmin) / BLI_rctf_size_x(&but->rect);
+        f = float(mx - btn->rect.xmin) / lib_rctf_size_x(&but->rect);
       }
 
       if (scale_type == PROP_SCALE_LOG) {
@@ -4794,13 +4794,13 @@ static int ui_do_but_SLI(
         f = softmin + f * softrange;
       }
 
-      if (!ui_but_is_float(but)) {
-        int value_step = 1;
-        if (f < temp) {
-          temp -= value_step;
+      if (!ui_btn_is_float(btn)) {
+        int val_step = 1;
+        if (f < tmp) {
+          temp -= val_step;
         }
         else {
-          temp += value_step;
+          temp += val_step;
         }
 
         if (temp >= softmin && temp <= softmax) {
@@ -4812,36 +4812,36 @@ static int ui_do_but_SLI(
       }
       else {
         if (tempf >= softmin && tempf <= softmax) {
-          float value_step;
+          float val_step;
           if (scale_type == PROP_SCALE_LOG) {
-            value_step = powf(10.0f, roundf(log10f(tempf) + UI_PROP_SCALE_LOG_SNAP_OFFSET) - 1.0f);
+            val_step = powf(10.0f, roundf(log10f(tempf) + UI_PROP_SCALE_LOG_SNAP_OFFSET) - 1.0f);
           }
           else {
-            value_step = 0.01f;
+            val_step = 0.01f;
           }
 
           if (f < tempf) {
-            tempf -= value_step;
+            tempf -= val_step;
           }
           else {
-            tempf += value_step;
+            tempf += val_step;
           }
 
           CLAMP(tempf, softmin, softmax);
-          data->value = tempf;
+          data->val = tempf;
         }
         else {
           data->cancel = true;
         }
       }
 
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
       retval = WM_UI_HANDLER_BREAK;
     }
     else {
       /* edit the value directly */
-      button_activate_state(C, but, BUTTON_STATE_TEXT_EDITING);
-      retval = WM_UI_HANDLER_BREAK;
+      btn_activate_state(C, btn, BTN_STATE_TXT_EDITING);
+      retval = WIN_UI_HANDLER_BREAK;
     }
   }
 
@@ -4851,19 +4851,19 @@ static int ui_do_but_SLI(
   return retval;
 }
 
-static int ui_do_but_SCROLL(
-    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+static int ui_do_btn_scroll(
+    Cxt *C, uiBlock *block, uiBtn *btn, uiHandleBtnData *data, const WinEv *ev)
 {
-  int retval = WM_UI_HANDLER_CONTINUE;
-  const bool horizontal = (BLI_rctf_size_x(&but->rect) > BLI_rctf_size_y(&but->rect));
+  int retval = WIN_UI_HANDLER_CONTINUE;
+  const bool horizontal = (lib_rctf_size_x(&btn->rect) > lib_rctf_size_y(&btn->rect));
 
-  int mx = event->xy[0];
-  int my = event->xy[1];
-  ui_window_to_block(data->region, block, &mx, &my);
+  int mx = ev->xy[0];
+  int my = ev->xy[1];
+  ui_window_to_block(data->rgn, block, &mx, &my);
 
-  if (data->state == BUTTON_STATE_HIGHLIGHT) {
-    if (event->val == KM_PRESS) {
-      if (event->type == LEFTMOUSE) {
+  if (data->state == BTN_STATE_HIGHLIGHT) {
+    if (ev->val == KM_PRESS) {
+      if (ev->type == LEFTMOUSE) {
         if (horizontal) {
           data->dragstartx = mx;
           data->draglastx = mx;
@@ -4872,27 +4872,27 @@ static int ui_do_but_SCROLL(
           data->dragstartx = my;
           data->draglastx = my;
         }
-        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
-        retval = WM_UI_HANDLER_BREAK;
+        btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
+        retval = WIN_UI_HANDLER_BREAK;
       }
     }
   }
-  else if (data->state == BUTTON_STATE_NUM_EDITING) {
-    if (event->type == EVT_ESCKEY) {
-      if (event->val == KM_PRESS) {
+  else if (data->state == BTN_STATE_NUM_EDITING) {
+    if (ev->type == EV_ESCKEY) {
+      if (ev->val == KM_PRESS) {
         data->cancel = true;
         data->escapecancel = true;
-        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        btn_activate_state(C, btn, BTN_STATE_EXIT);
       }
     }
-    else if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    else if (ev->type == LEFTMOUSE && ev->val == KM_RELEASE) {
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
     }
     else if (event->type == MOUSEMOVE) {
-      const bool is_motion = (event->type == MOUSEMOVE);
-      if (ui_numedit_but_SLI(
-              but, data, (horizontal) ? mx : my, horizontal, is_motion, false, false)) {
-        ui_numedit_apply(C, block, but, data);
+      const bool is_motion = (ev->type == MOUSEMOVE);
+      if (ui_numedit_btn_SLI(
+              btn, data, (horizontal) ? mx : my, horizontal, is_motion, false, false)) {
+        ui_numedit_apply(C, block, btn, data);
       }
     }
 
@@ -4902,20 +4902,19 @@ static int ui_do_but_SCROLL(
   return retval;
 }
 
-static int ui_do_but_GRIP(
-    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+static int ui_do_btn_grip(
+    Cxt *C, uiBlock *block, uiBut *but, uiHandleBtnData *data, const WinEv *ev)
 {
-  int retval = WM_UI_HANDLER_CONTINUE;
-  const bool horizontal = (BLI_rctf_size_x(&but->rect) < BLI_rctf_size_y(&but->rect));
+  int retval = WIN_UI_HANDLER_CONTINUE;
+  const bool horizontal = (lib_rctf_size_x(&btn->rect) < lib_rctf_size_y(&btn->rect));
 
   /* NOTE: Having to store org point in window space and recompute it to block "space" each time
    *       is not ideal, but this is a way to hack around behavior of ui_window_to_block(), which
-   *       returns different results when the block is inside a panel or not...
-   *       See #37739.
-   */
+   *       returns diff results when the block is inside a pnl or not...
+   *       See #37739. */
 
-  int mx = event->xy[0];
-  int my = event->xy[1];
+  int mx = ev->xy[0];
+  int my = ev->xy[1];
   ui_win_to_block(data->rgn, block, &mx, &my);
 
   if (data->state == BTN_STATE_HIGHLIGHT) {
@@ -4942,8 +4941,8 @@ static int ui_do_but_GRIP(
     else if (ev->type == MOUSEMOVE) {
       int dragstartx = data->dragstartx;
       int dragstarty = data->dragstarty;
-      ui_win_to_block(data->region, block, &dragstartx, &dragstarty);
-      data->value = data->origvalue + (horizontal ? mx - dragstartx : dragstarty - my);
+      ui_win_to_block(data->rgn, block, &dragstartx, &dragstarty);
+      data->val = data->origval + (horizontal ? mx - dragstartx : dragstarty - my);
       ui_numedit_apply(C, block, btn, data);
     }
 
@@ -4953,7 +4952,7 @@ static int ui_do_but_GRIP(
   return retval;
 }
 
-static int btn_do_LISTROW(Cxt *C,
+static int btn_do_listrow(Cxt *C,
                           Btn *btn,
                           BtnHandleData *data,
                           const WinEv *ev)
@@ -4967,7 +4966,7 @@ static int btn_do_LISTROW(Cxt *C,
         (ev->type == LEFTMOUSE && ev->val == KM_DBL_CLICK))
     {
       Btn *labelbtn = btn_list_row_txt_activate(
-          C, btn, data, ev, BTN_ACTIVATE_TXT_EDITING);
+          C, btn, data, ev, BTN_ACTIVATE_TXT_ED);
       if (labelbtn) {
         /* Nothing else to do. */
         return WIN_UI_HANDLER_BREAK;
@@ -4975,10 +4974,10 @@ static int btn_do_LISTROW(Cxt *C,
     }
   }
 
-  return btn_do_EXIT(C, btn, data, event);
+  return btn_do_exit(C, btn, data, ev);
 }
 
-static int btn_do_BLOCK(Cxt *C, Btn *btn, BtnHandleData *data, const WinEv *ev)
+static int btn_do_block(Cxt *C, Btn *btn, BtnHandleData *data, const WinEv *ev)
 {
   if (data->state == BTN_STATE_HIGHLIGHT) {
 
@@ -4992,39 +4991,39 @@ static int btn_do_BLOCK(Cxt *C, Btn *btn, BtnHandleData *data, const WinEv *ev)
       }
     }
 #ifdef USE_DRAG_TOGGLE
-    if (event->type == LEFTMOUSE && event->val == KM_PRESS && ui_but_is_drag_toggle(but)) {
-      button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
-      data->dragstartx = event->xy[0];
-      data->dragstarty = event->xy[1];
-      return WM_UI_HANDLER_BREAK;
+    if (ev->type == LEFTMOUSE && ev->val == KM_PRESS && ui_btn_is_drag_toggle(btn)) {
+      btn_activate_state(C, btn, BTN_STATE_WAIT_DRAG);
+      data->dragstartx = ev->xy[0];
+      data->dragstarty = ev->xy[1];
+      return WIN_UI_HANDLER_BREAK;
     }
 #endif
     /* regular open menu */
-    if (ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
-      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
-      return WM_UI_HANDLER_BREAK;
+    if (elem(ev->type, LEFTMOUSE, EV_PADENTER, EV_RETKEY) && ev->val == KM_PRESS) {
+      btn_activate_state(C, btn, BTN_STATE_MENU_OPEN);
+      return WIN_UI_HANDLER_BREAK;
     }
     if (ui_but_supports_cycling(but)) {
-      if (ELEM(event->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (event->modifier & KM_CTRL))
+      if (ELEM(ev->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (ev->mod & KM_CTRL))
       {
-        int type = event->type;
-        int val = event->val;
+        int type = ev->type;
+        int val = ev->val;
 
         /* Convert pan to scroll-wheel. */
         if (type == MOUSEPAN) {
-          ui_pan_to_scroll(event, &type, &val);
+          ui_pan_to_scroll(ev, &type, &val);
 
           if (type == MOUSEPAN) {
-            return WM_UI_HANDLER_BREAK;
+            return WIN_UI_HANDLER_BREAK;
           }
         }
 
         const int direction = (type == WHEELDOWNMOUSE) ? 1 : -1;
 
-        data->value = ui_but_menu_step(but, direction);
+        data->val = ui_btn_menu_step(btn, direction);
 
-        button_activate_state(C, but, BUTTON_STATE_EXIT);
-        ui_apply_but(C, but->block, but, data, true);
+        btn_activate_state(C, btn, BTN_STATE_EXIT);
+        ui_apply_btn(C, btn->block, btn, data, true);
 
         /* Button's state need to be changed to EXIT so moving mouse away from this mouse
          * wouldn't lead to cancel changes made to this button, but changing state to EXIT also
@@ -5032,50 +5031,48 @@ static int btn_do_BLOCK(Cxt *C, Btn *btn, BtnHandleData *data, const WinEv *ev)
          * scrolling mouse wheel. using post activate stuff from button allows to make button be
          * active again after checking for all that mouse leave and cancel stuff, so quick
          * scroll wouldn't be an issue anymore. Same goes for scrolling wheel in another
-         * direction below (sergey).
-         */
-        data->postbut = but;
-        data->posttype = BUTTON_ACTIVATE_OVER;
+         * direction below (sergey). */
+        data->postbtn = btn;
+        data->posttype = BTN_ACTIVATE_OVER;
 
-        /* without this, a new interface that draws as result of the menu change
+        /* wo this, a new interface that drws as result of the menu change
          * won't register that the mouse is over it, eg:
-         * Alt+MouseWheel over the render slots, without this,
+         * Alt+MouseWheel over the render slots, wo this,
          * the slot menu fails to switch a second time.
          *
          * The active state of the button could be maintained some other way
-         * and remove this mouse-move event.
-         */
-        WM_event_add_mousemove(data->window);
+         * and remove this mouse-move event.  */
+        win_ev_add_mousemove(data->win);
 
-        return WM_UI_HANDLER_BREAK;
+        return WIN_UI_HANDLER_BREAK;
       }
     }
   }
-  else if (data->state == BUTTON_STATE_WAIT_DRAG) {
+  else if (data->state == BTN_STATE_WAIT_DRAG) {
 
-    /* this function also ends state */
-    if (ui_but_drag_init(C, but, data, event)) {
-      return WM_UI_HANDLER_BREAK;
+    /* this fn also ends state */
+    if (ui_btn_drag_init(C, btn, data, ev)) {
+      return WIN_UI_HANDLER_BREAK;
     }
 
     /* outside icon quit, not needed if drag activated */
-    if (0 == ui_but_contains_point_px_icon(but, data->region, event)) {
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    if (0 == ui_btn_contains_point_px_icon(btn, data->rgn, ev)) {
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
       data->cancel = true;
-      return WM_UI_HANDLER_BREAK;
+      return WIN_UI_HANDLER_BREAK;
     }
 
-    if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
-      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
-      return WM_UI_HANDLER_BREAK;
+    if (ev->type == LEFTMOUSE && ev->val == KM_RELEASE) {
+      btn_activate_state(C, btn, BTN_STATE_MENU_OPEN);
+      return WIN_UI_HANDLER_BREAK;
     }
   }
 
-  return WM_UI_HANDLER_CONTINUE;
+  return WIN_UI_HANDLER_CONTINUE;
 }
 
-static bool ui_numedit_but_UNITVEC(
-    uiBut *but, uiHandleButtonData *data, int mx, int my, const enum eSnapType snap)
+static bool ui_numed_btn_UNITVEC(
+    uiBut *btn, uiHandleBtnData *data, int mx, int my, const enum eSnapType snap)
 {
   float mrad;
   bool changed = true;
@@ -5085,9 +5082,8 @@ static bool ui_numedit_but_UNITVEC(
 
   /* note that both data->vec and data->origvec should be normalized
    * else we'll get a harmless but annoying jump when first clicking */
-
   float *fp = data->origvec;
-  const float rad = BLI_rctf_size_x(&but->rect);
+  const float rad = lib_rctf_size_x(&btn->rect);
   const float radsq = rad * rad;
 
   int mdx, mdy;
@@ -5153,48 +5149,48 @@ static bool ui_numedit_but_UNITVEC(
   return changed;
 }
 
-static void ui_palette_set_active(uiButColor *color_but)
+static void ui_palette_set_active(uiBtnColor *color_btn)
 {
-  if (color_but->is_pallete_color) {
-    Palette *palette = (Palette *)color_but->rnapoin.owner_id;
-    PaletteColor *color = static_cast<PaletteColor *>(color_but->rnapoin.data);
-    palette->active_color = BLI_findindex(&palette->colors, color);
+  if (color_btn->is_pallete_color) {
+    Palette *palette = (Palette *)color_btn->apipoin.owner_id;
+    PaletteColor *color = static_cast<PaletteColor *>(color_btn->apipoin.data);
+    palette->active_color = lib_findindex(&palette->colors, color);
   }
 }
 
-static int ui_do_but_COLOR(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+static int ui_do_btn_COLOR(Cxt *C, uiBtn *btn, uiHandleBtnData *data, const WinEv *ev)
 {
-  BLI_assert(but->type == UI_BTYPE_COLOR);
-  uiButColor *color_but = (uiButColor *)but;
+  lib_assert(btn->type == UI_BTYPE_COLOR);
+  uiBtnColor *color_btn = (uiBtnColor *)but;
 
-  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+  if (data->state == BTN_STATE_HIGHLIGHT) {
     /* First handle click on icon-drag type button. */
-    if (event->type == LEFTMOUSE && ui_but_drag_is_draggable(but) && event->val == KM_PRESS) {
-      ui_palette_set_active(color_but);
-      if (ui_but_contains_point_px_icon(but, data->region, event)) {
-        button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
-        data->dragstartx = event->xy[0];
-        data->dragstarty = event->xy[1];
-        return WM_UI_HANDLER_BREAK;
+    if (ev->type == LEFTMOUSE && ui_btn_drag_is_draggable(btn) && ev->val == KM_PRESS) {
+      ui_palette_set_active(color_btn);
+      if (ui_btn_contains_point_px_icon(btn, data->rgn, ev)) {
+        btn_activate_state(C, btn, BTN_STATE_WAIT_DRAG);
+        data->dragstartx = ev->xy[0];
+        data->dragstarty = ev->xy[1];
+        return WIN_UI_HANDLER_BREAK;
       }
     }
 #ifdef USE_DRAG_TOGGLE
-    if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
-      ui_palette_set_active(color_but);
-      button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
-      data->dragstartx = event->xy[0];
-      data->dragstarty = event->xy[1];
-      return WM_UI_HANDLER_BREAK;
+    if (ev->type == LEFTMOUSE && ev->val == KM_PRESS) {
+      ui_palette_set_active(color_btn);
+      btn_activate_state(C, btn, BTN_STATE_WAIT_DRAG);
+      data->dragstartx = ev->xy[0];
+      data->dragstarty = ev->xy[1];
+      return WIN_UI_HANDLER_BREAK;
     }
 #endif
     /* regular open menu */
-    if (ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
-      ui_palette_set_active(color_but);
-      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
-      return WM_UI_HANDLER_BREAK;
+    if (ELEM(ev->type, LEFTMOUSE, EV_PADENTER, EV_RETKEY) && ev->val == KM_PRESS) {
+      ui_palette_set_active(color_btn);
+      btn_activate_state(C, btn, BTN_STATE_MENU_OPEN);
+      return WIN_UI_HANDLER_BREAK;
     }
-    if (ELEM(event->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (event->modifier & KM_CTRL)) {
-      ColorPicker *cpicker = static_cast<ColorPicker *>(but->custom_data);
+    if (ELEM(ev->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (ev->mod & KM_CTRL)) {
+      ColorPicker *cpicker = static_cast<ColorPicker *>(btn->custom_data);
       float hsv_static[3] = {0.0f};
       float *hsv = cpicker ? cpicker->hsv_perceptual : hsv_static;
       float col[3];
@@ -5216,22 +5212,22 @@ static int ui_do_but_COLOR(bContext *C, uiBut *but, uiHandleButtonData *data, co
       hsv_to_rgb_v(hsv, data->vec);
       ui_but_v3_set(but, data->vec);
 
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
-      ui_apply_but(C, but->block, but, data, true);
-      return WM_UI_HANDLER_BREAK;
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
+      ui_apply_btn(C, btn->block, btn, data, true);
+      return MIN_UI_HANDLER_BREAK;
     }
-    if (color_but->is_pallete_color && (event->type == EVT_DELKEY) && (event->val == KM_PRESS)) {
-      Palette *palette = (Palette *)but->rnapoin.owner_id;
-      PaletteColor *color = static_cast<PaletteColor *>(but->rnapoin.data);
+    if (color_btn->is_pallete_color && (ev->type == EV_DELKEY) && (ev->val == KM_PRESS)) {
+      Palette *palette = (Palette *)btn->apipoin.owner_id;
+      PaletteColor *color = static_cast<PaletteColor *>(btn->apipoin.data);
 
-      BKE_palette_color_remove(palette, color);
+      dune_palette_color_remove(palette, color);
 
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
 
       /* this is risky. it works OK for now,
        * but if it gives trouble we should delay execution */
-      but->rnapoin = PointerRNA_NULL;
-      but->rnaprop = nullptr;
+      btn->apipoin = ApiPointerRNA_NULL;
+      btn->apiprop = nullptr;
 
       return WM_UI_HANDLER_BREAK;
     }
@@ -5239,13 +5235,13 @@ static int ui_do_but_COLOR(bContext *C, uiBut *but, uiHandleButtonData *data, co
   else if (data->state == BUTTON_STATE_WAIT_DRAG) {
 
     /* this function also ends state */
-    if (ui_but_drag_init(C, but, data, event)) {
-      return WM_UI_HANDLER_BREAK;
+    if (ui_btn_drag_init(C, but, data, event)) {
+      return WIN_UI_HANDLER_BREAK;
     }
 
     /* outside icon quit, not needed if drag activated */
-    if (0 == ui_but_contains_point_px_icon(but, data->region, event)) {
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    if (0 == ui_btn_contains_point_px_icon(btn, data->rgn, ev)) {
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
       data->cancel = true;
       return WM_UI_HANDLER_BREAK;
     }
@@ -5260,20 +5256,20 @@ static int ui_do_but_COLOR(bContext *C, uiBut *but, uiHandleButtonData *data, co
           if (brush->flag & BRUSH_USE_GRADIENT) {
             float *target = &brush->gradient->data[brush->gradient->cur].r;
 
-            if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
-              RNA_property_float_get_array(&but->rnapoin, but->rnaprop, target);
-              IMB_colormanagement_srgb_to_scene_linear_v3(target, target);
+            if (but->rnaprop && api_prop_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+              api_prop_float_get_array(&btn->apipoin, btn->apiprop, target);
+              imbuf_colormanagement_srgb_to_scene_linear_v3(target, target);
             }
-            else if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR) {
-              RNA_property_float_get_array(&but->rnapoin, but->rnaprop, target);
+            else if (but->rnaprop && RNA_property_subtype(but->apiprop) == PROP_COLOR) {
+              api_prop_float_get_array(&btn->apipoin, but->apiprop, target);
             }
           }
           else {
-            Scene *scene = CTX_data_scene(C);
+            Scene *scene = cxt_data_scene(C);
             bool updated = false;
 
-            if (btn->apiprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
-              api_prop_float_get_array(&but->rnapoin, but->rnaprop, color);
+            if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR_GAMMA) {
+              api_prop_float_get_array(&btn->apipoin, btn->apiprop, color);
               dune_brush_color_set(scene, brush, color);
               updated = true;
             }
