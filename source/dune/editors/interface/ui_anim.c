@@ -203,8 +203,8 @@ bool btn_anim_expression_set(Btn *btn, const char *str)
       driver->flag &= ~DRIVER_FLAG_INVALID;
       fcu->flag &= ~FCURVE_DISABLED;
 
-      /* this notifier should update the Graph Editor and trigger depsgraph refresh? */
-      win_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME, NULL);
+      /* this notifier should update the Graph Editor and trigger graph refresh? */
+      win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME, NULL);
 
       graph_relations_tag_update(cxt_data_main(C));
 
@@ -223,7 +223,7 @@ bool btn_anim_expression_create(Btn *btn, const char *str)
   char *path;
   bool ok = false;
 
-  /* button must have api-ptr to a numeric-capable property */
+  /* btn must have api-ptr to a numeric-capable prop */
   if (ELEM(NULL, btn->apiptr.data, btn->apiprop)) {
     if (G.debug & G_DEBUG) {
       printf("ERROR: create expression failed - btn has no api info attached\n");
@@ -231,7 +231,7 @@ bool btn_anim_expression_create(Btn *btn, const char *str)
     return false;
   }
 
-  if (api_prop_array_check(btn->apiprop) != 0) {
+  if (api_prop_arr_check(btn->apiprop) != 0) {
     if (btn->apiindex == -1) {
       if (G.debug & G_DEBUG) {
         printf("ERROR: create expression failed - can't create expression for entire array\n");
@@ -273,7 +273,7 @@ bool btn_anim_expression_create(Btn *btn, const char *str)
       /* updates */
       dune_driver_invalidate_expression(driver, true, false);
       graph_relations_tag_update(cxt_data_main(C));
-      win_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME, NULL);
+      win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME, NULL);
       ok = true;
     }
   }
@@ -290,14 +290,14 @@ void btn_anim_autokey(Cxt *C, Btn *btn, Scene *scene, float cfra)
 
 void btn_anim_copy_driver(Cxt *C)
 {
-  /* this operator calls UI_context_active_but_prop_get */
-  win_op_name_call(C, "ANIM_OT_copy_driver_btn", WIN_OP_INVOKE_DEFAULT, NULL, NULL);
+  /* this op calls ui_cxt_active_btn_prop_get */
+  win_op_name_call(C, "anim_ot_copy_driver_btn", WIN_OP_INVOKE_DEFAULT, NULL, NULL);
 }
 
 void btn_anim_paste_driver(Cxt *C)
 {
-  /* this operator calls UI_context_active_btn_prop_get */
-  win_op_name_call(C, "ANIM_OT_paste_driver_btn", WIN_OP_INVOKE_DEFAULT, NULL, NULL);
+  /* this op calls ui_cxt_active_btn_prop_get */
+  win_op_name_call(C, "anim_ot_paste_driver_btn", WIN_OP_INVOKE_DEFAULT, NULL, NULL);
 }
 
 void btn_anim_decorate_cb(Cxt *C, void *arg_btn, void *UNUSED(arg_dummy))
@@ -320,21 +320,21 @@ void btn_anim_decorate_cb(Cxt *C, void *arg_btn, void *UNUSED(arg_dummy))
   }
   else if (btn_anim->flag & UI_BTN_ANIMATED_KEY) {
     ApiPtr props_ptr;
-    WinOpType *ot = win_optype_find("ANIM_OT_keyframe_delete_btn", false);
+    WinOpType *ot = win_optype_find("anim_ot_keyframe_del_btn", false);
     win_op_props_create_ptr(&props_ptr, ot);
     api_bool_set(&props_ptr, "all", btn_anim->apiindex == -1);
     win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, &props_ptr, NULL);
     win_op_props_free(&props_ptr);
   }
   else {
-    PointerRNA props_ptr;
-    wmOperatorType *ot = WM_operatortype_find("ANIM_OT_keyframe_insert_button", false);
-    WM_operator_properties_create_ptr(&props_ptr, ot);
-    RNA_boolean_set(&props_ptr, "all", but_anim->rnaindex == -1);
-    WM_operator_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, &props_ptr, NULL);
-    WM_operator_properties_free(&props_ptr);
+    ApiPtr props_ptr;
+    WinOpType *ot = win_optype_find("anim_ot_keyframe_insert_btn", false);
+    win_op_props_create_ptr(&props_ptr, ot);
+    api_bool_set(&props_ptr, "all", but_anim->apiindex == -1);
+    win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, &props_ptr, NULL);
+    win_op_props_free(&props_ptr);
   }
 
-  SWAP(struct uiHandleButtonData *, but_anim->active, but_decorate->but.active);
-  wm->op_undo_depth--;
+  SWAP(struct uiHandleBtnData *, btn_anim->active, btn_decorate->btn.active);
+  win->op_undo_depth--;
 }
