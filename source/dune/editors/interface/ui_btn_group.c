@@ -29,7 +29,7 @@ void btn_group_add_btn(uiBlock *block, Btn *btn)
 
   BtnGroup *current_btn_group = block->btn_groups.last;
 
-  /* We can't use the btn directly because adding it to
+  /* We can't use the btn directly bc adding it to
    * this list would mess with its `prev` and `next` ptrs. */
   LinkData *btn_link = lib_genericNode(btn);
   lib_addtail(&current_btn_group->btns, btn_link);
@@ -48,12 +48,12 @@ void ui_block_free_btn_groups(uiBlock *block)
   }
 }
 
-void btn_group_replace_but_ptr(uiBlock *block, const void *old_btn_ptr, Btn *new_btn)
+void btn_group_replace_btn_ptr(uiBlock *block, const void *old_btn_ptr, Btn *new_btn)
 {
   LIST_FOREACH (BtnGroup *, btn_group, &block->btn_groups) {
     LIST_FOREACH (LinkData *, link, &btn_group->btns) {
       if (link->data == old_btn_ptr) {
-        link->data = new_but;
+        link->data = new_btn;
         return;
       }
     }
