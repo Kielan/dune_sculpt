@@ -16,12 +16,11 @@
 #include "ui.h"
 
 /* Tree View Drag/Drop Cbs */
-
-static bool ui_tree_view_drop_poll(Cxt *C, WinDrag *drag, const WinEvent *event)
+static bool ui_tree_view_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  const ARegion *region = cxt_win_region(C);
-  const uiTreeViewItemHandle *hovered_tree_item = ui_block_tree_view_find_item_at(region,
-                                                                                  event->xy);
+  const ARgn *rgn = cxt_win_rgn(C);
+  const uiTreeViewItemHandle *hovered_tree_item = ui_block_tree_view_find_item_at(rgn,
+                                                                                  ev->xy);
   if (!hovered_tree_item) {
     return false;
   }
@@ -37,10 +36,10 @@ static bool ui_tree_view_drop_poll(Cxt *C, WinDrag *drag, const WinEvent *event)
 static char *ui_tree_view_drop_tooltip(Cxt *C,
                                        WinDrag *drag,
                                        const int xy[2],
-                                       wmDropBox *UNUSED(drop))
+                                       WinDropBox *UNUSED(drop))
 {
-  const ARegion *region = cxt_win_region(C);
-  const uiTreeViewItemHandle *hovered_tree_item = ui_block_tree_view_find_item_at(region, xy);
+  const ARgn *rgn = cxt_win_rgn(C);
+  const uiTreeViewItemHandle *hovered_tree_item = ui_block_tree_view_find_item_at(rgn, xy);
   if (!hovered_tree_item) {
     return nullptr;
   }
@@ -49,7 +48,7 @@ static char *ui_tree_view_drop_tooltip(Cxt *C,
 }
 
 /* Name Drag/Drop Cbs */
-static bool ui_drop_name_poll(struct Cxt *C, WinDrag *drag, const WinEvent *UNUSED(event))
+static bool ui_drop_name_poll(struct Cxt *C, WinDrag *drag, const WinEv *UNUSED(ev))
 {
   return btn_active_drop_name(C) && (drag->type == WIN_DRAG_ID);
 }
@@ -61,7 +60,7 @@ static void ui_drop_name_copy(WinDrag *drag, WinDropBox *drop)
 }
 
 /* Material Drag/Drop Cbs */
-static bool ui_drop_material_poll(Cxt *C, WinDrag *drag, const WinEvent *UNUSED(event))
+static bool ui_drop_material_poll(Cxt *C, WinDrag *drag, const WinEv *UNUSED(ev))
 {
   ApiPtr mat_slot = cxt_data_ptr_get_type(C, "material_slot", &ApiMaterialSlot);
   return win_drag_is_id_type(drag, ID_MA) && !api_ptr_is_null(&mat_slot);
@@ -70,7 +69,7 @@ static bool ui_drop_material_poll(Cxt *C, WinDrag *drag, const WinEvent *UNUSED(
 static void ui_drop_material_copy(WinDrag *drag, WinDropBox *drop)
 {
   const Id *id = win_drag_get_local_id_or_import_from_asset(drag, ID_MA);
-  api_int_set(drop->ptr, "session_uuid", (int)id->session_uuid);
+  api_int_set(drop->ptr, "sess_uuid", (int)id->sess_uuid);
 }
 
 static char *ui_drop_material_tooltip(Cxt *C,
@@ -78,8 +77,8 @@ static char *ui_drop_material_tooltip(Cxt *C,
                                       const int UNUSED(xy[2]),
                                       struct WinDropBox *UNUSED(drop))
 {
-  ApiPtr api_ptr = cxt_data_ptr_get_type(C, "object", &apiObject);
-  Object *ob = (Object *)api_ptr.data;
+  ApiPtr api_ptr = cxt_data_ptr_get_type(C, "object", &apiOb);
+  Ob *ob = (Ob *)api_ptr.data;
   lib_assert(ob);
 
   ApiPtr mat_slot = cxt_data_ptr_get_type(C, "material_slot", &ApiMaterialSlot);
@@ -118,19 +117,19 @@ void ed_dropboxes_ui()
   List *list = win_dropboxmap_find("User Interface", SPACE_EMPTY, 0);
 
   win_dropbox_add(list,
-                 "UI_OT_tree_view_drop",
+                 "ui_ot_tree_view_drop",
                  ui_tree_view_drop_poll,
                  nullptr,
                  nullptr,
                  ui_tree_view_drop_tooltip);
   win_dropbox_add(list,
-                 "UI_OT_drop_name",
+                 "ui_ot_drop_name",
                  ui_drop_name_poll,
                  ui_drop_name_copy,
                  win_drag_free_imported_drag_id,
                  nullptr);
   win_dropbox_add(list,
-                 "UI_OT_drop_material",
+                 "ui_ot_drop_material",
                  ui_drop_material_poll,
                  ui_drop_material_copy,
                  win_drag_free_imported_drag_id,
