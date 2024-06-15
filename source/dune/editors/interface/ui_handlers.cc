@@ -1846,8 +1846,8 @@ static void ui_selcxt_end(Btn *btn, uiSelCxtStore *selcxt_data)
 static void ui_selcxt_apply(Cxt *C,
                             Btn *btn,
                             uiSelCxtStore *selcxt_data,
-                            const double value,
-                            const double value_orig)
+                            const double val,
+                            const double val_orig)
 {
   if (selcxt_data->elems) {
     ApiProp *prop = btn->apiprop;
@@ -1867,11 +1867,11 @@ static void ui_selcxt_apply(Cxt *C,
     const int api_type = api_prop_type(prop);
 
     if (api_type == PROP_FLOAT) {
-      delta.f = use_delta ? (value - value_orig) : value;
+      delta.f = use_delta ? (val - val_orig) : val;
       api_prop_float_range(&btn->apiptr, prop, &min.f, &max.f);
     }
     else if (api_type == PROP_INT) {
-      delta.i = use_delta ? (int(value) - int(value_orig)) : int(value);
+      delta.i = use_delta ? (int(val) - int(val_orig)) : int(val);
       api_prop_int_range(&btn->apiptr, prop, &min.i, &max.i);
     }
     else if (api_type == PROP_ENUM) {
@@ -1933,46 +1933,46 @@ static void ui_selcxt_apply(Cxt *C,
       ApiPtr lptr = other->ptr;
 
       if (api_type == PROP_FLOAT) {
-        float other_value = use_delta ? (other->val_f + delta.f) : delta.f;
-        CLAMP(other_value, min.f, max.f);
+        float other_val = use_delta ? (other->val_f + delta.f) : delta.f;
+        CLAMP(other_val, min.f, max.f);
         if (is_array) {
-          api_prop_float_set_index(&lptr, lprop, index, other_value);
+          api_prop_float_set_index(&lptr, lprop, index, other_val);
         }
         else {
-          api_prop_float_set(&lptr, lprop, other_value);
+          api_prop_float_set(&lptr, lprop, other_val);
         }
       }
       else if (api_type == PROP_INT) {
-        int other_value = use_delta ? (other->val_i + delta.i) : delta.i;
-        CLAMP(other_value, min.i, max.i);
+        int other_val = use_delta ? (other->val_i + delta.i) : delta.i;
+        CLAMP(other_val, min.i, max.i);
         if (is_array) {
-          api_prop_int_set_index(&lptr, lprop, index, other_value);
+          api_prop_int_set_index(&lptr, lprop, index, other_val);
         }
         else {
-          api_prop_int_set(&lptr, lprop, other_value);
+          api_prop_int_set(&lptr, lprop, other_val);
         }
       }
       else if (api_type == PROP_BOOL) {
-        const bool other_value = delta.b;
+        const bool other_val = delta.b;
         if (is_array) {
-          api_prop_bool_set_index(&lptr, lprop, index, other_value);
+          api_prop_bool_set_index(&lptr, lprop, index, other_val);
         }
         else {
           api_prop_bool_set(&lptr, lprop, delta.b);
         }
       }
       else if (api_type == PROP_ENUM) {
-        const int other_value = delta.i;
+        const int other_val = delta.i;
         lib_assert(!is_array);
-        api_prop_enum_set(&lptr, lprop, other_value);
+        api_prop_enum_set(&lptr, lprop, other_val);
       }
       else if (api_type == PROP_PTR) {
-        const ApiPtr other_value = delta.p;
-        api_prop_ptr_set(&lptr, lprop, other_value, nullptr);
+        const ApiPtr other_val = delta.p;
+        api_prop_ptr_set(&lptr, lprop, other_val, nullptr);
       }
       else if (api_type == PROP_STRING) {
-        const char *other_value = delta.str;
-        api_prop_string_set(&lptr, lprop, other_value);
+        const char *other_val = delta.str;
+        api_prop_string_set(&lptr, lprop, other_val);
       }
 
       api_prop_update(C, &lptr, prop);
@@ -2011,13 +2011,13 @@ static bool btn_drag_init(Cxt *C,
 
       /* call here because regular mouse-up event won't run,
        * typically 'btn_activate_exit()' handles this */
-      ui_apply_but_autokey(C, btn);
+      ui_apply_btn_autokey(C, btn);
 
       drag_info->pushed_state = btn_drag_toggle_pushed_state(btn);
       drag_info->btn_cent_start[0] = lib_rctf_cent_x(&btn->rect);
       drag_info->btn_cent_start[1] = lib_rctf_cent_y(&btn->rect);
-      copy_v2_v2_int(drag_info->xy_init, event->xy);
-      copy_v2_v2_int(drag_info->xy_last, event->xy);
+      copy_v2_v2_int(drag_info->xy_init, ev->xy);
+      copy_v2_v2_int(drag_info->xy_last, ev->xy);
 
       /* needed for toggle drag on popups */
       rgn_prev = cxt_win_rgn(C);
@@ -2032,8 +2032,8 @@ static bool btn_drag_init(Cxt *C,
 
       cxt_win_rgn_set(C, rgn_prev);
 
-      /* Initialize alignment for single row/column regions,
-       * otherwise we use the relative position of the first other button dragged over. */
+      /* Initialize alignment for single row/column rgns,
+       * otherwise we use the relative position of the first other bn dragged over. */
       if (ELEM(data->rgn->rgntype,
                RGN_TYPE_NAV_BAR,
                RGN_TYPE_HEADER,
@@ -2070,11 +2070,11 @@ static bool btn_drag_init(Cxt *C,
         valid = true;
       }
       else if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR) {
-        ui_but_v3_get(but, drag_info->color);
+        ui_btn_v3_get(btn, drag_info->color);
         drag_info->gamma_corrected = false;
         valid = true;
       }
-      else if (ELEM(btn->ptrtype, BTN_PTR_FLOAT, BTN_PTR_CHAR)) {
+      else if (elem(btn->ptrtype, BTN_PTR_FLOAT, BTN_PTR_CHAR)) {
         btn_v3_get(btn, drag_info->color);
         copy_v3_v3(drag_info->color, (float *)btn->ptr);
         valid = true;
@@ -2104,28 +2104,28 @@ static bool btn_drag_init(Cxt *C,
 }
 
 /* Btn Apply */
-static void btn_apply_IMG(Cxt *C, Btn *btn, BtnHandleData *data)
+static void btn_apply_img(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
   data->retval = btn->retval;
   data->applied = true;
 }
 
-static void btn_apply_HISTOGRAM(Cxt *C, Btn *btn, BtnHandleData *data)
+static void btn_apply_histogram(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
   data->retval = btn->retval;
   data->applied = true;
 }
 
-static void btn_apply_WAVEFORM(Cxt *C, Btn *btn, BtnHandleData *data)
+static void btn_apply_waveform(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
   data->retval = btn->retval;
   data->applied = true;
 }
 
-static void btn_apply_TRACKPREVIEW(Cxt *C, Btn *btn, BtnHandleData *data)
+static void btn_apply_trackpreview(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
   data->retval = btn->retval;
@@ -2140,7 +2140,7 @@ static void btn_apply(
   data->retval = 0;
 
   /* if we cancel and have not applied yet, there is nothing to do,
-   * otherwise we have to restore the original value again */
+   * otherwise we have to restore the original val again */
   if (data->cancel) {
     if (!data->applied) {
       return;
@@ -2151,13 +2151,13 @@ static void btn_apply(
     }
     data->str = data->origstr;
     data->origstr = nullptr;
-    data->value = data->origvalue;
+    data->val = data->origval;
     copy_v3_v3(data->vec, data->origvec);
     /* postpone clearing origdata */
   }
   else {
     /* We avoid applying interactive edits a second time
-     * at the end with the #uiHandleButtonData.applied_interactive flag. */
+     * at the end with the uiHandleBtnData.applied_interactive flag. */
     if (interactive) {
       data->applied_interactive = true;
     }
@@ -2165,7 +2165,7 @@ static void btn_apply(
       return;
     }
 
-#ifdef USE_ALLSELECT
+#ifdef USE_ALLSEL
 #  ifdef USE_DRAG_MULTINUM
     if (btn->flag & BTN_DRAG_MULTI) {
       /* pass */
@@ -2181,7 +2181,7 @@ static void btn_apply(
         /* See comment for IS_ALLSEL_EV why this needs to be filtered here. */
         const bool is_array_paste = (ev->val == KM_PRESS) &&
                                     (ev->mod & (KM_CTRL | KM_OSKEY)) &&
-                                    (ev->mod & KM_SHIFT) == 0 && (ev->type == EVT_VKEY);
+                                    (ev->mod & KM_SHIFT) == 0 && (ev->type == EV_VKEY);
         if (!is_array_paste) {
           ui_selcxt_begin(C, btn, &data->sel_others);
           data->sel_others.is_enabled = true;
@@ -2219,7 +2219,7 @@ static void btn_apply(
   btn->editvec = nullptr;
   if (btn_type == BTYPE_COLORBAND) {
     BtnColorBand *btn_coba = (BtnColorBand *)btn;
-    btn_coba->edit_coba = nullptr;
+    btn_coba->ed_coba = nullptr;
   }
   else if (btn_type == BTYPE_CURVE) {
     BtnCurveMapping *btn_cumap = (BtnCurveMapping *)btn;
@@ -2230,15 +2230,15 @@ static void btn_apply(
     btn_profile->edit_profile = nullptr;
   }
 
-  /* handle different types */
+  /* handle diff types */
   switch (btn_type) {
     case BTYPE_BTN:
     case BTYPE_DECORATOR:
-      btn_apply_BTN(C, btn, data);
+      btn_apply_btn(C, btn, data);
       break;
-    case BTYPE_TEXT:
+    case BTYPE_TXT:
     case BTYPE_SEARCH_MENU:
-      btn_apply_TEX(C, btn, data);
+      btn_apply_tex(C, btn, data);
       break;
     case BTYPE_BTN_TOGGLE:
     case BTYPE_TOGGLE:
@@ -2247,71 +2247,71 @@ static void btn_apply(
     case BTYPE_ICON_TOGGLE_N:
     case BTYPE_CHECKBOX:
     case BTYPE_CHECKBOX_N:
-      btn_apply_TOG(C, btn, data);
+      btn_apply_tog(C, btn, data);
       break;
     case BTYPE_ROW:
-      btn_apply_ROW(C, block, btn, data);
+      btn_apply_row(C, block, btn, data);
       break;
     case BTYPE_VIEW_ITEM:
-      btn_apply_VIEW_ITEM(C, block, btn, data);
+      btn_apply_view_item(C, block, btn, data);
       break;
     case BTYPE_LISTROW:
-      btn_apply_LISTROW(C, block, btn, data);
+      btn_apply_listrow(C, block, btn, data);
       break;
     case BTYPE_TAB:
-      btn_apply_TAB(C, btn, data);
+      btn_apply_tab(C, btn, data);
       break;
     case BTYPE_SCROLL:
     case BTYPE_GRIP:
     case BTYPE_NUM:
     case BTYPE_NUM_SLIDER:
-      btn_apply_NUM(C, btn, data);
+      btn_apply_num(C, btn, data);
       break;
     case BTYPE_MENU:
     case BTYPE_BLOCK:
     case BTYPE_PULLDOWN:
-      btn_apply_BLOCK(C, btn, data);
+      btn_apply_block(C, btn, data);
       break;
     case BTYPE_COLOR:
       if (data->cancel) {
-        btn_apply_VEC(C, btn, data);
+        btn_apply_vec(C, btn, data);
       }
       else {
-        btn_apply_BLOCK(C, btn, data);
+        btn_apply_block(C, btn, data);
       }
       break;
     case BTYPE_BTN_MENU:
-      btn_apply_BUTM(C, btn, data);
+      btn_apply_btnm(C, btn, data);
       break;
     case BTYPE_UNITVEC:
     case BTYPE_HSVCUBE:
     case BTYPE_HSVCIRCLE:
-      btn_apply_VEC(C, btn, data);
+      btn_apply_vec(C, btn, data);
       break;
     case BTYPE_COLORBAND:
-      btn_apply_COLORBAND(C, btn, data);
+      btn_apply_colorband(C, btn, data);
       break;
     case BTYPE_CURVE:
-      btn_apply_CURVE(C, btn, data);
+      btn_apply_curve(C, btn, data);
       break;
     case BTYPE_CURVEPROFILE:
-      btn_apply_CURVEPROFILE(C, btn, data);
+      btn_apply_curveprofile(C, btn, data);
       break;
-    case BTYPE_KEY_EVENT:
-    case BTYPE_HOTKEY_EVENT:
-      btn_apply_BTN(C, btn, data);
+    case BTYPE_KEY_EV:
+    case BTYPE_HOTKEY_EV:
+      btn_apply_btn(C, btn, data);
       break;
-    case BTYPE_IMAGE:
-      btn_apply_IMAGE(C, btn, data);
+    case BTYPE_IMG:
+      btn_apply_img(C, btn, data);
       break;
     case BTYPE_HISTOGRAM:
-      btn_apply_HISTOGRAM(C, btn, data);
+      btn_apply_histogram(C, btn, data);
       break;
     case BTYPE_WAVEFORM:
-      btn_apply_WAVEFORM(C, btn, data);
+      btn_apply_waveform(C, btn, data);
       break;
     case BTYPE_TRACK_PREVIEW:
-      btn_apply_TRACKPREVIEW(C, btn, data);
+      btn_apply_trackpreview(C, btn, data);
       break;
     default:
       break;
