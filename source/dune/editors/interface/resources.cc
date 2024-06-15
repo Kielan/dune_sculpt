@@ -3,55 +3,53 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
+#include "types_screen..h"
+#include "types_space.h"
+#include "types_userdef.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_vector.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_math_vector.h"
+#include "lib_utildefines.h"
 
-#include "BKE_addon.h"
-#include "BKE_appdir.h"
-#include "BKE_main.h"
-#include "BKE_mesh_runtime.hh"
+#include "dune_addon.h"
+#include "dune_appdir.h"
+#include "dune_main.h"
+#include "dune_mesh_runtime.hh"
 
-#include "BLO_readfile.h" /* for UserDef version patching. */
+#include "loader_readfile.h" /* for UserDef version patching. */
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "ED_screen.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_interface_icons.hh"
+#include "ui.hh"
+#include "ui_icons.hh"
 
-#include "GPU_framebuffer.h"
-#include "interface_intern.hh"
+#include "gpu_framebuffer.h"
+#include "ui_intern.hh"
 
-/* be sure to keep 'bThemeState' in sync */
-static bThemeState g_theme_state = {
+/* be sure to keep 'ThemeState' in sync */
+static ThemeState g_theme_state = {
     nullptr,
     SPACE_VIEW3D,
-    RGN_TYPE_WINDOW,
+    RGN_TYPE_WIN,
 };
 
 void ui_resources_init()
 {
-  UI_icons_init();
+  ui_icons_init();
 }
 
 void ui_resources_free()
 {
-  UI_icons_free();
+  ui_icons_free();
 }
 
-/* ******************************************************** */
 /*    THEMES */
-/* ******************************************************** */
 
-const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
+const uchar *ui_ThemeGetColorPtr(Theme *theme, int spacetype, int colorid)
 {
   ThemeSpace *ts = nullptr;
   static uchar error[4] = {240, 0, 240, 255};
@@ -61,11 +59,11 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
   static uchar setting = 0;
   const uchar *cp = error;
 
-  /* ensure we're not getting a color after running BKE_blender_userdef_free */
-  BLI_assert(BLI_findindex(&U.themes, g_theme_state.theme) != -1);
-  BLI_assert(colorid != TH_UNDEFINED);
+  /* ensure we're not getting a color after running dune_userdef_free */
+  lib_assert(lib_findindex(&U.themes, g_theme_state.theme) != -1);
+  lib_assert(colorid != TH_UNDEFINED);
 
-  if (btheme) {
+  if (theme) {
 
     /* first check for ui buttons theme */
     if (colorid < TH_THEMEUI) {
@@ -80,94 +78,94 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
     else {
 
       switch (spacetype) {
-        case SPACE_PROPERTIES:
-          ts = &btheme->space_properties;
+        case SPACE_PROPS:
+          ts = &theme->space_props;
           break;
         case SPACE_VIEW3D:
-          ts = &btheme->space_view3d;
+          ts = &theme->space_view3d;
           break;
         case SPACE_GRAPH:
-          ts = &btheme->space_graph;
+          ts = &theme->space_graph;
           break;
         case SPACE_FILE:
-          ts = &btheme->space_file;
+          ts = &theme->space_file;
           break;
         case SPACE_NLA:
-          ts = &btheme->space_nla;
+          ts = &theme->space_nla;
           break;
         case SPACE_ACTION:
-          ts = &btheme->space_action;
+          ts = &theme->space_action;
           break;
         case SPACE_SEQ:
-          ts = &btheme->space_sequencer;
+          ts = &theme->space_seq;
           break;
-        case SPACE_IMAGE:
-          ts = &btheme->space_image;
+        case SPACE_IMG:
+          ts = &theme->space_img;
           break;
-        case SPACE_TEXT:
-          ts = &btheme->space_text;
+        case SPACE_TXT:
+          ts = &theme->space_txt;
           break;
         case SPACE_OUTLINER:
-          ts = &btheme->space_outliner;
+          ts = &theme->space_outliner;
           break;
         case SPACE_INFO:
-          ts = &btheme->space_info;
+          ts = &theme->space_info;
           break;
         case SPACE_USERPREF:
-          ts = &btheme->space_preferences;
+          ts = &theme->space_prefs;
           break;
         case SPACE_CONSOLE:
-          ts = &btheme->space_console;
+          ts = &theme->space_console;
           break;
         case SPACE_NODE:
-          ts = &btheme->space_node;
+          ts = &theme->space_node;
           break;
         case SPACE_CLIP:
-          ts = &btheme->space_clip;
+          ts = &theme->space_clip;
           break;
         case SPACE_TOPBAR:
-          ts = &btheme->space_topbar;
+          ts = &theme->space_topbar;
           break;
         case SPACE_STATUSBAR:
-          ts = &btheme->space_statusbar;
+          ts = &theme->space_statusbar;
           break;
         case SPACE_SPREADSHEET:
-          ts = &btheme->space_spreadsheet;
+          ts = &theme->space_spreadsheet;
           break;
         default:
-          ts = &btheme->space_view3d;
+          ts = &theme->space_view3d;
           break;
       }
 
       switch (colorid) {
         case TH_BACK:
-          if (ELEM(g_theme_state.regionid, RGN_TYPE_WINDOW, RGN_TYPE_PREVIEW)) {
+          if (ELEM(g_theme_state.rgnid, RGN_TYPE_WIN, RGN_TYPE_PREVIEW)) {
             cp = ts->back;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_CHANNELS) {
+          else if (g_theme_state.rgnid == RGN_TYPE_CHANNELS) {
             cp = ts->list;
           }
-          else if (ELEM(g_theme_state.regionid, RGN_TYPE_HEADER, RGN_TYPE_FOOTER)) {
+          else if (ELEM(g_theme_state.rgnid, RGN_TYPE_HEADER, RGN_TYPE_FOOTER)) {
             cp = ts->header;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_NAV_BAR) {
-            cp = ts->navigation_bar;
+          else if (g_theme_state.rgnid == RGN_TYPE_NAV_BAR) {
+            cp = ts->nav_bar;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_EXECUTE) {
-            cp = ts->execution_buts;
+          else if (g_theme_state.rgnid == RGN_TYPE_EX) {
+            cp = ts->ex_btns;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_ASSET_SHELF) {
+          else if (g_theme_state.rgnid == RGN_TYPE_ASSET_SHELF) {
             cp = ts->asset_shelf.back;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_ASSET_SHELF_HEADER) {
+          else if (g_theme_state.rgnid == RGN_TYPE_ASSET_SHELF_HEADER) {
             cp = ts->asset_shelf.header_back;
           }
           else {
-            cp = ts->button;
+            cp = ts->btn;
           }
 
           copy_v4_v4_uchar(back, cp);
-          if (!ED_region_is_overlap(spacetype, g_theme_state.regionid)) {
+          if (!ed_rgn_is_overlap(spacetype, g_theme_state.rgnid)) {
             back[3] = 255;
           }
           cp = back;
@@ -180,50 +178,50 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
           cp = &setting;
           setting = ts->background_type;
           break;
-        case TH_TEXT:
-          if (g_theme_state.regionid == RGN_TYPE_WINDOW) {
-            cp = ts->text;
+        case TH_TXT:
+          if (g_theme_state.rgnid == RGN_TYPE_WIN) {
+            cp = ts->txt;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_CHANNELS) {
-            cp = ts->list_text;
+          else if (g_theme_state.rgnid == RGN_TYPE_CHANNELS) {
+            cp = ts->list_txt;
           }
-          else if (ELEM(g_theme_state.regionid,
+          else if (ELEM(g_theme_state.rgnid,
                         RGN_TYPE_HEADER,
                         RGN_TYPE_FOOTER,
                         RGN_TYPE_ASSET_SHELF_HEADER))
           {
-            cp = ts->header_text;
+            cp = ts->header_txt;
           }
           else {
-            cp = ts->button_text;
+            cp = ts->btn_txt;
           }
           break;
-        case TH_TEXT_HI:
-          if (g_theme_state.regionid == RGN_TYPE_WINDOW) {
-            cp = ts->text_hi;
+        case TH_TXT_HI:
+          if (g_theme_state.rgnid == RGN_TYPE_WIN) {
+            cp = ts->txt_hi;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_CHANNELS) {
+          else if (g_theme_state.rgnid == RGN_TYPE_CHANNELS) {
             cp = ts->list_text_hi;
           }
-          else if (ELEM(g_theme_state.regionid,
+          else if (ELEM(g_theme_state.rgnid,
                         RGN_TYPE_HEADER,
                         RGN_TYPE_FOOTER,
                         RGN_TYPE_ASSET_SHELF_HEADER))
           {
-            cp = ts->header_text_hi;
+            cp = ts->header_txt_hi;
           }
           else {
-            cp = ts->button_text_hi;
+            cp = ts->btn_txt_hi;
           }
           break;
         case TH_TITLE:
-          if (g_theme_state.regionid == RGN_TYPE_WINDOW) {
+          if (g_theme_state.rgnid == RGN_TYPE_WIN) {
             cp = ts->title;
           }
-          else if (g_theme_state.regionid == RGN_TYPE_CHANNELS) {
+          else if (g_theme_state.rgnid == RGN_TYPE_CHANNELS) {
             cp = ts->list_title;
           }
-          else if (ELEM(g_theme_state.regionid,
+          else if (ELEM(g_theme_state.rgnid,
                         RGN_TYPE_HEADER,
                         RGN_TYPE_FOOTER,
                         RGN_TYPE_ASSET_SHELF_HEADER))
@@ -231,7 +229,7 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
             cp = ts->header_title;
           }
           else {
-            cp = ts->button_title;
+            cp = ts->btn_title;
           }
           break;
 
@@ -250,31 +248,31 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
           cp = header_active;
           break;
         }
-        case TH_HEADER_TEXT:
-          cp = ts->header_text;
+        case TH_HEADER_TXT:
+          cp = ts->header_txt;
           break;
-        case TH_HEADER_TEXT_HI:
-          cp = ts->header_text_hi;
-          break;
-
-        case TH_PANEL_HEADER:
-          cp = ts->panelcolors.header;
-          break;
-        case TH_PANEL_BACK:
-          cp = ts->panelcolors.back;
-          break;
-        case TH_PANEL_SUB_BACK:
-          cp = ts->panelcolors.sub_back;
+        case TH_HEADER_TXT_HI:
+          cp = ts->header_txt_hi;
           break;
 
-        case TH_BUTBACK:
-          cp = ts->button;
+        case TH_PNL_HEADER:
+          cp = ts->pnlcolors.header;
           break;
-        case TH_BUTBACK_TEXT:
-          cp = ts->button_text;
+        case TH_PNL_BACK:
+          cp = ts->pnlcolors.back;
           break;
-        case TH_BUTBACK_TEXT_HI:
-          cp = ts->button_text_hi;
+        case TH_PNL_SUB_BACK:
+          cp = ts->pnlcolors.sub_back;
+          break;
+
+        case TH_BTNBACK:
+          cp = ts->btn;
+          break;
+        case TH_BTNBACK_TXT:
+          cp = ts->btn_txt;
+          break;
+        case TH_BTNBACK_TXT_HI:
+          cp = ts->btn_txt_hi;
           break;
 
         case TH_TAB_ACTIVE:
@@ -354,8 +352,8 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
         case TH_VERTEX:
           cp = ts->vertex;
           break;
-        case TH_VERTEX_SELECT:
-          cp = ts->vertex_select;
+        case TH_VERTEX_SEL:
+          cp = ts->vertex_sel;
           break;
         case TH_VERTEX_ACTIVE:
           cp = ts->vertex_active;
@@ -381,11 +379,11 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
         case TH_EDGE_WIDTH:
           cp = &ts->edge_width;
           break;
-        case TH_EDGE_SELECT:
-          cp = ts->edge_select;
+        case TH_EDGE_SEL:
+          cp = ts->edge_sel;
           break;
-        case TH_EDGE_MODE_SELECT:
-          cp = ts->edge_mode_select;
+        case TH_EDGE_MODE_SEL:
+          cp = ts->edge_mode_sel;
           break;
         case TH_EDGE_SEAM:
           cp = ts->edge_seam;
@@ -408,11 +406,11 @@ const uchar *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colorid)
         case TH_FACE:
           cp = ts->face;
           break;
-        case TH_FACE_SELECT:
-          cp = ts->face_select;
+        case TH_FACE_SEL:
+          cp = ts->face_sel;
           break;
-        case TH_FACE_MODE_SELECT:
-          cp = ts->face_mode_select;
+        case TH_FACE_MODE_SEL:
+          cp = ts->face_mode_sel;
           break;
         case TH_FACE_RETOPOLOGY:
           cp = ts->face_retopology;
