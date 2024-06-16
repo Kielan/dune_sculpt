@@ -116,17 +116,17 @@ int imgwrap(Tex *tex,
     fy = texvec[1];
   }
 
-  ImBuf *ibuf = dune_image_pool_acquire_ibuf(ima, iuser, pool);
+  ImBuf *ibuf = dune_img_pool_acquire_ibuf(ima, iuser, pool);
 
-  ima->flag |= IMA_USED_FOR_RENDER;
+  ima->flag |= IMG_USED_FOR_RNDR;
 
   if (ibuf == NULL || (ibuf->rect == NULL && ibuf->rect_float == NULL)) {
-    dune_image_pool_release_ibuf(ima, ibuf, pool);
+    dune_img_pool_release_ibuf(img, ibuf, pool);
     return retval;
   }
 
   /* setup mapping */
-  if (tex->imaflag & TEX_IMAROT) {
+  if (tex->imgflag & TEX_IMAROT) {
     SWAP(float, fx, fy);
   }
 
@@ -143,8 +143,8 @@ int imgwrap(Tex *tex,
         /* pass */
       }
       else {
-        if (ima) {
-          dune_image_pool_release_ibuf(ima, ibuf, pool);
+        if (img) {
+          dune_img_pool_release_ibuf(ima, ibuf, pool);
         }
         return retval;
       }
@@ -152,7 +152,7 @@ int imgwrap(Tex *tex,
     if ((tex->flag & TEX_CHECKER_EVEN) == 0) {
       if ((xs + ys) & 1) {
         if (ima) {
-          dune_image_pool_release_ibuf(ima, ibuf, pool);
+          dune_img_pool_release_ibuf(ima, ibuf, pool);
         }
         return retval;
       }
@@ -170,7 +170,7 @@ int imgwrap(Tex *tex,
   if (tex->extend == TEX_CLIPCUBE) {
     if (x < 0 || y < 0 || x >= ibuf->x || y >= ibuf->y || texvec[2] < -1.0f || texvec[2] > 1.0f) {
       if (ima) {
-        dune_image_pool_release_ibuf(ima, ibuf, pool);
+        dune_img_pool_release_ibuf(img, ibuf, pool);
       }
       return retval;
     }
@@ -178,7 +178,7 @@ int imgwrap(Tex *tex,
   else if (ELEM(tex->extend, TEX_CLIP, TEX_CHECKER)) {
     if (x < 0 || y < 0 || x >= ibuf->x || y >= ibuf->y) {
       if (ima) {
-        dune_image_pool_release_ibuf(ima, ibuf, pool);
+        dune_img_pool_release_ibuf(img, ibuf, pool);
       }
       return retval;
     }
@@ -216,8 +216,8 @@ int imgwrap(Tex *tex,
 
   /* Keep this before interpolation T29761. */
   if (ima) {
-    if ((tex->imaflag & TEX_USEALPHA) && (ima->alpha_mode != IMA_ALPHA_IGNORE)) {
-      if ((tex->imaflag & TEX_CALCALPHA) == 0) {
+    if ((tex->imgflag & TEX_USEALPHA) && (ima->alpha_mode != IMA_ALPHA_IGNORE)) {
+      if ((tex->imgflag & TEX_CALCALPHA) == 0) {
         texres->talpha = true;
       }
     }
@@ -229,9 +229,9 @@ int imgwrap(Tex *tex,
     filterx = (0.5f * tex->filtersize) / ibuf->x;
     filtery = (0.5f * tex->filtersize) / ibuf->y;
 
-    /* Important that this value is wrapped T27782.
+    /* Important that this val is wrapped T27782.
      * this applies the modifications made by the checks above,
-     * back to the floating point values */
+     * back to the floating point vals */
     fx -= (float)(xi - x) / (float)ibuf->x;
     fy -= (float)(yi - y) / (float)ibuf->y;
 
@@ -249,11 +249,11 @@ int imgwrap(Tex *tex,
   }
 
   if (texres->nor) {
-    if (tex->imaflag & TEX_NORMALMAP) {
+    if (tex->imgflag & TEX_NORMALMAP) {
       /* Normal from color:
        * The invert of the red channel is to make
        * the normal map compliant with the outside world.
-       * It needs to be done because in Blender
+       * It needs to be done bc in Dube
        * the normal used in the renderer points inward. It is generated
        * this way in calc_vertexnormals(). Should this ever change
        * this negate must be removed. */
@@ -292,7 +292,7 @@ int imgwrap(Tex *tex,
   if (texres->talpha) {
     texres->tin = texres->trgba[3];
   }
-  else if (tex->imaflag & TEX_CALCALPHA) {
+  else if (tex->imgflag & TEX_CALCALPHA) {
     texres->trgba[3] = texres->tin = max_fff(texres->trgba[0], texres->trgba[1], texres->trgba[2]);
   }
   else {
@@ -304,7 +304,7 @@ int imgwrap(Tex *tex,
   }
 
   /* de-premul, this is being pre-multiplied in shade_input_do_shade()
-   * do not de-premul for generated alpha, it is already in straight */
+   * do not de-premul for generated alpha, it is alrdy in straight */
   if (texres->trgba[3] != 1.0f && texres->trgba[3] > 1e-4f && !(tex->imaflag & TEX_CALCALPHA)) {
     fx = 1.0f / texres->trgba[3];
     texres->trgba[0] *= fx;
@@ -313,7 +313,7 @@ int imgwrap(Tex *tex,
   }
 
   if (ima) {
-    dune_image_pool_release_ibuf(ima, ibuf, pool);
+    dune_img_pool_release_ibuf(ima, ibuf, pool);
   }
 
   BRICONTRGB;
@@ -497,7 +497,7 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
 
 static void boxsampleclip(struct ImBuf *ibuf, rctf *rf, TexResult *texres)
 {
-  /* Sample box, is clipped already, and minx etc. have been set at ibuf size.
+  /* Sample box, is clipped alrdy, and minx etc. have been set at ibuf size.
    * Enlarge with anti-aliased edges of the pixels. */
 
   float muly, mulx, div, col[4];
@@ -590,18 +590,17 @@ static void boxsample(ImBuf *ibuf,
                       float maxx,
                       float maxy,
                       TexResult *texres,
-                      const short imaprepeat,
-                      const short imapextend)
+                      const short imgprepeat,
+                      const short imgpextend)
 {
   /* Sample box, performs clip. minx etc are in range 0.0 - 1.0 .
    * Enlarge with anti-aliased edges of pixels.
    * If variable 'imaprepeat' has been set, the
-   * clipped-away parts are sampled as well.
-   */
-  /* NOTE: actually minx etc isn't in the proper range...
+   * clipped-away parts are sampled as well. */
+  /* Actually minx etc isn't in the proper range...
    *       this due to filter size and offset vectors for bump. */
-  /* NOTE: talpha must be initialized. */
-  /* NOTE: even when 'imaprepeat' is set, this can only repeat once in any direction.
+  /* - talpha must be initialized. */
+  /* - even when 'imgprepeat' is set, this can only repeat once in any direction.
    * the point which min/max is derived from is assumed to be wrapped. */
   TexResult texr;
   rctf *rf, stack[8];
@@ -616,11 +615,11 @@ static void boxsample(ImBuf *ibuf,
 
   texr.talpha = texres->talpha; /* is read by boxsample_clip */
 
-  if (imapextend) {
+  if (imgpextend) {
     CLAMP(rf->xmin, 0.0f, ibuf->x - 1);
     CLAMP(rf->xmax, 0.0f, ibuf->x - 1);
   }
-  else if (imaprepeat) {
+  else if (imgprepeat) {
     clipx_rctf_swap(stack, &count, 0.0, (float)(ibuf->x));
   }
   else {
@@ -632,11 +631,11 @@ static void boxsample(ImBuf *ibuf,
     }
   }
 
-  if (imapextend) {
+  if (imgpextend) {
     CLAMP(rf->ymin, 0.0f, ibuf->y - 1);
     CLAMP(rf->ymax, 0.0f, ibuf->y - 1);
   }
-  else if (imaprepeat) {
+  else if (imgprepeat) {
     clipy_rctf_swap(stack, &count, 0.0, (float)(ibuf->y));
   }
   else {
@@ -690,8 +689,7 @@ static void boxsample(ImBuf *ibuf,
   }
 }
 
-/* -------------------------------------------------------------------- */
-/* from here, some functions only used for the new filtering */
+/* from here, some fns only used for the new filtering */
 
 /* anisotropic filters, data struct used instead of long line of (possibly unused) func args */
 typedef struct afdata_t {
@@ -706,10 +704,8 @@ typedef struct afdata_t {
 /* this only used here to make it easier to pass extend flags as single int */
 enum { TXC_XMIR = 1, TXC_YMIR, TXC_REPT, TXC_EXTD };
 
-/**
- * Similar to `ibuf_get_color()` but clips/wraps coords according to repeat/extend flags
- * returns true if out of range in clip-mode.
- */
+/* Similar to `ibuf_get_color()` but clips/wraps coords according to repeat/extend flags
+ * returns true if out of range in clip-mode. */
 static int ibuf_get_color_clip(float col[4], ImBuf *ibuf, int x, int y, int extflag)
 {
   int clip = 0;
@@ -835,6 +831,6 @@ static void area_sample(TexResult *texr, ImBuf *ibuf, float fx, float fy, afdata
   texr->trgba[0] *= xsd;
   texr->trgba[1] *= xsd;
   texr->trgba[2] *= xsd;
-  /* clipping can be ignored if alpha used, texr->trgba[3] already includes filtered edge */
+  /* clipping can be ignored if alpha used, texr->trgba[3] alrdy includes filtered edge */
   texr->trgba[3] = texr->talpha ? texr->trgba[3] * xsd : (clip ? cw * xsd : 1.0f);
 }
