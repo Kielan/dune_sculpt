@@ -13,17 +13,17 @@
 
 #include "dune_cxt.h"
 #include "dune_global.h"
-#include "dune_image.h"
+#include "dune_img.h"
 #include "dune_screen.h"
 #include "dune_workspace.h"
 
 #include "api_access.h"
 #include "api_types.h"
 
-#include "wm_api.h"
-#include "wm_message.h"
-#include "wm_toolsystem.h"
-#include "wm_types.h"
+#include "win_api.h"
+#include "win_msg.h"
+#include "win_toolsystem.h"
+#include "win_types.h"
 
 #include "ed_btns.h"
 #include "ed_screen.h"
@@ -37,35 +37,35 @@
 #include "gpu_matrix.h"
 #include "gpu_state.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "IMB_imbuf_types.h"
-#include "IMB_metadata.h"
+#include "imbuf_types.h"
+#include "imbuf_metadata.h"
 
-#include "ui_interface.h"
-#include "ui_interface_icons.h"
+#include "ui.h"
+#include "ui_icons.h"
 #include "ui_resources.h"
 #include "ui_view2d.h"
 
 #include "screen_intern.h"
 
-enum RegionEmbossSide {
-  REGION_EMBOSS_LEFT = (1 << 0),
-  REGION_EMBOSS_TOP = (1 << 1),
-  REGION_EMBOSS_BOTTOM = (1 << 2),
-  REGION_EMBOSS_RIGHT = (1 << 3),
-  REGION_EMBOSS_ALL = REGION_EMBOSS_LEFT | REGION_EMBOSS_TOP | REGION_EMBOSS_RIGHT |
-                      REGION_EMBOSS_BOTTOM,
+enum RgnEmbossSide {
+  RGN_EMBOSS_LEFT = (1 << 0),
+  RGN_EMBOSS_TOP = (1 << 1),
+  RGN_EMBOSS_BOTTOM = (1 << 2),
+  RGN_EMBOSS_RIGHT = (1 << 3),
+  RGN_EMBOSS_ALL = RGN_EMBOSS_LEFT | RGN_EMBOSS_TOP | RGN_EMBOSS_RIGHT |
+                      RGN_EMBOSS_BOTTOM,
 };
 
-/* general area and region code */
-static void region_draw_emboss(const ARegion *region, const rcti *scirct, int sides)
+/* general area and rgn code */
+static void rgn_drw_emboss(const ARgn *rgn, const rcti *scirct, int sides)
 {
   /* translate scissor rect to region space */
-  const rcti rect = {.xmin = scirct->xmin - region->winrct.xmin,
-                     .xmax = scirct->xmax - region->winrct.xmin,
-                     .ymin = scirct->ymin - region->winrct.ymin,
-                     .ymax = scirct->ymax - region->winrct.ymin};
+  const rcti rect = {.xmin = scirct->xmin - rgn->winrct.xmin,
+                     .xmax = scirct->xmax - rgn->winrct.xmin,
+                     .ymin = scirct->ymin - rgn->winrct.ymin,
+                     .ymax = scirct->ymax - rgn->winrct.ymin};
 
   /* set transp line */
   gpu_blend(GPU_BLEND_ALPHA);
@@ -81,7 +81,7 @@ static void region_draw_emboss(const ARegion *region, const rcti *scirct, int si
   immBeginAtMost(GPU_PRIM_LINES, 8);
 
   /* right */
-  if (sides & REGION_EMBOSS_RIGHT) {
+  if (sides & RGN_EMBOSS_RIGHT) {
     immVertex2f(pos, rect.xmax, rect.ymax);
     immVertex2f(pos, rect.xmax, rect.ymin);
   }
@@ -93,13 +93,13 @@ static void region_draw_emboss(const ARegion *region, const rcti *scirct, int si
   }
 
   /* left */
-  if (sides & REGION_EMBOSS_LEFT) {
+  if (sides & RGN_EMBOSS_LEFT) {
     immVertex2f(pos, rect.xmin, rect.ymin);
     immVertex2f(pos, rect.xmin, rect.ymax);
   }
 
   /* top */
-  if (sides & REGION_EMBOSS_TOP) {
+  if (sides & RGN_EMBOSS_TOP) {
     immVertex2f(pos, rect.xmin, rect.ymax);
     immVertex2f(pos, rect.xmax, rect.ymax);
   }
@@ -110,31 +110,31 @@ static void region_draw_emboss(const ARegion *region, const rcti *scirct, int si
   gpu_blend(GPU_BLEND_NONE);
 }
 
-void ed_region_pixelspace(const ARegion *region)
+void ed_rgn_pixelspace(const ARgn *rgn)
 {
-  wmOrtho2_region_pixelspace(region);
+  WinOrtho2_rgn_pixelspace(rgn);
   gpu_matrix_identity_set();
 }
 
-void ed_region_do_listen(wmRegionListenerParams *params)
+void ed_rgn_do_listen(WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  wmNotifier *notifier = params->notifier;
+  ARgn *rgn = params->rgn;
+  WinNotifier *notifier = params->notifier;
 
   /* generic notes first */
   switch (notifier->category) {
     case NC_WM:
       if (notifier->data == ND_FILEREAD) {
-        ed_region_tag_redraw(region);
+        ed_rgn_tag_redrw(rgn);
       }
       break;
-    case NC_WINDOW:
-      ed_region_tag_redraw(region);
+    case NC_WIN:
+      ed_rgn_tag_redrw(rgn);
       break;
   }
 
-  if (region->type && region->type->listener) {
-    region->type->listener(params);
+  if (rgn->type && rgn->type->listener) {
+    rgn->type->listener(params);
   }
 
   LIST_FOREACH (uiList *, list, &region->ui_lists) {
@@ -144,7 +144,7 @@ void ed_region_do_listen(wmRegionListenerParams *params)
   }
 }
 
-void ed_area_do_listen(wmSpaceTypeListenerParams *params)
+void ed_area_do_listen(WinSpaceTypeListenerParams *params)
 {
   /* no generic notes? */
   if (params->area->type && params->area->type->listener) {
@@ -161,11 +161,11 @@ void ed_area_do_refresh(Cxt *C, ScrArea *area)
   area->do_refresh = false;
 }
 
-/** Corner widget use for quitting fullscreen. **/
-static void area_draw_azone_fullscreen(
+/* Corner widget use for quitting fullscreen. **/
+static void area_drw_azone_fullscreen(
     short UNUSED(x1), short UNUSED(y1), short x2, short y2, float alpha)
 {
-  ui_icon_draw_ex(x2 - U.widget_unit,
+  ui_icon_drw_ex(x2 - U.widget_unit,
                   y2 - U.widget_unit,
                   ICON_FULLSCREEN_EXIT,
                   U.inv_dpi_fac,
@@ -175,14 +175,14 @@ static void area_draw_azone_fullscreen(
                   false);
 }
 
-/** Corner widgets use for dragging and splitting the view */
-static void area_draw_azone(short UNUSED(x1), short UNUSED(y1), short UNUSED(x2), short UNUSED(y2))
+/* Corner widgets use for dragging and splitting the view */
+static void area_drw_azone(short UNUSED(x1), short UNUSED(y1), short UNUSED(x2), short UNUSED(y2))
 {
   /* No drawing needed since all corners are action zone, and visually distinguishable. */
 }
 
-/** Edge widgets to show hidden panels such as the toolbar and headers **/
-static void draw_azone_arrow(float x1, float y1, float x2, float y2, AZEdge edge)
+/* Edge widgets to show hidden panels such as the toolbar and headers **/
+static void drw_azone_arrow(float x1, float y1, float x2, float y2, AZEdge edge)
 {
   const float size = 0.2f * U.widget_unit;
   const float l = 1.0f;  /* arrow length */
@@ -247,16 +247,16 @@ static void region_draw_azone_tab_arrow(ScrArea *area, ARegion *region, AZone *a
   /* add code to draw region hidden as 'too small' */
   switch (az->edge) {
     case AE_TOP_TO_BOTTOMRIGHT:
-      ui_draw_roundbox_corner_set(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
+      ui_drw_roundbox_corner_set(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
       break;
     case AE_BOTTOM_TO_TOPLEFT:
-      ui_draw_roundbox_corner_set(UI_CNR_BOTTOM_RIGHT | UI_CNR_BOTTOM_LEFT);
+      ui_drw_roundbox_corner_set(UI_CNR_BOTTOM_RIGHT | UI_CNR_BOTTOM_LEFT);
       break;
     case AE_LEFT_TO_TOPRIGHT:
-      ui_draw_roundbox_corner_set(UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT);
+      ui_drw_roundbox_corner_set(UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT);
       break;
     case AE_RIGHT_TO_TOPLEFT:
-      ui_draw_roundbox_corner_set(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT);
+      ui_drw_roundbox_corner_set(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT);
       break;
   }
 
@@ -984,10 +984,10 @@ static void region_azone_tab_plus(ScrArea *area, AZone *az, ARegion *region)
       az->y2 = region->winrct.ymin;
       break;
     case AE_LEFT_TO_TOPRIGHT:
-      az->x1 = region->winrct.xmin - tab_size_y;
-      az->y1 = region->winrct.ymax - ((edge_offset + 1.0f) * tab_size_x);
-      az->x2 = region->winrct.xmin;
-      az->y2 = region->winrct.ymax - (edge_offset * tab_size_x);
+      az->x1 = rgn->winrct.xmin - tab_size_y;
+      az->y1 = rgn->winrct.ymax - ((edge_offset + 1.0f) * tab_size_x);
+      az->x2 = rgn->winrct.xmin;
+      az->y2 = rgn->winrct.ymax - (edge_offset * tab_size_x);
       break;
     case AE_RIGHT_TO_TOPLEFT:
       az->x1 = region->winrct.xmax;
@@ -1000,7 +1000,7 @@ static void region_azone_tab_plus(ScrArea *area, AZone *az, ARegion *region)
   lib_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);
 }
 
-static bool region_azone_edge_poll(const ARegion *region, const bool is_fullscreen)
+static bool rgn_azone_edge_poll(const ARegion *region, const bool is_fullscreen)
 {
   const bool is_hidden = (region->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL));
 
@@ -1022,14 +1022,14 @@ static bool region_azone_edge_poll(const ARegion *region, const bool is_fullscre
   return true;
 }
 
-static void region_azone_edge_init(ScrArea *area,
-                                   ARegion *region,
+static void rgn_azone_edge_init(ScrArea *area,
+                                   ARgn *rgn,
                                    AZEdge edge,
                                    const bool is_fullscreen)
 {
   const bool is_hidden = (region->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL));
 
-  if (!region_azone_edge_poll(region, is_fullscreen)) {
+  if (!rgn_azone_edge_poll(region, is_fullscreen)) {
     return;
   }
 
