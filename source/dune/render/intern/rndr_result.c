@@ -7,7 +7,7 @@
 
 #include "lib_ghash.h"
 #include "lib_hash_md5.h"
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_path_util.h"
 #include "lib_rect.h"
 #include "lib_string.h"
@@ -18,28 +18,28 @@
 #include "dune_appdir.h"
 #include "dune_camera.h"
 #include "dune_global.h"
-#include "dune_image.h"
-#include "dune_image_format.h"
-#include "dune_image_save.h"
+#include "dune_img.h"
+#include "dune_img_format.h"
+#include "dune_img_save.h"
 #include "dune_report.h"
 #include "dune_scene.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
-#include "IMB_openexr.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
+#include "imbuf_openexr.h"
 
-#include "render_engine.h"
+#include "rndr_engine.h"
 
-#include "render_result.h"
-#include "render_types.h"
+#include "rndr_result.h"
+#include "rndr_types.h"
 
-/********************************** Free *************************************/
+/* Free */
 
-static void render_result_views_free(RenderResult *rr)
+static void rndr_result_views_free(RndrResult *rr)
 {
   while (rr->views.first) {
-    RenderView *rv = rr->views.first;
+    RndrView *rv = rr->views.first;
     lib_remlink(&rr->views, rv);
 
     if (rv->rect32) {
@@ -60,17 +60,17 @@ static void render_result_views_free(RenderResult *rr)
   rr->have_combined = false;
 }
 
-void render_result_free(RenderResult *rr)
+void rndr_result_free(RndrResult *rr)
 {
   if (rr == NULL) {
     return;
   }
 
   while (rr->layers.first) {
-    RenderLayer *rl = rr->layers.first;
+    RndrLayer *rl = rr->layers.first;
 
     while (rl->passes.first) {
-      RenderPass *rpass = rl->passes.first;
+      RndrPass *rpass = rl->passes.first;
       if (rpass->rect) {
         mem_freen(rpass->rect);
       }
@@ -81,7 +81,7 @@ void render_result_free(RenderResult *rr)
     mem_freen(rl);
   }
 
-  render_result_views_free(rr);
+  rndr_result_views_free(rr);
 
   if (rr->rect32) {
     mem_freen(rr->rect32);
@@ -92,11 +92,11 @@ void render_result_free(RenderResult *rr)
   if (rr->rectf) {
     mem_freen(rr->rectf);
   }
-  if (rr->text) {
-    mem_freen(rr->text);
+  if (rr->txt) {
+    mem_freen(rr->txt);
   }
-  if (rr->error) {
-    mem_freen(rr->error);
+  if (rr->err) {
+    mem_freen(rr->err);
   }
 
   dune_stamp_data_free(rr->stamp_data);
@@ -104,9 +104,9 @@ void render_result_free(RenderResult *rr)
   mem_freen(rr);
 }
 
-void render_result_free_list(ListBase *lb, RenderResult *rr)
+void rndr_result_free_list(List *lb, RndrResult *rr)
 {
-  RenderResult *rrnext;
+  RndrResult *rrnext;
 
   for (; rr; rr = rrnext) {
     rrnext = rr->next;
@@ -115,24 +115,23 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
       lib_remlink(lb, rr);
     }
 
-    render_result_free(rr);
+    rndr_result_free(rr);
   }
 }
 
-/********************************* multiview *************************************/
-
-void render_result_views_shallowcopy(RenderResult *dst, RenderResult *src)
+/* multiview */
+void rndr_result_views_shallowcopy(RndrResult *dst, RndrResult *src)
 {
-  RenderView *rview;
+  RndrView *rview;
 
   if (dst == NULL || src == NULL) {
     return;
   }
 
   for (rview = src->views.first; rview; rview = rview->next) {
-    RenderView *rv;
+    RndrView *rv;
 
-    rv = mem_mallocn(sizeof(RenderView), "new render view");
+    rv = mem_mallocn(sizeof(RndrView), "new render view");
     lib_addtail(&dst->views, rv);
 
     lib_strncpy(rv->name, rview->name, sizeof(rv->name));
@@ -142,22 +141,22 @@ void render_result_views_shallowcopy(RenderResult *dst, RenderResult *src)
   }
 }
 
-void render_result_views_shallowdelete(RenderResult *rr)
+void rndr_result_views_shallowdelete(RenderResult *rr)
 {
   if (rr == NULL) {
     return;
   }
 
   while (rr->views.first) {
-    RenderView *rv = rr->views.first;
+    RndrView *rv = rr->views.first;
     lib_remlink(&rr->views, rv);
     mem_freen(rv);
   }
 }
 
-/********************************** New **************************************/
+/* New */
 
-static void render_layer_allocate_pass(RenderResult *rr, RenderPass *rp)
+static void rndr_layer_alloc_pass(RndrResult *rr, RndrPass *rp)
 {
   if (rp->rect != NULL) {
     return;
