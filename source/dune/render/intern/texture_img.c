@@ -9,10 +9,10 @@
 #  include <io.h>
 #endif
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "types_image.h"
+#include "types_img.h"
 #include "types_scene.h"
 #include "types_texture.h"
 
@@ -21,11 +21,11 @@
 #include "lib_threads.h"
 #include "lib_utildefines.h"
 
-#include "dune_image.h"
+#include "dune_img.h"
 
-#include "render_texture.h"
+#include "rndr_texture.h"
 
-#include "render_types.h"
+#include "rndr_types.h"
 #include "texture_common.h"
 
 static void boxsample(ImBuf *ibuf,
@@ -37,8 +37,7 @@ static void boxsample(ImBuf *ibuf,
                       const short imaprepeat,
                       const short imapextend);
 
-/* *********** IMAGEWRAPPING ****************** */
-
+/* IMGWRAPPING */
 /* x and y have to be checked for image size */
 static void ibuf_get_color(float col[4], struct ImBuf *ibuf, int x, int y)
 {
@@ -74,12 +73,12 @@ static void ibuf_get_color(float col[4], struct ImBuf *ibuf, int x, int y)
   }
 }
 
-int imagewrap(Tex *tex,
-              Image *ima,
-              const float texvec[3],
-              TexResult *texres,
-              struct ImagePool *pool,
-              const bool skip_load_image)
+int imgwrap(Tex *tex,
+            Img *img,
+            const float texvec[3],
+            TexResult *texres,
+            struct ImgPool *pool,
+            const bool skip_load_img)
 {
   float fx, fy, val1, val2, val3;
   int x, y, retval;
@@ -96,7 +95,7 @@ int imagewrap(Tex *tex,
   }
 
   /* hack for icon render */
-  if (skip_load_image && !dune_image_has_loaded_ibuf(ima)) {
+  if (skip_load_image && !dune_img_has_loaded_ibuf(ima)) {
     return retval;
   }
 
