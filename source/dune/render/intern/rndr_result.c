@@ -885,29 +885,29 @@ void rndr_result_single_layer_end(Rndr *re)
   re->pushedresult = NULL;
 }
 
-int rndr_result_exr_file_read_path(RenderResult *rr,
-                                     RenderLayer *rl_single,
-                                     const char *filepath)
+int rndr_result_exr_file_read_path(RndrResult *rr,
+                                   RndrLayer *rl_single,
+                                   const char *filepath)
 {
-  RenderLayer *rl;
-  RenderPass *rpass;
-  void *exrhandle = IMB_exr_get_handle();
+  RndrLayer *rl;
+  RndrPass *rpass;
+  void *exrhandle = imbuf_exr_get_handle();
   int rectx, recty;
 
-  if (!IMB_exr_begin_read(exrhandle, filepath, &rectx, &recty, false)) {
+  if (!imbuf_exr_begin_read(exrhandle, filepath, &rectx, &recty, false)) {
     printf("failed being read %s\n", filepath);
-    IMB_exr_close(exrhandle);
+    imbuf_exr_close(exrhandle);
     return 0;
   }
 
   if (rr == NULL || rectx != rr->rectx || recty != rr->recty) {
     if (rr) {
-      printf("error in reading render result: dimensions don't match\n");
+      printf("err in reading render result: dimensions don't match\n");
     }
     else {
-      printf("error in reading render result: NULL result pointer\n");
+      printf("err in reading render result: NULL result ptr\n");
     }
-    IMB_exr_close(exrhandle);
+    imbuf_exr_close(exrhandle);
     return 0;
   }
 
@@ -916,45 +916,45 @@ int rndr_result_exr_file_read_path(RenderResult *rr,
       continue;
     }
 
-    /* passes are allocated in sync */
+    /* passes are alloc in sync */
     for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
       const int xstride = rpass->channels;
       int a;
       char fullname[EXR_PASS_MAXNAME];
 
       for (a = 0; a < xstride; a++) {
-        render_result_full_channel_name(
+        rndr_result_full_channel_name(
             fullname, NULL, rpass->name, rpass->view, rpass->chan_id, a);
-        IMB_exr_set_channel(
+        imbuf_exr_set_channel(
             exrhandle, rl->name, fullname, xstride, xstride * rectx, rpass->rect + a);
       }
 
-      render_result_full_channel_name(
+      rndr_result_full_channel_name(
           rpass->fullname, NULL, rpass->name, rpass->view, rpass->chan_id, -1);
     }
   }
 
-  IMB_exr_read_channels(exrhandle);
-  IMB_exr_close(exrhandle);
+  imbuf_exr_read_channels(exrhandle);
+  imbuf_exr_close(exrhandle);
 
   return 1;
 }
 
-static void render_result_exr_file_cache_path(Scene *sce, const char *root, char *r_path)
+static void rndr_result_exr_file_cache_path(Scene *sce, const char *root, char *r_path)
 {
   char filename_full[FILE_MAX + MAX_ID_NAME + 100], filename[FILE_MAXFILE], dirname[FILE_MAXDIR];
   char path_digest[16] = {0};
   char path_hexdigest[33];
 
-  /* If root is relative, use either current .blend file dir, or temp one if not saved. */
+  /* If root is relative, use either current .dune file dir, or temp one if not saved. */
   const char *dunefile_path = dune_main_dunefile_path_from_global();
   if (dunefile_path[0] != '\0') {
     lib_split_dirfile(dunefile_path, dirname, filename, sizeof(dirname), sizeof(filename));
     lib_path_extension_replace(filename, sizeof(filename), ""); /* strip '.dune' */
-    lib_hash_md5_buffer(dunefile_path, strlen(dunefile_path), path_digest);
+    lib_hash_md5_buf(dunefile_path, strlen(dunefile_path), path_digest);
   }
   else {
-    lib_strncpy(dirname, dune_tempdir_base(), sizeof(dirname));
+    lib_strncpy(dirname, dune_tmpdir_base(), sizeof(dirname));
     lib_strncpy(filename, "UNSAVED", sizeof(filename));
   }
   lib_hash_md5_to_hexdigest(path_digest, path_hexdigest);
@@ -973,58 +973,58 @@ static void render_result_exr_file_cache_path(Scene *sce, const char *root, char
   lib_make_file_string(dirname, r_path, root, filename_full);
 }
 
-void render_result_exr_file_cache_write(Render *re)
+void rndr_result_exr_file_cache_write(Rndr *re)
 {
-  RenderResult *rr = re->result;
+  RndrResult *rr = re->result;
   char str[FILE_MAXFILE + FILE_MAXFILE + MAX_ID_NAME + 100];
-  char *root = U.render_cachedir;
+  char *root = U.rndr_cachedir;
 
-  render_result_exr_file_cache_path(re->scene, root, str);
+  rndr_result_exr_file_cache_path(re->scene, root, str);
   printf("Caching exr file, %dx%d, %s\n", rr->rectx, rr->recty, str);
 
-  dune_image_render_write_exr(NULL, rr, str, NULL, NULL, -1);
+  dune_img_rndr_write_exr(NULL, rr, str, NULL, NULL, -1);
 }
 
-bool render_result_exr_file_cache_read(Render *re)
+bool rndr_result_exr_file_cache_read(Rndr *re)
 {
   /* File path to cache. */
   char filepath[FILE_MAXFILE + MAX_ID_NAME + MAX_ID_NAME + 100] = "";
-  char *root = U.render_cachedir;
-  render_result_exr_file_cache_path(re->scene, root, filepath);
+  char *root = U.rndr_cachedir;
+  rndr_result_exr_file_cache_path(re->scene, root, filepath);
 
   printf("read exr cache file: %s\n", filepath);
 
   /* Try opening the file. */
-  void *exrhandle = IMB_exr_get_handle();
+  void *exrhandle = imbuf_exr_get_handle();
   int rectx, recty;
 
-  if (!IMB_exr_begin_read(exrhandle, filepath, &rectx, &recty, true)) {
+  if (!imbuf_exr_begin_read(exrhandle, filepath, &rectx, &recty, true)) {
     printf("cannot read: %s\n", filepath);
-    IMB_exr_close(exrhandle);
+    imbuf_exr_close(exrhandle);
     return false;
   }
 
-  /* Read file contents into render result. */
-  const char *colorspace = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
-  render_FreeRenderResult(re->result);
+  /* Read file contents into rndr result. */
+  const char *colorspace = imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
+  rndr_FreeRndrResult(re->result);
 
-  IMB_exr_read_channels(exrhandle);
-  re->result = render_result_new_from_exr(exrhandle, colorspace, false, rectx, recty);
+  imbuf_exr_read_channels(exrhandle);
+  re->result = rndr_result_new_from_exr(exrhandle, colorspace, false, rectx, recty);
 
-  IMB_exr_close(exrhandle);
+  imbuf_exr_close(exrhandle);
 
   return true;
 }
 
-/*************************** Combined Pixel Rect *****************************/
+/* Combined Pixel Rect */
 
-ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
-                                     const ImageFormatData *imf,
-                                     const float dither,
-                                     const int view_id)
+ImBuf *rndr_result_rect_to_ibuf(RndrResult *rr,
+                                const ImgFormatData *imf,
+                                const float dither,
+                                const int view_id)
 {
-  ImBuf *ibuf = IMB_allocImBuf(rr->rectx, rr->recty, imf->planes, 0);
-  RenderView *rv = render_RenderViewGetById(rr, view_id);
+  ImBuf *ibuf = imbuf_allocImBuf(rr->rectx, rr->recty, imf->planes, 0);
+  RndrView *rv = rndr_RndrViewGetById(rr, view_id);
 
   /* if not exists, dune_imbuf_write makes one */
   ibuf->rect = (unsigned int *)rv->rect32;
@@ -1035,8 +1035,7 @@ ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
   ibuf->dither = dither;
 
   /* prepare to gamma correct to sRGB color space
-   * note that sequence editor can generate 8bpc render buffers
-   */
+   * note that seq editor can gen 8bpc rndr bufs */
   if (ibuf->rect) {
     if (dune_imtype_valid_depths(imf->imtype) &
         (R_IMF_CHAN_DEPTH_12 | R_IMF_CHAN_DEPTH_16 | R_IMF_CHAN_DEPTH_24 | R_IMF_CHAN_DEPTH_32)) {
@@ -1045,60 +1044,60 @@ ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
         ibuf->rect_float = NULL;
       }
       else {
-        IMB_float_from_rect(ibuf);
+        imbuf_float_from_rect(ibuf);
       }
     }
     else {
-      /* ensure no float buffer remained from previous frame */
+      /* ensure no float buf remained from prev frame */
       ibuf->rect_float = NULL;
     }
   }
 
   /* Color -> gray-scale. */
-  /* editing directly would alter the render view */
+  /* editing directly would alter the rndr view */
   if (imf->planes == R_IMF_PLANES_BW) {
-    ImBuf *ibuf_bw = IMB_dupImBuf(ibuf);
-    IMB_color_to_bw(ibuf_bw);
-    IMB_freeImBuf(ibuf);
+    ImBuf *ibuf_bw = imbuf_dupImBuf(ibuf);
+    imbuf_color_to_bw(ibuf_bw);
+    imbuf_freeImBuf(ibuf);
     ibuf = ibuf_bw;
   }
 
   return ibuf;
 }
 
-void render_result_rect_from_ibuf(RenderResult *rr, const ImBuf *ibuf, const int view_id)
+void rndr_result_rect_from_ibuf(RndrResult *rr, const ImBuf *ibuf, const int view_id)
 {
-  RenderView *rv = render_RenderViewGetById(rr, view_id);
+  RndrView *rv = rndr_RndrViewGetById(rr, view_id);
 
   if (ibuf->rect_float) {
     rr->have_combined = true;
 
     if (!rv->rectf) {
-      rv->rectf = mem_mallocn(sizeof(float[4]) * rr->rectx * rr->recty, "render_seq rectf");
+      rv->rectf = mem_mallocn(sizeof(float[4]) * rr->rectx * rr->recty, "rndr_seq rectf");
     }
 
     memcpy(rv->rectf, ibuf->rect_float, sizeof(float[4]) * rr->rectx * rr->recty);
 
-    /* TSK! Since sequence render doesn't free the *rr render result, the old rect32
-     * can hang around when sequence render has rendered a 32 bits one before */
+    /* TSK! Since seq rndr doesn't free the *rr rndr result, the old rect32
+     * can hang around when seq rndr has rndred a 32 bits one before */
     MEM_SAFE_FREE(rv->rect32);
   }
   else if (ibuf->rect) {
     rr->have_combined = true;
 
     if (!rv->rect32) {
-      rv->rect32 = MEM_mallocN(sizeof(int) * rr->rectx * rr->recty, "render_seq rect");
+      rv->rect32 = mem_malloc(sizeof(int) * rr->rectx * rr->recty, "rndr_seq rect");
     }
 
     memcpy(rv->rect32, ibuf->rect, 4 * rr->rectx * rr->recty);
 
-    /* Same things as above, old rectf can hang around from previous render. */
+    /* Same things as above, old rectf can hang around from prev rndr. */
     MEM_SAFE_FREE(rv->rectf);
   }
 }
-void render_result_rect_fill_zero(RenderResult *rr, const int view_id)
+void rndr_result_rect_fill_zero(RndrResult *rr, const int view_id)
 {
-  RenderView *rv = render_RenderViewGetById(rr, view_id);
+  RndrView *rv = rndr_RndrViewGetById(rr, view_id);
 
   if (rv->rectf) {
     memset(rv->rectf, 0, sizeof(float[4]) * rr->rectx * rr->recty);
@@ -1107,25 +1106,25 @@ void render_result_rect_fill_zero(RenderResult *rr, const int view_id)
     memset(rv->rect32, 0, 4 * rr->rectx * rr->recty);
   }
   else {
-    rv->rect32 = mem_callocn(sizeof(int) * rr->rectx * rr->recty, "render_seq rect");
+    rv->rect32 = mem_callocn(sizeof(int) * rr->rectx * rr->recty, "rndr_seq rect");
   }
 }
 
-void render_result_rect_get_pixels(RenderResult *rr,
-                                   unsigned int *rect,
-                                   int rectx,
-                                   int recty,
-                                   const ColorManagedViewSettings *view_settings,
-                                   const ColorManagedDisplaySettings *display_settings,
-                                   const int view_id)
+void rndr_result_rect_get_pixels(RndrResult *rr,
+                                 unsigned int *rect,
+                                 int rectx,
+                                 int recty,
+                                 const ColorManagedViewSettings *view_settings,
+                                 const ColorManagedDisplaySettings *display_settings,
+                                 const int view_id)
 {
-  RenderView *rv = render_RenderViewGetById(rr, view_id);
+  RndrView *rv = rndr_RenderViewGetById(rr, view_id);
 
   if (rv && rv->rect32) {
     memcpy(rect, rv->rect32, sizeof(int) * rr->rectx * rr->recty);
   }
   else if (rv && rv->rectf) {
-    IMB_display_buffer_transform_apply((unsigned char *)rect,
+    imbuf_display_buf_transform_apply((unsigned char *)rect,
                                        rv->rectf,
                                        rr->rectx,
                                        rr->recty,
@@ -1135,20 +1134,19 @@ void render_result_rect_get_pixels(RenderResult *rr,
                                        true);
   }
   else {
-    /* else fill with black */
+    /* else fill w black */
     memset(rect, 0, sizeof(int) * rectx * recty);
   }
 }
 
-/*************************** multiview functions *****************************/
-
-bool render_HasCombinedLayer(const RenderResult *rr)
+/* multiview fns */
+bool rndr_HasCombinedLayer(const RndrResult *rr)
 {
   if (rr == NULL) {
     return false;
   }
 
-  const RenderView *rv = rr->views.first;
+  const RndrView *rv = rr->views.first;
   if (rv == NULL) {
     return false;
   }
@@ -1156,9 +1154,9 @@ bool render_HasCombinedLayer(const RenderResult *rr)
   return (rv->rect32 || rv->rectf);
 }
 
-bool render_HasFloatPixels(const RenderResult *rr)
+bool rndr_HasFloatPixels(const RndrResult *rr)
 {
-  for (const RenderView *rview = rr->views.first; rview; rview = rview->next) {
+  for (const RndrView *rview = rr->views.first; rview; rview = rview->next) {
     if (rview->rect32 && !rview->rectf) {
       return false;
     }
@@ -1167,36 +1165,36 @@ bool render_HasFloatPixels(const RenderResult *rr)
   return true;
 }
 
-bool render_RenderResult_is_stereo(const RenderResult *rr)
+bool rndr_RndrResult_is_stereo(const RndrResult *rr)
 {
-  if (!lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name))) {
+  if (!lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RndrView, name))) {
     return false;
   }
 
-  if (!lib_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name))) {
+  if (!lib_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RndrView, name))) {
     return false;
   }
 
   return true;
 }
 
-RenderView *render_RenderViewGetById(RenderResult *rr, const int view_id)
+RndrView *rndr_RndrViewGetById(RndrResult *rr, const int view_id)
 {
-  RenderView *rv = lib_findlink(&rr->views, view_id);
+  RndrView *rv = lib_findlink(&rr->views, view_id);
   lib_assert(rr->views.first);
   return rv ? rv : rr->views.first;
 }
 
-RenderView *render_RenderViewGetByName(RenderResult *rr, const char *viewname)
+RndrView *rndr_RndrViewGetByName(RndrResult *rr, const char *viewname)
 {
-  RenderView *rv = lib_findstring(&rr->views, viewname, offsetof(RenderView, name));
+  RndrView *rv = lib_findstring(&rr->views, viewname, offsetof(RndarView, name));
   lib_assert(rr->views.first);
   return rv ? rv : rr->views.first;
 }
 
-static RenderPass *duplicate_render_pass(RenderPass *rpass)
+static RndrPass *dup_rndr_pass(RndrPass *rpass)
 {
-  RenderPass *new_rpass = mem_mallocn(sizeof(RenderPass), "new render pass");
+  RndrPass *new_rpass = mem_mallocn(sizeof(RndrPass), "new rndr pass");
   *new_rpass = *rpass;
   new_rpass->next = new_rpass->prev = NULL;
   if (new_rpass->rect != NULL) {
@@ -1205,59 +1203,59 @@ static RenderPass *duplicate_render_pass(RenderPass *rpass)
   return new_rpass;
 }
 
-static RenderLayer *duplicate_render_layer(RenderLayer *rl)
+static RndrLayer *dup_rndr_layer(RndrLayer *rl)
 {
-  RenderLayer *new_rl = mem_mallocn(sizeof(RenderLayer), "new render layer");
+  RndrLayer *new_rl = mem_mallocn(sizeof(RndrLayer), "new rndr layer");
   *new_rl = *rl;
   new_rl->next = new_rl->prev = NULL;
   new_rl->passes.first = new_rl->passes.last = NULL;
   new_rl->exrhandle = NULL;
-  for (RenderPass *rpass = rl->passes.first; rpass != NULL; rpass = rpass->next) {
-    RenderPass *new_rpass = duplicate_render_pass(rpass);
+  for (RndrPass *rpass = rl->passes.first; rpass != NULL; rpass = rpass->next) {
+    RndrPass *new_rpass = dup_rendr_pass(rpass);
     lib_addtail(&new_rl->passes, new_rpass);
   }
   return new_rl;
 }
 
-static RenderView *duplicate_render_view(RenderView *rview)
+static RndrView *dup_rndr_view(RndrView *rview)
 {
-  RenderView *new_rview = mem_mallocn(sizeof(RenderView), "new render view");
+  RndrView *new_rview = mem_malloc(sizeof(RndrView), "new rndr view");
   *new_rview = *rview;
   if (new_rview->rectf != NULL) {
-    new_rview->rectf = mem_dupallocn(new_rview->rectf);
+    new_rview->rectf = mem_dupalloc(new_rview->rectf);
   }
   if (new_rview->rectz != NULL) {
-    new_rview->rectz = mem_dupallocn(new_rview->rectz);
+    new_rview->rectz = mem_dupalloc(new_rview->rectz);
   }
   if (new_rview->rect32 != NULL) {
-    new_rview->rect32 = mem_dupallocn(new_rview->rect32);
+    new_rview->rect32 = mem_dupalloc(new_rview->rect32);
   }
   return new_rview;
 }
 
-RenderResult *render_DuplicateRenderResult(RenderResult *rr)
+RndrResult *rndr_DupRndrResult(RndrResult *rr)
 {
-  RenderResult *new_rr = mem_mallocn(sizeof(RenderResult), "new duplicated render result");
+  RndrResult *new_rr = mem_mallocn(sizeof(RndrResult), "new dup'd rndr result");
   *new_rr = *rr;
   new_rr->next = new_rr->prev = NULL;
   new_rr->layers.first = new_rr->layers.last = NULL;
   new_rr->views.first = new_rr->views.last = NULL;
-  for (RenderLayer *rl = rr->layers.first; rl != NULL; rl = rl->next) {
-    RenderLayer *new_rl = duplicate_render_layer(rl);
+  for (RndrLayer *rl = rr->layers.first; rl != NULL; rl = rl->next) {
+    RndrLayer *new_rl = dup_rndr_layer(rl);
     lib_addtail(&new_rr->layers, new_rl);
   }
-  for (RenderView *rview = rr->views.first; rview != NULL; rview = rview->next) {
-    RenderView *new_rview = duplicate_render_view(rview);
+  for (RndrView *rview = rr->views.first; rview != NULL; rview = rview->next) {
+    RndrView *new_rview = dup_rndr_view(rview);
     lib_addtail(&new_rr->views, new_rview);
   }
   if (new_rr->rect32 != NULL) {
-    new_rr->rect32 = mem_dupallocn(new_rr->rect32);
+    new_rr->rect32 = mem_dupalloc(new_rr->rect32);
   }
   if (new_rr->rectf != NULL) {
-    new_rr->rectf = MEM_dupallocN(new_rr->rectf);
+    new_rr->rectf = mem_dupalloc(new_rr->rectf);
   }
   if (new_rr->rectz != NULL) {
-    new_rr->rectz = mem_dupallocn(new_rr->rectz);
+    new_rr->rectz = mem_dupalloc(new_rr->rectz);
   }
   new_rr->stamp_data = dune_stamp_data_copy(new_rr->stamp_data);
   return new_rr;
