@@ -1,10 +1,7 @@
 #pragma once
 
-/* ------------------------------------------------------------------------- */
-/* exposed internal in render module only! */
-/* ------------------------------------------------------------------------- */
-
-#include "types_object.h"
+/* exposed internal in render module */
+#include "types_ob.h"
 #include "types_scene.h"
 
 #include "lib_threads.h"
@@ -16,8 +13,8 @@
 struct GHash;
 struct GSet;
 struct Main;
-struct Object;
-struct RenderEngine;
+struct Ob;
+struct RndrEngine;
 struct ReportList;
 
 #ifdef __cplusplus
@@ -28,32 +25,32 @@ typedef struct HighlightedTile {
   rcti rect;
 } HighlightedTile;
 
-/* controls state of render, everything that's read-only during render stage */
-struct Render {
-  struct Render *next, *prev;
+/* ctrls state of rndr, everything that's read-only during rndr stage */
+struct Rndr {
+  struct Rndr *next, *prev;
   char name[RE_MAXNAME];
   int slot;
 
   /* state settings */
   short flag, ok, result_ok;
 
-  /* result of rendering */
-  RenderResult *result;
+  /* result of rndring */
+  RndrResult *result;
   /* if render with single-layer option, other rendered layers are stored here */
-  RenderResult *pushedresult;
-  /** A list of RenderResults, for full-samples. */
-  ListBase fullresult;
+  RndrResult *pushedresult;
+  /* A list of RndrResults, for full-samples. */
+  List fullresult;
   /* read/write mutex, all internal code that writes to re->result must use a
    * write lock, all external code must use a read lock. internal code is assumed
    * to not conflict with writes, so no lock used for that */
   ThreadRWMutex resultmutex;
 
-  /* Guard for drawing render result using engine's `draw()` callback. */
-  ThreadMutex engine_draw_mutex;
+  /* Guard for drwing rndr result using engine's `draw()` cb. */
+  ThreadMutex engine_drw_mutex;
 
-  /** Window size, display rect, viewplane.
-   * note Buffer width and height with percentage applied
-   * without border & crop. convert to long before multiplying together to avoid overflow. */
+  /* Win size, display rect, viewplane.
+   * Buf width and height w percentage applied
+   * wo border & crop. convert to long before multiplying together to avoid overflow. */
   int winx, winy;
   rcti disprect;  /* part within winx winy */
   rctf viewplane; /* mapped on winx winy */
@@ -68,58 +65,58 @@ struct Render {
   float clip_start;
   float clip_end;
 
-  /* main, scene, and its full copy of renderdata and world */
+  /* main, scene, and its full copy of rndrdata and world */
   struct Main *main;
   Scene *scene;
-  RenderData r;
-  ListBase view_layers;
+  RndrData r;
+  List view_layers;
   int active_view_layer;
-  struct Object *camera_override;
+  struct Ob *camera_override;
 
   ThreadMutex highlighted_tiles_mutex;
   struct GSet *highlighted_tiles;
 
   /* render engine */
-  struct RenderEngine *engine;
+  struct RndrEngine *engine;
 
-  /* NOTE: This is a minimal dependency graph and evaluated scene which is enough to access view
+  /* NOTE: This is a minimal dep graph and evald scene which is enough to access view
    * layer visibility and use for postprocessing (compositor and sequencer). */
   Graph *pipeline_graph;
   Scene *pipeline_scene_eval;
 
-  /* callbacks */
-  void (*display_init)(void *handle, RenderResult *rr);
+  /* cbs */
+  void (*display_init)(void *handle, RndrResult *rr);
   void *dih;
-  void (*display_clear)(void *handle, RenderResult *rr);
+  void (*display_clear)(void *handle, RndrResult *rr);
   void *dch;
-  void (*display_update)(void *handle, RenderResult *rr, rcti *rect);
+  void (*display_update)(void *handle, RndrResult *rr, rcti *rect);
   void *duh;
   void (*current_scene_update)(void *handle, struct Scene *scene);
   void *suh;
 
-  void (*stats_draw)(void *handle, RenderStats *ri);
+  void (*stats_drw)(void *handle, RndrStats *ri);
   void *sdh;
   void (*progress)(void *handle, float i);
   void *prh;
 
-  void (*draw_lock)(void *handle, bool lock);
+  void (*drw_lock)(void *handle, bool lock);
   void *dlh;
   int (*test_break)(void *handle);
   void *tbh;
 
-  RenderStats i;
+  RndrStats i;
 
   struct ReportList *reports;
 
   void **movie_ctx_arr;
   char viewname[MAX_NAME];
 
-  /* TODO: replace by a whole draw manager. */
-  void *gl_ctx;
-  void *gpu_ctx;
+  /* TODO: replace by a whole drw manager. */
+  void *gl_cxt;
+  void *gpu_cxt;
 };
 
-/* **************** defines ********************* */
+/* defines */
 
 /* R.flag */
 #define R_ANIMATION 1
