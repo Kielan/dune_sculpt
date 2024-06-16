@@ -9,40 +9,40 @@
 #include "lib_utildefines.h"
 
 #include "types_anim.h"
-#include "types_image.h"
+#include "types_img.h"
 #include "types_light.h"
 #include "types_material.h"
 #include "types_meshdata.h"
 #include "types_node.h"
-#include "types_objects.h"
+#include "types_obs.h"
 #include "types_texture.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf_types.h"
 
 #include "dune_colorband.h"
-#include "dune_image.h"
+#include "dune_img.h"
 #include "dune_material.h"
 #include "dune_node.h"
 #include "dune_scene.h"
 #include "dune_texture.h"
 
-#include "NOD_texture.h"
+#include "node_texture.h"
 
 #include "mem_guardedalloc.h"
 
-#include "render_types.h"
+#include "rndr_types.h"
 #include "texture_common.h"
-#include "render_texture.h"
+#include "rndr_texture.h"
 
 static RNG_THREAD_ARRAY *random_tex_array;
 
-void render_texture_rng_init(void)
+void rndr_texture_rng_init(void)
 {
   random_tex_array = lib_rng_threaded_new();
 }
 
-void render_texture_rng_exit(void)
+void rndr_texture_rng_exit(void)
 {
   if (random_tex_array == NULL) {
     return;
@@ -53,20 +53,20 @@ void render_texture_rng_exit(void)
 
 /* ------------------------------------------------------------------------- */
 
-/* This allows color-banded textures to control normals as well. */
+/* This allows color-banded textures to ctrl normals as well. */
 static void tex_normal_derivate(const Tex *tex, TexResult *texres)
 {
   if (tex->flag & TEX_COLORBAND) {
     float col[4];
-    if (dune_colorband_evaluate(tex->coba, texres->tin, col)) {
+    if (dune_colorband_eval(tex->coba, texres->tin, col)) {
       float fac0, fac1, fac2, fac3;
 
       fac0 = (col[0] + col[1] + col[2]);
-      dune_colorband_evaluate(tex->coba, texres->nor[0], col);
+      dune_colorband_eval(tex->coba, texres->nor[0], col);
       fac1 = (col[0] + col[1] + col[2]);
-      dune_colorband_evaluate(tex->coba, texres->nor[1], col);
+      dune_colorband_eval(tex->coba, texres->nor[1], col);
       fac2 = (col[0] + col[1] + col[2]);
-      dune_colorband_evaluate(tex->coba, texres->nor[2], col);
+      dune_colorband_eval(tex->coba, texres->nor[2], col);
       fac3 = (col[0] + col[1] + col[2]);
 
       texres->nor[0] = (fac0 - fac1) / 3.0f;
@@ -366,8 +366,6 @@ static int marble(const Tex *tex, const float texvec[3], TexResult *texres)
   return rv;
 }
 
-/* ------------------------------------------------------------------------- */
-
 static int magic(const Tex *tex, const float texvec[3], TexResult *texres)
 {
   float x, y, z, turb;
@@ -441,8 +439,6 @@ static int magic(const Tex *tex, const float texvec[3], TexResult *texres)
   return TEX_RGB;
 }
 
-/* ------------------------------------------------------------------------- */
-
 /* newnoise: stucci also modified to use different noisebasis */
 static int stucci(const Tex *tex, const float texvec[3], TexResult *texres)
 {
@@ -507,19 +503,18 @@ static int stucci(const Tex *tex, const float texvec[3], TexResult *texres)
   return retval;
 }
 
-/* ------------------------------------------------------------------------- */
-/* newnoise: musgrave terrain noise types */
 
+/* newnoise: musgrave terrain noise types */
 static int mg_mFractalOrfBmTex(const Tex *tex, const float texvec[3], TexResult *texres)
 {
   int rv = TEX_INT;
-  float (*mgravefunc)(float, float, float, float, float, float, int);
+  float (*mgravefn)(float, float, float, float, float, float, int);
 
   if (tex->stype == TEX_MFRACTAL) {
-    mgravefunc = lib_noise_mg_multi_fractal;
+    mgravefn = lib_noise_mg_multi_fractal;
   }
   else {
-    mgravefunc = lib_noise_mg_fbm;
+    mgravefn = lib_noise_mg_fbm;
   }
 
   texres->tin = tex->ns_outscale * mgravefunc(texvec[0],
@@ -533,22 +528,22 @@ static int mg_mFractalOrfBmTex(const Tex *tex, const float texvec[3], TexResult 
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
-    /* calculate bumpnormal */
-    texres->nor[0] = tex->ns_outscale * mgravefunc(texvec[0] + ofs,
+    /* calc bumpnormal */
+    texres->nor[0] = tex->ns_outscale * mgravefn(texvec[0] + ofs,
                                                    texvec[1],
                                                    texvec[2],
                                                    tex->mg_H,
                                                    tex->mg_lacunarity,
                                                    tex->mg_octaves,
                                                    tex->noisebasis);
-    texres->nor[1] = tex->ns_outscale * mgravefunc(texvec[0],
+    texres->nor[1] = tex->ns_outscale * mgravefn(texvec[0],
                                                    texvec[1] + ofs,
                                                    texvec[2],
                                                    tex->mg_H,
                                                    tex->mg_lacunarity,
                                                    tex->mg_octaves,
                                                    tex->noisebasis);
-    texres->nor[2] = tex->ns_outscale * mgravefunc(texvec[0],
+    texres->nor[2] = tex->ns_outscale * mgravefn(texvec[0],
                                                    texvec[1],
                                                    texvec[2] + ofs,
                                                    tex->mg_H,
@@ -568,16 +563,16 @@ static int mg_mFractalOrfBmTex(const Tex *tex, const float texvec[3], TexResult 
 static int mg_ridgedOrHybridMFTex(const Tex *tex, const float texvec[3], TexResult *texres)
 {
   int rv = TEX_INT;
-  float (*mgravefunc)(float, float, float, float, float, float, float, float, int);
+  float (*mgravefn)(float, float, float, float, float, float, float, float, int);
 
   if (tex->stype == TEX_RIDGEDMF) {
-    mgravefunc = lib_noise_mg_ridged_multi_fractal;
+    mgravefn = lib_noise_mg_ridged_multi_fractal;
   }
   else {
-    mgravefunc = lib_noise_mg_hybrid_multi_fractal;
+    mgravefn = lib_noise_mg_hybrid_multi_fractal;
   }
 
-  texres->tin = tex->ns_outscale * mgravefunc(texvec[0],
+  texres->tin = tex->ns_outscale * mgravefn(texvec[0],
                                               texvec[1],
                                               texvec[2],
                                               tex->mg_H,
@@ -590,8 +585,8 @@ static int mg_ridgedOrHybridMFTex(const Tex *tex, const float texvec[3], TexResu
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
-    /* calculate bumpnormal */
-    texres->nor[0] = tex->ns_outscale * mgravefunc(texvec[0] + ofs,
+    /* calc bumpnormal */
+    texres->nor[0] = tex->ns_outscale * mgravefn(texvec[0] + ofs,
                                                    texvec[1],
                                                    texvec[2],
                                                    tex->mg_H,
@@ -600,7 +595,7 @@ static int mg_ridgedOrHybridMFTex(const Tex *tex, const float texvec[3], TexResu
                                                    tex->mg_offset,
                                                    tex->mg_gain,
                                                    tex->noisebasis);
-    texres->nor[1] = tex->ns_outscale * mgravefunc(texvec[0],
+    texres->nor[1] = tex->ns_outscale * mgravefn(texvec[0],
                                                    texvec[1] + ofs,
                                                    texvec[2],
                                                    tex->mg_H,
@@ -609,7 +604,7 @@ static int mg_ridgedOrHybridMFTex(const Tex *tex, const float texvec[3], TexResu
                                                    tex->mg_offset,
                                                    tex->mg_gain,
                                                    tex->noisebasis);
-    texres->nor[2] = tex->ns_outscale * mgravefunc(texvec[0],
+    texres->nor[2] = tex->ns_outscale * mgravefn(texvec[0],
                                                    texvec[1],
                                                    texvec[2] + ofs,
                                                    tex->mg_H,
@@ -644,7 +639,7 @@ static int mg_HTerrainTex(const Tex *tex, const float texvec[3], TexResult *texr
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
-    /* calculate bumpnormal */
+    /* calc bumpnormal */
     texres->nor[0] = tex->ns_outscale * lib_noise_mg_hetero_terrain(texvec[0] + ofs,
                                                                     texvec[1],
                                                                     texvec[2],
@@ -689,7 +684,7 @@ static int mg_distNoiseTex(const Tex *tex, const float texvec[3], TexResult *tex
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
-    /* calculate bumpnormal */
+    /* calc bumpnormal */
     texres->nor[0] = lib_noise_mg_variable_lacunarity(texvec[0] + ofs,
                                                       texvec[1],
                                                       texvec[2],
@@ -718,11 +713,9 @@ static int mg_distNoiseTex(const Tex *tex, const float texvec[3], TexResult *tex
   return rv;
 }
 
-/* ------------------------------------------------------------------------- */
 /* newnoise: Voronoi texture type
  *
- * probably the slowest, especially with minkovsky, bump-mapping, could be done another way.
- */
+ * probably the slowest, especially with minkovsky, bump-mapping, could be done another way. */
 
 static int voronoiTex(const Tex *tex, const float texvec[3], TexResult *texres)
 {
@@ -783,7 +776,7 @@ static int voronoiTex(const Tex *tex, const float texvec[3], TexResult *texres)
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
-    /* calculate bumpnormal */
+    /* calc bumpnormal */
     lib_noise_voronoi(texvec[0] + ofs, texvec[1], texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
     texres->nor[0] = sc * fabsf(dot_v4v4(&tex->vn_w1, da));
     lib_noise_voronoi(texvec[0], texvec[1] + ofs, texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
@@ -805,8 +798,6 @@ static int voronoiTex(const Tex *tex, const float texvec[3], TexResult *texres)
 
   return rv;
 }
-
-/* ------------------------------------------------------------------------- */
 
 static int texnoise(const Tex *tex, TexResult *texres, int thread)
 {
@@ -831,8 +822,6 @@ static int texnoise(const Tex *tex, TexResult *texres, int thread)
   BRICONT;
   return TEX_INT;
 }
-
-/* ------------------------------------------------------------------------- */
 
 static int cubemap_glob(const float n[3], float x, float y, float z, float *adr1, float *adr2)
 {
@@ -869,8 +858,6 @@ static int cubemap_glob(const float n[3], float x, float y, float z, float *adr1
   }
   return ret;
 }
-
-/* ------------------------------------------------------------------------- */
 
 static void do_2d_mapping(
     const MeshTex *mtex, float texvec[3], const float n[3], float dxt[3], float dyt[3])
@@ -1035,7 +1022,7 @@ static void do_2d_mapping(
       dyt[2] *= 0.5f;
     }
 
-    /* If area, then recalculate `dxt[]` and `dyt[]` */
+    /* If area, then recalc `dxt[]` and `dyt[]` */
     if (areaflag) {
       fx = area[0];
       fy = area[1];
@@ -1121,10 +1108,8 @@ static void do_2d_mapping(
 
     texvec[0] = fx;
     texvec[1] = fy;
-  }
+  }    
 }
-
-/* ************************************** */
 
 static int multitex(Tex *tex,
                     const float texvec[3],
@@ -1134,8 +1119,8 @@ static int multitex(Tex *tex,
                     TexResult *texres,
                     const short thread,
                     const short which_output,
-                    struct ImagePool *pool,
-                    const bool skip_load_image,
+                    struct ImgPool *pool,
+                    const bool skip_load_img,
                     const bool texnode_preview,
                     const bool use_nodes)
 {
@@ -1185,16 +1170,16 @@ static int multitex(Tex *tex,
       case TEX_NOISE:
         retval = texnoise(tex, texres, thread);
         break;
-      case TEX_IMAGE:
+      case TEX_IMG:
         if (osatex) {
-          retval = imagewraposa(
-              tex, tex->ima, NULL, texvec, dxt, dyt, texres, pool, skip_load_image);
+          retval = imgwraposa(
+              tex, tex->img, NULL, texvec, dxt, dyt, texres, pool, skip_load_image);
         }
         else {
-          retval = imagewrap(tex, tex->ima, texvec, texres, pool, skip_load_image);
+          retval = imgwrap(tex, tex->img, texvec, texres, pool, skip_load_image);
         }
-        if (tex->ima) {
-          BKE_image_tag_time(tex->ima);
+        if (tex->img) {
+          dune_img_tag_time(tex->img);
         }
         break;
       case TEX_MUSGRAVE:
@@ -1244,7 +1229,7 @@ static int multitex(Tex *tex,
 
   if (tex->flag & TEX_COLORBAND) {
     float col[4];
-    if (dune_colorband_evaluate(tex->coba, texres->tin, col)) {
+    if (dune_colorband_eval(tex->coba, texres->tin, col)) {
       texres->talpha = true;
       copy_v4_v4(texres->trgba, col);
       retval |= TEX_RGB;
@@ -1262,9 +1247,9 @@ static int multitex_nodes_intern(Tex *tex,
                                  const short thread,
                                  short which_output,
                                  MeshTex *mtex,
-                                 struct ImagePool *pool,
+                                 struct ImgPool *pool,
                                  const bool scene_color_manage,
-                                 const bool skip_load_image,
+                                 const bool skip_load_img,
                                  const bool texnode_preview,
                                  const bool use_nodes)
 {
@@ -1277,7 +1262,7 @@ static int multitex_nodes_intern(Tex *tex,
     which_output = mtex->which_output;
   }
 
-  if (tex->type == TEX_IMAGE) {
+  if (tex->type == TEX_IMG) {
     int rgbnor;
 
     if (mtex) {
@@ -1299,14 +1284,14 @@ static int multitex_nodes_intern(Tex *tex,
                         use_nodes);
 
       if (mtex->mapto & MAP_COL) {
-        ImBuf *ibuf = dune_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
+        ImBuf *ibuf = dune_img_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
 
         /* don't linearize float buffers, assumed to be linear */
         if (ibuf != NULL && ibuf->rect_float == NULL && (rgbnor & TEX_RGB) && scene_color_manage) {
-          IMB_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
+          imbuf_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
         }
 
-        dune_image_pool_release_ibuf(tex->ima, ibuf, pool);
+        dune_img_pool_release_ibuf(tex->ima, ibuf, pool);
       }
     }
     else {
@@ -1316,7 +1301,7 @@ static int multitex_nodes_intern(Tex *tex,
 
       localmtex.mapping = MTEX_FLAT;
       localmtex.tex = tex;
-      localmtex.object = NULL;
+      localmtex.ob = NULL;
       localmtex.texco = TEXCO_ORCO;
 
       copy_v3_v3(texvec_l, texvec);
@@ -1339,16 +1324,16 @@ static int multitex_nodes_intern(Tex *tex,
                         thread,
                         which_output,
                         pool,
-                        skip_load_image,
+                        skip_load_img,
                         texnode_preview,
                         use_nodes);
 
       {
-        ImBuf *ibuf = dune_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
+        ImBuf *ibuf = dune_img_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
 
         /* don't linearize float buffers, assumed to be linear */
         if (ibuf != NULL && ibuf->rect_float == NULL && (rgbnor & TEX_RGB) && scene_color_manage) {
-          IMB_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
+          imbuf_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
         }
 
         dune_image_pool_release_ibuf(tex->ima, ibuf, pool);
@@ -1367,7 +1352,7 @@ static int multitex_nodes_intern(Tex *tex,
                   thread,
                   which_output,
                   pool,
-                  skip_load_image,
+                  skip_load_img,
                   texnode_preview,
                   use_nodes);
 }
@@ -1406,9 +1391,9 @@ int multitex_ext(Tex *tex,
                  int osatex,
                  TexResult *texres,
                  const short thread,
-                 struct ImagePool *pool,
+                 struct ImgPool *pool,
                  bool scene_color_manage,
-                 const bool skip_load_image)
+                 const bool skip_load_img)
 {
   return multitex_nodes_intern(tex,
                                texvec,
@@ -1421,7 +1406,7 @@ int multitex_ext(Tex *tex,
                                NULL,
                                pool,
                                scene_color_manage,
-                               skip_load_image,
+                               skip_load_img,
                                false,
                                true);
 }
@@ -1429,9 +1414,9 @@ int multitex_ext(Tex *tex,
 int multitex_ext_safe(Tex *tex,
                       const float texvec[3],
                       TexResult *texres,
-                      struct ImagePool *pool,
+                      struct ImgPool *pool,
                       bool scene_color_manage,
-                      const bool skip_load_image)
+                      const bool skip_load_img)
 {
   return multitex_nodes_intern(tex,
                                texvec,
@@ -1444,12 +1429,10 @@ int multitex_ext_safe(Tex *tex,
                                NULL,
                                pool,
                                scene_color_manage,
-                               skip_load_image,
+                               skip_load_img,
                                false,
                                false);
 }
-
-/* ------------------------------------------------------------------------- */
 
 void texture_rgb_blend(
     float in[3], const float tex[3], const float out[3], float fact, float facg, int blendtype)
@@ -1590,7 +1573,7 @@ void texture_rgb_blend(
   }
 }
 
-float texture_value_blend(float tex, float out, float fact, float facg, int blendtype)
+float texture_val_blend(float tex, float out, float fact, float facg, int blendtype)
 {
   float in = 0.0, facm, col, scf;
   int flip = (facg < 0.0f);
@@ -1677,15 +1660,13 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
   return in;
 }
 
-/* ------------------------------------------------------------------------- */
-
-bool render_texture_evaluate(const MeshTex *mtex,
+bool render_texture_eval(const MeshTex *mtex,
                              const float vec[3],
                              const int thread,
-                             struct ImagePool *pool,
-                             const bool skip_load_image,
+                             struct ImgPool *pool,
+                             const bool skip_load_img,
                              const bool texnode_preview,
-                             /* Return arguments. */
+                             /* Return args. */
                              float *r_intensity,
                              float r_rgba[4])
 {
@@ -1736,12 +1717,12 @@ bool render_texture_evaluate(const MeshTex *mtex,
                  thread,
                  mtex->which_output,
                  pool,
-                 skip_load_image,
+                 skip_load_img,
                  texnode_preview,
                  true);
 
   if (rgb) {
-    texr.tin = IMB_colormanagement_get_luminance(texr.trgba);
+    texr.tin = imbuf_colormanagement_get_luminance(texr.trgba);
   }
   else {
     copy_v3_fl3(texr.trgba, mtex->r, mtex->g, mtex->b);
