@@ -18,10 +18,9 @@
 
 /* this module */
 #include "pipeline.h"
-#include "render_types.h"
+#include "rndr_types.h"
 
-/* ****************** MASKS and LUTS **************** */
-
+/* MASKS and LUTS */
 static float filt_quadratic(float x)
 {
   if (x < 0.0f) {
@@ -98,7 +97,7 @@ static float filt_mitchell(float x) /* Mitchell & Netravali's two-param cubic */
   return 0.0f;
 }
 
-float render_filter_value(int type, float x)
+float rndr_filter_val(int type, float x)
 {
   float gaussfac = 1.6f;
 
@@ -140,24 +139,24 @@ float render_filter_value(int type, float x)
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Object *render_GetCamera(Render *re)
+struct Ob *rndr_GetCamera(Rndr *re)
 {
-  Object *camera = re->camera_override ? re->camera_override : re->scene->camera;
-  return dune_camera_multiview_render(re->scene, camera, re->viewname);
+  Ob *camera = re->camera_override ? re->camera_override : re->scene->camera;
+  return dune_camera_multiview_rndr(re->scene, camera, re->viewname);
 }
 
-void render_SetOverrideCamera(Render *re, Object *cam_ob)
+void rndr_SetOverrideCamera(Rndr *re, Ob *cam_ob)
 {
   re->camera_override = cam_ob;
 }
 
-void render_SetCamera(Render *re, const Object *cam_ob)
+void rndr_SetCamera(Rndr *re, const Ob *cam_ob)
 {
   CameraParams params;
 
-  /* setup parameters */
+  /* setup params */
   dune_camera_params_init(&params);
-  dune_camera_params_from_object(&params, cam_ob);
+  dune_camera_params_from_ob(&params, cam_ob);
   dune_camera_multiview_params(&re->r, &params, cam_ob, re->viewname);
 
   /* Compute matrix, view-plane, etc. */
@@ -171,13 +170,13 @@ void render_SetCamera(Render *re, const Object *cam_ob)
   re->viewplane = params.viewplane;
 }
 
-void render_GetCameraWindow(struct Render *re, const struct Object *camera, float r_winmat[4][4])
+void rndr_GetCameraWin(struct Rndr *re, const struct Ob *camera, float r_winmat[4][4])
 {
-  render_SetCamera(re, camera);
+  rndr_SetCamera(re, camera);
   copy_m4_m4(r_winmat, re->winmat);
 }
 
-void render_GetCameraWindowWithOverscan(const struct Render *re, float overscan, float r_winmat[4][4])
+void rndr_GetCameraWinWithOverscan(const struct Rndr *re, float overscan, float r_winmat[4][4])
 {
   CameraParams params;
   params.is_ortho = re->winmat[3][3] != 0.0f;
@@ -195,16 +194,16 @@ void render_GetCameraWindowWithOverscan(const struct Render *re, float overscan,
   copy_m4_m4(r_winmat, params.winmat);
 }
 
-void render_GetCameraModelMatrix(const Render *re, const struct Object *camera, float r_modelmat[4][4])
+void rndr_GetCameraModelMatrix(const Rndr *re, const struct Ob *camera, float r_modelmat[4][4])
 {
   dune_camera_multiview_model_matrix(&re->r, camera, re->viewname, r_modelmat);
 }
 
-void render_GetViewPlane(Render *re, rctf *r_viewplane, rcti *r_disprect)
+void rndr_GetViewPlane(Render *re, rctf *r_viewplane, rcti *r_disprect)
 {
   *r_viewplane = re->viewplane;
 
-  /* make disprect zero when no border render, is needed to detect changes in 3d view render */
+  /* make disprect zero when no border rndr, is needed to detect changes in 3d view rndr */
   if (re->r.mode & R_BORDER) {
     *r_disprect = re->disprect;
   }
