@@ -155,7 +155,6 @@ void rndr_result_views_shallowdelete(RenderResult *rr)
 }
 
 /* New */
-
 static void rndr_layer_alloc_pass(RndrResult *rr, RndrPass *rp)
 {
   if (rp->rect != NULL) {
@@ -166,7 +165,7 @@ static void rndr_layer_alloc_pass(RndrResult *rr, RndrPass *rp)
   rp->rect = mem_callocn(sizeof(float) * rectsize, rp->name);
 
   if (STREQ(rp->name, RE_PASSNAME_VECTOR)) {
-    /* initialize to max speed */
+    /* init to max speed */
     float *rect = rp->rect;
     for (int x = rectsize - 1; x >= 0; x--) {
       rect[x] = PASS_VECTOR_MAX;
@@ -180,16 +179,16 @@ static void rndr_layer_alloc_pass(RndrResult *rr, RndrPass *rp)
   }
 }
 
-RenderPass *render_layer_add_pass(RenderResult *rr,
-                                  RenderLayer *rl,
-                                  int channels,
-                                  const char *name,
-                                  const char *viewname,
-                                  const char *chan_id,
-                                  const bool allocate)
+RenderPass *rndr_layer_add_pass(RndrResult *rr,
+                                RenderLayer *rl,
+                                int channels,
+                                const char *name,
+                                const char *viewname,
+                                const char *chan_id,
+                                const bool alloc)
 {
   const int view_id = lib_findstringindex(&rr->views, viewname, offsetof(RenderView, name));
-  RenderPass *rpass = mem_callocn(sizeof(RenderPass), name);
+  RndrPass *rpass = mem_callocn(sizeof(RndrPass), name);
 
   rpass->channels = channels;
   rpass->rectx = rl->rectx;
@@ -206,32 +205,32 @@ RenderPass *render_layer_add_pass(RenderResult *rr,
     int a;
     for (a = 0; a < channels; a++) {
       char passname[EXR_PASS_MAXNAME];
-      render_result_full_channel_name(passname, NULL, rpass->name, NULL, rpass->chan_id, a);
-      IMB_exr_add_channel(rl->exrhandle, rl->name, passname, viewname, 0, 0, NULL, false);
+      rndr_result_full_channel_name(passname, NULL, rpass->name, NULL, rpass->chan_id, a);
+      imbuf_exr_add_channel(rl->exrhandle, rl->name, passname, viewname, 0, 0, NULL, false);
     }
   }
 
   lib_addtail(&rl->passes, rpass);
 
-  if (allocate) {
-    render_layer_allocate_pass(rr, rpass);
+  if (alloc) {
+    rndr_layer_allocate_pass(rr, rpass);
   }
   else {
-    /* The result contains non-allocated pass now, so tag it as such. */
+    /* The result contains non-alloc'd pass now, so tag it as such. */
     rr->passes_allocated = false;
   }
 
   return rpass;
 }
 
-RenderResult *render_result_new(Render *re,
-                                rcti *partrct,
-                                const char *layername,
-                                const char *viewname)
+RndrResult *rndr_result_new(Rndr *re,
+                            rcti *partrct,
+                            const char *layername,
+                            const char *viewname)
 {
-  RenderResult *rr;
-  RenderLayer *rl;
-  RenderView *rv;
+  RndrResult *rr;
+  RndrLayer *rl;
+  RndrView *rv;
   int rectx, recty;
 
   rectx = lib_rcti_size_x(partrct);
@@ -241,13 +240,13 @@ RenderResult *render_result_new(Render *re,
     return NULL;
   }
 
-  rr = mem_callocn(sizeof(RenderResult), "new render result");
+  rr = mem_callocn(sizeof(RndrResult), "new render result");
   rr->rectx = rectx;
   rr->recty = recty;
   rr->renrect.xmin = 0;
   rr->renrect.xmax = rectx;
 
-  /* tilerect is relative coordinates within render disprect. do not subtract crop yet */
+  /* tilerect is relative coords w/in render disprect. do not subtract crop yet */
   rr->tilerect.xmin = partrct->xmin - re->disprect.xmin;
   rr->tilerect.xmax = partrct->xmax - re->disprect.xmin;
   rr->tilerect.ymin = partrct->ymin - re->disprect.ymin;
@@ -255,17 +254,17 @@ RenderResult *render_result_new(Render *re,
 
   rr->passes_allocated = false;
 
-  render_result_views_new(rr, &re->r);
+  rndr_result_views_new(rr, &re->r);
 
   /* check renderdata for amount of layers */
-  FOREACH_VIEW_LAYER_TO_RENDER_BEGIN (re, view_layer) {
+  FOREACH_VIEW_LAYER_TO_RNDR_BEGIN (re, view_layer) {
     if (layername && layername[0]) {
       if (!STREQ(view_layer->name, layername)) {
         continue;
       }
     }
 
-    rl = mem_callocn(sizeof(RenderLayer), "new render layer");
+    rl = mem_callocn(sizeof(RndrLayer), "new render layer");
     lib_addtail(&rr->layers, rl);
 
     lib_strncpy(rl->name, view_layer->name, sizeof(rl->name));
@@ -285,96 +284,96 @@ RenderResult *render_result_new(Render *re,
         }
       }
 
-#define RENDER_LAYER_ADD_PASS_SAFE(rr, rl, channels, name, viewname, chan_id) \
+#define RNDR_LAYER_ADD_PASS_SAFE(rr, rl, channels, name, viewname, chan_id) \
   do { \
-    if (render_layer_add_pass(rr, rl, channels, name, viewname, chan_id, false) == NULL) { \
-      render_result_free(rr); \
+    if (rndr_layer_add_pass(rr, rl, channels, name, viewname, chan_id, false) == NULL) { \
+      rndr_result_free(rr); \
       return NULL; \
     } \
   } while (false)
 
-      /* A renderlayer should always have a Combined pass. */
-      render_layer_add_pass(rr, rl, 4, "Combined", view, "RGBA", false);
+      /* A rndrlayer should always have a Combined pass. */
+      rndr_layer_add_pass(rr, rl, 4, "Combined", view, "RGBA", false);
 
       if (view_layer->passflag & SCE_PASS_Z) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_Z, view, "Z");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_Z, view, "Z");
       }
       if (view_layer->passflag & SCE_PASS_VECTOR) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 4, RE_PASSNAME_VECTOR, view, "XYZW");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 4, RE_PASSNAME_VECTOR, view, "XYZW");
       }
       if (view_layer->passflag & SCE_PASS_NORMAL) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_NORMAL, view, "XYZ");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_NORMAL, view, "XYZ");
       }
       if (view_layer->passflag & SCE_PASS_POSITION) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_POSITION, view, "XYZ");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_POSITION, view, "XYZ");
       }
       if (view_layer->passflag & SCE_PASS_UV) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_UV, view, "UVA");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_UV, view, "UVA");
       }
       if (view_layer->passflag & SCE_PASS_EMIT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_EMIT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_EMIT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_AO) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_AO, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_AO, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_ENVIRONMENT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_ENVIRONMENT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_ENVIRONMENT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_SHADOW) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SHADOW, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SHADOW, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_INDEXOB) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_INDEXOB, view, "X");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_INDEXOB, view, "X");
       }
       if (view_layer->passflag & SCE_PASS_INDEXMA) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_INDEXMA, view, "X");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_INDEXMA, view, "X");
       }
       if (view_layer->passflag & SCE_PASS_MIST) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_MIST, view, "Z");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 1, RE_PASSNAME_MIST, view, "Z");
       }
       if (view_layer->passflag & SCE_PASS_DIFFUSE_DIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_DIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_DIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_DIFFUSE_INDIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_INDIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_INDIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_DIFFUSE_COLOR) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_COLOR, view, "RGB");
+       RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_DIFFUSE_COLOR, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_GLOSSY_DIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_DIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_DIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_GLOSSY_INDIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_INDIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_INDIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_GLOSSY_COLOR) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_COLOR, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_GLOSSY_COLOR, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_TRANSM_DIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_DIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_DIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_TRANSM_INDIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_INDIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_INDIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_TRANSM_COLOR) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_COLOR, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_TRANSM_COLOR, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_SUBSURFACE_DIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_DIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_DIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_SUBSURFACE_INDIRECT) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_INDIRECT, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_INDIRECT, view, "RGB");
       }
       if (view_layer->passflag & SCE_PASS_SUBSURFACE_COLOR) {
-        RENDER_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_COLOR, view, "RGB");
+        RNDR_LAYER_ADD_PASS_SAFE(rr, rl, 3, RE_PASSNAME_SUBSURFACE_COLOR, view, "RGB");
       }
-#undef RENDER_LAYER_ADD_PASS_SAFE
+#undef RNDR_LAYER_ADD_PASS_SAFE
     }
   }
   FOREACH_VIEW_LAYER_TO_RENDER_END;
 
   /* Preview-render doesn't do layers, so we make a default one. */
-  if (lib_listbase_is_empty(&rr->layers) && !(layername && layername[0])) {
+  if (lib_list_is_empty(&rr->layers) && !(layername && layername[0])) {
     rl = mem_callocn(sizeof(RenderLayer), "new render layer");
     lib_addtail(&rr->layers, rl);
 
@@ -390,8 +389,8 @@ RenderResult *render_result_new(Render *re,
         }
       }
 
-      /* a renderlayer should always have a Combined pass */
-      render_layer_add_pass(rr, rl, 4, RE_PASSNAME_COMBINED, view, "RGBA", false);
+      /* a rndrlayer should always have a Combined pass */
+      rndr_layer_add_pass(rr, rl, 4, RE_PASSNAME_COMBINED, view, "RGBA", false);
     }
 
     /* NOTE: this has to be in sync with `scene.c`. */
@@ -401,47 +400,47 @@ RenderResult *render_result_new(Render *re,
     re->active_view_layer = 0;
   }
 
-  /* Border render; calculate offset for use in compositor. compo is centralized coords. */
-  /* XXX: obsolete? I now use it for drawing border render offset. */
+  /* Border render; calc offset for use in compositor. compo is centralized coords. */
+  /* XXX: obsolete? I now use it for drwing border rndr offset. */
   rr->xof = re->disprect.xmin + lib_rcti_cent_x(&re->disprect) - (re->winx / 2);
   rr->yof = re->disprect.ymin + lib_rcti_cent_y(&re->disprect) - (re->winy / 2);
 
-  /* Preview does not support deferred render result allocation. */
+  /* Preview does not support deferred rndr result alloc. */
   if (re->r.scemode & R_BUTS_PREVIEW) {
-    render_result_passes_allocated_ensure(rr);
+    rndr_result_passes_alloc_ensure(rr);
   }
 
   return rr;
 }
 
-void render_result_passes_allocated_ensure(RenderResult *rr)
+void rndr_result_passes_alloc_ensure(RndrResult *rr)
 {
   if (rr == NULL) {
-    /* Happens when the result was not yet allocated for the current scene or slot configuration. */
+    /* Happens when the result was not yet alloc for the current scene or slot config. */
     return;
   }
 
-  LISTBASE_FOREACH (RenderLayer *, rl, &rr->layers) {
-    LISTBASE_FOREACH (RenderPass *, rp, &rl->passes) {
+  LIST_FOREACH (RndrLayer *, rl, &rr->layers) {
+    LIST_FOREACH (RndrPass *, rp, &rl->passes) {
       if (rl->exrhandle != NULL && !STREQ(rp->name, RE_PASSNAME_COMBINED)) {
         continue;
       }
 
-      render_layer_allocate_pass(rr, rp);
+      rndr_layer_alloc_pass(rr, rp);
     }
   }
 
-  rr->passes_allocated = true;
+  rr->passes_alloc = true;
 }
 
-void render_result_clone_passes(Render *re, RenderResult *rr, const char *viewname)
+void rndr_result_clone_passes(Rndr *re, RndrResult *rr, const char *viewname)
 {
-  RenderLayer *rl;
-  RenderPass *main_rp;
+  RndrLayer *rl;
+  RndrPass *main_rp;
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
-    RenderLayer *main_rl = lib_findstring(
-        &re->result->layers, rl->name, offsetof(RenderLayer, name));
+    RndrLayer *main_rl = lib_findstring(
+        &re->result->layers, rl->name, offsetof(RndrLayer, name));
     if (!main_rl) {
       continue;
     }
@@ -452,27 +451,27 @@ void render_result_clone_passes(Render *re, RenderResult *rr, const char *viewna
       }
 
       /* Compare fullname to make sure that the view also is equal. */
-      RenderPass *rp = lib_findstring(
-          &rl->passes, main_rp->fullname, offsetof(RenderPass, fullname));
+      RndrPass *rp = lib_findstring(
+          &rl->passes, main_rp->fullname, offsetof(RndrPass, fullname));
       if (!rp) {
-        render_layer_add_pass(
+        rndr_layer_add_pass(
             rr, rl, main_rp->channels, main_rp->name, main_rp->view, main_rp->chan_id, false);
       }
     }
   }
 }
 
-void render_create_render_pass(RenderResult *rr,
-                               const char *name,
-                               int channels,
-                               const char *chan_id,
-                               const char *layername,
-                               const char *viewname,
-                               const bool allocate)
+void rndr_create_rndr_pass(RndrResult *rr,
+                           const char *name,
+                           int channels,
+                           const char *chan_id,
+                           const char *layername,
+                           const char *viewname,
+                           const bool alloc)
 {
-  RenderLayer *rl;
-  RenderPass *rp;
-  RenderView *rv;
+  RndrLayer *rl;
+  RndrPass *rp;
+  RndrView *rv;
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
     if (layername && layername[0] && !STREQ(rl->name, layername)) {
@@ -498,18 +497,18 @@ void render_create_render_pass(RenderResult *rr,
       }
 
       if (!rp) {
-        render_layer_add_pass(rr, rl, channels, name, view, chan_id, allocate);
+        rndr_layer_add_pass(rr, rl, channels, name, view, chan_id, alloc);
       }
     }
   }
 }
 
-void render_result_full_channel_name(char *fullname,
-                                     const char *layname,
-                                     const char *passname,
-                                     const char *viewname,
-                                     const char *chan_id,
-                                     const int channel)
+void rndr_result_full_channel_name(char *fullname,
+                                   const char *layname,
+                                   const char *passname,
+                                   const char *viewname,
+                                   const char *chan_id,
+                                   const int channel)
 {
   /* OpenEXR compatible full channel name. */
   const char *strings[4];
@@ -575,13 +574,13 @@ static int passtype_from_name(const char *name)
   return 0;
 }
 
-/* callbacks for render_result_new_from_exr */
+/* cbs for rndr_result_new_from_exr */
 static void *ml_addlayer_cb(void *base, const char *str)
 {
-  RenderResult *rr = base;
-  RenderLayer *rl;
+  RndrResult *rr = base;
+  RndrLayer *rl;
 
-  rl = mem_callocn(sizeof(RenderLayer), "new render layer");
+  rl = mem_callocn(sizeof(RndrLayer), "new render layer");
   lib_addtail(&rr->layers, rl);
 
   lib_strncpy(rl->name, str, EXR_LAY_MAXNAME);
@@ -596,9 +595,9 @@ static void ml_addpass_cb(void *base,
                           const char *chan_id,
                           const char *view)
 {
-  RenderResult *rr = base;
-  RenderLayer *rl = lay;
-  RenderPass *rpass = mem_callocn(sizeof(RenderPass), "loaded pass");
+  RndrResult *rr = base;
+  RndrLayer *rl = lay;
+  RndrPass *rpass = mem_callocn(sizeof(RndrPass), "loaded pass");
 
   lib_addtail(&rl->passes, rpass);
   rpass->channels = totchan;
@@ -610,10 +609,10 @@ static void ml_addpass_cb(void *base,
   rpass->rect = rect;
   lib_strncpy(rpass->name, name, EXR_PASS_MAXNAME);
   lib_strncpy(rpass->view, view, sizeof(rpass->view));
-  render_result_full_channel_name(rpass->fullname, NULL, name, view, rpass->chan_id, -1);
+  rndr_result_full_channel_name(rpass->fullname, NULL, name, view, rpass->chan_id, -1);
 
   if (view[0] != '\0') {
-    rpass->view_id = lib_findstringindex(&rr->views, view, offsetof(RenderView, name));
+    rpass->view_id = lib_findstringindex(&rr->views, view, offsetof(RndrView, name));
   }
   else {
     rpass->view_id = 0;
@@ -622,10 +621,10 @@ static void ml_addpass_cb(void *base,
 
 static void *ml_addview_cb(void *base, const char *str)
 {
-  RenderResult *rr = base;
-  RenderView *rv;
+  RndrResult *rr = base;
+  RndrView *rv;
 
-  rv = mem_callocn(sizeof(RenderView), "new render view");
+  rv = mem_callocn(sizeof(RndrView), "new render view");
   lib_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
 
   /* For stereo drawing we need to ensure:
@@ -636,7 +635,7 @@ static void *ml_addview_cb(void *base, const char *str)
     lib_addhead(&rr->views, rv);
   }
   else if (STREQ(str, STEREO_RIGHT_NAME)) {
-    RenderView *left_rv = lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name));
+    RndrView *left_rv = lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RndrView, name));
 
     if (left_rv == NULL) {
       lib_addhead(&rr->views, rv);
@@ -652,15 +651,15 @@ static void *ml_addview_cb(void *base, const char *str)
   return rv;
 }
 
-static int order_render_passes(const void *a, const void *b)
+static int order_rndr_passes(const void *a, const void *b)
 {
   /* 1 if `a` is after `b`. */
-  RenderPass *rpa = (RenderPass *)a;
-  RenderPass *rpb = (RenderPass *)b;
+  RndrPass *rpa = (RndrPass *)a;
+  RndrPass *rpb = (RndrPass *)b;
   unsigned int passtype_a = passtype_from_name(rpa->name);
   unsigned int passtype_b = passtype_from_name(rpb->name);
 
-  /* Render passes with default type always go first. */
+  /* Rndr passes with default type always go first. */
   if (passtype_b && !passtype_a) {
     return 1;
   }
@@ -707,35 +706,35 @@ static int order_render_passes(const void *a, const void *b)
   return (rpa->view_id < rpb->view_id);
 }
 
-RenderResult *render_result_new_from_exr(
+RndrResult *rndr_result_new_from_exr(
     void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty)
 {
-  RenderResult *rr = mem_callocn(sizeof(RenderResult), __func__);
-  RenderLayer *rl;
-  RenderPass *rpass;
-  const char *to_colorspace = IMB_colormanagement_role_colorspace_name_get(
+  RndrResult *rr = mem_callocn(sizeof(RndrResult), __func__);
+  RndrLayer *rl;
+  RndrPass *rpass;
+  const char *to_colorspace =imbuf_colormanagement_role_colorspace_name_get(
       COLOR_ROLE_SCENE_LINEAR);
 
   rr->rectx = rectx;
   rr->recty = recty;
 
-  IMB_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
+  imbuf_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
     rl->rectx = rectx;
     rl->recty = recty;
 
-    lib_listbase_sort(&rl->passes, order_render_passes);
+    lib_list_sort(&rl->passes, order_render_passes);
 
     for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
       rpass->rectx = rectx;
       rpass->recty = recty;
 
       if (rpass->channels >= 3) {
-        IMB_colormanagement_transform(rpass->rect,
-                                      rpass->rectx,
-                                      rpass->recty,
-                                      rpass->channels,
+        imbuf_colormanagement_transform(rpass->rect,
+                                        rpass->rectx,
+                                        rpass->recty,
+                                        rpass->channels,
                                       colorspace,
                                       to_colorspace,
                                       predivide);
@@ -746,40 +745,40 @@ RenderResult *render_result_new_from_exr(
   return rr;
 }
 
-void render_result_view_new(RenderResult *rr, const char *viewname)
+void rndr_result_view_new(RndrResult *rr, const char *viewname)
 {
-  RenderView *rv = mem_callocn(sizeof(RenderView), "new render view");
+  RndrView *rv = mem_callocn(sizeof(RndrView), "new render view");
   lib_addtail(&rr->views, rv);
   lib_strncpy(rv->name, viewname, sizeof(rv->name));
 }
 
-void render_result_views_new(RenderResult *rr, const RenderData *rd)
+void rndr_result_views_new(RndrResult *rr, const RndrData *rd)
 {
-  SceneRenderView *srv;
+  SceneRndrView *srv;
 
-  /* clear previously existing views - for sequencer */
-  render_result_views_free(rr);
+  /* clear prev existing views - for seq */
+  rndr_result_views_free(rr);
 
-  /* check renderdata for amount of views */
+  /* check rndrdata for amount of views */
   if (rd->scemode & R_MULTIVIEW) {
     for (srv = rd->views.first; srv; srv = srv->next) {
-      if (dune_scene_multiview_is_render_view_active(rd, srv) == false) {
+      if (dune_scene_multiview_is_rndr_view_active(rd, srv) == false) {
         continue;
       }
-      render_result_view_new(rr, srv->name);
+      rndr_result_view_new(rr, srv->name);
     }
   }
 
   /* we always need at least one view */
-  if (lib_listbase_count_at_most(&rr->views, 1) == 0) {
-    render_result_view_new(rr, "");
+  if (lib_list_count_at_most(&rr->views, 1) == 0) {
+    rndr_result_view_new(rr, "");
   }
 }
 
-/*********************************** Merge ***********************************/
+/* Merge */
 
 static void do_merge_tile(
-    RenderResult *rr, RenderResult *rrpart, float *target, float *tile, int pixsize)
+    RndrResult *rr, RndrResult *rrpart, float *target, float *tile, int pixsize)
 {
   int y, tilex, tiley;
   size_t ofs, copylen;
@@ -801,53 +800,52 @@ static void do_merge_tile(
   }
 }
 
-void render_result_merge(RenderResult *rr, RenderResult *rrpart)
+void rndr_result_merge(RndrResult *rr, RndrResult *rrpart)
 {
-  RenderLayer *rl, *rlp;
-  RenderPass *rpass, *rpassp;
+  RndrLayer *rl, *rlp;
+  RndrPass *rpass, *rpassp;
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
-    rlp = render_GetRenderLayer(rrpart, rl->name);
+    rlp = rndr_GetRndrLayer(rrpart, rl->name);
     if (rlp) {
-      /* Passes are allocated in sync. */
+      /* Passes are alloc'd in sync. */
       for (rpass = rl->passes.first, rpassp = rlp->passes.first; rpass && rpassp;
            rpass = rpass->next) {
-        /* For save buffers, skip any passes that are only saved to disk. */
+        /* For save bufs, skip any passes that are only saved to disk. */
         if (rpass->rect == NULL || rpassp->rect == NULL) {
           continue;
         }
-        /* Renderresult have all passes, renderpart only the active view's passes. */
+        /* Rndrresult have all passes, rndrpart only the active view's passes. */
         if (!STREQ(rpassp->fullname, rpass->fullname)) {
           continue;
         }
 
         do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
 
-        /* manually get next render pass */
+        /* manually get next rndr pass */
         rpassp = rpassp->next;
       }
     }
   }
 }
 
-/**************************** Single Layer Rendering *************************/
-
-void render_result_single_layer_begin(Render *re)
+/* Single Layer Rendering */
+void rndr_result_single_layer_begin(Rndr *re)
 {
-  /* all layers except the active one get temporally pushed away */
+  /* all layers except the active one get tmp pushed away */
 
-  /* officially pushed result should be NULL... error can happen with do_seq */
-  render_FreeRenderResult(re->pushedresult);
+  /* officially pushed result should be NULL... error can happen w do_seq */
+  rndr_FreeRndrResult(re->pushedresult);
 
   re->pushedresult = re->result;
   re->result = NULL;
 }
 
-void render_result_single_layer_end(Render *re)
+void rndr_result_single_layer_end(Rndr *re)
 {
   ViewLayer *view_layer;
-  RenderLayer *rlpush;
-  RenderLayer *rl;
+  RndrLayer *rlpush;
+  RndrLayer *rl;
   int nr;
 
   if (re->result == NULL) {
@@ -864,17 +862,17 @@ void render_result_single_layer_end(Render *re)
     /* find which layer in re->pushedresult should be replaced */
     rl = re->result->layers.first;
 
-    /* render result should be empty after this */
+    /* rndr result should be empty after this */
     lib_remlink(&re->result->layers, rl);
 
-    /* reconstruct render result layers */
+    /* reconstruct rndr result layers */
     for (nr = 0, view_layer = re->view_layers.first; view_layer;
          view_layer = view_layer->next, nr++) {
       if (nr == re->active_view_layer) {
         lib_addtail(&re->result->layers, rl);
       }
       else {
-        rlpush = render_GetRenderLayer(re->pushedresult, view_layer->name);
+        rlpush = rndr_GetRndrLayer(re->pushedresult, view_layer->name);
         if (rlpush) {
           lib_remlink(&re->pushedresult->layers, rlpush);
           lib_addtail(&re->result->layers, rlpush);
@@ -883,11 +881,11 @@ void render_result_single_layer_end(Render *re)
     }
   }
 
-  render_FreeRenderResult(re->pushedresult);
+  rndr_FreeRndrResult(re->pushedresult);
   re->pushedresult = NULL;
 }
 
-int render_result_exr_file_read_path(RenderResult *rr,
+int rndr_result_exr_file_read_path(RenderResult *rr,
                                      RenderLayer *rl_single,
                                      const char *filepath)
 {
