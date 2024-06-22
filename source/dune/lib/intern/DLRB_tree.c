@@ -81,7 +81,7 @@ static void linkedlist_sync_add_node(DLRBT_Tree *tree, DLRBT_Node *node)
    * - must remove detach from other links first
    *   (for now, only clear own ptrs) */
   node->prev = node->next = NULL;
-  lib_addtail((ListBase *)tree, (Link *)node);
+  lib_addtail((List *)tree, (Link *)node);
 
   /* finally, add right node (and its subtree) */
   linkedlist_sync_add_node(tree, node->right);
@@ -194,7 +194,7 @@ DLRBT_Node *lib_dlrbTree_search_exact(const DLRBT_Tree *tree,
   return (found == 1) ? (node) : (NULL);
 }
 
-DLRBT_Node *BLI_dlrbTree_search_prev(const DLRBT_Tree *tree,
+DLRBT_Node *lib_dlrbTree_search_prev(const DLRBT_Tree *tree,
                                      DLRBT_Comparator_FP cmp_cb,
                                      void *search_data)
 {
@@ -224,7 +224,7 @@ DLRBT_Node *BLI_dlrbTree_search_prev(const DLRBT_Tree *tree,
   return NULL;
 }
 
-DLRBT_Node *BLI_dlrbTree_search_next(const DLRBT_Tree *tree,
+DLRBT_Node *lib_dlrbTree_search_next(const DLRBT_Tree *tree,
                                      DLRBT_Comparator_FP cmp_cb,
                                      void *search_data)
 {
@@ -245,7 +245,7 @@ DLRBT_Node *BLI_dlrbTree_search_next(const DLRBT_Tree *tree,
       return node;
     }
 
-    /* return the previous node otherwise */
+    /* return the prev node otherwise */
     /* What happens if there is no previous node? */
     return node->next;
   }
@@ -457,7 +457,7 @@ static void insert_check_3(DLRBT_Tree *tree, DLRBT_Node *node)
       /* get 'new' grandparent (i.e. grandparent for old-parent (node)) */
       gp = get_grandparent(node);
 
-      /* modify the coloring of the grandparent and parent
+      /* mod the coloring of the grandparent and parent
        * so that they still satisfy the constraints */
       node->parent->tree_col = DLRBT_BLACK;
       gp->tree_col = DLRBT_RED;
@@ -519,7 +519,7 @@ DLRBT_Node *lib_dlrbTree_add(DLRBT_Tree *tree,
    * We do not support dups in our tree... */
   if (parNode) {
     /* check how this new node compares with the existing ones
-     * it is assumed that the values will be unit values only */
+     * it is assumed that the vals will be unit values only */
     switch (cmp_cb(parNode, data)) {
       case -1: /* add new node as left child */
       {
@@ -541,7 +541,7 @@ DLRBT_Node *lib_dlrbTree_add(DLRBT_Tree *tree,
       }
       default: /* update the dup node as appropriate */
       {
-        /* Return the updated node after calling the callback. */
+        /* Return the updated node after calling the cb. */
         node = parNode;
         if (update_cb) {
           update_cb(node, data);
@@ -572,9 +572,6 @@ DLRBT_Node *lib_dlrbTree_add(DLRBT_Tree *tree,
   return node;
 }
 
-/* *********************************************** */
 /* Remove */
 
 /* TODO: this hasn't been coded yet, since this functionality was not needed by the author */
-
-/* *********************************************** */
