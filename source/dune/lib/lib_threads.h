@@ -4,7 +4,7 @@
 
 #include "lib_sys_types.h"
 
-/** For tables, button in UI, etc. */
+/* For tables, btn in UI, etc. */
 #define DUNE_MAX_THREADS 1024
 
 struct ListBase;
@@ -19,35 +19,30 @@ void lib_threadapi_exit(void);
  * param tot: When 0 only initializes malloc mutex in a safe way (see sequence.c)
  * problem otherwise: scene render will kill of the mutex!
  */
-void lib_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
+void lib_threadpool_init(struct List *threadbase, void *(*do_thread)(void *), int tot);
 /** Amount of available threads. */
-int lib_available_threads(struct ListBase *threadbase);
+int lib_available_threads(struct List *threadbase);
 /** Returns thread number, for sample patterns or threadsafe tables. */
-int lib_threadpool_available_thread_index(struct ListBase *threadbase);
-void lib_threadpool_insert(struct ListBase *threadbase, void *callerdata);
-void lib_threadpool_remove(struct ListBase *threadbase, void *callerdata);
-void lib_threadpool_remove_index(struct ListBase *threadbase, int index);
-void lib_threadpool_clear(struct ListBase *threadbase);
-void lib_threadpool_end(struct ListBase *threadbase);
+int lib_threadpool_available_thread_index(struct List *threadbase);
+void lib_threadpool_insert(struct List *threadbase, void *callerdata);
+void lib_threadpool_remove(struct List *threadbase, void *callerdata);
+void lib_threadpool_remove_index(struct List *threadbase, int index);
+void lib_threadpool_clear(struct List *threadbase);
+void lib_threadpool_end(struct List *threadbase);
 int lin_thread_is_main(void);
 
 /* System Information */
 
-/**
- * return the number of threads the system can make use of.
- */
-int lib_system_thread_count(void);
-void lib_system_num_threads_override_set(int num);
-int lib_system_num_threads_override_get(void);
+/* return the nmbr of threads the sys can make use of. */
+int lib_sys_thread_count(void);
+void lib_sys_num_threads_override_set(int num);
+int lib_sys_num_threads_override_get(void);
 
-/**
- * Global Mutex Locks
- *
- * One custom lock available now. can be extended.
- */
+/* Global Mutex Locks
+ * One custom lock available now. can be extended. */
 enum {
-  LOCK_IMAGE = 0,
-  LOCK_DRAW_IMAGE,
+  LOCK_IMG = 0,
+  LOCK_DRW_IMG,
   LOCK_VIEWER,
   LOCK_CUSTOM1,
   LOCK_NODES,
@@ -65,26 +60,25 @@ void lib_thread_unlock(int type);
 typedef pthread_mutex_t ThreadMutex;
 #define LIB_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 
-void LIB_mutex_init(ThreadMutex *mutex);
-void LIB_mutex_end(ThreadMutex *mutex);
+void lib_mutex_init(ThreadMutex *mutex);
+void lib_mutex_end(ThreadMutex *mutex);
 
-ThreadMutex *LIB_mutex_alloc(void);
-void LIB_mutex_free(ThreadMutex *mutex);
+ThreadMutex *lib_mutex_alloc(void);
+void lib_mutex_free(ThreadMutex *mutex);
 
-void LIB_mutex_lock(ThreadMutex *mutex);
-bool LIB_mutex_trylock(ThreadMutex *mutex);
-void LIB_mutex_unlock(ThreadMutex *mutex);
+void lib_mutex_lock(ThreadMutex *mutex);
+bool lib_mutex_trylock(ThreadMutex *mutex);
+void lib_mutex_unlock(ThreadMutex *mutex);
 
 /* Spin Lock */
 typedef pthread_spinlock_t SpinLock;
 
-void LIB_spin_init(SpinLock *spin);
-void LIB_spin_lock(SpinLock *spin);
-void LIB_spin_unlock(SpinLock *spin);
-void LIB_spin_end(SpinLock *spin);
+void lib_spin_init(SpinLock *spin);
+void lib_spin_lock(SpinLock *spin);
+void lib_spin_unlock(SpinLock *spin);
+void lib_spin_end(SpinLock *spin);
 
 /* Read/Write Mutex Lock */
-
 #define THREAD_LOCK_READ 1
 #define THREAD_LOCK_WRITE 2
 
@@ -92,72 +86,66 @@ void LIB_spin_end(SpinLock *spin);
 
 typedef pthread_rwlock_t ThreadRWMutex;
 
-void LIB_rw_mutex_init(ThreadRWMutex *mutex);
-void LIB_rw_mutex_end(ThreadRWMutex *mutex);
+void lib_rw_mutex_init(ThreadRWMutex *mutex);
+void lib_rw_mutex_end(ThreadRWMutex *mutex);
 
-ThreadRWMutex *LIB_rw_mutex_alloc(void);
-void LIB_rw_mutex_free(ThreadRWMutex *mutex);
+ThreadRWMutex *lib_rw_mutex_alloc(void);
+void lib_rw_mutex_free(ThreadRWMutex *mutex);
 
-void LIB_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
-void LIB_rw_mutex_unlock(ThreadRWMutex *mutex);
+void lib_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
+void lib_rw_mutex_unlock(ThreadRWMutex *mutex);
 
 /* Ticket Mutex Lock
- *
  * This is a 'fair' mutex in that it will grant the lock to the first thread
  * that requests it. */
-
 typedef struct TicketMutex TicketMutex;
 
-TicketMutex *LIB_ticket_mutex_alloc(void);
-void LIB_ticket_mutex_free(TicketMutex *ticket);
-void LIB_ticket_mutex_lock(TicketMutex *ticket);
-void LIB_ticket_mutex_unlock(TicketMutex *ticket);
+TicketMutex *lib_ticket_mutex_alloc(void);
+void lib_ticket_mutex_free(TicketMutex *ticket);
+void lib_ticket_mutex_lock(TicketMutex *ticket);
+void lib_ticket_mutex_unlock(TicketMutex *ticket);
 
 /* Condition */
-
 typedef pthread_cond_t ThreadCondition;
 
-void LIB_condition_init(ThreadCondition *cond);
-void LIB_condition_wait(ThreadCondition *cond, ThreadMutex *mutex);
-void LIB_condition_wait_global_mutex(ThreadCondition *cond, int type);
-void LIB_condition_notify_one(ThreadCondition *cond);
-void LIB_condition_notify_all(ThreadCondition *cond);
-void LIB_condition_end(ThreadCondition *cond);
+void lib_condition_init(ThreadCondition *cond);
+void lib_condition_wait(ThreadCondition *cond, ThreadMutex *mutex);
+void lib_condition_wait_global_mutex(ThreadCondition *cond, int type);
+void lib_condition_notify_one(ThreadCondition *cond);
+void lib_condition_notify_all(ThreadCondition *cond);
+void lib_condition_end(ThreadCondition *cond);
 
 /* ThreadWorkQueue
- *
- * Thread-safe work queue to push work/pointers between threads. */
-
+ * Thread-safe work queue to push work/ptrs between threads. */
 typedef struct ThreadQueue ThreadQueue;
 
-ThreadQueue *LIB_thread_queue_init(void);
-void LIB_thread_queue_free(ThreadQueue *queue);
+ThreadQueue *lib_thread_queue_init(void);
+void lib_thread_queue_free(ThreadQueue *queue);
 
-void LIB_thread_queue_push(ThreadQueue *queue, void *work);
-void *LIB_thread_queue_pop(ThreadQueue *queue);
-void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms);
-int LIB_thread_queue_len(ThreadQueue *queue);
-bool LIB_thread_queue_is_empty(ThreadQueue *queue);
+void lib_thread_queue_push(ThreadQueue *queue, void *work);
+void *lib_thread_queue_pop(ThreadQueue *queue);
+void *lib_thread_queue_pop_timeout(ThreadQueue *queue, int ms);
+int lib_thread_queue_len(ThreadQueue *queue);
+bool lib_thread_queue_is_empty(ThreadQueue *queue);
 
-void LIB_thread_queue_wait_finish(ThreadQueue *queue);
-void LIB_thread_queue_nowait(ThreadQueue *queue);
+void lib_thread_queue_wait_finish(ThreadQueue *queue);
+void lib_thread_queue_nowait(ThreadQueue *queue);
 
 /* Thread local storage */
-
 #if defined(__APPLE__)
 #  define ThreadLocal(type) pthread_key_t
-#  define LIB_thread_local_create(name) pthread_key_create(&name, NULL)
-#  define LIB_thread_local_delete(name) pthread_key_delete(name)
-#  define LIB_thread_local_get(name) pthread_getspecific(name)
-#  define LIB_thread_local_set(name, value) pthread_setspecific(name, value)
+#  define lib_thread_local_create(name) pthread_key_create(&name, NULL)
+#  define lib_thread_local_delete(name) pthread_key_delete(name)
+#  define lib_thread_local_get(name) pthread_getspecific(name)
+#  define lib_thread_local_set(name, val) pthread_setspecific(name, val)
 #else /* defined(__APPLE__) */
 #  ifdef _MSC_VER
 #    define ThreadLocal(type) __declspec(thread) type
 #  else
 #    define ThreadLocal(type) __thread type
 #  endif
-#  define LIB_thread_local_create(name)
-#  define LIB_thread_local_delete(name)
-#  define LIB_thread_local_get(name) name
-#  define LIB_thread_local_set(name, value) name = value
+#  define lib_thread_local_create(name)
+#  define lib_thread_local_delete(name)
+#  define lib_thread_local_get(name) name
+#  define lib_thread_local_set(name, val) name = val
 #endif /* defined(__APPLE__) */
