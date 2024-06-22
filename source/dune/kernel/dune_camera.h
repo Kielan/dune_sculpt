@@ -1,7 +1,6 @@
 #pragma once
 
-/* Camera data-block and utility functions.
- */
+/* Camera data-block and util fns. */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,7 +10,7 @@ struct Graph;
 struct Main;
 struct Ob;
 struct RgnView3D;
-struct RenderData;
+struct RndrData;
 struct Scene;
 struct View3D;
 struct rctf;
@@ -27,7 +26,7 @@ int dune_camera_sensor_fit(int sensor_fit, float sizex, float sizey);
 float dune_camera_sensor_size(int sensor_fit, float sensor_x, float sensor_y);
 
 /* Camera Params:
- * Intermediate struct for storing camera parameters from various sources,
+ * Intermediate struct for storing camera params from various srcs,
  * to unify computation of view-plane, window matrix, ... etc. */
 typedef struct CameraParams {
   /* lens */
