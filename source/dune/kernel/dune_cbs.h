@@ -11,30 +11,30 @@ struct ApiPtr;
 
 /* Callbacks for One Off Actions
  *
- * - `{ACTION}` use in cases where only a single callback is required,
- *   `VERSION_UPDATE` and `RENDER_STATS` for example.
+ * - `{ACTION}` use in cases where only a single cb is required,
+ *   `VERSION_UPDATE` and `RNDR_STATS` for example.
  *
- * avoid single callbacks if there is a chance `PRE/POST` are useful to differentiate
- * since renaming callbacks may break Python scripts.
+ * avoid single cbs if there is a chance `PRE/POST` are useful to differentiate
+ * since renaming cbs may break Python scripts.
  *
- * Callbacks for Common Actions
+ * Cbs for Common Actions
  *
  * - `{ACTION}_PRE` run before the action.
  * - `{ACTION}_POST` run after the action.
  *
- * Optional Additional Callbacks
+ * Optional Additional Cbs
  *
- * - `{ACTION}_INIT` when the handler may manipulate the context used to run the action.
+ * - `{ACTION}_INIT` when the handler may manipulate the cxt used to run the action.
  *
- *   Examples where `INIT` functions may be useful are:
+ *   Examples where `INIT` fns may be useful are:
  *
- *   - When rendering, an `INIT` function may change the camera or render settings,
- *     things which a `PRE` function can't support as this information has already been used.
- *   - When saving an `INIT` function could temporarily change the preferences.
+ *   - When rendering, an `INIT` fn may change the camera or rndr settings,
+ *     things which a `PRE` fn can't support as this info has alrdy been used.
+ *   - When saving an `INIT` fn could temporarily change the preferences.
  *
  * - `{ACTION}_POST_FAIL` should be included if the action may fail.
  *
- *   Use this so a call to the `PRE` callback always has a matching call to `POST` or `POST_FAIL`.
+ *   Use this so a call to the `PRE` cb always has a matching call to `POST` or `POST_FAIL`.
  *
  * in most cases only `PRE/POST` are required.
  *
@@ -47,46 +47,46 @@ struct ApiPtr;
  *   While cancellation may be caused by any number of reasons, common causes may include:
  *
  *   - Explicit user cancellation.
- *   - Exiting Blender.
+ *   - Exiting Dune.
  *   - Failure to acquire resources (such as disk-full, out of memory ... etc).
  *
  * `PRE/POST` handlers may be used along side modal task handlers
- * as is the case for rendering, where rendering an animation uses modal task handlers,
- * rendering a single frame has `PRE/POST` handlers.
+ * as is the case for rndring, where rndring an anim uses modal task handlers,
+ * rndring a single frame has `PRE/POST` handlers.
  *
  * Python Access
  * =============
  *
- * All callbacks here must be exposed via the Python module `bpy.app.handlers`,
+ * All cbs here must be exposed via the Python module `bpy.app.handlers`,
  * see `bpy_app_handlers.c`. */
 typedef enum {
-  BKE_CB_EVT_FRAME_CHANGE_PRE,
-  BKE_CB_EVT_FRAME_CHANGE_POST,
-  BKE_CB_EVT_RENDER_PRE,
-  BKE_CB_EVT_RENDER_POST,
-  BKE_CB_EVT_RENDER_WRITE,
-  BKE_CB_EVT_RENDER_STATS,
-  BKE_CB_EVT_RENDER_INIT,
-  BKE_CB_EVT_RENDER_COMPLETE,
-  BKE_CB_EVT_RENDER_CANCEL,
-  BKE_CB_EVT_LOAD_PRE,
-  BKE_CB_EVT_LOAD_POST,
-  BKE_CB_EVT_SAVE_PRE,
-  BKE_CB_EVT_SAVE_POST,
-  BKE_CB_EVT_UNDO_PRE,
-  BKE_CB_EVT_UNDO_POST,
-  BKE_CB_EVT_REDO_PRE,
-  BKE_CB_EVT_REDO_POST,
-  BKE_CB_EVT_GRAPH_UPDATE_PRE,
-  BKE_CB_EVT_GRAPH_UPDATE_POST,
-  DUNE_CB_EVT_VERSION_UPDATE,
-  DUNE_CB_EVT_LOAD_FACTORY_USERDEF_POST,
-  DUNE_CB_EVT_LOAD_FACTORY_STARTUP_POST,
-  DUNE_CB_EVT_XR_SESSION_START_PRE,
-  DUNE_CB_EVT_ANNOTATION_PRE,
-  DUNE_CB_EVT_ANNOTATION_POST,
-  DUNE_CB_EVT_TOT,
-} eCbEvent;
+  DUNE_CB_EV_FRAME_CHANGE_PRE,
+  DUNE_CB_EV_FRAME_CHANGE_POST,
+  DUNE_CB_EV_RNDR_PRE,
+  DUNE_CB_EV_RNDR_POST,
+  DUNE_CB_EV_RNDR_WRITE,
+  DUNE_CB_EV_RNDR_STATS,
+  DUNE_CB_EV_RNDR_INIT,
+  DUNE_CB_EV_RNDR_COMPLETE,
+  DUNE_CB_EV_RNDR_CANCEL,
+  DUNE_CB_EV_LOAD_PRE,
+  DUNE_CB_EV_LOAD_POST,
+  DUNE_CB_EV_SAVE_PRE,
+  DUNE_CB_EV_SAVE_POST,
+  DUNE_CB_EV_UNDO_PRE,
+  DUNE_CB_EV_UNDO_POST,
+  DUNE_CB_EV_REDO_PRE,
+  DUNE_CB_EV_REDO_POST,
+  DUNE_CB_EV_GRAPH_UPDATE_PRE,
+  DUNE_CB_EV_GRAPH_UPDATE_POST,
+  DUNE_CB_EV_VERSION_UPDATE,
+  DUNE_CB_EV_LOAD_FACTORY_USERDEF_POST,
+  DUNE_CB_EV_LOAD_FACTORY_STARTUP_POST,
+  DUNE_CB_EV_XR_SESS_START_PRE,
+  DUNE_CB_EV_ANNOTATION_PRE,
+  DUNE_CB_EV_ANNOTATION_POST,
+  DUNE_CB_EV_TOT,
+} eCbEv;
 
 typedef struct CbFnStore {
   struct CbFnStore *next, *prev;
@@ -98,15 +98,15 @@ typedef struct CbFnStore {
 void dune_cb_ex(struct Main *main,
                 struct ApiPtr **ptrs,
                 int num_ptrs,
-                eCbEvent evt);
-void dune_cb_ex_null(struct Main *main, eCbEvent evt);
-void dune_cb_ex_id(struct Main *main, struct Id *id, eCbEvent evt);
+                eCbEv evt);
+void dune_cb_ex_null(struct Main *main, eCbEv evt);
+void dune_cb_ex_id(struct Main *main, struct Id *id, eCbEv ev);
 void dune_cb_ex_id_graph(struct Main *main,
                          struct Id *id,
                          struct Graph *graph,
                          eCbEvent evt);
-void dune_cb_add(CbFnStore *fnstore, eCbEvent evt);
-void dune_cb_remove(CbFnStore *fnstore, eCbEvent evt);
+void dune_cb_add(CbFnStore *fnstore, eCbEv ev);
+void dune_cb_remove(CbFnStore *fnstore, eCbEv ev);
 
 void dune_cb_global_init(void);
 /* Call on application exit. */
