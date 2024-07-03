@@ -327,7 +327,7 @@ static int action_pushdown_ex(Cxt *C, WinOp *op)
     graph_id_tag_update_ex(main, &adt->action->id, ID_RECALC_ANIM);
 
     /* Stop displaying this action in this editor
-     * NOTE: The editor itself doesn't set a user. */
+     * The editor itself doesn't set a user. */
     saction->action = nullptr;
   }
 
@@ -336,54 +336,50 @@ static int action_pushdown_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void action_ot_push_down(wmOperatorType *ot)
+void action_ot_push_down(WinOpType *ot)
 {
   /* ids */
   ot->name = "Push Down Action";
-  ot->idname = "ACTION_OT_push_down";
+  ot->idname = "action_ot_push_down";
   ot->description = "Push action down on to the NLA stack as a new strip";
 
   /* callbacks */
-  ot->exec = action_pushdown_exec;
+  ot->exec = action_pushdown_ex;
   ot->poll = action_pushdown_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Action Stash Operator
- * \{ */
+/* Action Stash Op */
 
-static int action_stash_exec(bContext *C, wmOperator *op)
+static int action_stash_ex(Cxt *C, WinOp *op)
 {
-  SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-  ID *adt_id_owner = nullptr;
-  AnimData *adt = ED_actedit_animdata_from_context(C, &adt_id_owner);
+  SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+  Id *adt_id_owner = nullptr;
+  AnimData *adt = ed_actedit_animdata_from_cxt(C, &adt_id_owner);
 
   /* Perform stashing operation */
   if (adt) {
     /* don't do anything if this action is empty... */
-    if (BKE_action_has_motion(adt->action) == 0) {
+    if (dune_action_has_motion(adt->action) == 0) {
       /* action may not be suitable... */
-      BKE_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
+      return OP_CANCELLED;
     }
 
     /* stash the action */
-    if (BKE_nla_action_stash(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner))) {
-      /* The stash operation will remove the user already,
+    if (dune_nla_action_stash(adt, ID_IS_OVERRIDE_LIB(adt_id_owner))) {
+      /* The stash operation will remove the user alrdy,
        * so the flushing step later shouldn't double up
        * the user-count fixes. Hence, we must unset this ref
-       * first before setting the new action.
-       */
+       * first before setting the new action.  */
       saction->action = nullptr;
     }
     else {
       /* action has already been added - simply warn about this, and clear */
-      BKE_report(op->reports, RPT_ERROR, "Action has already been stashed");
+      dune_report(op->reports, RPT_ERROR, "Action has already been stashed");
     }
 
     /* clear action refs from editor, and then also the backing data (not necessary) */
@@ -391,50 +387,46 @@ static int action_stash_exec(bContext *C, wmOperator *op)
   }
 
   /* Send notifiers that stuff has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
+  win_ev_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
   return OPERATOR_FINISHED;
 }
 
-void ACTION_OT_stash(wmOperatorType *ot)
+void action_ot_stash(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Stash Action";
-  ot->idname = "ACTION_OT_stash";
+  ot->idname = "action_ot_stash";
   ot->description = "Store this action in the NLA stack as a non-contributing strip for later use";
 
-  /* callbacks */
-  ot->exec = action_stash_exec;
+  /* cbs */
+  ot->ex = action_stash_ex;
   ot->poll = action_pushdown_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_boolean(ot->srna,
+  /* props */
+  ot->prop = api_def_bool(ot->srna,
                              "create_new",
                              true,
                              "Create New Action",
                              "Create a new action once the existing one has been safely stored");
-}
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Action Stash & Create Operator
+/* Action Stash & Create Op
  *
  * Criteria:
  * 1) There must be an dope-sheet/action editor, and it must be in a mode which uses actions.
- * 2) The associated #AnimData block must not be in tweak-mode.
- * \{ */
+ * 2) The associated AnimData block must not be in tweak-mode. */
 
-static bool action_stash_create_poll(bContext *C)
+static bool action_stash_create_poll(Cxt *C)
 {
-  if (ED_operator_action_active(C)) {
-    AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+  if (ed_op_action_active(C)) {
+    AnimData *adt = ed_actedit_animdata_from_context(C, nullptr);
 
     /* Check tweak-mode is off (as you don't want to be tampering with the action in that case) */
-    /* NOTE: unlike for pushdown,
-     * this operator needs to be run when creating an action from nothing... */
+    /* unlike for pushdown,
+     * this op needs to be run when creating an action from nothing... */
     if (adt) {
       if (!(adt->flag & ADT_NLA_EDIT_ON)) {
         return true;
@@ -443,15 +435,13 @@ static bool action_stash_create_poll(bContext *C)
     else {
       /* There may not be any action/animdata yet, so, just fallback to the global setting
        * (which may not be totally valid yet if the action editor was used and things are
-       * now in an inconsistent state)
-       */
-      SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-      Scene *scene = CTX_data_scene(C);
+       * now in an inconsistent state)  */
+      SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+      Scene *scene = cxt_data_scene(C);
 
       if (!(scene->flag & SCE_NLA_EDIT_ON)) {
-        /* For now, actions are only for the active object, and on object and shape-key levels...
-         */
-        return ELEM(saction->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY);
+        /* For now, actions are only for the active object, and on object and shape-key levels..  */
+        return elem(saction->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY);
       }
     }
   }
@@ -460,24 +450,24 @@ static bool action_stash_create_poll(bContext *C)
   return false;
 }
 
-static int action_stash_create_exec(bContext *C, wmOperator *op)
+static int action_stash_create_ex(Cxt *C, WinOp *op)
 {
-  SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-  ID *adt_id_owner = nullptr;
-  AnimData *adt = ED_actedit_animdata_from_context(C, &adt_id_owner);
+  SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+  Id *adt_id_owner = nullptr;
+  AnimData *adt = ed_actedit_animdata_from_cxt(C, &adt_id_owner);
 
   /* Check for no action... */
   if (saction->action == nullptr) {
     /* just create a new action */
-    bAction *action = action_create_new(C, nullptr);
+    Action *action = action_create_new(C, nullptr);
     actedit_change_action(C, action);
   }
   else if (adt) {
-    /* Perform stashing operation */
-    if (BKE_action_has_motion(adt->action) == 0) {
+    /* Perform stashing op */
+    if (dune_action_has_motion(adt->action) == 0) {
       /* don't do anything if this action is empty... */
-      BKE_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
+      return OP_CANCELLED;
     }
 
     /* stash the action */
