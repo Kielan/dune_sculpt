@@ -247,55 +247,49 @@ static int action_new_ex(bContext *C, wmOperator * /*op*/)
     if (prop) {
       /* set this new action
        * We can't use actedit_change_action, as this function is also called from the NLA */
-      ApiPtr idptr = RNA_id_pointer_create(&action->id);
-      RNA_prop_pointer_set(&ptr, prop, idptr, nullptr);
-      RNA_prop_update(C, &ptr, prop);
+      ApiPtr idptr = api_id_ptr_create(&action->id);
+      api_prop_ptr_set(&ptr, prop, idptr, nullptr);
+      api_prop_update(C, &ptr, prop);
     }
   }
 
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_ADDED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_ADDED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_new(wmOperatorType *ot)
+void action_ot_new(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "New Action";
-  ot->idname = "ACTION_OT_new";
+  ot->idname = "action_ot_new";
   ot->description = "Create new action";
 
-  /* api callbacks */
-  ot->exec = action_new_exec;
+  /* api cbs */
+  ot->ex = action_new_ex;
   ot->poll = action_new_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Action Push-Down Operator
- *
+/* Action Push-Down Op
  * Criteria:
  * 1) There must be an dope-sheet/action editor, and it must be in a mode which uses actions.
  * 2) There must be an action active.
- * 3) The associated #AnimData block must not be in tweak-mode.
- * \{ */
+ * 3) The associated AnimData block must not be in tweak-mode. */
 
-static bool action_pushdown_poll(bContext *C)
+static bool action_pushdown_poll(Cxt *C)
 {
-  if (ED_operator_action_active(C)) {
-    SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-    AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+  if (ed_op_action_active(C)) {
+    SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+    AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
 
     /* Check for AnimData, Actions, and that tweak-mode is off. */
     if (adt && saction->action) {
-      /* NOTE: We check this for the AnimData block in question and not the global flag,
-       *       as the global flag may be left dirty by some of the browsing ops here.
-       */
+      /* We check this for the AnimData block in question and not the global flag,
+       * as the global flag may be left dirty by some of the browsing ops here. */
       if (!(adt->flag & ADT_NLA_EDIT_ON)) {
         return true;
       }
@@ -306,46 +300,45 @@ static bool action_pushdown_poll(bContext *C)
   return false;
 }
 
-static int action_pushdown_exec(bContext *C, wmOperator *op)
+static int action_pushdown_ex(Cxt *C, WinOp *op)
 {
-  SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-  ID *adt_id_owner = nullptr;
-  AnimData *adt = ED_actedit_animdata_from_context(C, &adt_id_owner);
+  SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+  Id *adt_id_owner = nullptr;
+  AnimData *adt = ed_actedit_animdata_from_cxt(C, &adt_id_owner);
 
   /* Do the deed... */
   if (adt) {
     /* Perform the push-down operation
      * - This will deal with all the AnimData-side user-counts. */
-    if (BKE_action_has_motion(adt->action) == 0) {
+    if (dune_action_has_motion(adt->action) == 0) {
       /* action may not be suitable... */
-      BKE_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_WARNING, "Action must have at least one keyframe or F-Modifier");
+      return OP_CANCELLED;
     }
 
     /* action can be safely added */
-    BKE_nla_action_pushdown(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner));
+    dune_nla_action_pushdown(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner));
 
-    Main *bmain = CTX_data_main(C);
-    DEG_id_tag_update_ex(bmain, adt_id_owner, ID_RECALC_ANIMATION);
+    Main *main = cxt_data_main(C);
+    graph_id_tag_update_ex(main, adt_id_owner, ID_RECALC_ANIM);
 
     /* The action needs updating too, as FCurve modifiers are to be reevaluated. They won't extend
      * beyond the NLA strip after pushing down to the NLA. */
-    DEG_id_tag_update_ex(bmain, &adt->action->id, ID_RECALC_ANIMATION);
+    graph_id_tag_update_ex(main, &adt->action->id, ID_RECALC_ANIM);
 
     /* Stop displaying this action in this editor
-     * NOTE: The editor itself doesn't set a user...
-     */
+     * NOTE: The editor itself doesn't set a user. */
     saction->action = nullptr;
   }
 
   /* Send notifiers that stuff has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_ANIM | ND_NLA_ACTCHANGE, nullptr);
+  return OP_FINISHED;
 }
 
-void ACTION_OT_push_down(wmOperatorType *ot)
+void action_ot_push_down(wmOperatorType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Push Down Action";
   ot->idname = "ACTION_OT_push_down";
   ot->description = "Push action down on to the NLA stack as a new strip";
