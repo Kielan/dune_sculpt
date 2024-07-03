@@ -500,9 +500,9 @@ static void box_sel_action(AnimCxt *ac, const rcti rect, short mode, short selmo
   anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Get beztriple editing/validation fns. */
-  sel_data.select_cb = anim_editkeyframes_sel(selmode);
+  sel_data.sel_cb = anim_editkeyframes_sel(selmode);
 
-  if (ELEM(mode, ACTKEYS_BORDERSEL_FRAMERANGE, ACTKEYS_BORDERSEL_ALLKEYS)) {
+  if (elem(mode, ACTKEYS_BORDERSEL_FRAMERANGE, ACTKEYS_BORDERSEL_ALLKEYS)) {
     sel_data.ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAMERANGE);
   }
   else {
@@ -894,7 +894,7 @@ void action_ot_sel_lasso(WinOpType *ot)
   /* ids */
   ot->name = "Lasso Sel";
   ot->description = "Sel keyframe points using lasso selection";
-  ot->idname = "ACTION_OT_sel_lasso";
+  ot->idname = "action_ot_sel_lasso";
 
   /* api cbs */
   ot->invoke = win_gesture_lasso_invoke;
@@ -930,7 +930,7 @@ static int action_circle_sel_ex(Cxt *C, WinOp *op)
   const eSelOp sel_op = ed_sel_op_modal(
       eSelOp(api_enum_get(op->ptr, "mode")),
       win_gesture_is_modal_first(static_cast<WinGesture *>(op->customdata)));
-  const short selectmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEL_SUBTRACT;
+  const short selmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEL_SUBTRACT;
   if (SEL_OP_USE_PRE_DESEL(sel_op)) {
     desel_action_keys(&ac, 0, SEL_SUBTRACT);
   }
@@ -948,7 +948,7 @@ static int action_circle_sel_ex(Cxt *C, WinOp *op)
   /* apply rgn sel action */
   rgn_sel_action_keys(&ac, &rect_fl, BEZT_OK_CHANNEL_CIRCLE, selmode, &data);
 
-  /* send notifier that keyframe selection has changed */
+  /* send notifier that keyframe sel has changed */
   win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SEL, nullptr);
   if (anim_animdata_can_have_pen(eAnimCont_Types(ac.datatype))) {
     win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SEL, nullptr);
@@ -956,11 +956,11 @@ static int action_circle_sel_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_circle(WinOpType *ot)
+void action_ot_sel_circle(WinOpType *ot)
 {
   ot->name = "Circle Sel";
   ot->description = "Sel keyframe points using circle sel";
-  ot->idname = "ACTION_OT_sel_circle";
+  ot->idname = "action_ot_sel_circle";
 
   ot->invoke = win_gesture_circle_invoke;
   ot->modal = win_gesture_circle_modal;
@@ -1033,7 +1033,7 @@ static void markers_selkeys_between(AnimCxt *ac)
             static_cast<PenLayerTreeNode *>(ale->data)->wrap(), min, max, SEL_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
-      case ANIMTYPE_GPLAYER:
+      case ANIMTYPE_PENLAYER:
         ed_pen_layer_frames_sel_box(
             static_cast<PenDataLayer *>(ale->data), min, max, SEL_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
@@ -1067,7 +1067,7 @@ static void markers_selkeys_between(AnimCxt *ac)
   anim_animdata_freelist(&anim_data);
 }
 
-/* Sels all visible keyframes in the same frames as the specified elements */
+/* Sels all visible keyframes in the same frames as the specified elemss */
 static void columnsel_action_keys(AnimCxt *ac, short mode)
 {
   List anim_data = {nullptr, nullptr};
@@ -1212,11 +1212,11 @@ static int actkeys_columnsel_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_column(WinOpType *ot)
+void action_ot_sel_column(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel All";
-  ot->idname = "ACTION_OT_sel_column";
+  ot->idname = "action_ot_sel_column";
   ot->description = "Sel all keyframes on the specified frame(s)";
 
   /* api cbs */
@@ -1273,7 +1273,7 @@ static int actkeys_sel_linked_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_linked(WinOpType *ot)
+void action_ot_sel_linked(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel Linked";
@@ -1355,11 +1355,11 @@ static int actkeys_sel_more_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_more(WinOpType *ot)
+void action_ot_sel_more(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel More";
-  ot->idname = "ACTION_OT_sel_more";
+  ot->idname = "actiob_ot_sel_more";
   ot->description = "Sel keyframes beside already selected ones";
 
   /* api cbs */
@@ -1390,7 +1390,7 @@ static int actkeys_sel_less_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_less(WinOpType *ot)
+void action_ot_sel_less(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel Less";
@@ -1581,14 +1581,14 @@ static int actkeys_sel_leftright_invoke(Cxt *C, WinOp *op, const WinEv *ev)
   return actkeys_sel_leftright_ex(C, op);
 }
 
-void ACTION_OT_sel_leftright(WinOpType *ot)
+void action_ot_sel_leftright(WinOpType *ot)
 {
   ApiProp *prop;
 
   /* ids */
   ot->name = "Sel Left/Right";
-  ot->idname = "ACTION_OT_sel_leftright";
-  ot->description = "Select keyframes to the left or the right of the current frame";
+  ot->idname = "action_ot_sel_leftright";
+  ot->description = "Sel keyframes to the left or the right of the current frame";
 
   /* api cbs */
   ot->invoke = actkeys_sel_leftright_invoke;
@@ -1675,7 +1675,7 @@ static void actkeys_msel_single(AnimCxt *ac,
       anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
       /* Loop over all keys that are represented by this summary key. */
-      LIST_FOREACH (bAnimListElem *, ale2, &anim_data) {
+      LIST_FOREACH (bmAnimListElem *, ale2, &anim_data) {
         switch (ale2->type) {
           case ANIMTYPE_PLAYER:
             ed_pen_sel_frame(static_cast<PenDataLayer *>(ale2->data), selx, sel_mode);
@@ -1797,11 +1797,11 @@ static void actkeys_msel_channel_only(AnimCxt *ac, AnimListElem *ale, short sel_
 
       LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
         if (ale2->type == ANIMTYPE_PLAYER) {
-         ed_pen_sel_frames(static_cast<PenLayer *>(ale2->data), select_mode);
+         ed_pen_sel_frames(static_cast<PenLayer *>(ale2->data), sel_mode);
           ale2->update |= ANIM_UPDATE_DEPS;
         }
         else if (ale2->type == ANIMTYPE_MASKLAYER) {
-          ed_mask_sel_frames(static_cast<MaskLayer *>(ale2->data), select_mode);
+          ed_mask_sel_frames(static_cast<MaskLayer *>(ale2->data), sel_mode);
         }
       }
 
@@ -1809,7 +1809,7 @@ static void actkeys_msel_channel_only(AnimCxt *ac, AnimListElem *ale, short sel_
       anim_animdata_freelist(&anim_data);
     }
 
-    if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    if (!elem(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
       anim_animchannel_keyframes_loop(nullptr, ac->ads, ale, nullptr, sel_cb, nullptr);
     }
   }
@@ -1831,21 +1831,21 @@ static int mouse_action_keys(AnimCxt *ac,
   bool is_sel = false;
   float frame = 0.0f; /* frame of keyframe under mouse - NLA corrections not applied/included */
   float selx = 0.0f;  /* frame of keyframe under mouse */
-  int ret_value = OP_FINISHED;
+  int ret_val = OP_FINISHED;
 
   actkeys_find_key_at_position(
       ac, filter, mval[0], mval[1], &ale, &selx, &frame, &found, &is_selected);
 
-  if (select_mode != SEL_REPLACE) {
+  if (sel_mode != SEL_REPLACE) {
     wait_to_desel_others = false;
   }
 
   /* For replacing sel, if we have something to sel, we have to clear existing selection.
    * The same goes if we found nothing to select, and desel_all is true
    * (desel on nothing behavior). */
-  if ((select_mode == SEL_REPLACE && found) || (!found && desel_all)) {
+  if ((sel_mode == SEL_REPLACE && found) || (!found && desel_all)) {
     /* reset sel  mode for next steps */
-    select_mode = SEL_ADD;
+    sell_mode = SEL_ADD;
 
     /* Rather than desel others, users may want to drag to box-sel (drag from empty space)
      * or tweak-translate an alrdy sel item. If these cases may apply, delay dese. */
@@ -1857,7 +1857,7 @@ static int mouse_action_keys(AnimCxt *ac,
       desel_action_keys(ac, 0, SEL_SUBTRACT);
 
       /* highlight channel clicked on */
-      if (ELEM(ac->datatype, ANIMCONT_ACTION, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE)) {
+      if (ele(ac->datatype, ANIMCONT_ACTION, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE)) {
         /* deselect all other channels first */
         anim_anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
 
@@ -1870,7 +1870,7 @@ static int mouse_action_keys(AnimCxt *ac,
             anim_set_active_channel(
                 ac, ac->data, eAnimContTypes(ac->datatype), filter, agrp, ANIMTYPE_GROUP);
           }
-          else if (ELEM(ale->type, ANIMTYPE_FCURVE, ANIMTYPE_NLACURVE)) {
+          else if (elem(ale->type, ANIMTYPE_FCURVE, ANIMTYPE_NLACURVE)) {
             FCurve *fcu = static_cast<FCurve *>(ale->data);
 
             fcu->flag |= FCURVE_SELECTED;
@@ -1891,7 +1891,7 @@ static int mouse_action_keys(AnimCxt *ac,
       }
       else if (ac->datatype == ANIMCONT_PEN) {
         /* Desel all other channels first. */
-        anim_anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
+        anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
 
         /* Highlight the pen channel, and set the corresponding layer as active. */
         if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_PEN_LAYER) {
@@ -1991,13 +1991,13 @@ static int actkeys_clicksel_ex(Cxt *C, WinOp *op)
   return ret_val | OP_PASS_THROUGH;
 }
 
-void ACTION_OT_clicksel(WinOpType *ot)
+void action_ot_clicksel(WinOpType *ot)
 {
   ApiProp *prop;
 
   /* ids */
   ot->name = "Sel Keyframes";
-  ot->idname = "ACTION_OT_clicksel";
+  ot->idname = "action_ot_clicksel";
   ot->description = "Sel keyframes by clicking on them";
 
   /* cbs */
@@ -2009,7 +2009,7 @@ void ACTION_OT_clicksel(WinOpType *ot)
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* propa */
+  /* props */
   win_op_props_generic_sel(ot);
   /* Key-map: Enable with `Shift`. */
   prop = api_def_bool(
