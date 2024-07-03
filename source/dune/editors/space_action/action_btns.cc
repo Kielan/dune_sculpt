@@ -20,15 +20,15 @@ void action_btns_register(ARgnType * /*art*/)
 
   /* TODO: AnimData / Actions List */
   pt = mem_cnew<PnlType>("spacetype action pnl props");
-  STRNCPY(pt->idname, "ACTION_PT_props");
+  STRNCPY(pt->idname, "action_pt_props");
   STRNCPY(pt->label, N_("Active F-Curve"));
   STRNCPY(pt->lang_cxt, LANG_CXT_DEFAULT_API);
-  pt->draw = action_anim_pnl_props;
+  pt->drw = action_anim_pnl_props;
   pt->poll = action_anim_pnl_poll;
   lib_addtail(&art->pnltypes, pt);
 
   pt = mem_cnew<PnlType>("spacetype action pnl props");
-  STRNCPY(pt->idname, "ACTION_PT_key_props");
+  STRNCPY(pt->idname, "action_pt_key_props");
   STRNCPY(pt->label, N_("Active Keyframe"));
   STRNCPY(pt->lang_cxt, LANG_CXT_DEFAULT_API);
   pt->draw = action_anim_pnl_key_props;
@@ -36,10 +36,10 @@ void action_btns_register(ARgnType * /*art*/)
   lob_addtail(&art->pnltypes, pt);
 
   pt = mem_calloc(sizeof(PnlType), "spacetype action pnl mods");
-  STRNCPY(pt->idname, "ACTION_PT_mods");
+  STRNCPY(pt->idname, "action_pt_mods");
   STRNCPY(pt->label, N_("Mods"));
   STRNCPY(pt->lang_cxt, LANG_CXT_DEFAULT_API);
-  pt->draw = action_anim_pnl_mods;
+  pt->drw = action_anim_pnl_mods;
   pt->poll = action_anim_pnl_poll;
   lib_addtail(&art->pnltypes, pt);
 #endif
