@@ -3,63 +3,60 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_key_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_gpencil_legacy.h"
+#include "types_key.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
+#include "api_prototypes.h"
 
-#include "BKE_action.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_key.h"
-#include "BKE_lib_id.h"
-#include "BKE_nla.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_action.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_key.h"
+#include "dune_lib_id.h"
+#include "dune_nla.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "UI_view2d.hh"
+#include "ui_view2d.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_gpencil_legacy.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_keyframing.hh"
-#include "ED_markers.hh"
-#include "ED_mask.hh"
-#include "ED_screen.hh"
+#include "ed_anim_api.hh"
+#include "ed_pen_legacy.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_keyframing.hh"
+#include "ed_markers.hh"
+#include "ed_mask.hh"
+#include "ed_screen.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
+#include "ui.hh"
 
 #include "action_intern.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Utilities
- * \{ */
-
-AnimData *ED_actedit_animdata_from_context(const bContext *C, ID **r_adt_id_owner)
+/* Utils */
+AnimData *ed_actedit_animdata_from_cxt(const Cxt *C, Id **r_adt_id_owner)
 {
-  SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-  Object *ob = CTX_data_active_object(C);
+  SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+  Ob *ob = cxt_data_active_ob(C);
   AnimData *adt = nullptr;
 
   /* Get AnimData block to use */
   if (saction->mode == SACTCONT_ACTION) {
-    /* Currently, "Action Editor" means object-level only... */
+    /* Currently, "Action Editor" means ob-lvl only... */
     if (ob) {
       adt = ob->adt;
       if (r_adt_id_owner) {
@@ -68,7 +65,7 @@ AnimData *ED_actedit_animdata_from_context(const bContext *C, ID **r_adt_id_owne
     }
   }
   else if (saction->mode == SACTCONT_SHAPEKEY) {
-    Key *key = BKE_key_from_object(ob);
+    Key *key = dune_key_from_ob(ob);
     if (key) {
       adt = key->adt;
       if (r_adt_id_owner) {
@@ -80,38 +77,31 @@ AnimData *ED_actedit_animdata_from_context(const bContext *C, ID **r_adt_id_owne
   return adt;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Create New Action
- * \{ */
-
-static bAction *action_create_new(bContext *C, bAction *oldact)
+/* Create New Action */
+static Action *action_create_new(Cxt *C, Action *oldact)
 {
-  ScrArea *area = CTX_wm_area(C);
-  bAction *action;
+  ScrArea *area = cxt_win_area(C);
+  Action *action;
 
   /* create action - the way to do this depends on whether we've got an
    * existing one there already, in which case we make a copy of it
-   * (which is useful for "versioning" actions within the same file)
-   */
+   * (which is useful for "versioning" actions within the same file)  */
   if (oldact && GS(oldact->id.name) == ID_AC) {
     /* make a copy of the existing action */
-    action = (bAction *)BKE_id_copy(CTX_data_main(C), &oldact->id);
+    action = (Action *)dune_id_copy(cxt_data_main(C), &oldact->id);
   }
   else {
     /* just make a new (empty) action */
-    action = BKE_action_add(CTX_data_main(C), "Action");
+    action = dune_action_add(cxt_data_main(C), "Action");
   }
 
-  /* when creating new ID blocks, there is already 1 user (as for all new datablocks),
-   * but the RNA pointer code will assign all the proper users instead, so we compensate
-   * for that here
-   */
-  BLI_assert(action->id.us == 1);
+  /* when creating new Id blocks, there is alrdy 1 user (as for all new datablocks),
+   * but the api ptr code will assign all the proper users instead, so we compensate
+   * for that here */
+  lib_assert(action->id.us == 1);
   id_us_min(&action->id);
 
-  /* set ID-Root type */
+  /* set Id-Root type */
   if (area->spacetype == SPACE_ACTION) {
     SpaceAction *saction = (SpaceAction *)area->spacedata.first;
 
@@ -127,47 +117,43 @@ static bAction *action_create_new(bContext *C, bAction *oldact)
 }
 
 /* Change the active action used by the action editor */
-static void actedit_change_action(bContext *C, bAction *act)
+static void actedit_change_action(Cxt *C, Action *act)
 {
-  bScreen *screen = CTX_wm_screen(C);
-  SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
+  Screen *screen = cxt_win_screen(C);
+  SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
 
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* create RNA pointers and get the property */
-  PointerRNA ptr = RNA_pointer_create(&screen->id, &RNA_SpaceDopeSheetEditor, saction);
-  prop = RNA_struct_find_property(&ptr, "action");
+  /* create api ptrs and get the prop */
+  ApiPtr ptr = api_ptr_create(&screen->id, &ApiSpaceDopeSheetEditor, saction);
+  prop = api_struct_find_prop(&ptr, "action");
 
-  /* NOTE: act may be nullptr here, so better to just use a cast here */
-  PointerRNA idptr = RNA_id_pointer_create((ID *)act);
+  /* act may be nullptr here, so better to just use a cast here */
+  ApiPtr idptr = api_id_ptr_create((Id *)act);
 
-  /* set the new pointer, and force a refresh */
-  RNA_property_pointer_set(&ptr, prop, idptr, nullptr);
-  RNA_property_update(C, &ptr, prop);
+  /* set the new ptr, and force a refresh */
+  api_prop_ptr_set(&ptr, prop, idptr, nullptr);
+  api_prop_update(C, &ptr, prop);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name New Action Operator
+/* New Action Op
  *
  * Criteria:
- * 1) There must be an dope-sheet/action editor, and it must be in a mode which uses actions...
+ * 1) There must be a dope-sheet/action editor and it must be in a mode which uses actions...
  *       OR
- *    The NLA Editor is active (i.e. Animation Data panel -> new action)
- * 2) The associated #AnimData block must not be in tweak-mode.
- * \{ */
+ *    The NLA Editor is active (ie Anim Data pnl -> new action)
+ * 2) The associated AnimData block must not be in tweak-mode. */
 
-static bool action_new_poll(bContext *C)
+static bool action_new_poll(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* Check tweak-mode is off (as you don't want to be tampering with the action in that case) */
   /* NOTE: unlike for pushdown,
-   * this operator needs to be run when creating an action from nothing... */
-  if (ED_operator_action_active(C)) {
-    SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-    Object *ob = CTX_data_active_object(C);
+   * this op needs to be run when creating an action from nothing... */
+  if (ed_op_action_active(C)) {
+    SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+    Ob *ob = cxt_data_active_ob(C);
 
     /* For now, actions are only for the active object, and on object and shape-key levels... */
     if (saction->mode == SACTCONT_ACTION) {
