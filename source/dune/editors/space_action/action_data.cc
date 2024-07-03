@@ -8,7 +8,7 @@
 #include "lang.h"
 
 #include "types_anim.h"
-#include "types_gpencil_legacy.h"
+#include "types_pen_legacy.h"
 #include "types_key.h"
 #include "types_mask.h"
 #include "types_ob.h"
@@ -148,8 +148,8 @@ static bool action_new_poll(Cxt *C)
 {
   Scene *scene = cxt_data_scene(C);
 
-  /* Check tweak-mode is off (as you don't want to be tampering with the action in that case) */
-  /* NOTE: unlike for pushdown,
+  /* Check tweak-mode is off (as you don't want to be tampering w the action in that case) */
+  /* Unlike for pushdown,
    * this op needs to be run when creating an action from nothing... */
   if (ed_op_action_active(C)) {
     SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
@@ -157,7 +157,7 @@ static bool action_new_poll(Cxt *C)
 
     /* For now, actions are only for the active object, and on object and shape-key levels... */
     if (saction->mode == SACTCONT_ACTION) {
-      /* XXX: This assumes that actions are assigned to the active object in this mode */
+      /* This assumes that actions are assigned to the active object in this mode */
       if (ob) {
         if ((ob->adt == nullptr) || (ob->adt->flag & ADT_NLA_EDIT_ON) == 0) {
           return true;
@@ -165,7 +165,7 @@ static bool action_new_poll(Cxt *C)
       }
     }
     else if (saction->mode == SACTCONT_SHAPEKEY) {
-      Key *key = BKE_key_from_object(ob);
+      Key *key = dune_key_from_ob(ob);
       if (key) {
         if ((key->adt == nullptr) || (key->adt->flag & ADT_NLA_EDIT_ON) == 0) {
           return true;
@@ -173,7 +173,7 @@ static bool action_new_poll(Cxt *C)
       }
     }
   }
-  else if (ED_operator_nla_active(C)) {
+  else if (ed_op_nla_active(C)) {
     if (!(scene->flag & SCE_NLA_EDIT_ON)) {
       return true;
     }
@@ -183,53 +183,52 @@ static bool action_new_poll(Cxt *C)
   return false;
 }
 
-static int action_new_exec(bContext *C, wmOperator * /*op*/)
+static int action_new_ex(bContext *C, wmOperator * /*op*/)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
 
-  bAction *oldact = nullptr;
+  Action *oldact = nullptr;
   AnimData *adt = nullptr;
-  ID *adt_id_owner = nullptr;
+  Id *adt_id_owner = nullptr;
   /* hook into UI */
-  UI_context_active_but_prop_get_templateID(C, &ptr, &prop);
+  ui_cxt_active_butn_prop_get_templateId(C, &ptr, &prop);
 
   if (prop) {
-    /* The operator was called from a button. */
-    PointerRNA oldptr;
+    /* The op was called from a btn. */
+    ApiPtr oldptr;
 
-    oldptr = RNA_property_pointer_get(&ptr, prop);
-    oldact = (bAction *)oldptr.owner_id;
+    oldptr = api_prop_ptr_get(&ptr, prop);
+    oldact = (Action *)oldptr.owner_id;
 
     /* stash the old action to prevent it from being lost */
-    if (ptr.type == &RNA_AnimData) {
+    if (ptr.type == &ApiAnimData) {
       adt = static_cast<AnimData *>(ptr.data);
       adt_id_owner = ptr.owner_id;
     }
-    else if (ptr.type == &RNA_SpaceDopeSheetEditor) {
-      adt = ED_actedit_animdata_from_context(C, &adt_id_owner);
+    else if (ptr.type == &ApiSpaceDopeSheetEditor) {
+      adt = ed_actedit_animdata_from_cxt(C, &adt_id_owner);
     }
   }
   else {
-    adt = ED_actedit_animdata_from_context(C, &adt_id_owner);
+    adt = ed_actedit_animdata_from_cxt(C, &adt_id_owner);
     oldact = adt->action;
   }
   {
-    bAction *action = nullptr;
+    Action *action = nullptr;
 
-    /* Perform stashing operation - But only if there is an action */
+    /* Perform stashing op but only if there is an action */
     if (adt && oldact) {
-      BLI_assert(adt_id_owner != nullptr);
+      lib_assert(adt_id_owner != nullptr);
       /* stash the action */
-      if (BKE_nla_action_stash(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner))) {
-        /* The stash operation will remove the user already
+      if (dune_nla_action_stash(adt, ID_IS_OVERRIDE_LIB(adt_id_owner))) {
+        /* The stash op will remove the user alrdy
          * (and unlink the action from the AnimData action slot).
-         * Hence, we must unset the ref to the action in the
+         * Thus we must unset the ref to the action in the
          * action editor too (if this is where we're being called from)
-         * first before setting the new action once it is created,
-         * or else the user gets decremented twice!
-         */
-        if (ptr.type == &RNA_SpaceDopeSheetEditor) {
+         * 1st before setting the new action once it is created,
+         * or else the user gets decremented twice! */
+        if (ptr.type == &ApiSpaceDopeSheetEditor) {
           SpaceAction *saction = static_cast<SpaceAction *>(ptr.data);
           saction->action = nullptr;
         }
@@ -247,11 +246,10 @@ static int action_new_exec(bContext *C, wmOperator * /*op*/)
 
     if (prop) {
       /* set this new action
-       * NOTE: we can't use actedit_change_action, as this function is also called from the NLA
-       */
-      PointerRNA idptr = RNA_id_pointer_create(&action->id);
-      RNA_property_pointer_set(&ptr, prop, idptr, nullptr);
-      RNA_property_update(C, &ptr, prop);
+       * We can't use actedit_change_action, as this function is also called from the NLA */
+      ApiPtr idptr = RNA_id_pointer_create(&action->id);
+      RNA_prop_pointer_set(&ptr, prop, idptr, nullptr);
+      RNA_prop_update(C, &ptr, prop);
     }
   }
 
