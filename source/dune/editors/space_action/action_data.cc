@@ -379,7 +379,7 @@ static int action_stash_ex(Cxt *C, WinOp *op)
     }
     else {
       /* action has already been added - simply warn about this, and clear */
-      dune_report(op->reports, RPT_ERROR, "Action has already been stashed");
+      dune_report(op->reports, RPT_ERROR, "Action has alrdy been stashed");
     }
 
     /* clear action refs from editor, and then also the backing data (not necessary) */
@@ -387,8 +387,8 @@ static int action_stash_ex(Cxt *C, WinOp *op)
   }
 
   /* Send notifiers that stuff has changed */
-  win_ev_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_ANIM | ND_NLA_ACTCHANGE, nullptr);
+  return OP_FINISHED;
 }
 
 void action_ot_stash(WinOpType *ot)
@@ -471,67 +471,63 @@ static int action_stash_create_ex(Cxt *C, WinOp *op)
     }
 
     /* stash the action */
-    if (BKE_nla_action_stash(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner))) {
-      bAction *new_action = nullptr;
+    if (dune_nla_action_stash(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner))) {
+      Action *new_action = nullptr;
 
       /* Create new action not based on the old one
-       * (since the "new" operator already does that). */
+       * (since the "new" op alrdy does that). */
       new_action = action_create_new(C, nullptr);
 
-      /* The stash operation will remove the user already,
+      /* The stash op will remove the user alrdy,
        * so the flushing step later shouldn't double up
        * the user-count fixes. Hence, we must unset this ref
-       * first before setting the new action.
-       */
+       * 1st before setting the new action. */
       saction->action = nullptr;
       actedit_change_action(C, new_action);
     }
     else {
-      /* action has already been added - simply warn about this, and clear */
-      BKE_report(op->reports, RPT_ERROR, "Action has already been stashed");
+      /* action has alrdy been added - simply warn about this, and clear */
+      dune_report(op->reports, RPT_ERROR, "Action has alrdy been stashed");
       actedit_change_action(C, nullptr);
     }
   }
 
   /* Send notifiers that stuff has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_ANIM | ND_NLA_ACTCHANGE, nullptr);
+  return OP_FINISHED;
 }
 
-void ACTION_OT_stash_and_create(wmOperatorType *ot)
+void actuon_it_stash_and_create(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Stash Action";
-  ot->idname = "ACTION_OT_stash_and_create";
+  ot->idname = "action_ot_stash_and_create";
   ot->description =
       "Store this action in the NLA stack as a non-contributing strip for later use, and create a "
       "new action";
 
-  /* callbacks */
-  ot->exec = action_stash_create_exec;
+  /* cbs */
+  ot->ex = action_stash_create_ex;
   ot->poll = action_stash_create_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Action Unlink Operator
+/* Action Unlink Op
  *
- * We use a custom unlink operator here, as there are some technicalities which need special care:
+ * We use a custom unlink op here, as there are some technicalities which need special care:
  * 1) When in Tweak Mode, it shouldn't be possible to unlink the active action,
  *    or else, everything turns to custard.
  * 2) If the Action doesn't have any other users, the user should at least get
  *    a warning that it is going to get lost.
- * 3) We need a convenient way to exit Tweak Mode from the Action Editor
- * \{ */
+ * 3) We need a convenient way to exit Tweak Mode from the Action Editor */
 
-void ED_animedit_unlink_action(
-    bContext *C, ID *id, AnimData *adt, bAction *act, ReportList *reports, bool force_delete)
+void ed_animedit_unlink_action(
+    Cxt *C, Id *id, AnimData *adt, Action *act, ReportList *reports, bool force_delete)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_win_area(C);
 
   /* If the old action only has a single user (that it's about to lose),
    * warn user about it
@@ -540,7 +536,7 @@ void ED_animedit_unlink_action(
    *       trying to get rid of stuff that's actually unwanted!
    */
   if (act->id.us == 1) {
-    BKE_reportf(reports,
+    dube_reportf(reports,
                 RPT_WARNING,
                 "Action '%s' will not be saved, create Fake User or Stash in NLA Stack to retain",
                 act->id.name + 2);
@@ -549,10 +545,9 @@ void ED_animedit_unlink_action(
   /* Clear Fake User and remove action stashing strip (if present) */
   if (force_delete) {
     /* Remove stashed strip binding this action to this datablock */
-    /* XXX: we cannot unlink it from *OTHER* datablocks that may also be stashing it,
+    /* We cannot unlink it from *OTHER* datablocks that may also be stashing it,
      * but GE users only seem to use/care about single-object binding for now so this
-     * should be fine
-     */
+     * should be fine */
     if (adt) {
       NlaTrack *nlt, *nlt_next;
       NlaStrip *strip, *nstrip;
@@ -584,9 +579,9 @@ void ED_animedit_unlink_action(
 
   /* If in Tweak Mode, don't unlink. Instead, this becomes a shortcut to exit Tweak Mode. */
   if ((adt) && (adt->flag & ADT_NLA_EDIT_ON)) {
-    BKE_nla_tweakmode_exit(adt);
+    dune_nla_tweakmode_exit(adt);
 
-    Scene *scene = CTX_data_scene(C);
+    Scene *scene = cxt_data_scene(C);
     if (scene != nullptr) {
       scene->flag &= ~SCE_NLA_EDIT_ON;
     }
@@ -599,10 +594,10 @@ void ED_animedit_unlink_action(
     }
     else {
       /* clear AnimData -> action */
-      PropertyRNA *prop;
+      ApiProp *prop;
 
       /* create AnimData RNA pointers */
-      PointerRNA ptr = RNA_pointer_create(id, &RNA_AnimData, adt);
+      ApiPtr ptr = RNA_pointer_create(id, &RNA_AnimData, adt);
       prop = RNA_struct_find_property(&ptr, "action");
 
       /* clear... */
