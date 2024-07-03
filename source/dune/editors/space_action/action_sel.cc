@@ -83,7 +83,7 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
   AnimData *adt = anim_nla_mapping_get(ac, ale);
 
   DopeSheet *ads = nullptr;
-  if (ELEM(ac->datatype, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE)) {
+  if (elem(ac->datatype, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE)) {
     ads = static_cast<DopeSheet *>(ac->data);
   }
 
@@ -147,7 +147,7 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
   }
 }
 
-static void actkeys_find_key_in_list_element(AnimCxt *ac,
+static void actkeys_find_key_in_list_elem(AnimCxt *ac,
                                              AnimListElem *ale,
                                              float rgn_x,
                                              float *r_selx,
@@ -166,7 +166,7 @@ static void actkeys_find_key_in_list_element(AnimCxt *ac,
   AnimData *adt = anim_nla_mapping_get(ac, ale);
 
   /* standard channel height (to allow for some slop) */
-  float key_hsize = ANIM_UI_get_channel_height() * 0.8f;
+  float key_hsize = anim_ui_get_channel_height() * 0.8f;
   /* half-size (for either side), but rounded up to nearest int (for easier targeting) */
   key_hsize = roundf(key_hsize / 2.0f);
 
@@ -232,8 +232,7 @@ static bool actkeys_is_key_at_position(AnimCxt *ac, float rgn_x, float rgn_y)
  * This op works in one of three ways:
  * 1) (de)sel all (AKEY) - test if select all or desel all.
  * 2) invert all (CTRL-IKEY) - invert sel of all keyframes.
- * 3) (de)sel all - no testing is done; only for use internal tools as normal function.
- * \{ */
+ * 3) (de)sel all - no testing is done; only for use internal tools as normal fn. */
 
 /* Desels keyframes in the action editor
  * - This is called by the desel all op, as well as other on
@@ -300,10 +299,10 @@ static void desel_action_keys(AnimCxt *ac, short test, short sel)
       ale->update |= ANIM_UPDATE_DEPS;
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
-      ed_masklayer_frame_select_set(static_cast<MaskLayer *>(ale->data), sel);
+      ed_masklayer_frame_sel_set(static_cast<MaskLayer *>(ale->data), sel);
     }
     else if (ale->type == ANIMTYPE_PEN_LAYER) {
-      dune::ed::pen::select_all_frames(
+      dune::ed::pen::sel_all_frames(
           static_cast<PenLayer *>(ale->data)->wrap(), sel);
       ale->update |= ANIM_UPDATE_DEPS;
     }
@@ -355,11 +354,11 @@ static int actkeys_deselall_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_all(WinOpType *ot)
+void action_ot_sel_all(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel All";
-  ot->idname = "ACTION_OT_sel_all";
+  ot->idname = "action_ot_sel_all";
   ot->description = "Toggle sel of all keyframes";
 
   /* api cbs */
@@ -407,7 +406,7 @@ static void box_sel_elem(
     case ANIMTYPE_PENDATABLOCK: {
       PenData *pd = ale->data;
       PenDataLayer *pdl;
-      for (gpl = pd->layers.first; pdl; pdl = pdl->next) {
+      for (pdl = pd->layers.first; pdl; pdl = pdl->next) {
         ed_pen_layer_frames_sel_box(pdl, xmin, xmax, data->selmode);
       }
       ale->update |= ANIM_UPDATE_DEPS;
@@ -432,7 +431,7 @@ static void box_sel_elem(
           sel_data->selmode);
       ale->update |= ANIM_UPDATE_DEPS;
       break;
-    case ANIMTYPE_GPLAYER: {
+    case ANIMTYPE_PENLAYER: {
       ed_pen_layer_frames_sel_box(
           static_cast<PenDataLayer *>(ale->data), xmin, xmax, sel_data->selectmode);
       ale->update |= ANIM_UPDATE_DEPS;
@@ -470,7 +469,7 @@ static void box_sel_elem(
         anim_animdata_freelist(&anim_data);
       }
 
-      if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+      if (!elem(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
         anim_animchannel_keyframes_loop(
             &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->sel_cb, nullptr);
       }
@@ -492,7 +491,7 @@ static void box_sel_action(AnimCxt *ac, const rcti rect, short mode, short selmo
   rctf rectf;
 
   /* Convert mouse coordis to frame ranges and channel
-   * coordinates corrected for view pan/zoom. */
+   * coords corrected for view pan/zoom. */
   ui_view2d_rgn_to_view(v2d, rect.xmin, rect.ymin + 2, &rectf.xmin, &rectf.ymin);
   ui_view2d_rgn_to_view(v2d, rect.xmax, rect.ymax - 2, &rectf.xmax, &rectf.ymax);
 
@@ -522,7 +521,7 @@ static void box_sel_action(AnimCxt *ac, const rcti rect, short mode, short selmo
   {
     AnimData *adt = anim_nla_mapping_get(ac, ale);
 
-    /* get new vertical minimum extent of channel */
+    /* get new vertical min extent of channel */
     float ymin = ymax - channel_step;
 
     /* set horizontal range (if applicable) */
@@ -551,9 +550,9 @@ static void box_sel_action(AnimCxt *ac, const rcti rect, short mode, short selmo
   anim_animdata_freelist(&anim_data);
 }
 
-static int actkeys_box_select_invoke(Cxt *C, WinOp *op, const WinEv *ev)
+static int actkeys_box_sel_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  bAnimCxt ac;
+  AnimCxt ac;
   if (anim_animdata_get_cxt(C, &ac) == 0) {
     return OP_CANCELLED;
   }
@@ -582,7 +581,7 @@ static int actkeys_box_sel_ex(Cxt *C, WinOp *op)
   }
 
   const eSelOp sel_op = eSelOp(api_enum_get(op->ptr, "mode"));
-  const int selectmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEl_SUBTRACT;
+  const int selmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEl_SUBTRACT;
   if (SEL_OP_USE_PRE_DESEL(sel_op)) {
     desel_action_keys(&ac, 1, SEL_SUBTRACT);
   }
@@ -594,7 +593,7 @@ static int actkeys_box_sel_ex(Cxt *C, WinOp *op)
   if (api_bool_get(op->ptr, "axis_range")) {
     /* Mode depends on which axis of the range is larger to determine which axis to use:
      * - checking this in rgn-space is fine,
-     *   as it's fundamentally still going to be a different rect size.
+     *   as it's fundamentally still going to be a diff rect size.
      * - the frame-range sel option is favored over the channel one (x over y),
      *   as frame-range one is often used for tweaking timing when "blocking",
      *   while channels is not that useful.. */
@@ -620,11 +619,11 @@ static int actkeys_box_sel_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_box(WinOpType *ot)
+void action_ot_sel_box(WinOpType *ot)
 {
   /* ids */
   ot->name = "Box Sel";
-  ot->idname = "ACTION_OT_sel_box";
+  ot->idname = "action_ot_sel_box";
   ot->description = "Sel all keyframes within the specified region";
 
   /* api cbs */
@@ -655,7 +654,7 @@ void ACTION_OT_sel_box(WinOpType *ot)
  * These two ended up being lumped together, as it was easier in the
  * original Graph Editor implementation of these to do it this way. */
 
-struct RegionSelData {
+struct RgnSelData {
   AnimCxt *ac;
   short mode;
   short selmode;
@@ -748,7 +747,7 @@ static void rgn_sel_elem(RgnSelData *sel_data, AnimListElem *ale, bool summary)
         anim_animdata_freelist(&anim_data);
       }
 
-      if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+      if (!elem(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
         anim_animchannel_keyframes_loop(
             &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->sel_cb, nullptr);
       }
@@ -771,7 +770,7 @@ static void rgn_sel_action_keys(
   rctf rectf, scaled_rectf;
 
   /* Convert mouse coords to frame ranges and channel
-   * coordinates corrected for view pan/zoom. */
+   * coords corrected for view pan/zoom. */
   ui_view2d_rgn_to_view_rctf(v2d, rectf_view, &rectf);
 
   /* filter data */
@@ -839,7 +838,7 @@ static void rgn_sel_action_keys(
 
     /* perform vertical suitability check (if applicable) */
     if ((mode == ACTKEYS_BORDERSEL_FRAMERANGE) || !((ymax < rectf.ymin) || (ymin > rectf.ymax))) {
-      region_sel_elem(&sel_data, ale, false);
+      rgn_sel_elem(&sel_data, ale, false);
     }
   }
 
@@ -890,7 +889,7 @@ static int actkeys_lassosel_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_sel_lasso(WinOpType *ot)
+void action_ot_sel_lasso(WinOpType *ot)
 {
   /* ids */
   ot->name = "Lasso Sel";
@@ -965,7 +964,7 @@ void ACTION_OT_sel_circle(WinOpType *ot)
 
   ot->invoke = win_gesture_circle_invoke;
   ot->modal = win_gesture_circle_modal;
-  ot->ex = action_circle_select_ex;
+  ot->ex = action_circle_sel_ex;
   ot->poll = win_oper_action_active;
   ot->cancel = win_gesture_circle_cancel;
   ot->get_name = dd_sel_circle_get_name;
