@@ -19,7 +19,7 @@
 #include "types_screen.h"
 
 #include "dune_action.h"
-#include "dune_bake_geometry_nodes_mod.hh"
+#include "dune_bake_geo_nodes_mod.hh"
 #include "dune_cxt.hh"
 #include "dune_node_runtime.hh"
 #include "dune_pointcache.h"
@@ -34,14 +34,14 @@
 #include "ui_view2d.hh"
 
 #include "ed_anim_api.hh"
-#include "ed_keyframes_draw.hh"
+#include "ed_keyframes_drw.hh"
 
 #include "mod_nodes.hh"
 
 #include "action_intern.hh"
 
 /* Channel List */
-void draw_channel_names(Cxt *C, AnimCxt *ac, ARtn *rgn)
+void drw_channel_names(Cxt *C, AnimCxt *ac, ARtn *rgn)
 {
   List anim_data = {nullptr, nullptr};
   AnimListElem *ale;
@@ -76,7 +76,7 @@ void draw_channel_names(Cxt *C, AnimCxt *ac, ARtn *rgn)
       if (IN_RANGE(ymin, v2d->cur.ymin, v2d->cur.ymax) ||
           IN_RANGE(ymax, v2d->cur.ymin, v2d->cur.ymax)) {
         /* draw all channels using standard channel-drawing API */
-        anim_channel_draw(ac, ale, ymin, ymax, channel_index);
+        anim_channel_drw(ac, ale, ymin, ymax, channel_index);
       }
     }
   }
@@ -96,12 +96,12 @@ void draw_channel_names(Cxt *C, AnimCxt *ac, ARtn *rgn)
         /* draw all channels using standard channel-drawing API */
         rctf channel_rect;
         lib_rctf_init(&channel_rect, 0, v2d->cur.xmax, ymin, ymax);
-        anim_channel_draw_widgets(C, ac, ale, block, &channel_rect, channel_index);
+        anim_channel_drw_widgets(C, ac, ale, block, &channel_rect, channel_index);
       }
     }
 
     ui_block_end(C, block);
-    ui_block_draw(C, block);
+    ui_block_drw(C, block);
   }
 
   /* Free temporary channels. */
@@ -113,7 +113,7 @@ void draw_channel_names(Cxt *C, AnimCxt *ac, ARtn *rgn)
 #define EXTRA_SCROLL_PAD 100.0f
 
 /* Draw manually set intended playback frame ranges for actions. */
-static void draw_channel_action_ranges(List *anim_data, View2D *v2d)
+static void drw_channel_action_ranges(List *anim_data, View2D *v2d)
 {
   /* Variables for coalescing the Y region of one action. */
   Action *cur_action = nullptr;
@@ -144,10 +144,10 @@ static void draw_channel_action_ranges(List *anim_data, View2D *v2d)
       }
     }
 
-    /* Extend the current region, or flush and restart. */
+    /* Extend the current rgn, or flush and restart. */
     if (action != cur_action || adt != cur_adt) {
       if (cur_action) {
-        anim_draw_action_framerange(cur_adt, cur_action, v2d, ymax, cur_ymax);
+        anim_drw_action_framerange(cur_adt, cur_action, v2d, ymax, cur_ymax);
       }
 
       cur_action = action;
@@ -158,11 +158,11 @@ static void draw_channel_action_ranges(List *anim_data, View2D *v2d)
 
   /* Flush the last rgn. */
   if (cur_action) {
-    anim_draw_action_framerange(cur_adt, cur_action, v2d, ymax, cur_ymax);
+    anim_drw_action_framerange(cur_adt, cur_action, v2d, ymax, cur_ymax);
   }
 }
 
-static void draw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
+static void drw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
 {
   uchar col1[4], col2[4];
   uchar col1a[4], col2a[4];
@@ -178,7 +178,7 @@ static void draw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
   ui_GetThemeColor4ubv(TH_GROUP_ACTIVE, col1a);
 
   ui_GetThemeColor4ubv(TH_DOPESHEET_CHANNELOB, col1b);
-  ii_GetThemeColor4ubv(TH_DOPESHEET_CHANNELSUBOB, col2b);
+  ui_GetThemeColor4ubv(TH_DOPESHEET_CHANNELSUBOB, col2b);
 
   float ymax = anim_ui_get_first_channel_top(v2d);
   const float channel_step = anim_ui_get_channel_step();
@@ -206,7 +206,7 @@ static void draw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
       sel = anim_channel_setting_get(ac, ale, ACHANNEL_SETTING_SEL);
     }
 
-    if (ELEM(ac->datatype, ANIMCONT_ACTION, ANIMCONT_DOPESHEET, ANIMCONT_SHAPEKEY)) {
+    if (elem(ac->datatype, ANIMCONT_ACTION, ANIMCONT_DOPESHEET, ANIMCONT_SHAPEKEY)) {
       switch (ale->type) {
         case ANIMTYPE_SUMMARY: {
           /* reddish color from NLA */
@@ -232,7 +232,7 @@ static void draw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
         }
       }
 
-      /* draw rgn twice: firstly backdrop, then the current range */
+      /* drw rgn twice: firstly backdrop, then the current range */
       immRectf(pos, v2d->cur.xmin, ymin, v2d->cur.xmax + EXTRA_SCROLL_PAD, ymax);
     }
     else if (ac->datatype == ANIMCONT_PEN) {
@@ -297,7 +297,7 @@ static void draw_backdrops(AnimCxt *ac, List &anim_data, View2D *v2d, uint pos)
   }
 }
 
-static void draw_keyframes(AnimCxt *ac,
+static void drw_keyframes(AnimCxt *ac,
                            View2D *v2d,
                            SpaceAction *saction,
                            List &anim_data)
@@ -345,10 +345,10 @@ static void draw_keyframes(AnimCxt *ac,
     switch (ale->datatype) {
       case ALE_ALL:
         ed_add_summary_channel(
-            draw_list, static_cast<AnimCxt *>(ale->data), ycenter, scale_factor, action_flag);
+            drw_list, static_cast<AnimCxt *>(ale->data), ycenter, scale_factor, action_flag);
         break;
       case ALE_SCE:
-        ed_add_scene_channel(draw_list,
+        ed_add_scene_channel(drw_list,
                              ads,
                              static_cast<Scene *>(ale->key_data),
                              ycenter,
@@ -356,7 +356,7 @@ static void draw_keyframes(AnimCxt *ac,
                              action_flag);
         break;
       case ALE_OB:
-        ed_add_ob_channel(draw_list,
+        ed_add_ob_channel(drw_list,
                           ads,
                           static_cast<Ob *>(ale->key_data),
                           ycenter,
@@ -364,7 +364,7 @@ static void draw_keyframes(AnimCxt *ac,
                           action_flag);
         break;
       case ALE_ACT:
-        ed_add_action_channel(draw_list,
+        ed_add_action_channel(drw_list,
                               adt,
                               static_cast<Action *>(ale->key_data),
                               ycenter,
@@ -372,7 +372,7 @@ static void draw_keyframes(AnimCxt *ac,
                               action_flag);
         break;
       case ALE_GROUP:
-        ed_add_action_group_channel(draw_list,
+        ed_add_action_group_channel(drw_list,
                                     adt,
                                     static_cast<ActionGroup *>(ale->data),
                                     ycenter,
@@ -380,7 +380,7 @@ static void draw_keyframes(AnimCxt *ac,
                                     action_flag);
         break;
       case ALE_FCURVE:
-        ed_add_fcurve_channel(draw_list,
+        ed_add_fcurve_channel(drw_list,
                               adt,
                               static_cast<FCurve *>(ale->key_data),
                               ycenter,
@@ -388,7 +388,7 @@ static void draw_keyframes(AnimCxt *ac,
                               action_flag);
         break;
       case ALE_PEN_CEL:
-        ed_add_pen_cels_channel(draw_list,
+        ed_add_pen_cels_channel(drw_list,
                                 ads,
                                 static_cast<const PenLayer *>(ale->data),
                                 ycenter,
@@ -397,7 +397,7 @@ static void draw_keyframes(AnimCxt *ac,
         break;
       case ALE_PEN_GROUP:
         ed_add_pen_layer_group_channel(
-            draw_list,
+            drw_list,
             ads,
             static_cast<const PenLayerTreeGroup *>(ale->data),
             ycenter,
@@ -405,23 +405,23 @@ static void draw_keyframes(AnimCxt *ac,
             action_flag);
         break;
       case ALE_PEN_DATA:
-        ed_add_pen_datablock_channel(draw_list,
-                                               ads,
-                                               static_cast<const Pen *>(ale->data),
-                                               ycenter,
-                                               scale_factor,
-                                               action_flag);
+        ed_add_pen_datablock_channel(drw_list,
+                                     ads,
+                                     static_cast<const Pen *>(ale->data),
+                                     ycenter,
+                                     scale_factor,
+                                     action_flag);
         break;
-      case ALE_GPFRAME:
-        ed_add_pen_layer_legacy_channel(draw_list,
-                                                  ads,
-                                                  static_cast<PenDataLayer *>(ale->data),
-                                                  ycenter,
-                                                  scale_factor,
-                                                  action_flag);
+      case ALE_PENFRAME:
+        ed_add_pen_layer_legacy_channel(drw_list,
+                                        ads,
+                                        static_cast<PenDataLayer *>(ale->data),
+                                        ycenter,
+                                        scale_factor,
+                                        action_flag);
         break;
       case ALE_MASKLAY:
-        ed_add_mask_layer_channel(draw_list,
+        ed_add_mask_layer_channel(drw_list,
                                   ads,
                                   static_cast<MaskLayer *>(ale->data),
                                   ycenter,
@@ -432,14 +432,14 @@ static void draw_keyframes(AnimCxt *ac,
   }
 
   /* Drawing happens in here. */
-  ed_channel_list_flush(draw_list, v2d);
-  ed_channel_list_free(draw_list);
+  ed_channel_list_flush(drw_list, v2d);
+  ed_channel_list_free(drw_list);
 }
 
-void draw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn)
+void drw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn)
 {
   List anim_data = {nullptr, nullptr};
-  View2D *v2d = &region->v2d;
+  View2D *v2d = &rgn->v2d;
 
   /* build list of channels to draw */
   eAnimFilter_Flags filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
@@ -451,10 +451,10 @@ void draw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn)
   const float pad_bottom = lib_list_is_empty(ac->markers) ? 0 : UI_MARKER_MARGIN_Y;
   v2d->tot.ymin = -(height + pad_bottom);
 
-  /* Draw the manual frame ranges for actions in the background of the dopesheet.
+  /* Drw the manual frame ranges for actions in the background of the dopesheet.
    * The action editor has alrdy drawn the range for its action so it's not needed. */
   if (ac->datatype == ANIMCONT_DOPESHEET) {
-    draw_channel_action_ranges(&anim_data, v2d);
+    drw_channel_action_ranges(&anim_data, v2d);
   }
 
   /* Draw the background strips. */
@@ -466,7 +466,7 @@ void draw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn)
   gpu_blend(GPU_BLEND_ALPHA);
 
   /* first backdrop strips */
-  draw_backdrops(ac, anim_data, v2d, pos);
+  drw_backdrops(ac, anim_data, v2d, pos);
 
   gpu_blend(GPU_BLEND_NONE);
 
@@ -483,7 +483,7 @@ void draw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn)
 
   draw_keyframes(ac, v2d, saction, anim_data);
 
-  /* free temporary channels used for drawing */
+  /* free tmp channels used for drawing */
   anim_animdata_freelist(&anim_data);
 }
 
@@ -577,9 +577,9 @@ static void timeline_cache_color_get(PTCacheId *pid, float color[4])
   }
 }
 
-static void timeline_cache_modify_color_based_on_state(PointCache *cache,
-                                                       float color[4],
-                                                       float color_state[4])
+static void timeline_cache_mod_color_based_on_state(PointCache *cache,
+                                                    float color[4],
+                                                    float color_state[4])
 {
   if (cache->flag & PTCACHE_BAKED) {
     color[3] = color_state[3] = 1.0f;
@@ -642,7 +642,7 @@ static uint timeline_cache_segments_count(PointCache *cache)
   return count;
 }
 
-static void timeline_cache_draw_cached_segments(PointCache *cache, uint pos_id)
+static void timeline_cache_drw_cached_segments(PointCache *cache, uint pos_id)
 {
   uint segments_count = timeline_cache_segments_count(cache);
   if (segments_count == 0) {
@@ -662,7 +662,7 @@ static void timeline_cache_draw_cached_segments(PointCache *cache, uint pos_id)
   immEnd();
 }
 
-static void timeline_cache_draw_single(PTCacheId *pid, float y_offset, float height, uint pos_id)
+static void timeline_cache_drw_single(PTCacheId *pid, float y_offset, float height, uint pos_id)
 {
   gpu_matrix_push();
   gpu_matrix_translate_2f(0.0, float(V2D_SCROLL_HANDLE_HEIGHT) + y_offset);
@@ -686,35 +686,35 @@ static void timeline_cache_draw_single(PTCacheId *pid, float y_offset, float hei
   dune::ColorTheme4f color_state;
   copy_v4_v4(color_state, color);
 
-  timeline_cache_modify_color_based_on_state(pid->cache, color, color_state);
+  timeline_cache_mod_color_based_on_state(pid->cache, color, color_state);
 
   immUniform4fv("color1", color);
   immUniform4fv("color2", color_state);
 
-  timeline_cache_draw_cached_segments(pid->cache, pos_id);
+  timeline_cache_drw_cached_segments(pid->cache, pos_id);
 
   gpu_matrix_pop();
 }
 
-struct SimulationRange {
+struct SimRange {
   dune::IndexRange frames;
   dune::bake::CacheStatus status;
 };
 
-static void timeline_cache_draw_simulation_nodes(
-    const dune::Span<SimulationRange> simulation_ranges,
-    const bool all_simulations_baked,
+static void timeline_cache_drw_sim_nodes(
+    const dune::Span<SimRange> sim_ranges,
+    const bool all_sims_baked,
     float *y_offset,
     const float line_height,
     const uint pos_id)
 {
-  if (simulation_ranges.is_empty()) {
+  if (sim_ranges.is_empty()) {
     return;
   }
 
   bool has_bake = false;
 
-  for (const SimulationRange &sim_range : simulation_ranges) {
+  for (const SimRange &sim_range : sim_ranges) {
     switch (sim_range.status) {
       case dune::bake::CacheStatus::Invalid:
       case dune::bake::CacheStatus::Valid:
