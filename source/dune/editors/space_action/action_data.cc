@@ -703,7 +703,7 @@ static void action_layer_switch_strip(
     AnimData *adt, NlaTrack *old_track, NlaStrip *old_strip, NlaTrack *nlt, NlaStrip *strip)
 {
   /* Exit tweak-mode on old strip
-   * NOTE: We need to manually clear this stuff ourselves, as tweak-mode exit doesn't do it */
+   * We need to manually clear this stuff ourselves, as tweak-mode exit doesn't do it */
   dune_nla_tweakmode_exit(adt);
 
   if (old_strip) {
@@ -781,19 +781,19 @@ static bool action_layer_next_poll(Cxt *C)
   return false;
 }
 
-static int action_layer_next_exec(bContext *C, wmOperator *op)
+static int action_layer_next_ex(Cxt *C, WinOp *op)
 {
-  AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+  AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
   NlaTrack *act_track;
 
-  Scene *scene = CTX_data_scene(C);
-  float ctime = BKE_scene_ctime_get(scene);
+  Scene *scene = cxt_data_scene(C);
+  float ctime = dune_scene_ctime_get(scene);
 
   /* Get active track */
   act_track = dune_nlatrack_find_tweaked(adt);
 
   if (act_track == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Could not find current NLA Track");
+    dune_report(op->reports, RPT_ERROR, "Could not find current NLA Track");
     return OP_CANCELLED;
   }
 
@@ -813,7 +813,7 @@ static int action_layer_next_exec(bContext *C, wmOperator *op)
   }
   else {
     /* No more actions (strips) - Go back to editing the original active action
-     * NOTE: This will mean exiting tweak-mode..  */
+     * This will mean exiting tweak-mode..  */
     dune_nla_tweakmode_exit(adt);
 
     /* Deal with solo flags...
@@ -836,11 +836,11 @@ static int action_layer_next_exec(bContext *C, wmOperator *op)
   return OT_FINISHED;
 }
 
-void ACTION_OT_layer_next(WinOpType *ot)
+void action_ot_layer_next(WinOpType *ot)
 {
   /* ids */
   ot->name = "Next Layer";
-  ot->idname = "ACTION_OT_layer_next";
+  ot->idname = "action_ot_layer_next";
   ot->description =
       "Switch to editing action in anim layer above the current action in the NLA Stack";
 
@@ -888,7 +888,7 @@ static bool action_layer_prev_poll(Cxt *C)
   return false;
 }
 
-static int action_layer_prev_exec(Cxt *C, WinOp *op)
+static int action_layer_prev_ex(Cxt *C, WinOp *op)
 {
   AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
   NlaTrack *act_track;
