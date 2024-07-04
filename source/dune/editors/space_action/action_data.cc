@@ -406,7 +406,7 @@ void action_ot_stash(WinOpType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  ot->prop = api_def_bool(ot->srna,
+  ot->prop = api_def_bool(ot->sapi,
                              "create_new",
                              true,
                              "Create New Action",
@@ -525,7 +525,7 @@ void actuon_it_stash_and_create(WinOpType *ot)
  * 3) We need a convenient way to exit Tweak Mode from the Action Editor */
 
 void ed_animedit_unlink_action(
-    Cxt *C, Id *id, AnimData *adt, Action *act, ReportList *reports, bool force_delete)
+    Cxt *C, Id *id, AnimData *adt, Action *act, ReportList *reports, bool force_del)
 {
   ScrArea *area = cxt_win_area(C);
 
@@ -533,8 +533,7 @@ void ed_animedit_unlink_action(
    * warn user about it
    *
    * TODO: Maybe we should just save it for them? But then, there's the problem of
-   *       trying to get rid of stuff that's actually unwanted!
-   */
+   * trying to get rid of stuff that's actually unwanted!   */
   if (act->id.us == 1) {
     dube_reportf(reports,
                 RPT_WARNING,
@@ -543,7 +542,7 @@ void ed_animedit_unlink_action(
   }
 
   /* Clear Fake User and remove action stashing strip (if present) */
-  if (force_delete) {
+  if (force_del) {
     /* Remove stashed strip binding this action to this datablock */
     /* We cannot unlink it from *OTHER* datablocks that may also be stashing it,
      * but GE users only seem to use/care about single-object binding for now so this
@@ -561,11 +560,11 @@ void ed_animedit_unlink_action(
 
             if (strip->act == act) {
               /* Remove this strip, and the track too if it doesn't have anything else */
-              BKE_nlastrip_remove_and_free(&nlt->strips, strip, true);
+              dune_nlastrip_remove_and_free(&nlt->strips, strip, true);
 
               if (nlt->strips.first == nullptr) {
-                BLI_assert(nstrip == nullptr);
-                BKE_nlatrack_remove_and_free(&adt->nla_tracks, nlt, true);
+                lib_assert(nstrip == nullptr);
+                dune_nlatrack_remove_and_free(&adt->nla_tracks, nlt, true);
               }
             }
           }
@@ -596,24 +595,22 @@ void ed_animedit_unlink_action(
       /* clear AnimData -> action */
       ApiProp *prop;
 
-      /* create AnimData RNA pointers */
-      ApiPtr ptr = RNA_pointer_create(id, &RNA_AnimData, adt);
-      prop = RNA_struct_find_property(&ptr, "action");
+      /* create AnimData api ptrs */
+      ApiPtr ptr = api_ptr_create(id, &ApiAnimData, adt);
+      prop = api_struct_find_prop(&ptr, "action");
 
       /* clear... */
-      RNA_property_pointer_set(&ptr, prop, PointerRNA_NULL, nullptr);
-      RNA_property_update(C, &ptr, prop);
+      api_prop_ptr_set(&ptr, prop, ApiPtr_NULL, nullptr);
+      api_prop_update(C, &ptr, prop);
     }
   }
 }
 
-/* -------------------------- */
-
-static bool action_unlink_poll(bContext *C)
+static bool action_unlink_poll(Cxt *C)
 {
-  if (ED_operator_action_active(C)) {
-    SpaceAction *saction = (SpaceAction *)CTX_wm_space_data(C);
-    AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+  if (ed_op_action_active(C)) {
+    SpaceAction *saction = (SpaceAction *)cxt_win_space_data(C);
+    AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
 
     /* Only when there's an active action, in the right modes... */
     if (saction->action && adt) {
@@ -625,30 +622,30 @@ static bool action_unlink_poll(bContext *C)
   return false;
 }
 
-static int action_unlink_exec(bContext *C, wmOperator *op)
+static int action_unlink_ex(Cxt *C, WinOp *op)
 {
-  AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
-  bool force_delete = RNA_boolean_get(op->ptr, "force_delete");
+  AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
+  bool force_del = api_bool_get(op->ptr, "force_del");
 
   if (adt && adt->action) {
-    ED_animedit_unlink_action(C, nullptr, adt, adt->action, op->reports, force_delete);
+    ed_animedit_unlink_action(C, nullptr, adt, adt->action, op->reports, force_del);
   }
 
   /* Unlink is also abused to exit NLA tweak mode. */
-  WM_main_add_notifier(NC_ANIMATION | ND_NLA_ACTCHANGE, nullptr);
+  win_main_add_notifier(NC_ANIM | ND_NLA_ACTCHANGE, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int action_unlink_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int action_unlink_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* NOTE: this is hardcoded to match the behavior for the unlink button
+  /* This is hardcoded to match the behavior for the unlink btn
    * (in `interface_templates.cc`). */
-  RNA_boolean_set(op->ptr, "force_delete", event->modifier & KM_SHIFT);
-  return action_unlink_exec(C, op);
+  api_bool_set(op->ptr, "force_del", ev->mod & KM_SHIFT);
+  return action_unlink_ex(C, op);
 }
 
-void ACTION_OT_unlink(wmOperatorType *ot)
+void action_ot_unlink(WinOpType *ot)
 {
   PropertyRNA *prop;
 
