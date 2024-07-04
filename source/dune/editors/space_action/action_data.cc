@@ -471,7 +471,7 @@ static int action_stash_create_ex(Cxt *C, WinOp *op)
     }
 
     /* stash the action */
-    if (dune_nla_action_stash(adt, ID_IS_OVERRIDE_LIBRARY(adt_id_owner))) {
+    if (dune_nla_action_stash(adt, ID_IS_OVERRIDE_LIB(adt_id_owner))) {
       Action *new_action = nullptr;
 
       /* Create new action not based on the old one
@@ -497,7 +497,7 @@ static int action_stash_create_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void actuon_it_stash_and_create(WinOpType *ot)
+void action_ot_stash_and_create(WinOpType *ot)
 {
   /* ids */
   ot->name = "Stash Action";
@@ -647,48 +647,45 @@ static int action_unlink_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 
 void action_ot_unlink(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Unlink Action";
-  ot->idname = "ACTION_OT_unlink";
+  ot->idname = "action_ot_unlink";
   ot->description = "Unlink this action from the active action slot (and/or exit Tweak Mode)";
 
-  /* callbacks */
+  /* cbs */
   ot->invoke = action_unlink_invoke;
-  ot->exec = action_unlink_exec;
+  ot->ex = action_unlink_ex;
   ot->poll = action_unlink_poll;
 
-  /* properties */
-  prop = RNA_def_boolean(ot->srna,
-                         "force_delete",
+  /* props */
+  prop = api_def_bool(ot->sapi,
+                         "force_del",
                          false,
-                         "Force Delete",
+                         "Force Del",
                          "Clear Fake User and remove "
                          "copy stashed in this data-block's NLA stack");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Action Browsing
- * \{ */
+/* Action Browsing */
 
 /* Try to find NLA Strip to use for action layer up/down tool */
-static NlaStrip *action_layer_get_nlastrip(ListBase *strips, float ctime)
+static NlaStrip *action_layer_get_nlastrip(List *strips, float ctime)
 {
-  LISTBASE_FOREACH (NlaStrip *, strip, strips) {
+  LIST_FOREACH (NlaStrip *, strip, strips) {
     /* Can we use this? */
     if (IN_RANGE_INCL(ctime, strip->start, strip->end)) {
       /* in range - use this one */
       return strip;
     }
     if ((ctime < strip->start) && (strip->prev == nullptr)) {
-      /* before first - use this one */
+      /* before 1st use this one */
       return strip;
     }
     if ((ctime > strip->end) && (strip->next == nullptr)) {
@@ -706,9 +703,8 @@ static void action_layer_switch_strip(
     AnimData *adt, NlaTrack *old_track, NlaStrip *old_strip, NlaTrack *nlt, NlaStrip *strip)
 {
   /* Exit tweak-mode on old strip
-   * NOTE: We need to manually clear this stuff ourselves, as tweak-mode exit doesn't do it
-   */
-  BKE_nla_tweakmode_exit(adt);
+   * NOTE: We need to manually clear this stuff ourselves, as tweak-mode exit doesn't do it */
+  dune_nla_tweakmode_exit(adt);
 
   if (old_strip) {
     old_strip->flag &= ~(NLASTRIP_FLAG_ACTIVE | NLASTRIP_FLAG_SELECT);
@@ -743,21 +739,17 @@ static void action_layer_switch_strip(
   }
 
   /* Enter tweak-mode again - hopefully we're now "it" */
-  BKE_nla_tweakmode_enter(adt);
-  BLI_assert(adt->actstrip == strip);
+  dune_nla_tweakmode_enter(adt);
+  lib_assert(adt->actstrip == strip);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name One Layer Up Operator
- * \{ */
-
-static bool action_layer_next_poll(bContext *C)
+/* One Layer Up Op */
+static bool action_layer_next_poll(Cxt *C)
 {
   /* Action Editor's action editing modes only */
-  if (ED_operator_action_active(C)) {
-    AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+  if (ed_op_action_active(C)) {
+    AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
     if (adt) {
       /* only allow if we're in tweak-mode, and there's something above us... */
       if (adt->flag & ADT_NLA_EDIT_ON) {
