@@ -1,4 +1,4 @@
-/* System includes */
+/* Sys includes */
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
@@ -776,7 +776,7 @@ static void timeline_cache_drw_sim_nodes(
       continue;
     }
 
-    if (all_simulations_baked) {
+    if (all_sims_baked) {
       immUniform4fv("color1", baked_color);
       immUniform4fv("color2", baked_color);
       immBeginAtMost(GPU_PRIM_TRIS, 6);
@@ -807,7 +807,7 @@ static void timeline_cache_drw_sim_nodes(
   *y_offset += max_used_height * 2;
 }
 
-void timeline_draw_cache(const SpaceAction *saction, const Ob *ob, const Scene *scene)
+void timeline_drw_cache(const SpaceAction *saction, const Ob *ob, const Scene *scene)
 {
   if ((saction->cache_display & TIME_CACHE_DISPLAY) == 0 || ob == nullptr) {
     return;
@@ -820,14 +820,14 @@ void timeline_draw_cache(const SpaceAction *saction, const Ob *ob, const Scene *
       immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_2D_DIAG_STRIPES);
 
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 
-  /* Iterate over point-caches on the active object, and draw each one's range. */
+  /* Iter over point-caches on the active ob, and draw each one's range. */
   float y_offset = 0.0f;
-  const float cache_draw_height = 4.0f * UI_SCALE_FAC * U.pixelsize;
+  const float cache_drw_height = 4.0f * UI_SCALE_FAC * U.pixelsize;
 
-  immUniform1i("size1", cache_draw_height * 2.0f);
-  immUniform1i("size2", cache_draw_height);
+  immUniform1i("size1", cache_drw_height * 2.0f);
+  immUniform1i("size2", cache_drw_height);
 
   LIST_FOREACH (PTCacheId *, pid, &pidlist) {
     if (timeline_cache_is_hidden_by_setting(saction, pid)) {
@@ -838,13 +838,13 @@ void timeline_draw_cache(const SpaceAction *saction, const Ob *ob, const Scene *
       continue;
     }
 
-    timeline_cache_draw_single(pid, y_offset, cache_draw_height, pos_id);
+    timeline_cache_drw_single(pid, y_offset, cache_drw_height, pos_id);
 
-    y_offset += cache_draw_height;
+    y_offset += cache_drw_height;
   }
-  if (saction->cache_display & TIME_CACHE_SIMULATION_NODES) {
-    dune::Vector<SimulationRange> simulation_ranges;
-    bool all_simulations_baked = true;
+  if (saction->cache_display & TIME_CACHE_SIM_NODES) {
+    dune::Vector<SimRange> sim_ranges;
+    bool all_sims_baked = true;
     LIST_FOREACH (ModData *, md, &ob->mods) {
       if (md->type != eModTypeNodes) {
         continue;
@@ -863,29 +863,29 @@ void timeline_draw_cache(const SpaceAction *saction, const Ob *ob, const Scene *
       {
         std::lock_guard lock{modifier_cache.mutex};
         for (const std::unique_ptr<dune::bake::NodeCache> &node_cache_ptr :
-             modifier_cache.cache_by_id.values())
+             mod_cache.cache_by_id.values())
         {
           const dune::bake::NodeCache &node_cache = *node_cache_ptr;
           if (node_cache.frame_caches.is_empty()) {
-            all_simulations_baked = false;
+            all_sims_baked = false;
             continue;
           }
-          if (node_cache.cache_status != blender::bke::bake::CacheStatus::Baked) {
-            all_simulations_baked = false;
+          if (node_cache.cache_status !=dun::bake::CacheStatus::Baked) {
+            all_sims_baked = false;
           }
           const int start_frame = node_cache.frame_caches.first()->frame.frame();
           const int end_frame = node_cache.frame_caches.last()->frame.frame();
           const dune::IndexRange frame_range{start_frame, end_frame - start_frame + 1};
-          simulation_ranges.append({frame_range, node_cache.cache_status});
+          sim_ranges.append({frame_range, node_cache.cache_status});
         }
       }
     }
-    timeline_cache_draw_simulation_nodes(
-        simulation_ranges, all_simulations_baked, &y_offset, cache_draw_height, pos_id);
+    timeline_cache_drw_sim_nodes(
+        sim_ranges, all_sims_baked, &y_offset, cache_drw_height, pos_id);
   }
 
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_blend(GPU_BLEND_NONE);
   immUnbindProgram();
 
-  BLI_freelistN(&pidlist);
+  lib_freelist(&pidlist);
 }
