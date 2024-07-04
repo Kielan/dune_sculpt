@@ -183,7 +183,7 @@ static bool action_new_poll(Cxt *C)
   return false;
 }
 
-static int action_new_ex(bContext *C, wmOperator * /*op*/)
+static int action_new_ex(Cxt *C, WinOp * /*op*/)
 {
   ApiPtr ptr;
   ApiProp *prop;
