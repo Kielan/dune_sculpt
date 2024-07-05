@@ -9,54 +9,53 @@
 
 #include "lang.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "DNA_anim_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_key_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_pen_legacy.h"
+#include "types_key.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
 
-#include "BKE_action.h"
-#include "BKE_animsys.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_global.h"
-#include "BKE_gpencil_legacy.h"
-#include "BKE_grease_pencil.hh"
-#include "BKE_key.h"
-#include "BKE_nla.h"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_animsys.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_global.h"
+#include "dune_pen_legacy.h"
+#include "dune_pen.hh"
+#include "dune_key.h"
+#include "dune_nla.h"
+#include "dune_report.h"
 
-#include "UI_view2d.hh"
+#include "ui_view2d.hh"
 
-#include "ANIM_animdata.hh"
-#include "ANIM_fcurve.hh"
-#include "ANIM_keyframing.hh"
-#include "ED_anim_api.hh"
-#include "ED_gpencil_legacy.hh"
-#include "ED_grease_pencil.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_keyframing.hh"
-#include "ED_markers.hh"
-#include "ED_mask.hh"
-#include "ED_screen.hh"
+#include "anim_animdata.hh"
+#include "anim_fcurve.hh"
+#include "anim_keyframing.hh"
+#include "ed_anim_api.hh"
+#include "ed_pen_legacy.hh"
+#include "ed_pen.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_keyframing.hh"
+#include "ed_markers.hh"
+#include "ed_mask.hh"
+#include "ed_screen.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
+#include "ui.hh"
 
 #include "action_intern.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Pose Markers: Localize Markers
- * \{ */
+/** Pose Markers: Localize Markers */
 
 /* ensure that there is:
  * 1) an active action editor
@@ -64,9 +63,9 @@
  * 3) that the set of markers being shown are the scene markers, not the list we're merging
  * 4) that there are some selected markers
  */
-static bool act_markers_make_local_poll(bContext *C)
+static bool act_markers_make_local_poll(Cxt *C)
 {
-  SpaceAction *sact = CTX_wm_space_action(C);
+  SpaceAction *sact = cxt_win_space_action(C);
 
   /* 1) */
   if (sact == nullptr) {
@@ -74,7 +73,7 @@ static bool act_markers_make_local_poll(bContext *C)
   }
 
   /* 2) */
-  if (ELEM(sact->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY) == 0) {
+  if (elem(sact->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY) == 0) {
     return false;
   }
   if (sact->action == nullptr) {
@@ -87,21 +86,21 @@ static bool act_markers_make_local_poll(bContext *C)
   }
 
   /* 4) */
-  return ED_markers_get_first_selected(ED_context_get_markers(C)) != nullptr;
+  return ed_markers_get_first_selected(ed_cxt_get_markers(C)) != nullptr;
 }
 
-static int act_markers_make_local_exec(bContext *C, wmOperator * /*op*/)
+static int act_markers_make_local_ex(Cxt *C, WinOp * /*op*/)
 {
-  ListBase *markers = ED_context_get_markers(C);
+  List *markers = ed_cxt_get_markers(C);
 
-  SpaceAction *sact = CTX_wm_space_action(C);
-  bAction *act = (sact) ? sact->action : nullptr;
+  SpaceAction *sact = cxt_win_space_action(C);
+  Action *act = (sact) ? sact->action : nullptr;
 
   TimeMarker *marker, *markern = nullptr;
 
   /* sanity checks */
-  if (ELEM(nullptr, markers, act)) {
-    return OPERATOR_CANCELLED;
+  if (elem(nullptr, markers, act)) {
+    return OP_CANCELLED;
   }
 
   /* migrate markers */
@@ -109,9 +108,9 @@ static int act_markers_make_local_exec(bContext *C, wmOperator * /*op*/)
     markern = marker->next;
 
     /* move if marker is selected */
-    if (marker->flag & SELECT) {
-      BLI_remlink(markers, marker);
-      BLI_addtail(&act->markers, marker);
+    if (marker->flag & SEL) {
+      lib_remlink(markers, marker);
+      lib_addtail(&act->markers, marker);
     }
   }
 
@@ -120,62 +119,59 @@ static int act_markers_make_local_exec(bContext *C, wmOperator * /*op*/)
   sact->flag |= SACTION_POSEMARKERS_SHOW;
 
   /* notifiers - both sets, as this change affects both */
-  WM_event_add_notifier(C, NC_SCENE | ND_MARKERS, nullptr);
-  WM_event_add_notifier(C, NC_ANIMATION | ND_MARKERS, nullptr);
+  win_ev_add_notifier(C, NC_SCENE | ND_MARKERS, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_MARKERS, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_markers_make_local(wmOperatorType *ot)
+void action_ot_markers_make_local(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Make Markers Local";
-  ot->idname = "ACTION_OT_markers_make_local";
+  ot->idname = "action_ot_markers_make_local";
   ot->description = "Move selected scene markers to the active Action as local 'pose' markers";
 
-  /* callbacks */
-  ot->exec = act_markers_make_local_exec;
+  /* cbs */
+  ot->ex = act_markers_make_local_ex;
   ot->poll = act_markers_make_local_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Calculate Range
- * \{ */
+/* Calc Range */
 
 /* Get the min/max keyframes. */
 static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const short onlySel)
 {
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
   eAnimFilter_Flags filter;
   bool found = false;
 
   /* get data to filter, from Action or Dopesheet */
-  /* XXX: what is sel doing here?!
+  /* What is sel doing here?!
    *      Commented it, was breaking things (eg. the "auto preview range" tool). */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE /*| ANIMFILTER_SEL */ |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
 
-  /* set large values to try to override */
+  /* set large vals to try to override */
   *min = 999999999.0f;
   *max = -999999999.0f;
 
   /* check if any channels to set range with */
   if (anim_data.first) {
     /* go through channels, finding max extents */
-    LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-      AnimData *adt = ANIM_nla_mapping_get(ac, ale);
-      if (ale->datatype == ALE_GPFRAME) {
-        bGPDlayer *gpl = static_cast<bGPDlayer *>(ale->data);
+    LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+      AnimData *adt = anim_nla_mapping_get(ac, ale);
+      if (ale->datatype == ALE_PENFRAME) {
+        PenDataLayer *pl = static_cast<PenDataLayer *>(ale->data);
 
         /* Find GP-frame which is less than or equal to current-frame. */
-        LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
-          if (!onlySel || (gpf->flag & GP_FRAME_SELECT)) {
+        LIST_FOREACH (PenDataFrame *, pf, &pl->frames) {
+          if (!onlySel || (gpf->flag & PEN_FRAME_SEL)) {
             const float framenum = float(gpf->framenum);
             *min = min_ff(*min, framenum);
             *max = max_ff(*max, framenum);
@@ -186,19 +182,19 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
       else if (ale->datatype == ALE_MASKLAY) {
         MaskLayer *masklay = static_cast<MaskLayer *>(ale->data);
         /* Find mask layer which is less than or equal to current-frame. */
-        LISTBASE_FOREACH (MaskLayerShape *, masklay_shape, &masklay->splines_shapes) {
+        LIST_FOREACH (MaskLayerShape *, masklay_shape, &masklay->splines_shapes) {
           const float framenum = float(masklay_shape->frame);
           *min = min_ff(*min, framenum);
           *max = max_ff(*max, framenum);
           found = true;
         }
       }
-      else if (ale->datatype == ALE_GREASE_PENCIL_CEL) {
-        const blender::bke::greasepencil::Layer &layer =
-            static_cast<GreasePencilLayer *>(ale->data)->wrap();
+      else if (ale->datatype == ALE_PEN_CEL) {
+        const dune::pen::Layer &layer =
+            static_cast<PenLayer *>(ale->data)->wrap();
 
         for (const auto [key, frame] : layer.frames().items()) {
-          if (onlySel && !frame.is_selected()) {
+          if (onlySel && !frame.is_sel()) {
             continue;
           }
           *min = min_ff(*min, float(key));
@@ -211,11 +207,11 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
         float tmin, tmax;
 
         /* get range and apply necessary scaling before processing */
-        if (BKE_fcurve_calc_range(fcu, &tmin, &tmax, onlySel)) {
+        if (dune_fcurve_calc_range(fcu, &tmin, &tmax, onlySel)) {
 
           if (adt) {
-            tmin = BKE_nla_tweakedit_remap(adt, tmin, NLATIME_CONVERT_MAP);
-            tmax = BKE_nla_tweakedit_remap(adt, tmax, NLATIME_CONVERT_MAP);
+            tmin = dune_nla_tweakedit_remap(adt, tmin, NLATIME_CONVERT_MAP);
+            tmax = dune_nla_tweakedit_remap(adt, tmax, NLATIME_CONVERT_MAP);
           }
 
           /* Try to set cur using these values,
