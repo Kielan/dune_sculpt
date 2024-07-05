@@ -3,11 +3,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "BLI_blenlib.h"
-#include "BLI_map.hh"
-#include "BLI_utildefines.h"
+#include "lib_dune.h"
+#include "lib_map.hh"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "DEG_depsgraph.hh"
 
