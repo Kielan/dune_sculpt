@@ -405,8 +405,8 @@ static int actkeys_viewall(Cxt *C, const bool only_sel)
       float ymid = (ymax - ymin) / 2.0f + ymin;
       float x_center;
 
-      UI_view2d_center_get(v2d, &x_center, nullptr);
-      UI_view2d_center_set(v2d, x_center, ymid);
+      ui_view2d_center_get(v2d, &x_center, nullptr);
+      ui_view2d_center_set(v2d, x_center, ymid);
     }
   }
 
@@ -558,14 +558,14 @@ static int actkeys_copy_ex(Cxt *C, WinOp *op)
   /* copy keyframes */
   if (ac.datatype == ANIMCONT_PEN) {
     if (ed_pen_anim_copybuf_copy(&ac) == false) {
-      /* check if anything ended up in the buffer */
+      /* check if anything ended up in the buf */
       dune_report(op->reports, RPT_ERROR, "No keyframes copied to the internal clipboard");
       return OP_CANCELLED;
     }
   }
   else if (ac.datatype == ANIMCONT_MASK) {
     /* FIXME: support this case. */
-    BKE_report(op->reports, RPT_ERR, "Keyframe pasting is not available for mask mode");
+    dune_report(op->reports, RPT_ERR, "Keyframe pasting is not available for mask mode");
     return OP_CANCELLED;
   }
   else {
@@ -626,14 +626,14 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
     /* FIXME: support this case. */
     dune_report(op->reports,
                RPT_ERR,
-               "Keyframe pasting is not available for grease pencil or mask mode");
+               "Keyframe pasting is not available for pen or mask mode");
     return OP_CANCELLED;
   }
   else {
     /* Both paste fn needs to be evaluated to account for mixed selection */
     const eKeyPasteErr kf_empty = paste_action_keys(&ac, offset_mode, merge_mode, flipped);
     /* non-zero return means an error occurred while trying to paste */
-    gpframes_inbuf = ED_gpencil_anim_copybuf_paste(&ac, offset_mode);
+    pframes_inbuf = ed_pen_anim_copybuf_paste(&ac, offset_mode);
 
     /* Only report an error if nothing was pasted, i.e. when both FCurve and GPencil failed. */
     if (!gpframes_inbuf) {
@@ -643,24 +643,24 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
           break;
 
         case KEYFRAME_PASTE_NOWHERE_TO_PASTE:
-          BKE_report(op->reports, RPT_ERROR, "No selected F-Curves to paste into");
+          dune_report(op->reports, RPT_ERROR, "No sel F-Curves to paste into");
           return OPERATOR_CANCELLED;
 
         case KEYFRAME_PASTE_NOTHING_TO_PASTE:
-          BKE_report(op->reports, RPT_ERROR, "No data in the internal clipboard to paste");
+          dune_report(op->reports, RPT_ERROR, "No data in the internal clipboard to paste");
           return OPERATOR_CANCELLED;
       }
     }
   }
 
   /* Grease Pencil needs extra update to refresh the added keyframes. */
-  if (ac.datatype == ANIMCONT_GPENCIL || gpframes_inbuf) {
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA, nullptr);
+  if (ac.datatype == ANIMCONT_PEN || pframes_inbuf) {
+    win_ev_add_notifier(C, NC_PEN | ND_DATA, nullptr);
   }
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
+  WM_ev_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 static std::string actkeys_paste_description(bContext * /*C*/,
