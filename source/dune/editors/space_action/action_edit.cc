@@ -805,7 +805,7 @@ static void insert_fcurve_key(AnimCxt *ac,
                                    reports,
                                    ale->id,
                                    nullptr,
-                                   ((fcu->grp) ? (fcu->grp->name) : (nullptr)) ;
+                                   ((fcu->grp) ? (fcu->grp->name) : (nullptr)),
                                       fcu->api_path,
                                       fcu->arr_index,
                                       &anim_eval_cxt,
@@ -821,19 +821,19 @@ static void insert_fcurve_key(AnimCxt *ac,
       cfra = dune_nla_tweakedit_remap(adt, cfra, NLATIME_CONVERT_UNMAP);
     }
 
-    const float curval = evaluate_fcurve(fcu, cfra);
-    blender::animrig::insert_vert_fcurve(
+    const float curval = eval_fcurve(fcu, cfra);
+    dune::animrig::insert_vert_fcurve(
         fcu, cfra, curval, eBezTriple_KeyframeType(ts->keyframe_type), eInsertKeyFlags(0));
   }
 
   ale->update |= ANIM_UPDATE_DEFAULT;
 }
 
-/* this function is responsible for inserting new keyframes */
-static void insert_action_keys(bAnimContext *ac, short mode)
+/* this fn is responsible for inserting new keyframes */
+static void insert_act_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   Scene *scene = ac->scene;
   ToolSettings *ts = scene->toolsettings;
@@ -852,176 +852,169 @@ static void insert_action_keys(bAnimContext *ac, short mode)
     filter |= ANIMFILTER_ACTGROUPED;
   }
 
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Init keyframing flag. */
-  flag = ANIM_get_keyframing_flags(scene, true);
+  flag = anim_get_keyframing_flags(scene, true);
 
-  /* GPLayers specific flags */
-  if (ts->gpencil_flags & GP_TOOL_FLAG_RETAIN_LAST) {
-    add_frame_mode = GP_GETFRAME_ADD_COPY;
+  /* PenLayers specific flags */
+  if (ts->pen_flags & PEN_TOOL_FLAG_RETAIN_LAST) {
+    add_frame_mode = PEN_GETFRAME_ADD_COPY;
   }
   else {
-    add_frame_mode = GP_GETFRAME_ADD_NEW;
+    add_frame_mode = PEN_GETFRAME_ADD_NEW;
   }
-  const bool grease_pencil_hold_previous = ((ts->gpencil_flags & GP_TOOL_FLAG_RETAIN_LAST) != 0);
+  const bool pen_hold_prev = ((ts->pen_flags & PEN_TOOL_FLAG_RETAIN_LAST) != 0);
 
   /* insert keyframes */
-  const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(
-      ac->depsgraph, float(scene->r.cfra));
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  const AnimEvalCxt anim_eval_cxt = dune_animsys_eval_cxt_construct(
+      ac->graph, float(scene->r.cfra));
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->type) {
-      case ANIMTYPE_GPLAYER:
-        insert_gpencil_key(ac, ale, add_frame_mode, &gpd_old);
+      case ANIMTYPE_PLAYER:
+        insert_glpen_key(ac, ale, add_frame_mode, &pd_old);
         break;
 
-      case ANIMTYPE_GREASE_PENCIL_LAYER:
-        insert_grease_pencil_key(ac, ale, grease_pencil_hold_previous);
+      case ANIMTYPE_PEN_LAYER:
+        insert_pen_key(ac, ale, pen_hold_prev);
         break;
 
       case ANIMTYPE_FCURVE:
-        insert_fcurve_key(ac, ale, anim_eval_context, flag);
+        insert_fcurve_key(ac, ale, anim_eval_cxt, flag);
         break;
 
       default:
-        BLI_assert_msg(false, "Keys cannot be inserted into this animation type.");
+        lib_assert_msg(false, "Keys cannot be inserted into this anim type.");
     }
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_insertkey_exec(bContext *C, wmOperator *op)
+static int actkeys_insertkey_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   if (ac.datatype == ANIMCONT_MASK) {
-    BKE_report(op->reports, RPT_ERROR, "Insert Keyframes is not yet implemented for this mode");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Insert Keyframes is not yet implemented for this mode");
+    return OP_CANCELLED;
   }
 
   /* what channels to affect? */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* insert keyframes */
   insert_action_keys(&ac, mode);
 
   /* set notifier that keyframes have changed */
-  if (ac.datatype == ANIMCONT_GPENCIL) {
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, nullptr);
+  if (ac.datatype == ANIMCONT_PEN) {
+    win_ev_add_notifier(C, NC_PEN | ND_DATA | NA_EDITED, nullptr);
   }
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_ADDED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_ADDED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_keyframe_insert(wmOperatorType *ot)
+void act_ot_keyframe_insert(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Insert Keyframes";
-  ot->idname = "ACTION_OT_keyframe_insert";
+  ot->idname = "act_ot_keyframe_insert";
   ot->description = "Insert keyframes for the specified channels";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_insertkey_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_insertkey_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(ot->srna, "type", prop_actkeys_insertkey_types, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", prop_actkeys_insertkey_types, 0, "Type", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Duplicate Operator
- * \{ */
+/* Keyframes: Dupl Op */
 
-static bool duplicate_action_keys(bAnimContext *ac)
+static bool dupl_act_keys(AnimCxt *ac)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
   bool changed = false;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* loop through filtered data and delete selected keys */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    if (ELEM(ale->type, ANIMTYPE_FCURVE, ANIMTYPE_NLACURVE)) {
-      changed |= duplicate_fcurve_keys((FCurve *)ale->key_data);
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    if (elem(ale->type, ANIMTYPE_FCURVE, ANIMTYPE_NLACURVE)) {
+      changed |= dupl_fcurve_keys((FCurve *)ale->key_data);
     }
-    else if (ale->type == ANIMTYPE_GPLAYER) {
-      ED_gpencil_layer_frames_duplicate((bGPDlayer *)ale->data);
-      changed |= ED_gpencil_layer_frame_select_check((bGPDlayer *)ale->data);
+    else if (ale->type == ANIMTYPE_PENLAYER) {
+      ed_pen_layer_frames_dupl((PenLayer *)ale->data);
+      changed |= ed_pen_layer_frame_sel_check((PenLayer *)ale->data);
     }
-    else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-      changed |= blender::ed::greasepencil::duplicate_selected_frames(
-          *reinterpret_cast<GreasePencil *>(ale->id),
-          static_cast<GreasePencilLayer *>(ale->data)->wrap());
+    else if (ale->type == ANIMTYPE_PEN_LAYER) {
+      changed |= dune::ed::pen::dupl_sel_frames(
+          *reinterpret_cast<Pen *>(ale->id),
+          static_cast<PenLayer *>(ale->data)->wrap());
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
-      ED_masklayer_frames_duplicate((MaskLayer *)ale->data);
+      ed_masklayer_frames_dupl((MaskLayer *)ale->data);
     }
     else {
-      BLI_assert(0);
+      lib_assert(0);
     }
 
     ale->update |= ANIM_UPDATE_DEFAULT;
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 
   return changed;
 }
 
-/* ------------------- */
-
-static int actkeys_duplicate_exec(bContext *C, wmOperator * /*op*/)
+static int actkeys_dupl_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* duplicate keyframes */
-  if (!duplicate_action_keys(&ac)) {
-    return OPERATOR_CANCELLED;
+  /* dupl keyframes */
+  if (!dupl_act_keys(&ac)) {
+    return OP_CANCELLED;
   }
 
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_ADDED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_ADDED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_duplicate(wmOperatorType *ot)
+void act_ot_dupl(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Duplicate Keyframes";
-  ot->idname = "ACTION_OT_duplicate";
-  ot->description = "Make a copy of all selected keyframes";
+  /* ids */
+  ot->name = "Dupl Keyframes";
+  ot->idname = "act_ot_dupl";
+  ot->description = "Make a copy of all sel keyframes";
 
   /* api callbacks */
-  ot->exec = actkeys_duplicate_exec;
-  ot->poll = ED_operator_action_active;
+  ot->exec = actkeys_dupl_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
