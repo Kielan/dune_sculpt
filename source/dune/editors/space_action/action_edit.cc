@@ -526,8 +526,7 @@ static eKeyPasteErr paste_action_keys(AnimCxt *ac,
    * - 1st time we try to filter more strictly, allowing only sel channels
    *   to allow copying animation between channels
    * - 2nd time, we loosen things up if nothing was found the 1st time, allowing
-   *   users to just paste keyframes back into the original curve again #31670.
-   */
+   *   users to just paste keyframes back into the original curve again #31670.  */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_FCURVESONLY | ANIMFILTER_NODUPLIS);
 
@@ -539,102 +538,100 @@ static eKeyPasteErr paste_action_keys(AnimCxt *ac,
 
   /* Val offset is always None bc the user cannot see the effect of it. */
   const eKeyPasteErr ok = paste_animedit_keys(
-      ac, &anim_data, offset_mode, KEYFRAME_PASTE_VALUE_OFFSET_NONE, merge_mode, flip);
+      ac, &anim_data, offset_mode, KEYFRAME_PASTE_VAL_OFFSET_NONE, merge_mode, flip);
 
   /* clean up */
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_freelist(&anim_data);
 
   return ok;
 }
 
-/* ------------------- */
-
-static int actkeys_copy_exec(bContext *C, wmOperator *op)
+static int actkeys_copy_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* copy keyframes */
-  if (ac.datatype == ANIMCONT_GPENCIL) {
-    if (ED_gpencil_anim_copybuf_copy(&ac) == false) {
+  if (ac.datatype == ANIMCONT_PEN) {
+    if (ed_pen_anim_copybuf_copy(&ac) == false) {
       /* check if anything ended up in the buffer */
-      BKE_report(op->reports, RPT_ERROR, "No keyframes copied to the internal clipboard");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_ERROR, "No keyframes copied to the internal clipboard");
+      return OP_CANCELLED;
     }
   }
   else if (ac.datatype == ANIMCONT_MASK) {
     /* FIXME: support this case. */
-    BKE_report(op->reports, RPT_ERROR, "Keyframe pasting is not available for mask mode");
-    return OPERATOR_CANCELLED;
+    BKE_report(op->reports, RPT_ERR, "Keyframe pasting is not available for mask mode");
+    return OP_CANCELLED;
   }
   else {
-    /* Both copy function needs to be evaluated to account for mixed selection */
+    /* Both copy fn needs to be eval to account for mixed sel */
     const short kf_empty = copy_action_keys(&ac);
-    const bool gpf_ok = ED_gpencil_anim_copybuf_copy(&ac);
+    const bool gpf_ok = ed_pen_anim_copybuf_copy(&ac);
 
     if (kf_empty && !gpf_ok) {
-      BKE_report(op->reports, RPT_ERROR, "No keyframes copied to the internal clipboard");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_ERR, "No keyframes copied to the internal clipboard");
+      return OP_CANCELLED;
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_copy(wmOperatorType *ot)
+void act_ot_copy(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Copy Keyframes";
-  ot->idname = "ACTION_OT_copy";
-  ot->description = "Copy selected keyframes to the internal clipboard";
+  ot->idname = "act_ot_copy";
+  ot->description = "Copy sel keyframes to the internal clipboard";
 
-  /* api callbacks */
-  ot->exec = actkeys_copy_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_copy_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int actkeys_paste_exec(bContext *C, wmOperator *op)
+static int actkeys_paste_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  const eKeyPasteOffset offset_mode = eKeyPasteOffset(RNA_enum_get(op->ptr, "offset"));
-  const eKeyMergeMode merge_mode = eKeyMergeMode(RNA_enum_get(op->ptr, "merge"));
-  const bool flipped = RNA_boolean_get(op->ptr, "flipped");
+  const eKeyPasteOffset offset_mode = eKeyPasteOffset(api_enum_get(op->ptr, "offset"));
+  const eKeyMergeMode merge_mode = eKeyMergeMode(api_enum_get(op->ptr, "merge"));
+  const bool flipped = api_bool_get(op->ptr, "flipped");
 
   bool gpframes_inbuf = false;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* ac.reports by default will be the global reports list, which won't show warnings */
   ac.reports = op->reports;
 
   /* paste keyframes */
-  if (ac.datatype == ANIMCONT_GPENCIL) {
-    if (ED_gpencil_anim_copybuf_paste(&ac, offset_mode) == false) {
-      BKE_report(op->reports, RPT_ERROR, "No data in the internal clipboard to paste");
-      return OPERATOR_CANCELLED;
+  if (ac.datatype == ANIMCONT_PEN) {
+    if (ed_pen_anim_copybuf_paste(&ac, offset_mode) == false) {
+      dune_report(op->reports, RPT_ERROR, "No data in the internal clipboard to paste");
+      return OP_CANCELLED;
     }
   }
   else if (ac.datatype == ANIMCONT_MASK) {
     /* FIXME: support this case. */
-    BKE_report(op->reports,
-               RPT_ERROR,
+    dune_report(op->reports,
+               RPT_ERR,
                "Keyframe pasting is not available for grease pencil or mask mode");
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   else {
-    /* Both paste function needs to be evaluated to account for mixed selection */
-    const eKeyPasteError kf_empty = paste_action_keys(&ac, offset_mode, merge_mode, flipped);
+    /* Both paste fn needs to be evaluated to account for mixed selection */
+    const eKeyPasteErr kf_empty = paste_action_keys(&ac, offset_mode, merge_mode, flipped);
     /* non-zero return means an error occurred while trying to paste */
     gpframes_inbuf = ED_gpencil_anim_copybuf_paste(&ac, offset_mode);
 
