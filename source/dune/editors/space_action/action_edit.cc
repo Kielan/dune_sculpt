@@ -245,7 +245,6 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
   return found;
 }
 
-/* ------------------------------------------ */
 /* View: Automatic Preview-Range Op */
 
 static int actkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
@@ -358,7 +357,7 @@ static int actkeys_viewall(Cxt *C, const bool only_sel)
   float extra, min, max;
   bool found;
 
-  /* get editor data */
+  /* get ed data */
   if (anim_animdata_get_cxt(C, &ac) == 0) {
     return OP_CANCELLED;
   }
@@ -413,7 +412,7 @@ static int actkeys_viewall(Cxt *C, const bool only_sel)
   /* do View2D syncing */
   ui_view2d_sync(cxt_win_screen(C), cxt_win_area(C), v2d, V2D_LOCK_COPY);
 
-  /* just redraw this view */
+  /* just redrw this view */
   ed_area_tag_redrw(cxt_win_area(C));
 
   return OP_FINISHED;
@@ -630,25 +629,25 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
     return OP_CANCELLED;
   }
   else {
-    /* Both paste fn needs to be evaluated to account for mixed selection */
+    /* Both paste fn needs to be evaluated to account for mixed sel */
     const eKeyPasteErr kf_empty = paste_action_keys(&ac, offset_mode, merge_mode, flipped);
     /* non-zero return means an error occurred while trying to paste */
     pframes_inbuf = ed_pen_anim_copybuf_paste(&ac, offset_mode);
 
     /* Only report an error if nothing was pasted, i.e. when both FCurve and GPencil failed. */
-    if (!gpframes_inbuf) {
+    if (!pframes_inbuf) {
       switch (kf_empty) {
         case KEYFRAME_PASTE_OK:
           /* FCurve paste was ok, so it's all good. */
           break;
 
         case KEYFRAME_PASTE_NOWHERE_TO_PASTE:
-          dune_report(op->reports, RPT_ERROR, "No sel F-Curves to paste into");
-          return OPERATOR_CANCELLED;
+          dune_report(op->reports, RPT_ERR, "No sel F-Curves to paste into");
+          return OP_CANCELLED;
 
         case KEYFRAME_PASTE_NOTHING_TO_PASTE:
-          dune_report(op->reports, RPT_ERROR, "No data in the internal clipboard to paste");
-          return OPERATOR_CANCELLED;
+          dune_report(op->reports, RPT_ERR, "No data in the internal clipboard to paste");
+          return OP_CANCELLED;
       }
     }
   }
@@ -658,135 +657,132 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
     win_ev_add_notifier(C, NC_PEN | ND_DATA, nullptr);
   }
   /* set notifier that keyframes have changed */
-  WM_ev_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
 
   return OP_FINISHED;
 }
 
-static std::string actkeys_paste_description(bContext * /*C*/,
-                                             wmOperatorType * /*ot*/,
-                                             PointerRNA *ptr)
+static std::string actkeys_paste_description(Cxt * /*C*/,
+                                             WinOpType * /*ot*/,
+                                             ApiPtr *ptr)
 {
   /* Custom description if the 'flipped' option is used. */
-  if (RNA_boolean_get(ptr, "flipped")) {
-    return BLI_strdup(TIP_("Paste keyframes from mirrored bones if they exist"));
+  if (api_bool_get(ptr, "flipped")) {
+    return lib_strdup(TIP_("Paste keyframes from mirrored bones if they exist"));
   }
 
   /* Use the default description in the other cases. */
   return "";
 }
 
-void ACTION_OT_paste(wmOperatorType *ot)
+void act_ot_paste(WinOpType *ot)
 {
-  PropertyRNA *prop;
-  /* identifiers */
+  ApiProp *prop;
+  /* ids */
   ot->name = "Paste Keyframes";
-  ot->idname = "ACTION_OT_paste";
+  ot->idname = "act_ot_paste";
   ot->description =
-      "Paste keyframes from the internal clipboard for the selected channels, starting on the "
+      "Paste keyframes from the internal clipboard for the sel channels, starting on the "
       "current "
       "frame";
 
-  /* api callbacks */
-  //  ot->invoke = WM_operator_props_popup; /* Better wait for action redo panel. */
+  /* api cbs */
+  //  ot->invoke = win_op_props_popup; /* Better wait for action redo panel. */
   ot->get_description = actkeys_paste_description;
-  ot->exec = actkeys_paste_exec;
-  ot->poll = ED_operator_action_active;
+  ot->ex = actkeys_paste_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "offset",
-               rna_enum_keyframe_paste_offset_items,
+               api_enum_keyframe_paste_offset_items,
                KEYFRAME_PASTE_OFFSET_CFRA_START,
                "Offset",
                "Paste time offset of keys");
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "merge",
-               rna_enum_keyframe_paste_merge_items,
+               api_enum_keyframe_paste_merge_items,
                KEYFRAME_PASTE_MERGE_MIX,
                "Type",
                "Method of merging pasted keys and existing");
-  prop = RNA_def_boolean(
-      ot->srna, "flipped", false, "Flipped", "Paste keyframes from mirrored bones if they exist");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(
+      ot->sapi, "flipped", false, "Flipped", "Paste keyframes from mirrored bones if they exist");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Insert Operator
- * \{ */
+/* Keyframes: Insert Op */
 
 /* defines for insert keyframes tool */
-static const EnumPropertyItem prop_actkeys_insertkey_types[] = {
+static const EnumPropItem prop_actkeys_insertkey_types[] = {
     {1, "ALL", 0, "All Channels", ""},
-    {2, "SEL", 0, "Only Selected Channels", ""},
-    /* XXX not in all cases. */
+    {2, "SEL", 0, "Only Sel Channels", ""},
+    /* not in all cases. */
     {3, "GROUP", 0, "In Active Group", ""},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-static void insert_gpencil_key(bAnimContext *ac,
-                               bAnimListElem *ale,
-                               const eGP_GetFrame_Mode add_frame_mode,
-                               bGPdata **gpd_old)
+static void insert_pen_key(AnimCxt *ac,
+                           AnimListElem *ale,
+                           const ePenGetFrame_Mode add_frame_mode,
+                           PenData **pd_old)
 {
   Scene *scene = ac->scene;
-  bGPdata *gpd = (bGPdata *)ale->id;
-  bGPDlayer *gpl = (bGPDlayer *)ale->data;
-  BKE_gpencil_layer_frame_get(gpl, scene->r.cfra, add_frame_mode);
-  /* Check if the gpd changes to tag only once. */
-  if (gpd != *gpd_old) {
-    BKE_gpencil_tag(gpd);
-    *gpd_old = gpd;
+  PenData *pd = (PenData *)ale->id;
+  PenLayer *pl = (PenLayer *)ale->data;
+  dune_pen_layer_frame_get(pl, scene->r.cfra, add_frame_mode);
+  /* Check if the pd changes to tag only once. */
+  if (pd != *pd_old) {
+    dune_pen_tag(pd);
+    *pd_old = pd;
   }
 }
 
-static void insert_grease_pencil_key(bAnimContext *ac,
-                                     bAnimListElem *ale,
-                                     const bool hold_previous)
+static void insert_pen_key(AnimCxt *ac,
+                           AnimListElem *ale,
+                           const bool hold_prev)
 {
-  using namespace blender::bke::greasepencil;
+  using namespace dune::pen;
   Layer *layer = static_cast<Layer *>(ale->data);
-  GreasePencil *grease_pencil = reinterpret_cast<GreasePencil *>(ale->id);
-  const int current_frame_number = ac->scene->r.cfra;
+  Pen *pen = reinterpret_cast<Pen *>(ale->id);
+  const int curr_frame_num = ac->scene->r.cfra;
 
-  if (layer->frames().contains(current_frame_number)) {
+  if (layer->frames().contains(curr_frame_num)) {
     return;
   }
 
   bool changed = false;
-  if (hold_previous) {
-    const FramesMapKey active_frame_number = layer->frame_key_at(current_frame_number);
-    if ((active_frame_number == -1) || layer->frames().lookup(active_frame_number).is_null()) {
-      /* There is no active frame to hold to, or it's a null frame. Therefore just insert a blank
-       * frame. */
-      changed = grease_pencil->insert_blank_frame(
-          *layer, current_frame_number, 0, BEZT_KEYTYPE_KEYFRAME);
+  if (hold_prev) {
+    const FramesMapKey active_frame_num = layer->frame_key_at(curr_frame_num);
+    if ((active_frame_num == -1) || layer->frames().lookup(active_frame_num).is_null()) {
+      /* There is no active frame to hold to, or it's a null frame.
+       * Thus insert a blank frame. */
+      changed = pen->insert_blank_frame(
+          *layer, curr_frame_num, 0, BEZT_KEYTYPE_KEYFRAME);
     }
     else {
-      /* Duplicate the active frame. */
-      changed = grease_pencil->insert_duplicate_frame(
-          *layer, active_frame_number, current_frame_number, false);
+      /* Dupl the active frame. */
+      changed = pen->insert_dupl_frame(
+          *layer, active_frame_num, curr_frame_num, false);
     }
   }
   else {
     /* Insert a blank frame. */
-    changed = grease_pencil->insert_blank_frame(
-        *layer, current_frame_number, 0, BEZT_KEYTYPE_KEYFRAME);
+    changed = pen->insert_blank_frame(
+        *layer, curr_frame_num, 0, BEZT_KEYTYPE_KEYFRAME);
   }
 
   if (changed) {
-    DEG_id_tag_update(&grease_pencil->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&pen->id, ID_RECALC_GEO);
   }
 }
 
-static void insert_fcurve_key(bAnimContext *ac,
-                              bAnimListElem *ale,
-                              const AnimationEvalContext anim_eval_context,
+static void insert_fcurve_key(AnimCxt *ac,
+                              AnimListElem *ale,
+                              const AnimEvalCxt anim_eval_cxt,
                               eInsertKeyFlags flag)
 {
   FCurve *fcu = (FCurve *)ale->key_data;
@@ -795,34 +791,34 @@ static void insert_fcurve_key(bAnimContext *ac,
   Scene *scene = ac->scene;
   ToolSettings *ts = scene->toolsettings;
 
-  /* Read value from property the F-Curve represents, or from the curve only?
+  /* Read val from prop the F-Curve represents or from the curve only?
    * - ale->id != nullptr:
-   *   Typically, this means that we have enough info to try resolving the path.
+   * Typically this means: we have enough info to try resolving the path.
    *
    * - ale->owner != nullptr:
-   *   If this is set, then the path may not be resolvable from the ID alone,
-   *   so it's easier for now to just read the F-Curve directly.
-   *   (TODO: add the full-blown PointerRNA relative parsing case here...)
+   *   If set, path may not be resolvable from the Id alone,
+   *   so it's easier for now to read the F-Curve directly.
+   *   (TODO: add the full-blown ApiPtr relative parsing case here...)
    */
   if (ale->id && !ale->owner) {
-    blender::animrig::insert_keyframe(ac->bmain,
-                                      reports,
-                                      ale->id,
-                                      nullptr,
-                                      ((fcu->grp) ? (fcu->grp->name) : (nullptr)),
-                                      fcu->rna_path,
-                                      fcu->array_index,
-                                      &anim_eval_context,
-                                      eBezTriple_KeyframeType(ts->keyframe_type),
+    dune::animrig::insert_keyframe(ac->main,
+                                   reports,
+                                   ale->id,
+                                   nullptr,
+                                   ((fcu->grp) ? (fcu->grp->name) : (nullptr)) ;
+                                      fcu->api_path,
+                                      fcu->arr_index,
+                                      &anim_eval_cxt,
+                                      eBezTripleKeyframeType(ts->keyframe_type),
                                       flag);
   }
   else {
-    AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+    AnimData *adt = anim_nla_mapping_get(ac, ale);
 
     /* adjust current frame for NLA-scaling */
-    float cfra = anim_eval_context.eval_time;
+    float cfra = anim_eval_cxt.eval_time;
     if (adt) {
-      cfra = BKE_nla_tweakedit_remap(adt, cfra, NLATIME_CONVERT_UNMAP);
+      cfra = dune_nla_tweakedit_remap(adt, cfra, NLATIME_CONVERT_UNMAP);
     }
 
     const float curval = evaluate_fcurve(fcu, cfra);
