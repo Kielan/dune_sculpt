@@ -1011,60 +1011,57 @@ void act_ot_dupl(WinOpType *ot)
   ot->idname = "act_ot_dupl";
   ot->description = "Make a copy of all sel keyframes";
 
-  /* api callbacks */
-  ot->exec = actkeys_dupl_ex;
-  ot->poll = ed_op_action_active;
+  /* api cbs */
+  ot->ex = actkeys_dupl_ex;
+  ot->poll = ed_op_act_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Delete Operator
- * \{ */
+/* Keyframes: Del Op */
 
-static bool delete_action_keys(bAnimContext *ac)
+static bool del_act_keys(AnimCxt *ac)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
   bool changed_final = false;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  /* loop through filtered data and delete selected keys */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  /* loop through filtered data and del sel keys */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     bool changed = false;
 
     if (ale->type == ANIMTYPE_PENLAYER) {
-      changed = ed_pen_layer_frames_del((bGPDlayer *)ale->data);
+      changed = ed_pen_layer_frames_del((PenLayer *)ale->data);
     }
     else if (ale->type == ANIMTYPE_PEN_LAYER) {
-      Pen *pen = reinterpret_cast<GreasePencil *>(ale->id);
-      changed = dune::ed::pen::remove_all_selected_frames(
-          *pen, static_cast<GreasePencilLayer *>(ale->data)->wrap());
+      Pen *pen = reinterpret_cast<Pen *>(ale->id);
+      changed = dune::ed::pen::remove_all_sel_frames(
+          *pen, static_cast<PenLayer *>(ale->data)->wrap());
 
       if (changed) {
-        graph_id_tag_update(&grease_pencil->id, ID_RECALC_GEOMETRY);
+        graph_id_tag_update(&pen->id, ID_RECALC_GEO);
       }
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
-      changed = ED_masklayer_frames_delete((MaskLayer *)ale->data);
+      changed = ed_masklayer_frames_delete((MaskLayer *)ale->data);
     }
     else {
       FCurve *fcu = (FCurve *)ale->key_data;
       AnimData *adt = ale->adt;
 
-      /* delete selected keyframes only */
-      changed = BKE_fcurve_delete_keys_selected(fcu);
+      /* del sel keyframes only */
+      changed = dune_fcurve_del_keys_sel(fcu);
 
-      /* Only delete curve too if it won't be doing anything anymore */
-      if (BKE_fcurve_is_empty(fcu)) {
-        blender::animrig::animdata_fcurve_delete(ac, adt, fcu);
+      /* Only del curve too if it won't be doing anything anymore */
+      if (dune_fcurve_is_empty(fcu)) {
+        dune::animrig::animdata_fcurve_del(ac, adt, fcu);
         ale->key_data = nullptr;
       }
     }
@@ -1075,61 +1072,56 @@ static bool delete_action_keys(bAnimContext *ac)
     }
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 
   return changed_final;
 }
 
-/* ------------------- */
-
-static int actkeys_delete_exec(bContext *C, wmOperator * /*op*/)
+static int actkeys_del_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* delete keyframes */
-  if (!delete_action_keys(&ac)) {
-    return OPERATOR_CANCELLED;
+  /* del keyframes */
+  if (!del_act_keys(&ac)) {
+    return OP_CANCELLED;
   }
 
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_REMOVED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_REMOVED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_delete(wmOperatorType *ot)
+void act_ot_del(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Delete Keyframes";
-  ot->idname = "ACTION_OT_delete";
-  ot->description = "Remove all selected keyframes";
+  /* ids */
+  ot->name = "Del Keyframes";
+  ot->idname = "act_ot_del";
+  ot->description = "Remove all sel keyframes";
 
-  /* api callbacks */
-  ot->invoke = WM_operator_confirm_or_exec;
-  ot->exec = actkeys_delete_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_op_confirm_or_ex;
+  ot->ex = actkeys_del_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-  WM_operator_properties_confirm_or_exec(ot);
+  win_op_props_confirm_or_ex(ot);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Clean Operator
- * \{ */
+/* Keyframes: Clean Op */
 
-static void clean_action_keys(bAnimContext *ac, float thresh, bool clean_chan)
+static void clean_act_keys(AnimCxt *ac, float thresh, bool clean_chan)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
@@ -1139,152 +1131,142 @@ static void clean_action_keys(bAnimContext *ac, float thresh, bool clean_chan)
     filter |= ANIMFILTER_SEL;
   }
 
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
 
-  const bool only_selected_keys = !clean_chan;
+  const bool only_sel_keys = !clean_chan;
   /* loop through filtered data and clean curves */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    clean_fcurve(ac, ale, thresh, clean_chan, only_selected_keys);
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    clean_fcurve(ac, ale, thresh, clean_chan, only_sel_keys);
 
     ale->update |= ANIM_UPDATE_DEFAULT;
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_clean_exec(bContext *C, wmOperator *op)
+static int actkeys_clean_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   float thresh;
   bool clean_chan;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ac.datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented");
-    return OPERATOR_PASS_THROUGH;
+  if (elem(ac.datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    dune_report(op->reports, RPT_ERR, "Not implemented");
+    return OP_PASS_THROUGH;
   }
 
   /* get cleaning threshold */
-  thresh = RNA_float_get(op->ptr, "threshold");
-  clean_chan = RNA_boolean_get(op->ptr, "channels");
+  thresh = api_float_get(op->ptr, "threshold");
+  clean_chan = api_bool_get(op->ptr, "channels");
 
   /* clean keyframes */
   clean_action_keys(&ac, thresh, clean_chan);
 
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_clean(wmOperatorType *ot)
+void act_ot_clean(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clean Keyframes";
-  ot->idname = "ACTION_OT_clean";
+  ot->idname = "act_ot_clean";
   ot->description = "Simplify F-Curves by removing closely spaced keyframes";
 
-  /* api callbacks */
-  // ot->invoke =  /* XXX we need that number popup for this! */
-  ot->exec = actkeys_clean_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  // ot->invoke =  /* we need that num popup for this! */
+  ot->ex = actkeys_clean_ex;
+  ot->poll = ed_op_act_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_float(
-      ot->srna, "threshold", 0.001f, 0.0f, FLT_MAX, "Threshold", "", 0.0f, 1000.0f);
-  RNA_def_boolean(ot->srna, "channels", false, "Channels", "");
+  /* props */
+  ot->prop = api_def_float(
+      ot->sapi, "threshold", 0.001f, 0.0f, FLT_MAX, "Threshold", "", 0.0f, 1000.0f);
+  api_def_bool(ot->sapi, "channels", false, "Channels", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Sample Operator
- * \{ */
+/* Keyframes: Sample Op */
 
-/* Evaluates the curves between each selected keyframe on each frame, and keys the value. */
-static void bake_action_keys(bAnimContext *ac)
+/* Evals the curves between each sel keyframe on each frame, and keys the val. */
+static void bake_act_keys(AnimCxt *ac)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_FCURVESONLY | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Loop through filtered data and add keys between selected keyframes on every frame. */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     bake_fcurve_segments((FCurve *)ale->key_data);
 
     ale->update |= ANIM_UPDATE_DEPS;
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_bake_exec(bContext *C, wmOperator *op)
+static int actkeys_bake_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ac.datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented");
-    return OPERATOR_PASS_THROUGH;
+  if (elem(ac.datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    dune_report(op->reports, RPT_ERR, "Not implemented");
+    return OP_PASS_THROUGH;
   }
 
   /* sample keyframes */
-  bake_action_keys(&ac);
+  bake_act_keys(&ac);
 
   /* set notifier that keyframes have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_bake_keys(wmOperatorType *ot)
+void act_ot_bake_keys(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Bake Keyframes";
-  ot->idname = "ACTION_OT_bake_keys";
-  ot->description = "Add keyframes on every frame between the selected keyframes";
+  ot->idname = "act_ot_bake_keys";
+  ot->description = "Add keyframes on every frame between the sel keyframes";
 
-  /* api callbacks */
-  ot->exec = actkeys_bake_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_bake_ex;
+  ot->poll = ed_op_act_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Settings: Set Extrapolation-Type Operator
- * \{ */
+/* Settings: Set Extrapolation-Type Op */
 
 /* defines for make/clear cyclic extrapolation tools */
 #define MAKE_CYCLIC_EXPO -1
 #define CLEAR_CYCLIC_EXPO -2
 
-/* defines for set extrapolation-type for selected keyframes tool */
-static const EnumPropertyItem prop_actkeys_expo_types[] = {
+/* defines for set extrapolation-type for sel keyframes tool */
+static const EnumPropItem prop_actkeys_expo_types[] = {
     {FCURVE_EXTRAPOLATE_CONSTANT,
      "CONSTANT",
      0,
@@ -1309,19 +1291,19 @@ static const EnumPropertyItem prop_actkeys_expo_types[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/* this function is responsible for setting extrapolation mode for keyframes */
-static void setexpo_action_keys(bAnimContext *ac, short mode)
+/* this fn is responsible for setting extrapolation mode for keyframes */
+static void setexpo_act_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_SEL | ANIMFILTER_FCURVESONLY | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* loop through setting mode per F-Curve */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     FCurve *fcu = (FCurve *)ale->data;
 
     if (mode >= 0) {
@@ -1329,25 +1311,24 @@ static void setexpo_action_keys(bAnimContext *ac, short mode)
       fcu->extend = mode;
     }
     else {
-      /* shortcuts for managing Cycles F-Modifiers to make it easier to toggle cyclic animation
-       * without having to go through FModifier UI in Graph Editor to do so
-       */
+      /* shortcuts for managing Cycles F-Mods to make it easier to toggle cyclic anim
+       * o having to go through FMod UI in Graph Ed to do so */
       if (mode == MAKE_CYCLIC_EXPO) {
         /* only add if one doesn't exist */
-        if (list_has_suitable_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_CYCLES, -1) == 0) {
-          /* TODO: add some more preset versions which set different extrapolation options? */
-          add_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_CYCLES, fcu);
+        if (list_has_suitable_fmod(&fcu->mods, FMOD_TYPE_CYCLES, -1) == 0) {
+          /* TODO: add some more preset versions which set diff extrapolation options? */
+          add_fmod(&fcu->mods, FMOD_TYPE_CYCLES, fcu);
         }
       }
       else if (mode == CLEAR_CYCLIC_EXPO) {
-        /* remove all the modifiers fitting this description */
-        FModifier *fcm, *fcn = nullptr;
+        /* remove all the mods fitting this description */
+        FMod *fcm, *fcn = nullptr;
 
-        for (fcm = static_cast<FModifier *>(fcu->modifiers.first); fcm; fcm = fcn) {
+        for (fcm = static_cast<FMod *>(fcu->mods.first); fcm; fcm = fcn) {
           fcn = fcm->next;
 
-          if (fcm->type == FMODIFIER_TYPE_CYCLES) {
-            remove_fmodifier(&fcu->modifiers, fcm);
+          if (fcm->type == FMOD_TYPE_CYCLES) {
+            remove_fmod(&fcu->mods, fcm);
           }
         }
       }
@@ -1356,405 +1337,382 @@ static void setexpo_action_keys(bAnimContext *ac, short mode)
     ale->update |= ANIM_UPDATE_DEFAULT;
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_expo_exec(bContext *C, wmOperator *op)
+static int actkeys_expo_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
-
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ac.datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented");
-    return OPERATOR_PASS_THROUGH;
+  if (elem(ac.datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    dune_report(op->reports, RPT_ERR, "Not implemented");
+    return OP_PASS_THROUGH;
   }
 
   /* get handle setting mode */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* set handle type */
-  setexpo_action_keys(&ac, mode);
+  setexpo_act_keys(&ac, mode);
 
-  /* set notifier that keyframe properties have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr);
+  /* set notifier that keyframe props have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_extrapolation_type(wmOperatorType *ot)
+void act_ot_extrapolation_type(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set F-Curve Extrapolation";
-  ot->idname = "ACTION_OT_extrapolation_type";
-  ot->description = "Set extrapolation mode for selected F-Curves";
+  ot->idname = "act_ot_extrapolation_type";
+  ot->description = "Set extrapolation mode for sel F-Curves";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_expo_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_expo_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(ot->srna, "type", prop_actkeys_expo_types, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", prop_actkeys_expo_types, 0, "Type", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Settings: Set Interpolation-Type Operator
- * \{ */
+/* Settings: Set Interpolation-Type Op */
 
-static int actkeys_ipo_exec(bContext *C, wmOperator *op)
+static int actkeys_ipo_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ac.datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented");
-    return OPERATOR_PASS_THROUGH;
+  if (elem(ac.datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    dune_report(op->reports, RPT_ERR, "Not implemented");
+    return OP_PASS_THROUGH;
   }
 
   /* get handle setting mode */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* set handle type */
-  ANIM_animdata_keyframe_callback(&ac,
-                                  (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
-                                   ANIMFILTER_FOREDIT | ANIMFILTER_NODUPLIS |
-                                   ANIMFILTER_FCURVESONLY),
-                                  ANIM_editkeyframes_ipo(mode));
+  anim_animdata_keyframe_cb(&ac,
+                            (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
+                            ANIMFILTER_FOREDIT | ANIMFILTER_NODUPLIS |
+                            ANIMFILTER_FCURVESONLY),
+                            anim_editkeyframes_ipo(mode));
 
-  /* set notifier that keyframe properties have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr);
+  /* set notifier that keyframe props have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_interpolation_type(wmOperatorType *ot)
+void act_ot_interpolation_type(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set Keyframe Interpolation";
-  ot->idname = "ACTION_OT_interpolation_type";
+  ot->idname = "act_ot_interpolation_type";
   ot->description =
       "Set interpolation mode for the F-Curve segments starting from the selected keyframes";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_ipo_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_ipo_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(
-      ot->srna, "type", rna_enum_beztriple_interpolation_mode_items, 0, "Type", "");
-  RNA_def_property_translation_context(ot->prop, BLT_I18NCONTEXT_ID_ACTION);
+  ot->prop = api_def_enum(
+      ot->sapi, "type", api_enum_beztriple_interpolation_mode_items, 0, "Type", "");
+  api_def_prop_lang_cxt(ot->prop, LANG_CXT_ID_ACTION);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Settings: Set Easing Operator
- * \{ */
+/* Settings: Set Easing Op */
 
-static int actkeys_easing_exec(bContext *C, wmOperator *op)
+static int actkeys_easing_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* get handle setting mode */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* set handle type */
-  ANIM_animdata_keyframe_callback(&ac,
-                                  (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
-                                   ANIMFILTER_FOREDIT | ANIMFILTER_NODUPLIS |
-                                   ANIMFILTER_FCURVESONLY),
-                                  ANIM_editkeyframes_easing(mode));
+  anim_animdata_keyframe_cb(&ac,
+                            (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
+                            ANIMFILTER_FOREDIT | ANIMFILTER_NODUPLIS |
+                            ANIMFILTER_FCURVESONLY),
+                            anim_editkeyframes_easing(mode));
 
-  /* set notifier that keyframe properties have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr);
+  /* set notifier that keyframe props have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_easing_type(wmOperatorType *ot)
+void act_ot_easing_type(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set Keyframe Easing Type";
-  ot->idname = "ACTION_OT_easing_type";
+  ot->idname = "act_ot_easing_type";
   ot->description =
       "Set easing type for the F-Curve segments starting from the selected keyframes";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_easing_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cb */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_easing_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(
-      ot->srna, "type", rna_enum_beztriple_interpolation_easing_items, 0, "Type", "");
+  ot->prop = api_def_enum(
+      ot->sapi, "type", api_enum_beztriple_interpolation_easing_items, 0, "Type", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Settings: Set Handle-Type Operator
- * \{ */
+/* Settings: Set Handle-Type Op */
 
-/* this function is responsible for setting handle-type of selected keyframes */
-static void sethandles_action_keys(bAnimContext *ac, short mode)
+/* this fn is responsible for setting handle-type of sel keyframes */
+static void sethandles_action_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
-  KeyframeEditFunc edit_cb = ANIM_editkeyframes_handles(mode);
-  KeyframeEditFunc sel_cb = ANIM_editkeyframes_ok(BEZT_OK_SELECTED);
+  KeyframeEditFn edit_cb = anim_editkeyframes_handles(mode);
+  KeyframeEditFn sel_cb = anim_editkeyframes_ok(BEZT_OK_SEL);
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_FCURVESONLY | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Loop through setting flags for handles
-   * NOTE: we do not supply KeyframeEditData to the looper yet.
-   * Currently that's not necessary here.
-   */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+   * we do not supply KeyframeEditData to the looper yet.
+   * Currently that's not necessary here. */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     FCurve *fcu = (FCurve *)ale->key_data;
 
-    /* any selected keyframes for editing? */
-    if (ANIM_fcurve_keyframes_loop(nullptr, fcu, nullptr, sel_cb, nullptr)) {
-      /* change type of selected handles */
-      ANIM_fcurve_keyframes_loop(nullptr, fcu, nullptr, edit_cb, BKE_fcurve_handles_recalc);
+    /* any sel keyframes for editing? */
+    if (anim_fcurve_keyframes_loop(nullptr, fcu, nullptr, sel_cb, nullptr)) {
+      /* change type of sel handles */
+      anim_fcurve_keyframes_loop(nullptr, fcu, nullptr, edit_cb, dune_fcurve_handles_recalc);
 
       ale->update |= ANIM_UPDATE_DEFAULT;
     }
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_handletype_exec(bContext *C, wmOperator *op)
+static int actkeys_handletype_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ac.datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented");
-    return OPERATOR_PASS_THROUGH;
+  if (elem(ac.datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+    dune_report(op->reports, RPT_ERR, "Not implemented");
+    return OP_PASS_THROUGH;
   }
 
   /* get handle setting mode */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* set handle type */
-  sethandles_action_keys(&ac, mode);
+  sethandles_act_keys(&ac, mode);
 
-  /* set notifier that keyframe properties have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr);
+  /* set notifier that keyframe props have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_handle_type(wmOperatorType *ot)
+void act_ot_handle_type(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set Keyframe Handle Type";
-  ot->idname = "ACTION_OT_handle_type";
+  ot->idname = "act_ot_handle_type";
   ot->description = "Set type of handle for selected keyframes";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_handletype_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_handletype_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_keyframe_handle_type_items, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", api_enum_keyframe_handle_type_items, 0, "Type", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Settings: Set Keyframe-Type Operator
- * \{ */
+/* Settings: Set Keyframe-Type Op */
 
-/* this function is responsible for setting keyframe type for keyframes */
-static void setkeytype_action_keys(bAnimContext *ac, short mode)
+/* this fn is responsible for setting keyframe type for keyframes */
+static void setkeytype_act_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
-  KeyframeEditFunc set_cb = ANIM_editkeyframes_keytype(mode);
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
+  KeyframeEditFn set_cb = anim_editkeyframes_keytype(mode);
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Loop through setting BezTriple interpolation
-   * NOTE: we do not supply KeyframeEditData to the looper yet.
-   * Currently that's not necessary here.
-   */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+   * NOTE: we do not supply KeyframeEdData to the looper yet.
+   * Currently that's not necessary here.  */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->type) {
-      case ANIMTYPE_GPLAYER:
-        ED_gpencil_layer_frames_keytype_set(static_cast<bGPDlayer *>(ale->data), mode);
+      case ANIMTYPE_PENLAYER:
+        ed_pen_layer_frames_keytype_set(static_cast<PenLayer *>(ale->data), mode);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
 
-      case ANIMTYPE_GREASE_PENCIL_LAYER:
-        blender::ed::greasepencil::set_selected_frames_type(
-            static_cast<GreasePencilLayer *>(ale->data)->wrap(),
-            static_cast<eBezTriple_KeyframeType>(mode));
+      case ANIMTYPE_PEN_LAYER:
+        dune::ed::pen::set_sel_frames_type(
+            static_cast<PenLayer *>(ale->data)->wrap(),
+            static_cast<eBezTripleKeyframeType>(mode));
         ale->update |= ANIM_UPDATE_DEPS;
         break;
 
       case ANIMTYPE_FCURVE:
-        ANIM_fcurve_keyframes_loop(
+        anim_fcurve_keyframes_loop(
             nullptr, static_cast<FCurve *>(ale->key_data), nullptr, set_cb, nullptr);
         ale->update |= ANIM_UPDATE_DEPS | ANIM_UPDATE_HANDLES;
         break;
 
       default:
-        BLI_assert_msg(false, "Keytype cannot be set into this animation type.");
+        lib_assert_msg(false, "Keytype cannot be set into this anim type.");
     }
   }
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_keytype_exec(bContext *C, wmOperator *op)
+static int actkeys_keytype_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
-  /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* get ed data */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   if (ac.datatype == ANIMCONT_MASK) {
-    BKE_report(op->reports, RPT_ERROR, "Not implemented for Masks");
-    return OPERATOR_PASS_THROUGH;
+    dune_report(op->reports, RPT_ERR, "Not implemented for Masks");
+    return OP_PASS_THROUGH;
   }
 
   /* get handle setting mode */
-  mode = RNA_enum_get(op->ptr, "type");
+  mode = api_enum_get(op->ptr, "type");
 
   /* set handle type */
   setkeytype_action_keys(&ac, mode);
 
-  /* set notifier that keyframe properties have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME_PROP, nullptr);
+  /* set notifier that keyframe props have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME_PROP, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_keyframe_type(wmOperatorType *ot)
+void act_ot_keyframe_type(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set Keyframe Type";
-  ot->idname = "ACTION_OT_keyframe_type";
+  ot->idname = "act_ot_keyframe_type";
   ot->description = "Set type of keyframe for the selected keyframes";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_keytype_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = actkeys_keytype_exec;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_beztriple_keyframe_type_items, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", api_enum_beztriple_keyframe_type_items, 0, "Type", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Transform: Jump to Selected Frames Operator
- * \{ */
+/* Transform: Jump to Sel Frames Op */
 
-static bool actkeys_framejump_poll(bContext *C)
+static bool actkeys_framejump_poll(Cxt *C)
 {
-  /* prevent changes during render */
-  if (G.is_rendering) {
+  /* prevent changes during rndr */
+  if (G.is_rndring) {
     return false;
   }
 
-  return ED_operator_action_active(C);
+  return ed_op_act_active(C);
 }
 
-/* snap current-frame indicator to 'average time' of selected keyframe */
-static int actkeys_framejump_exec(bContext *C, wmOperator * /*op*/)
+/* snap current-frame indicator to 'avg time' of sel keyframe */
+static int actkeys_framejump_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
-  KeyframeEditData ked = {{nullptr}};
+  AnimCxt ac;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
+  KeyframeEdData ked = {{nullptr}};
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* init edit data */
-  /* loop over action data, averaging values */
+  /* loop over act data, averaging vals */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-  anim_animdata_filter(&ac, &anim_data, filter, ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(&ac, &anim_data, filter, ac.data, eAnimContTypes(ac.datatype));
 
   LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->datatype) {
-      case ALE_GPFRAME: {
-        PenDataLayer *gpl = static_cast<PenDataLayer *>(ale->data);
+      case ALE_PENFRAME: {
+        PenLayer *pl = static_cast<PenLayer *>(ale->data);
 
-        LISTB_FOREACH (PenDataFrame *, gpf, &gpl->frames) {
-          /* only if selected */
-          if (!(gpf->flag & PEN_FRAME_SEL)) {
+        LIST_FOREACH (PenDataFrame *, pf, &pl->frames) {
+          /* only if sel */
+          if (!(pf->flag & PEN_FRAME_SEL)) {
             continue;
           }
-          /* store average time in float 1 (only do rounding at last step) */
-          ked.f1 += gpf->framenum;
+          /* store avg time in float 1 (only do rounding at last step) */
+          ked.f1 += pf->framenum;
 
-          /* increment number of items */
+          /* increment num of items */
           ked.i1++;
         }
         break;
@@ -1763,11 +1721,11 @@ static int actkeys_framejump_exec(bContext *C, wmOperator * /*op*/)
       case ALE_PEN_CEL: {
         using namespace dune::pen;
         const Layer &layer = *static_cast<Layer *>(ale->data);
-        for (auto [frame_number, frame] : layer.frames().items()) {
+        for (auto [frame_num, frame] : layer.frames().items()) {
           if (!frame.is_sel()) {
             continue;
           }
-          ked.f1 += frame_number;
+          ked.f1 += frame_num;
           ked.i1++;
         }
         break;
@@ -1794,7 +1752,7 @@ static int actkeys_framejump_exec(bContext *C, wmOperator * /*op*/)
 
   anim_animdata_freelist(&anim_data);
 
-  /* set the new current frame value, based on the average time */
+  /* set new curr frame val, based on the avg time */
   if (ked.i1) {
     Scene *scene = ac.scene;
     scene->r.cfra = round_fl_to_int(ked.f1 / ked.i1);
@@ -1807,7 +1765,7 @@ static int actkeys_framejump_exec(bContext *C, wmOperator * /*op*/)
   return OP_FINISHED;
 }
 
-void ACTION_OT_frame_jump(WinOpType *ot)
+void act_ot_frame_jump(WinOpType *ot)
 {
   /* ids */
   ot->name = "Jump to Keyframes";
