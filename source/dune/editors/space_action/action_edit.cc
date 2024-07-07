@@ -55,14 +55,13 @@
 #include "action_intern.hh"
 
 /* -------------------------------------------------------------------- */
-/** Pose Markers: Localize Markers */
+/* Pose Markers: Localize Markers */
 
 /* ensure that there is:
  * 1) an active action editor
  * 2) that the mode will have an active action available
  * 3) that the set of markers being shown are the scene markers, not the list we're merging
- * 4) that there are some selected markers
- */
+ * 4) that there are some selected markers */
 static bool act_markers_make_local_poll(Cxt *C)
 {
   SpaceAction *sact = cxt_win_space_action(C);
@@ -246,24 +245,21 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
   return found;
 }
 
-/** \} */
+/* ------------------------------------------ */
+/* View: Automatic Preview-Range Op */
 
-/* -------------------------------------------------------------------- */
-/** \name View: Automatic Preview-Range Operator
- * \{ */
-
-static int actkeys_previewrange_exec(bContext *C, wmOperator * /*op*/)
+static int actkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   Scene *scene;
   float min, max;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
   if (ac.scene == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   scene = ac.scene;
@@ -280,74 +276,70 @@ static int actkeys_previewrange_exec(bContext *C, wmOperator * /*op*/)
 
   /* set notifier that things have changed */
   /* XXX err... there's nothing for frame ranges yet, but this should do fine too */
-  WM_event_add_notifier(C, NC_SCENE | ND_FRAME, ac.scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_FRAME, ac.scene);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_previewrange_set(wmOperatorType *ot)
+void action_ot_previewrange_set(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Set Preview Range to Selected";
-  ot->idname = "ACTION_OT_previewrange_set";
-  ot->description = "Set Preview Range based on extents of selected Keyframes";
+  /* ids */
+  ot->name = "Set Preview Range to Sel";
+  ot->idname = "action_ot_previewrange_set";
+  ot->description = "Set Preview Range based on extents of sel Keyframes";
 
-  /* api callbacks */
-  ot->exec = actkeys_previewrange_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_previewrange_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View: All Operator
- * \{ */
+/* View: All Op */
 
-/**
- * Find the extents of the active channel
+/* Find the extents of the active channel
  *
- * \param r_min: Bottom y-extent of channel.
- * \param r_max: Top y-extent of channel.
- * \return Success of finding a selected channel.
+ * param r_min: Bottom y-extent of channel.
+ * param r_max: Top y-extent of channel.
+ * return Success of finding a selected channel.
  */
-static bool actkeys_channels_get_selected_extents(bAnimContext *ac, float *r_min, float *r_max)
+static bool actkeys_channels_get_sel_extents(AnimCxt *ac, float *r_min, float *r_max)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  bAnimListElem *ale;
+  List anim_data = {nullptr, nullptr};
+  AnimListElem *ale;
   eAnimFilter_Flags filter;
 
-  /* NOTE: not bool, since we want prioritize individual channels over expanders. */
+  /* Not bool bc want to prioritize 
+  individual channels over expanders. */
   short found = 0;
 
   /* get all items - we need to do it this way */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_LIST_CHANNELS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
 
   /* loop through all channels, finding the first one that's selected */
-  float ymax = ANIM_UI_get_first_channel_top(&ac->region->v2d);
-  const float channel_step = ANIM_UI_get_channel_step();
-  for (ale = static_cast<bAnimListElem *>(anim_data.first); ale;
+  float ymax = anim_ui_get_first_channel_top(&ac->rgn->v2d);
+  const float channel_step = anim_ui_get_channel_step();
+  for (ale = static_cast<AnimListElem *>(anim_data.first); ale;
        ale = ale->next, ymax -= channel_step)
   {
-    const bAnimChannelType *acf = ANIM_channel_get_typeinfo(ale);
+    const AnimChannelType *acf = anim_channel_get_typeinfo(ale);
 
-    /* must be selected... */
-    if (acf && acf->has_setting(ac, ale, ACHANNEL_SETTING_SELECT) &&
-        ANIM_channel_setting_get(ac, ale, ACHANNEL_SETTING_SELECT))
+    /* must be sel... */
+    if (acf && acf->has_setting(ac, ale, ACHANNEL_SETTING_SEL) &&
+        anim_channel_setting_get(ac, ale, ACHANNEL_SETTING_SEL))
     {
       /* update best estimate */
-      *r_min = ymax - ANIM_UI_get_channel_height();
+      *r_min = ymax - anim_ui_get_channel_height();
       *r_max = ymax;
 
       /* is this high enough priority yet? */
       found = acf->channel_role;
 
       /* only stop our search when we've found an actual channel
-       * - data-block expanders get less priority so that we don't abort prematurely
-       */
+       * - data-block expanders get less priority so that we don't abort premature  */
       if (found == ACHANNEL_ROLE_CHANNEL) {
         break;
       }
@@ -355,34 +347,34 @@ static bool actkeys_channels_get_selected_extents(bAnimContext *ac, float *r_min
   }
 
   /* free all temp data */
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_freelist(&anim_data);
 
   return (found != 0);
 }
 
-static int actkeys_viewall(bContext *C, const bool only_sel)
+static int actkeys_viewall(Cxt *C, const bool only_sel)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   View2D *v2d;
   float extra, min, max;
   bool found;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
-  v2d = &ac.region->v2d;
+  v2d = &ac.rgn->v2d;
 
   /* set the horizontal range, with an extra offset so that the extreme keys will be in view */
   found = get_keyframe_extents(&ac, &min, &max, only_sel);
 
   if (only_sel && (found == false)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   if (fabsf(max - min) < 1.0f) {
     /* Exception - center the single keyframe. */
-    float xwidth = BLI_rctf_size_x(&v2d->cur);
+    float xwidth = lib_rctf_size_x(&v2d->cur);
 
     v2d->cur.xmin = min - xwidth / 2.0f;
     v2d->cur.xmax = max + xwidth / 2.0f;
@@ -392,7 +384,7 @@ static int actkeys_viewall(bContext *C, const bool only_sel)
     v2d->cur.xmin = min;
     v2d->cur.xmax = max;
 
-    extra = 0.125f * BLI_rctf_size_x(&v2d->cur);
+    extra = 0.125f * lib_rctf_size_x(&v2d->cur);
     v2d->cur.xmin -= extra;
     v2d->cur.xmax += extra;
   }
@@ -402,14 +394,14 @@ static int actkeys_viewall(bContext *C, const bool only_sel)
     /* view all -> the summary channel is usually the shows everything,
      * and resides right at the top... */
     v2d->cur.ymax = 0.0f;
-    v2d->cur.ymin = float(-BLI_rcti_size_y(&v2d->mask));
+    v2d->cur.ymin = float(-lib_rcti_size_y(&v2d->mask));
   }
   else {
-    /* locate first selected channel (or the active one), and frame those */
+    /* locate 1st sel channel (or the active one), and frame those */
     float ymin = v2d->cur.ymin;
     float ymax = v2d->cur.ymax;
 
-    if (actkeys_channels_get_selected_extents(&ac, &ymin, &ymax)) {
+    if (actkeys_channels_get_sel_extents(&ac, &ymin, &ymax)) {
       /* recenter the view so that this range is in the middle */
       float ymid = (ymax - ymin) / 2.0f + ymin;
       float x_center;
@@ -420,10 +412,10 @@ static int actkeys_viewall(bContext *C, const bool only_sel)
   }
 
   /* do View2D syncing */
-  UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
+  ui_view2d_sync(cxt_win_screen(C), cxt_win_area(C), v2d, V2D_LOCK_COPY);
 
   /* just redraw this view */
-  ED_area_tag_redraw(CTX_wm_area(C));
+  ED_area_tag_redrw(cxt_wm_area(C));
 
   return OPERATOR_FINISHED;
 }
