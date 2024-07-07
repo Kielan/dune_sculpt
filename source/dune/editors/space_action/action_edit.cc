@@ -275,7 +275,7 @@ static int actkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
   }
 
   /* set notifier that things have changed */
-  /* XXX err... there's nothing for frame ranges yet, but this should do fine too */
+  /* err... there's nothing for frame ranges yet, but this should do fine too */
   win_ev_add_notifier(C, NC_SCENE | ND_FRAME, ac.scene);
 
   return OP_FINISHED;
@@ -303,8 +303,7 @@ void action_ot_previewrange_set(WinOpType *ot)
  *
  * param r_min: Bottom y-extent of channel.
  * param r_max: Top y-extent of channel.
- * return Success of finding a selected channel.
- */
+ * return Success of finding a selected channel */
 static bool actkeys_channels_get_sel_extents(AnimCxt *ac, float *r_min, float *r_max)
 {
   List anim_data = {nullptr, nullptr};
@@ -415,12 +414,10 @@ static int actkeys_viewall(Cxt *C, const bool only_sel)
   ui_view2d_sync(cxt_win_screen(C), cxt_win_area(C), v2d, V2D_LOCK_COPY);
 
   /* just redraw this view */
-  ED_area_tag_redrw(cxt_wm_area(C));
+  ed_area_tag_redrw(cxt_win_area(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
-
-/* ......... */
 
 static int actkeys_viewall_exec(bContext *C, wmOperator * /*op*/)
 {
@@ -430,127 +427,118 @@ static int actkeys_viewall_exec(bContext *C, wmOperator * /*op*/)
 
 static int actkeys_viewsel_exec(bContext *C, wmOperator * /*op*/)
 {
-  /* only selected */
+  /* only sel */
   return actkeys_viewall(C, true);
 }
 
-/* ......... */
-
-void ACTION_OT_view_all(wmOperatorType *ot)
+void action_ot_view_all(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Frame All";
-  ot->idname = "ACTION_OT_view_all";
+  ot->idname = "action_ot_view_all";
   ot->description = "Reset viewable area to show full keyframe range";
 
-  /* api callbacks */
-  ot->exec = actkeys_viewall_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_viewall_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-void ACTION_OT_view_selected(wmOperatorType *ot)
+void action_ot_view_sel(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Frame Selected";
-  ot->idname = "ACTION_OT_view_selected";
+  /* ids */
+  ot->name = "Frame Sel";
+  ot->idname = "action_ot_view_sel";
   ot->description = "Reset viewable area to show selected keyframes range";
 
-  /* api callbacks */
-  ot->exec = actkeys_viewsel_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_viewsel_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View: Frame Operator
- * \{ */
+/* View: Frame Op */
 
-static int actkeys_view_frame_exec(bContext *C, wmOperator *op)
+static int actkeys_view_frame_exec(Cxt *C, WinOp *op)
 {
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
-  ANIM_center_frame(C, smooth_viewtx);
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
+  anim_center_frame(C, smooth_viewtx);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_view_frame(wmOperatorType *ot)
+void action_ot_view_frame(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Go to Current Frame";
-  ot->idname = "ACTION_OT_view_frame";
+  ot->idname = "action_ot_view_frame";
   ot->description = "Move the view to the current frame";
 
-  /* api callbacks */
-  ot->exec = actkeys_view_frame_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_view_frame_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Keyframes: Copy/Paste Operator
- * \{ */
+/* Keyframes: Copy/Paste Op */
 
-/* NOTE: the backend code for this is shared with the graph editor */
-
-static short copy_action_keys(bAnimContext *ac)
+/* the backend code for this is shared with the graph editor */
+static short copy_act_keys(AnimCxt *ac)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
   short ok = 0;
 
-  /* clear buffer first */
-  ANIM_fcurves_copybuf_free();
+  /* clear buf 1st */
+  anim_fcurves_copybuf_free();
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FCURVESONLY |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* copy keyframes */
   ok = copy_animedit_keys(ac, &anim_data);
 
   /* clean up */
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_freelist(&anim_data);
 
   return ok;
 }
 
-static eKeyPasteError paste_action_keys(bAnimContext *ac,
-                                        const eKeyPasteOffset offset_mode,
-                                        const eKeyMergeMode merge_mode,
-                                        bool flip)
+static eKeyPasteErr paste_action_keys(AnimCxt *ac,
+                                      const eKeyPasteOffset offset_mode,
+                                      const eKeyMergeMode merge_mode,
+                                      bool flip)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   /* filter data
-   * - First time we try to filter more strictly, allowing only selected channels
+   * - 1st time we try to filter more strictly, allowing only sel channels
    *   to allow copying animation between channels
-   * - Second time, we loosen things up if nothing was found the first time, allowing
+   * - 2nd time, we loosen things up if nothing was found the 1st time, allowing
    *   users to just paste keyframes back into the original curve again #31670.
    */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
             ANIMFILTER_FCURVESONLY | ANIMFILTER_NODUPLIS);
 
-  if (ANIM_animdata_filter(
+  if (anim_animdata_filter(
           ac, &anim_data, filter | ANIMFILTER_SEL, ac->data, eAnimCont_Types(ac->datatype)) == 0)
   {
-    ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+    anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
   }
 
-  /* Value offset is always None because the user cannot see the effect of it. */
-  const eKeyPasteError ok = paste_animedit_keys(
+  /* Val offset is always None bc the user cannot see the effect of it. */
+  const eKeyPasteErr ok = paste_animedit_keys(
       ac, &anim_data, offset_mode, KEYFRAME_PASTE_VALUE_OFFSET_NONE, merge_mode, flip);
 
   /* clean up */
