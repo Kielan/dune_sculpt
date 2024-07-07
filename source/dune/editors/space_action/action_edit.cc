@@ -168,7 +168,7 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
       if (ale->datatype == ALE_PENFRAME) {
         PenDataLayer *pl = static_cast<PenDataLayer *>(ale->data);
 
-        /* Find GP-frame which is less than or equal to current-frame. */
+        /* Find Pen-frame which is less than or equal to current-frame. */
         LIST_FOREACH (PenDataFrame *, pf, &pl->frames) {
           if (!onlySel || (gpf->flag & PEN_FRAME_SEL)) {
             const float framenum = float(gpf->framenum);
@@ -227,8 +227,8 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
       *max += 0.0005f;
     }
 
-    /* free memory */
-    ANIM_animdata_freelist(&anim_data);
+    /* free mem */
+    anim_animdata_freelist(&anim_data);
   }
   else {
     /* set default range */
@@ -246,14 +246,13 @@ static bool get_keyframe_extents(bAnimContext *ac, float *min, float *max, const
 }
 
 /* View: Automatic Preview-Range Op */
-
 static int actkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
 {
   AnimCxt ac;
   Scene *scene;
   float min, max;
 
-  /* get editor data */
+  /* get ed data */
   if (anim_animdata_get_cxt(C, &ac) == 0) {
     return OP_CANCELLED;
   }
@@ -1041,16 +1040,16 @@ static bool delete_action_keys(bAnimContext *ac)
   LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
     bool changed = false;
 
-    if (ale->type == ANIMTYPE_GPLAYER) {
-      changed = ED_gpencil_layer_frames_delete((bGPDlayer *)ale->data);
+    if (ale->type == ANIMTYPE_PENLAYER) {
+      changed = ed_pen_layer_frames_del((bGPDlayer *)ale->data);
     }
-    else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-      GreasePencil *grease_pencil = reinterpret_cast<GreasePencil *>(ale->id);
-      changed = blender::ed::greasepencil::remove_all_selected_frames(
-          *grease_pencil, static_cast<GreasePencilLayer *>(ale->data)->wrap());
+    else if (ale->type == ANIMTYPE_PEN_LAYER) {
+      Pen *pen = reinterpret_cast<GreasePencil *>(ale->id);
+      changed = dune::ed::pen::remove_all_selected_frames(
+          *pen, static_cast<GreasePencilLayer *>(ale->data)->wrap());
 
       if (changed) {
-        DEG_id_tag_update(&grease_pencil->id, ID_RECALC_GEOMETRY);
+        graph_id_tag_update(&grease_pencil->id, ID_RECALC_GEOMETRY);
       }
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
