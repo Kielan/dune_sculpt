@@ -124,12 +124,12 @@ static int act_markers_make_local_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void action_ot_markers_make_local(WinOpType *ot)
+void act_ot_markers_make_local(WinOpType *ot)
 {
   /* ids */
   ot->name = "Make Markers Local";
-  ot->idname = "action_ot_markers_make_local";
-  ot->description = "Move selected scene markers to the active Action as local 'pose' markers";
+  ot->idname = "act_ot_markers_make_local";
+  ot->description = "Move sel scene markers to the active Action as local 'pose' markers";
 
   /* cbs */
   ot->ex = act_markers_make_local_ex;
@@ -279,11 +279,11 @@ static int actkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void action_ot_previewrange_set(WinOpType *ot)
+void act_ot_previewrange_set(WinOpType *ot)
 {
   /* ids */
   ot->name = "Set Preview Range to Sel";
-  ot->idname = "action_ot_previewrange_set";
+  ot->idname = "act_ot_previewrange_set";
   ot->description = "Set Preview Range based on extents of sel Keyframes";
 
   /* api cbs */
@@ -343,7 +343,7 @@ static bool actkeys_channels_get_sel_extents(AnimCxt *ac, float *r_min, float *r
     }
   }
 
-  /* free all temp data */
+  /* free all tmp data */
   anim_animdata_freelist(&anim_data);
 
   return (found != 0);
@@ -429,11 +429,11 @@ static int actkeys_viewsel_exec(bContext *C, wmOperator * /*op*/)
   return actkeys_viewall(C, true);
 }
 
-void action_ot_view_all(WinOpType *ot)
+void act_ot_view_all(WinOpType *ot)
 {
   /* ids */
   ot->name = "Frame All";
-  ot->idname = "action_ot_view_all";
+  ot->idname = "act_ot_view_all";
   ot->description = "Reset viewable area to show full keyframe range";
 
   /* api cbs */
@@ -444,7 +444,7 @@ void action_ot_view_all(WinOpType *ot)
   ot->flag = 0;
 }
 
-void action_ot_view_sel(WinOpType *ot)
+void act_ot_view_sel(WinOpType *ot)
 {
   /* ids */
   ot->name = "Frame Sel";
@@ -470,7 +470,7 @@ static int actkeys_view_frame_exec(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void action_ot_view_frame(WinOpType *ot)
+void act_ot_view_frame(WinOpType *ot)
 {
   /* ids */
   ot->name = "Go to Current Frame";
@@ -633,7 +633,7 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
     /* non-zero return means an error occurred while trying to paste */
     pframes_inbuf = ed_pen_anim_copybuf_paste(&ac, offset_mode);
 
-    /* Only report an error if nothing was pasted, i.e. when both FCurve and GPencil failed. */
+    /* Only report an err if nothing was pasted, i.e. when both FCurve and GPencil failed. */
     if (!pframes_inbuf) {
       switch (kf_empty) {
         case KEYFRAME_PASTE_OK:
@@ -651,7 +651,7 @@ static int actkeys_paste_ex(Cxt *C, WinOp *op)
     }
   }
 
-  /* Grease Pencil needs extra update to refresh the added keyframes. */
+  /* Pen needs extra update to refresh the added keyframes. */
   if (ac.datatype == ANIMCONT_PEN || pframes_inbuf) {
     win_ev_add_notifier(C, NC_PEN | ND_DATA, nullptr);
   }
@@ -838,8 +838,8 @@ static void insert_act_keys(AnimCxt *ac, short mode)
   ToolSettings *ts = scene->toolsettings;
   eInsertKeyFlags flag;
 
-  eGP_GetFrame_Mode add_frame_mode;
-  bGPdata *gpd_old = nullptr;
+  ePenGetFrame_Mode add_frame_mode;
+  bPenData *pd_old = nullptr;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT |
@@ -902,7 +902,7 @@ static int actkeys_insertkey_ex(Cxt *C, WinOp *op)
   }
 
   if (ac.datatype == ANIMCONT_MASK) {
-    dune_report(op->reports, RPT_ERROR, "Insert Keyframes is not yet implemented for this mode");
+    dune_report(op->reports, RPT_ERR, "Insert Keyframes is not yet implemented for this mode");
     return OP_CANCELLED;
   }
 
@@ -910,7 +910,7 @@ static int actkeys_insertkey_ex(Cxt *C, WinOp *op)
   mode = api_enum_get(op->ptr, "type");
 
   /* insert keyframes */
-  insert_action_keys(&ac, mode);
+  insert_act_keys(&ac, mode);
 
   /* set notifier that keyframes have changed */
   if (ac.datatype == ANIMCONT_PEN) {
@@ -1271,7 +1271,7 @@ static const EnumPropItem prop_actkeys_expo_types[] = {
      "CONSTANT",
      0,
      "Constant Extrapolation",
-     "Values on endpoint keyframes are held"},
+     "Vals on endpoint keyframes are held"},
     {FCURVE_EXTRAPOLATE_LINEAR,
      "LINEAR",
      0,
@@ -1281,13 +1281,13 @@ static const EnumPropItem prop_actkeys_expo_types[] = {
     {MAKE_CYCLIC_EXPO,
      "MAKE_CYCLIC",
      0,
-     "Make Cyclic (F-Modifier)",
-     "Add Cycles F-Modifier if one doesn't exist already"},
+     "Make Cyclic (F-Mod)",
+     "Add Cycles F-Mod if one doesn't exist already"},
     {CLEAR_CYCLIC_EXPO,
      "CLEAR_CYCLIC",
      0,
-     "Clear Cyclic (F-Modifier)",
-     "Remove Cycles F-Modifier if not needed anymore"},
+     "Clear Cyclic (F-Mod)",
+     "Remove Cycles F-Mod if not needed anymore"},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
@@ -1769,7 +1769,7 @@ void act_ot_frame_jump(WinOpType *ot)
 {
   /* ids */
   ot->name = "Jump to Keyframes";
-  ot->idname = "ACTION_OT_frame_jump";
+  ot->idname = "act_ot_frame_jump";
   ot->description = "Set the current frame to the average frame value of selected keyframes";
 
   /* api cbs */
@@ -1780,14 +1780,14 @@ void act_ot_frame_jump(WinOpType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \name Transform: Snap Keyframes Op */
+/* Transform: Snap Keyframes Op */
 
 /* defines for snap keyframes tool */
 static const EnumPropItem prop_actkeys_snap_types[] = {
     {ACTKEYS_SNAP_CFRA,
      "CFRA",
      0,
-     "Selection to Current Frame",
+     "Sel to Current Frame",
      "Snap sel keyframes to the current frame"},
     {ACTKEYS_SNAP_NEAREST_FRAME,
      "NEAREST_FRAME",
@@ -1798,8 +1798,8 @@ static const EnumPropItem prop_actkeys_snap_types[] = {
     {ACTKEYS_SNAP_NEAREST_SECOND,
      "NEAREST_SECOND",
      0,
-     "Selection to Nearest Second",
-     "Snap selected keyframes to the nearest second"},
+     "Sel to Nearest Second",
+     "Snap sel keyframes to the nearest second"},
     {ACTKEYS_SNAP_NEAREST_MARKER,
      "NEAREST_MARKER",
      0,
@@ -1815,10 +1815,10 @@ static void snap_action_keys(AnimCxt *ac, short mode)
   eAnimFilterFlags filter;
 
   KeyframeEditData ked = {{nullptr}};
-  KeyframeEditFunc edit_cb;
+  KeyframeEditFn edit_cb;
 
   /* filter data */
-  if (ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+  if (elem(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
     filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT);
   }
   else {
@@ -1827,7 +1827,7 @@ static void snap_action_keys(AnimCxt *ac, short mode)
   }
   anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
 
-  /* get beztriple editing callbacks */
+  /* get beztriple editing cbs */
   edit_cb = anim_editkeyframes_snap(mode);
 
   ked.scene = ac->scene;
@@ -1841,7 +1841,7 @@ static void snap_action_keys(AnimCxt *ac, short mode)
     AnimData *adt = anim_nla_mapping_get(ac, ale);
 
     if (ale->type == ANIMTYPE_GPLAYER) {
-      ed_pen_layer_snap_frames(static_cast<bGPDlayer *>(ale->data), ac->scene, mode);
+      ed_pen_layer_snap_frames(static_cast<PenDataLayer *>(ale->data), ac->scene, mode);
     }
     else if (ale->type == ANIMTYPE_PEN_LAYER) {
       Pen *pen = reinterpret_cast<Pen *>(ale->id);
@@ -1868,7 +1868,7 @@ static void snap_action_keys(AnimCxt *ac, short mode)
     else {
       FCurve *fcurve = static_cast<FCurve *>(ale->key_data);
       anim_fcurve_keyframes_loop(&ked, fcurve, nullptr, edit_cb, dune_fcurve_handles_recalc);
-      dune_fcurve_merge_duplicate_keys(
+      dune_fcurve_merge_dup_keys(
           fcurve, SEL, false); /* only use handles in graph editor */
     }
 
@@ -1901,11 +1901,11 @@ static int actkeys_snap_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_snap(WinOpType *ot)
+void act_ot_snap(WinOpType *ot)
 {
   /* ids */
   ot->name = "Snap Keys";
-  ot->idname = "ACTION_OT_snap";
+  ot->idname = "act_ot_snap";
   ot->description = "Snap sel keyframes to the times specified";
 
   /* api cbs */
@@ -1927,11 +1927,11 @@ static const EnumPropItem prop_actkeys_mirror_types[] = {
      "CFRA",
      0,
      "By Times Over Current Frame",
-     "Flip times of selected keyframes using the current frame as the mirror line"},
+     "Flip times of sel keyframes using the current frame as the mirror line"},
     {ACTKEYS_MIRROR_XAXIS,
      "XAXIS",
      0,
-     "By Values Over Zero Value",
+     "By Vals Over Zero Val",
      "Flip vals of sel keyframes (i.e. negative values become positive, and vice versa)"},
     {ACTKEYS_MIRROR_MARKER,
      "MARKER",
@@ -1942,7 +1942,7 @@ static const EnumPropItem prop_actkeys_mirror_types[] = {
 };
 
 /* this fn is responsible for mirroring keyframes */
-static void mirror_action_keys(AnimCxt *ac, short mode)
+static void mirror_act_keys(AnimCxt *ac, short mode)
 {
   List anim_data = {nullptr, nullptr};
   eAnimFilterFlags filter;
@@ -1988,7 +1988,7 @@ static void mirror_action_keys(AnimCxt *ac, short mode)
           *pen, layer->wrap(), *(ac->scene), static_cast<eEditKeyframesMirror>(mode));
 
       if (changed) {
-        graph_id_tag_update(&pen->id, ID_RECALC_GEOMETRY);
+        graph_id_tag_update(&pen->id, ID_RECALC_GEO);
       }
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
@@ -2026,7 +2026,7 @@ static int actkeys_mirror_ex(Cxt *C, WinOp *op)
   mode = api_enum_get(op->ptr, "type");
 
   /* mirror keyframes */
-  mirror_action_keys(&ac, mode);
+  mirror_act_keys(&ac, mode);
 
   /* set notifier that keyframes have changed */
   win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_EDITED, nullptr);
@@ -2034,21 +2034,21 @@ static int actkeys_mirror_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void ACTION_OT_mirror(WinOpType *ot)
+void act_ot_mirror(WinOpType *ot)
 {
   /* ids */
   ot->name = "Mirror Keys";
-  ot->idname = "ACTION_OT_mirror";
-  ot->description = "Flip sel keyframes over the selected mirror line";
+  ot->idname = "act_ot_mirror";
+  ot->description = "Flip sel keyframes over the sel mirror line";
 
   /* api cbs */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = actkeys_mirror_exec;
-  ot->poll = ED_operator_action_active;
+  ot->invoke = win_menu_invoke;
+  ot->exec = actkeys_mirror_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* id-props */
-  ot->prop = RNA_def_enum(ot->srna, "type", prop_actkeys_mirror_types, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", prop_actkeys_mirror_types, 0, "Type", "");
 }
