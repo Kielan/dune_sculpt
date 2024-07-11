@@ -1,13 +1,13 @@
 #pragma once
 
-struct ARegion;
-struct ARegionType;
-struct Object;
+struct ARgn;
+struct ARgnType;
+struct Ob;
 struct Scene;
 struct SpaceAction;
-struct bAnimContext;
-struct bContext;
-struct wmOperatorType;
+struct AnimCxt;
+struct Cxt;
+struct wmOpType;
 
 /* internal exports only */
 
