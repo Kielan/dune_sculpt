@@ -23,8 +23,8 @@
 #include "ed_curve.h"
 #include "ed_curves.h"
 #include "ed_curves_sculpt.h"
-#include "ed_fileselect.h"
-#include "ed_geometry.h"
+#include "ed_filesel.h"
+#include "ed_geo.h"
 #include "ed_gizmo_lib.h"
 #include "ed_pen.h"
 #include "ed_lattice.h"
@@ -33,10 +33,10 @@
 #include "ed_mball.h"
 #include "ed_mesh.h"
 #include "ed_node.h"
-#include "ed_object.h"
+#include "ed_ob.h"
 #include "ed_paint.h"
 #include "ed_phys.h"
-#include "ed_render.h"
+#include "ed_rndr.h"
 #include "ed_scene.h"
 #include "ed_screen.h"
 #include "ed_sculpt.h"
@@ -59,7 +59,7 @@ void ed_spacetypes_init(void)
   ed_spacetype_outliner();
   ed_spacetype_view3d();
   ed_spacetype_ipo();
-  ed_spacetype_image();
+  ed_spacetype_img();
   ed_spacetype_node();
   ed_spacetype_btns();
   ed_spacetype_info();
@@ -85,10 +85,10 @@ void ed_spacetypes_init(void)
   ed_optypes_animchannels();
   ed_optypes_asset();
   ed_optypes_pen();
-  ed_optypes_object();
+  ed_optypes_ob();
   ed_optypes_lattice();
   ed_optypes_mesh();
-  ed_optypes_geometry();
+  ed_optypes_geo();
   ed_optypes_sculpt();
   ed_optypes_sculpt_curves();
   ed_optypes_uvedit();
@@ -100,7 +100,7 @@ void ed_spacetypes_init(void)
   ed_optypes_marker();
   ed_optypes_metaball();
   ed_optypes_sound();
-  ed_optypes_render();
+  ed_optypes_rndr();
   ed_optypes_mask();
   ed_optypes_io();
   ed_optypes_edutils();
@@ -146,10 +146,10 @@ void ed_spacemacros_init(void)
   ed_opmacros_uvedit();
   ed_opmacros_metaball();
   ed_opmacros_node();
-  ed_opmacros_object();
+  ed_opmacros_ob();
   ed_opmacros_file();
   ed_opnacros_graph();
-  ed_opmacros_action();
+  ed_opmacros_act();
   ed_opmacros_clip();
   ed_opmacros_curve();
   ed_opmacros_mask();
@@ -167,13 +167,13 @@ void ed_spacemacros_init(void)
   }
 }
 
-void ed_spacetypes_keymap(wmKeyConfig *keyconf)
+void ed_spacetypes_keymap(WinKeyConfig *keyconf)
 {
   ed_keymap_screen(keyconf);
   ed_keymap_anim(keyconf);
   ed_keymap_animchannels(keyconf);
   ed_keymap_pen(keyconf);
-  ed_keymap_object(keyconf);
+  ed_keymap_ob(keyconf);
   ed_keymap_lattice(keyconf);
   ed_keymap_mesh(keyconf);
   ed_keymap_uvedit(keyconf);
@@ -195,46 +195,45 @@ void ed_spacetypes_keymap(wmKeyConfig *keyconf)
     if (type->keymap) {
       type->keymap(keyconf);
     }
-    LIST_FOREACH (ARegionType *, region_type, &type->regiontypes) {
-      if (region_type->keymap) {
-        region_type->keymap(keyconf);
+    LIST_FOREACH (ARgnType *, rgn_type, &type->rgntypes) {
+      if (rgn_type->keymap) {
+        rgn_type->keymap(keyconf);
       }
     }
   }
 }
 
-/* Custom Draw Call API ***************** */
+/* Custom Draw Call API */
+typedef struct RgnDrawCB {
+  struct RgnDrawCB *next, *prev;
 
-typedef struct RegionDrawCB {
-  struct RegionDrawCB *next, *prev;
-
-  void (*draw)(const struct Cxt *, struct ARegion *, void *);
+  void (*drw)(const struct Cxt *, struct ARgn *, void *);
   void *customdata;
 
   int type;
 
-} RegionDrawCB;
+} RgnDrawCB;
 
-void *ed_region_draw_cb_activate(ARegionType *art,
-                                 void (*draw)(const struct Cxt *, struct ARegion *, void *),
-                                 void *customdata,
-                                 int type)
+void *ed_rgn_drw_cb_activate(ARgnType *art,
+                             void (*drw)(const struct Cxt *, struct ARgn *, void *),
+                             void *customdata,
+                             int type)
 {
-  RegionDrawCB *rdc = mem_callocn(sizeof(RegionDrawCB), "RegionDrawCB");
+  RgnDrawCB *rdc = mem_callocn(sizeof(RgnDrawCB), "RgnDrawCB");
 
-  lib_addtail(&art->drawcalls, rdc);
-  rdc->draw = draw;
+  lib_addtail(&art->drwcalls, rdc);
+  rdc->drw = draw;
   rdc->customdata = customdata;
   rdc->type = type;
 
   return rdc;
 }
 
-bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
+bool ed_rgn_drw_cb_exit(ARgnType *art, void *handle)
 {
-  LIST_FOREACH (RegionDrawCB *, rdc, &art->drawcalls) {
-    if (rdc == (RegionDrawCB *)handle) {
-      lib_remlink(&art->drawcalls, rdc);
+  LIST_FOREACH (RgnDrawCB *, rdc, &art->drwcalls) {
+    if (rdc == (RgnDrawCB *)handle) {
+      lib_remlink(&art->drwcalls, rdc);
       mem_freem(rdc);
       return true;
     }
@@ -242,11 +241,11 @@ bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
   return false;
 }
 
-static void ed_region_draw_cb_draw(const Cxt *C, ARegion *region, ARegionType *art, int type)
+static void ed_rgn_drw_cb_drw(const Cxt *C, ARgn *rgn, ARgnType *art, int type)
 {
-  LIST_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
+  LIST_FOREACH_MUTABLE (RgnDrwCB *, rdc, &art->drwcalls) {
     if (rdc->type == type) {
-      rdc->draw(C, region, rdc->customdata);
+      rdc->drw(C, rgn, rdc->customdata);
 
       /* This is needed until we get rid of BGL which can change the states we are tracking. */
       gpu_bgl_end();
@@ -254,34 +253,34 @@ static void ed_region_draw_cb_draw(const Cxt *C, ARegion *region, ARegionType *a
   }
 }
 
-void ed_region_draw_cb_draw(const Ctx *C, ARegion *region, int type)
+void ed_rgn_drw_cb_drw(const Ctx *C, ARgn *rgn, int type)
 {
-  ed_region_draw_cb_draw(C, region, region->type, type);
+  ed_rgn_drw_cb_drw(C, rgn, rgn->type, type);
 }
 
-void ed_region_surface_draw_cb_draw(ARegionType *art, int type)
+void ed_rgn_surface_drw_cb_drw(ARgnType *art, int type)
 {
-  ed_region_draw_cb_draw(NULL, NULL, art, type);
+  ed_rgn_draw_cb_drw(NULL, NULL, art, type);
 }
 
-void ed_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*free)(void *))
+void ed_rgn_drw_cb_remove_by_type(ARgnType *art, void *drw_fn, void (*free)(void *))
 {
-  LIST_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
-    if (rdc->draw == draw_fn) {
+  LIST_FOREACH_MUTABLE (RgnDrawCB *, rdc, &art->drwcalls) {
+    if (rdc->drw == drw_fn) {
       if (free) {
         free(rdc->customdata);
       }
-      lib_remlink(&art->drawcalls, rdc);
+      lib_remlink(&art->drwcalls, rdc);
       mem_freen(rdc);
     }
   }
 }
 
-/* space template *********************** */
+/* space template */
 /* forward declare */
 void ed_spacetype_xxx(void);
 
-/* allocate and init some vars */
+/* alloc and init some vars */
 static SpaceLink *xxx_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
 {
   return NULL;
@@ -292,18 +291,18 @@ static void xxx_free(SpaceLink *UNUSED(sl))
 {
 }
 
-/* spacetype; init callback for usage, should be re-doable. */
-static void xxx_init(wmWindowManager *UNUSED(wm), ScrArea *UNUSED(area))
+/* spacetype; init cb for usage, should be re-doable. */
+static void xxx_init(Win *UNUSED(wm), ScrArea *UNUSED(area))
 {
 
   /* link area to SpaceXXX struct */
 
-  /* define how many regions, the order and types */
+  /* define how many rgns, the order and types */
 
   /* add types to regions */
 }
 
-static SpaceLink *xxx_duplicate(SpaceLink *UNUSED(sl))
+static SpaceLink *xxx_dup(SpaceLink *UNUSED(sl))
 {
 
   return NULL;
@@ -314,7 +313,7 @@ static void xxx_optypes(void)
   /* register operator types for this space */
 }
 
-static void xxx_keymap(wmKeyConfig *UNUSED(keyconf))
+static void xxx_keymap(WinKeyConfig *UNUSED(keyconf))
 {
   /* add default items to keymap */
 }
@@ -329,8 +328,8 @@ void ed_spacetype_xxx(void)
   st.create = xxx_create;
   st.free = xxx_free;
   st.init = xxx_init;
-  st.duplicate = xxx_duplicate;
-  st.operatortypes = xxx_optypes;
+  st.dup = xxx_dup;
+  st.optypes = xxx_optypes;
   st.keymap = xxx_keymap;
 
   dune_spacetype_register(&st);
