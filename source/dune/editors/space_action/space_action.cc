@@ -617,7 +617,7 @@ static void act_listener(const WinSpaceTypeListenerParams *params)
       }
       break;
     case NC_WIN:
-      if (saction->runtime.flag & SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC) {
+      if (sact->runtime.flag & SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC) {
         /* force redrw/refresh after undo/redo, see: #28962. */
         ed_area_tag_refresh(area);
       }
@@ -632,31 +632,31 @@ static void act_listener(const WinSpaceTypeListenerParams *params)
   }
 }
 
-static void action_header_rgn_listener(const WinRgnListenerParams *params)
+static void act_header_rgn_listener(const WinRgnListenerParams *params)
 {
   ScrArea *area = params->area;
   ARgn *rgn = params->rgn;
   const WinNotifier *winn = params->notifier;
-  SpaceAction *saction = (SpaceAction *)area->spacedata.first;
+  SpaceAct *sact = (SpaceAct *)area->spacedata.first;
 
   /* cxt changes */
   switch (winn->category) {
     case NC_SCREEN:
-      if (saction->mode == SACTCONT_TIMELINE) {
+      if (sact->mode == SACTCONT_TIMELINE) {
         if (winn->data == ND_ANIMPLAY) {
           ed_rhn_tag_redrw(rgn);
         }
       }
       break;
     case NC_SCENE:
-      if (saction->mode == SACTCONT_TIMELINE) {
+      if (sact->mode == SACTCONT_TIMELINE) {
         switch (wmn->data) {
-          case ND_RENDER_RESULT:
+          case ND_RNDR_RESULT:
           case ND_OB_SEL:
           case ND_FRAME:
           case ND_FRAME_RANGE:
           case ND_KEYINGSET:
-          case ND_RENDER_OPTIONS:
+          case ND_RNDR_OPTIONS:
             ed_rgn_tag_redrw(rhn);
             break;
         }
@@ -670,7 +670,7 @@ static void action_header_rgn_listener(const WinRgnListenerParams *params)
       }
       break;
     case NC_ID:
-      if (winn->action == NA_RENAME) {
+      if (winn->act == NA_RENAME) {
         ed_rgn_tag_redrw(rgn);
       }
       break;
@@ -692,7 +692,7 @@ static void action_header_rgn_listener(const WinRgnListenerParams *params)
 }
 
 /* add handlers, stuff you only do once or on area/rgn changes */
-static void action_btns_area_init(WinMngr *wm, ARgn *rgn)
+static void act_btns_area_init(WinMngr *wm, ARgn *rgn)
 {
   WinKeyMap *keymap;
 
@@ -702,12 +702,12 @@ static void action_btns_area_init(WinMngr *wm, ARgn *rgn)
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_btns_area_drw(const Cxt *C, ARgn *rgn)
+static void act_btns_area_drw(const Cxt *C, ARgn *rgn)
 {
   ed_rgn_pnls(C, rgn);
 }
 
-static void action_rgn_listener(const WinRgnListenerParams *params)
+static void act_rgn_listener(const WinRgnListenerParams *params)
 {
   ARgn *rgn = params->rgn;
   const WinNotifier *winn = params->notifier;
@@ -743,19 +743,19 @@ static void action_rgn_listener(const WinRgnListenerParams *params)
   }
 }
 
-static void action_refresh(const Cxt *C, ScrArea *area)
+static void act_refresh(const Cxt *C, ScrArea *area)
 {
-  SpaceAction *saction = (SpaceAction *)area->spacedata.first;
+  SpaceAct *sact = (SpaceAct *)area->spacedata.first;
 
   /* Update the state of the animchannels in response to changes from the data they represent
    * The tmp flag is used to indicate when this needs to be done,
    * and will be cleared once handled. */
-  if (saction->runtime.flag & SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC) {
+  if (sact->runtime.flag & SACT_RUNTIME_FLAG_NEED_CHAN_SYNC) {
     /* Perform syncing of channel state incl. sel
      * Active action setting also occurs here
      * (as part of anim channel filtering in `anim_filter.cc`). */
     anim_sync_animchannels_to_data(C);
-    saction->runtime.flag &= ~SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
+    sact->runtime.flag &= ~SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
 
     /* Tag everything for redre
      * - Rgns (such as header) need to be manually tagged for redrw too
@@ -770,24 +770,24 @@ static void action_refresh(const Cxt *C, ScrArea *area)
   /* re-sizing y-extents of tot should go here? */
 }
 
-static void action_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IdRemapper *mappings)
+static void act_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IdRemapper *mappings)
 {
-  SpaceAction *sact = (SpaceAction *)slink;
+  SpaceAct *sact = (SpaceAct *)slink;
 
-  dune_id_remapper_apply(mappings, (Id **)&sact->action, ID_REMAP_APPLY_DEFAULT);
+  dune_id_remapper_apply(mappings, (Id **)&sact->act, ID_REMAP_APPLY_DEFAULT);
   dune_id_remapper_apply(mappings, (Id **)&sact->ads.filter_grp, ID_REMAP_APPLY_DEFAULT);
-  dune_id_remapper_apply(mappings, &sact->ads.source, ID_REMAP_APPLY_DEFAULT);
+  dune_id_remapper_apply(mappings, &sact->ads.src, ID_REMAP_APPLY_DEFAULT);
 }
 
-static void action_foreach_id(SpaceLink *space_link, LibForeachIdData *data)
+static void act_foreach_id(SpaceLink *space_link, LibForeachIdData *data)
 {
-  SpaceAction *sact = reinterpret_cast<SpaceAction *>(space_link);
+  SpaceAct *sact = reinterpret_cast<SpaceAct *>(space_link);
   const int data_flags = dune_lib_query_foreachid_process_flags_get(data);
   const bool is_readonly = (data_flags & IDWALK_READONLY) != 0;
 
   DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sact->action, IDWALK_CB_NOP);
 
-  /* Could be deduplicated with the DopeSheet handling of SpaceNla and SpaceGraph. */
+  /* Could be dedup'd w the DopeSheet handling of SpaceNla and SpaceGraph. */
   DUNE_LIB_FOREACHID_PROCESS_ID(data, sact->ads.source, IDWALK_CB_NOP);
   DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sact->ads.filter_grp, IDWALK_CB_NOP);
 
@@ -799,44 +799,44 @@ static void action_foreach_id(SpaceLink *space_link, LibForeachIdData *data)
 }
 
 /* Used for splitting out a subset of modes is more involved,
- * The previous non-timeline mode is stored so switching back to the
+ * The prev non-timeline mode is stored so switching back to the
  * dope-sheet doesn't always reset the sub-mode */
-static int action_space_subtype_get(ScrArea *area)
+static int act_space_subtype_get(ScrArea *area)
 {
-  SpaceAction *sact = static_cast<SpaceAction *>(area->spacedata.first);
+  SpaceAct *sact = static_cast<SpaceAct *>(area->spacedata.first);
   return sact->mode == SACTCONT_TIMELINE ? SACTCONT_TIMELINE : SACTCONT_DOPESHEET;
 }
 
-static void action_space_subtype_set(ScrArea *area, int value)
+static void act_space_subtype_set(ScrArea *area, int val)
 {
-  SpaceAction *sact = static_cast<SpaceAction *>(area->spacedata.first);
-  if (value == SACTCONT_TIMELINE) {
+  SpaceAct *sact = static_cast<SpaceAct *>(area->spacedata.first);
+  if (val == SACTCONT_TIMELINE) {
     if (sact->mode != SACTCONT_TIMELINE) {
       sact->mode_prev = sact->mode;
     }
-    sact->mode = value;
+    sact->mode = val;
   }
   else {
     sact->mode = sact->mode_prev;
   }
 }
 
-static void action_space_subtype_item_extend(Cxt * /*C*/,
-                                             EnumPropItem **item,
-                                             int *totitem)
+static void act_space_subtype_item_extend(Cxt * /*C*/,
+                                          EnumPropItem **item,
+                                          int *totitem)
 {
-  api_enum_items_add(item, totitem, api_enum_space_action_mode_items);
+  api_enum_items_add(item, totitem, api_enum_space_act_mode_items);
 }
 
-static void action_space_dune_read_data(DuneDataReader * /*reader*/, SpaceLink *sl)
+static void act_space_dune_read_data(DuneDataReader * /*reader*/, SpaceLink *sl)
 {
-  SpaceAction *saction = (SpaceAction *)sl;
-  memset(&saction->runtime, 0x0, sizeof(saction->runtime));
+  SpaceAct *sact = (SpaceAct *)sl;
+  memset(&sact->runtime, 0x0, sizeof(saction->runtime));
 }
 
-static void action_space_dune_write(DuneWriter *writer, SpaceLink *sl)
+static void act_space_dune_write(DuneWriter *writer, SpaceLink *sl)
 {
-  loader_write_struct(writer, SpaceAction, sl);
+  loader_write_struct(writer, SpaceAct, sl);
 }
 
 static void action_main_rgn_view2d_changed(const Cxt * /*C*/, ARgn *rgn)
@@ -850,48 +850,48 @@ void ed_spacetype_action()
   SpaceType *st = mem_cnew<SpaceType>("spacetype action");
   ARgnType *art;
 
-  st->spaceid = SPACE_ACTION;
-  STRNCPY(st->name, "Action");
+  st->spaceid = SPACE_ACT;
+  STRNCPY(st->name, "Act");
 
-  st->create = action_create;
-  st->free = action_free;
-  st->init = action_init;
-  st->dup = action_dup;
-  st->optypes = action_optypes;
-  st->keymap = action_keymap;
-  st->listener = action_listener;
-  st->refresh = action_refresh;
-  st->id_remap = action_id_remap;
-  st->foreach_id = action_foreach_id;
-  st->space_subtype_item_extend = action_space_subtype_item_extend;
-  st->space_subtype_get = action_space_subtype_get;
-  st->space_subtype_set = action_space_subtype_set;
-  st->dune_read_data = action_space_dune_read_data;
+  st->create = act_create;
+  st->free = act_free;
+  st->init = act_init;
+  st->dup = act_dup;
+  st->optypes = act_optypes;
+  st->keymap = act_keymap;
+  st->listener = act_listener;
+  st->refresh = act_refresh;
+  st->id_remap = act_id_remap;
+  st->foreach_id = act_foreach_id;
+  st->space_subtype_item_extend = act_space_subtype_item_extend;
+  st->space_subtype_get = act_space_subtype_get;
+  st->space_subtype_set = act_space_subtype_set;
+  st->dune_read_data = act_space_dune_read_data;
   st->dune_read_after_liblink = nullptr;
-  st->dune_write = action_space_dune_write;
+  st->dune_write = act_space_dune_write;
 
   /* rgns: main win */
   art = mem_cnew<ARgnType>("spacetype action rgn");
   art->rgnid = RGN_TYPE_WIN;
-  art->init = action_main_rgn_init;
-  art->drw = action_main_rgn_drw;
-  art->drw_overlay = action_main_rgn_drw_overlay;
-  art->listener = action_main_rgn_listener;
-  art->msg_sub = saction_main_rgn_msg_sub;
-  art->on_view2d_changed = action_main_rgn_view2d_changed;
+  art->init = act_main_rgn_init;
+  art->drw = act_main_rgn_drw;
+  art->drw_overlay = act_main_rgn_drw_overlay;
+  art->listener = act_main_rgn_listener;
+  art->msg_sub = sact_main_rgn_msg_sub;
+  art->on_view2d_changed = act_main_rgn_view2d_changed;
   art->keymapflag = ED_KEYMAP_GIZMO | ED_KEYMAP_VIEW2D | ED_KEYMAP_ANIM | ED_KEYMAP_FRAMES;
 
   lib_addhead(&st->rgntypes, art);
 
   /* rgns: header */
-  art = mem_cnew<ARgnType>("spacetype action rgn");
+  art = mem_cnew<ARgnType>("spacetype act rgn");
   art->rgnid = RGN_TYPE_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
 
-  art->init = action_header_rgn_init;
-  art->draw = action_header_rgn_draw;
-  art->listener = action_header_rgn_listener;
+  art->init = act_header_rgn_init;
+  art->draw = act_header_rgn_draw;
+  art->listener = act_header_rgn_listener;
 
   lib_addhead(&st->rgntypes, art);
 
@@ -901,21 +901,21 @@ void ed_spacetype_action()
   art->prefsizex = 200;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES;
 
-  art->init = action_channel_rgn_init;
-  art->draw = action_channel_rgn_draw;
-  art->listener = action_channel_rgn_listener;
-  art->msg_sub = saction_channel_rgn_msg_sub;
+  art->init = act_channel_rgn_init;
+  art->draw = act_channel_rgn_draw;
+  art->listener = act_channel_rgn_listener;
+  art->msg_sub = sact_channel_rgn_msg_sub;
 
   lib_addhead(&st->rgntypes, art);
 
   /* regions: UI btns */
-  art = mem_cnew<ARgnType>("spacetype action rgn");
+  art = mem_cnew<ARgnType>("spacetype act rgn");
   art->rgnid = RGN_TYPE_UI;
   art->prefsizex = UI_SIDEBAR_PNL_WIDTH;
   art->keymapflag = ED_KEYMAP_UI;
-  art->listener = action_rgn_listener;
-  art->init = action_btns_area_init;
-  art->drw = action_btns_area_drw;
+  art->listener = act_rgn_listener;
+  art->init = act_btns_area_init;
+  art->drw = act_btns_area_drw;
 
   lib_addhead(&st->rgntypes, art);
 
