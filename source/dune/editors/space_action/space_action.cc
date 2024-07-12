@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "types_action.h"
+#include "types_act.h"
 #include "types_anim.h"
 #include "types_collection.h"
 #include "types_ob.h"
@@ -40,37 +40,37 @@
 
 #include "gpu_matrix.h"
 
-#include "action_intern.hh" /* own include */
+#include "act_intern.hh" /* own include */
 
 /* Default Cbs for Action Space */
-static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
+static SpaceLink *act_create(const ScrArea *area, const Scene *scene)
 {
-  SpaceAction *saction;
+  SpaceAct *sact;
   ARgn *rgn;
 
-  saction = mem_cnew<SpaceAction>("initaction");
-  saction->spacetype = SPACE_ACTION;
+  sact = mem_cnew<SpaceAct>("initact");
+  sact->spacetype = SPACE_ACT;
 
-  saction->mode = SACTCONT_DOPESHEET;
-  saction->mode_prev = SACTCONT_DOPESHEET;
-  saction->flag = SACTION_SHOW_INTERPOLATION | SACTION_SHOW_MARKERS;
+  sact->mode = SACTCONT_DOPESHEET;
+  sact->mode_prev = SACTCONT_DOPESHEET;
+  sact->flag = SACT_SHOW_INTERPOLATION | SACT_SHOW_MARKERS;
 
-  saction->ads.filterflag |= ADS_FILTER_SUMMARY;
+  sact->ads.filterflag |= ADS_FILTER_SUMMARY;
 
-  saction->cache_display = TIME_CACHE_DISPLAY | TIME_CACHE_SOFTBODY | TIME_CACHE_PARTICLES |
+  sact->cache_display = TIME_CACHE_DISPLAY | TIME_CACHE_SOFTBODY | TIME_CACHE_PARTICLES |
                            TIME_CACHE_CLOTH | TIME_CACHE_SMOKE | TIME_CACHE_DYNAMICPAINT |
-                           TIME_CACHE_RIGIDBODY | TIME_CACHE_SIMULATION_NODES;
+                           TIME_CACHE_RIGIDBODY | TIME_CACHE_SIM_NODES;
 
   /* header */
   rgn = mem_cnew<ARgn>("header for action");
 
-  lib_addtail(&saction->rgnbase, rgn);
+  lib_addtail(&sact->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_HEADER;
   rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
   /* channel list rgn */
   rgn = mem_cnew<ARgn>("channel rgn for action");
-  lib_addtail(&saction->rgnbase, rgn);
+  lib_addtail(&sact->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_CHANNELS;
   rgn->alignment = RGN_ALIGN_LEFT;
 
@@ -81,14 +81,14 @@ static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
   /* ui btns */
   rgn = mem_cnew<ARgn>("btns rgn for action");
 
-  lib_addtail(&saction->rgnbase, rgn);
+  lib_addtail(&sact->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_UI;
   rgn->alignment = RGN_ALIGN_RIGHT;
 
   /* main rgn */
-  region = mem_cnew<ARgn>("main rgn for action");
+  rgn = mem_cnew<ARgn>("main rgn for action");
 
-  lib_addtail(&saction->rgnbase, rgn);
+  lib_addtail(&sact->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_WIN;
 
   rgn->v2d.tot.xmin = float(scene->r.sfra - 10);
@@ -113,50 +113,50 @@ static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
   rgn->v2d.align = V2D_ALIGN_NO_POS_Y;
   rgn->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
 
-  return (SpaceLink *)saction;
+  return (SpaceLink *)sact;
 }
 
 /* Doesn't free the space-link itself. */
-static void action_free(SpaceLink * /*sl*/)
+static void act_free(SpaceLink * /*sl*/)
 {
-  //  SpaceAction *saction = (SpaceAction *) sl;
+  //  SpaceAct *sact = (SpaceAct *) sl;
 }
 
 /* spacetype; init cb */
-static void action_init(WinMngr * /*wm*/, ScrArea *area)
+static void act_init(WinMngr * /*wm*/, ScrArea *area)
 {
-  SpaceAction *saction = static_cast<SpaceAction *>(area->spacedata.first);
-  saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
+  SpaceAct *sact = static_cast<SpaceAct *>(area->spacedata.first);
+  sact->runtime.flag |= SACT_RUNTIME_FLAG_NEED_CHAN_SYNC;
 }
 
-static SpaceLink *action_duplicate(SpaceLink *sl)
+static SpaceLink *act_dup(SpaceLink *sl)
 {
-  SpaceAction *sactionn = static_cast<SpaceAction *>(MEM_dupallocN(sl));
+  SpaceAct *sact = static_cast<SpaceAct *>(mem_dupalloc(sl));
 
-  memset(&sactionn->runtime, 0x0, sizeof(sactionn->runtime));
+  memset(&sact->runtime, 0x0, sizeof(sact->runtime));
 
   /* clear or remove stuff from old */
-  return (SpaceLink *)sactionn;
+  return (SpaceLink *)sact;
 }
 
 /* add handlers, stuff you only do once or on area/rgn changes */
-static void action_main_rgn_init(WinMngr *wm, ARgn *rgn)
+static void act_main_rgn_init(WinMngr *wm, ARgn *rgn)
 {
   WinKeyMap *keymap;
   
   ui_view2d_rgn_reinit(&rgn->v2d, V2D_COMMONVIEW_CUSTOM, rgn->winx, rgn->winy);
 
   /* own keymap */
-  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet", SPACE_ACTION, RGN_TYPE_WIN);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet", SPACE_ACT, RGN_TYPE_WIN);
   win_ev_add_keymap_handler_v2d_mask(&rgn->handlers, keymap);
-  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WIN);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACT, RGN_TYPE_WIN);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_main_rgn_draw(const Cxt *C, ARgn *rgn)
+static void act_main_rgn_draw(const Cxt *C, ARgn *rgn)
 {
-  /* draw entirely, view changes should be handled here */
-  SpaceAction *saction = cxt_win_space_action(C);
+  /* drw entirely, view changes should be handled here */
+  SpaceAct *sact = cxt_win_space_act(C);
   Scene *scene = cxt_data_scene(C);
   AnimCxt ac;
   View2D *v2d = &rgn->v2d;
@@ -170,24 +170,24 @@ static void action_main_rgn_draw(const Cxt *C, ARgn *rgn)
   ui_view2d_view_ortho(v2d);
 
   /* time grid */
-  ui_view2d_draw_lines_x_discrete_frames_or_seconds(
-      v2d, scene, saction->flag & SACTION_DRAWTIME, true);
+  ui_view2d_drw_lines_x_discrete_frames_or_seconds(
+      v2d, scene, sact->flag & SACT_DRWTIME, true);
 
-  ed_rgn_draw_cb_draw(C, rgn, RGN_DRAW_PRE_VIEW);
+  ed_rgn_drw_cb_drw(C, rgn, RGN_DRW_PRE_VIEW);
 
   /* start and end frame */
-  ankm_draw_framerange(scene, v2d);
+  ankm_drw_framerange(scene, v2d);
 
-  /* Draw the manually set intended playback frame range highlight in the Action editor. */
-  if (ELEM(saction->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY) && saction->action) {
+  /* Draw the manually set intended playback frame range highlight in the Act editor. */
+  if (elem(sact->mode, SACTCONT_ACT, SACTCONT_SHAPEKEY) && sact->act) {
     AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
 
-    anim_draw_action_framerange(adt, saction->action, v2d, -FLT_MAX, FLT_MAX);
+    anim_drw_act_framerange(adt, sact->act, v2d, -FLT_MAX, FLT_MAX);
   }
 
   /* data */
   if (anim_animdata_get_ct(C, &ac)) {
-    draw_channel_strips(&ac, saction, rgn);
+    drw_channel_strips(&ac, sact, rgn);
   }
 
   /* markers */
@@ -196,7 +196,7 @@ static void action_main_rgn_draw(const Cxt *C, ARgn *rgn)
   marker_flag = ((ac.markers && (ac.markers != &ac.scene->markers)) ? DRAW_MARKERS_LOCAL : 0) |
                 DRW_MARKERS_MARGIN;
 
-  if (saction->flag & SACTION_SHOW_MARKERS) {
+  if (sact->flag & SACT_SHOW_MARKERS) {
     ed_markers_drw(C, marker_flag);
   }
 
@@ -206,43 +206,43 @@ static void action_main_rgn_draw(const Cxt *C, ARgn *rgn)
 
   /* cb */
   ui_view2d_view_ortho(v2d);
-  ed_rgn_drw_cb_draw(C, rgn, RGN_DRW_POST_VIEW);
+  ed_rgn_drw_cb_drw(C, rgn, RGN_DRW_POST_VIEW);
 
   /* reset view matrix */
   ui_view2d_view_restore(C);
 
   /* gizmos */
-  win_gizmomap_drw(rgn->gizmo_map, C, WIN_GIZMOMAP_DRAWSTEP_2D);
+  win_gizmomap_drw(rgn->gizmo_map, C, WIN_GIZMOMAP_DRWSTEP_2D);
 
   /* scrubbing rgn */
-  ed_time_scrub_drw(rhn, scene, saction->flag & SACTION_DRAWTIME, true);
+  ed_time_scrub_drw(rhn, scene, sact->flag & SACT_DRWTIME, true);
 }
 
-static void action_main_rgn_drw_overlay(const Cxt *C, ARgn *rgn)
+static void act_main_rgn_drw_overlay(const Cxt *C, ARgn *rgn)
 {
   /* drw entirely, view changes should be handled here */
-  const SpaceAction *saction = cxt_win_space_action(C);
+  const SpaceAct *sact = cxt_win_space_act(C);
   const Scene *scene = cxt_data_scene(C);
   const Ob *obact = cxt_data_active_ob(C);
   View2D *v2d = &rgn->v2d;
 
   /* caches */
-  if (saction->mode == SACTCONT_TIMELINE) {
+  if (sact->mode == SACTCONT_TIMELINE) {
     gpu_matrix_push_projection();
     ui_view2d_view_orthoSpecial(rgn, v2d, true);
-    timeline_draw_cache(saction, obact, scene);
+    timeline_drw_cache(sact, obact, scene);
     gpu_matrix_pop_projection();
   }
 
   /* scrubbing rgn */
-  es_time_scrub_draw_current_frame(rgn, scene, saction->flag & SACTION_DRAWTIME);
+  es_time_scrub_drw_current_frame(rgn, scene, saction->flag & SACTION_DRAWTIME);
 
   /* scrollers */
-  ui_view2d_scrollers_draw(v2d, nullptr);
+  ui_view2d_scrollers_drw(v2d, nullptr);
 }
 
 /* add handlers, stuff you only do once or on area/rgn changes */
-static void action_channel_region_init(WinMngr *wm, ARgn *rgn)
+static void act_channel_rgn_init(WinMngr *wm, ARgn *rgn)
 {
   WinKeyMap *keymap;
 
@@ -255,11 +255,11 @@ static void action_channel_region_init(WinMngr *wm, ARgn *rgn)
   keymap = win_keymap_ensure(wm->defaultconf, "Anim Channels", SPACE_EMPTY, RGN_TYPE_WIN);
   win_ev_add_keymap_handler_v2d_mask(&rgn->handlers, keymap);
 
-  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WIN);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACT, RGN_TYPE_WIN);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_channel_rgn_draw(const Cxt *C, ARgn *rgn)
+static void act_channel_rgn_drw(const Cxt *C, ARgn *rgn)
 {
   /* drw entirely, view changes should be handled here */
   AnimCxt ac;
@@ -276,7 +276,7 @@ static void action_channel_rgn_draw(const Cxt *C, ARgn *rgn)
   }
 
   /* channel filter next to scrubbing area */
-  ed_time_scrub_channel_search_draw(C, rgn, ac.ads);
+  ed_time_scrub_channel_search_drw(C, rgn, ac.ads);
 
   /* reset view matrix */
   ui_view2d_view_restore(C);
@@ -285,12 +285,12 @@ static void action_channel_rgn_draw(const Cxt *C, ARgn *rgn)
 }
 
 /* add handlers, stuff you only do once or on area/rgn changes */
-static void action_header_rgn_init(WinMngr * /*wm*/, ARgn *rgn)
+static void act_header_rgn_init(WinMngr * /*wm*/, ARgn *rgn)
 {
   ed_rgn_header_init(rgn);
 }
 
-static void action_header_rgn_drw(const Cxt *C, ARgn *rgn)
+static void act_header_rgn_drw(const Cxt *C, ARgn *rgn)
 {
   /* The anim cxt is not actually used, but this makes sure the action being displayed is up to
    * date. */
@@ -300,7 +300,7 @@ static void action_header_rgn_drw(const Cxt *C, ARgn *rgn)
   ed_rgn_header(C, rgn);
 }
 
-static void action_channel_rgn_listener(const WinRgnListenerParams *params)
+static void act_channel_rgn_listener(const WinRgnListenerParams *params)
 {
   ARgn *rgn = params->rgn;
   WinNotifier *winn = params->notifier;
@@ -323,17 +323,17 @@ static void action_channel_rgn_listener(const WinRgnListenerParams *params)
         case ND_BONE_ACTIVE:
         case ND_BONE_SEL:
         case ND_KEYS:
-          ed_rgn_tag_redraw(rgn);
+          ed_rgn_tag_redrw(rgn);
           break;
         case ND_MOD:
           if (winn->action == NA_RENAME) {
-            ed_rgn_tag_redraw(rgn);
+            ed_rgn_tag_redrw(rgn);
           }
           break;
       }
       break;
     case NC_PEN:
-      if (ELEM(winn->action, NA_RENAME, NA_SELECTED)) {
+      if (elem(winn->act, NA_RENAME, NA_SEL)) {
         ed_rgn_tag_redrw(rgn);
       }
       break;
@@ -344,13 +344,13 @@ static void action_channel_rgn_listener(const WinRgnListenerParams *params)
       break;
     default:
       if (winn->data == ND_KEYS) {
-        ed_rgn_tag_redraw(rgn);
+        ed_rgn_tag_redrw(rgn);
       }
       break;
   }
 }
 
-static void saction_channel_rgn_msg_sub(const WinRgnMsgSubParams *params)
+static void sact_channel_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
   WinMsgBus *mbus = params->msg_bus;
   ARgn *rgn = params->rgm;
@@ -387,7 +387,7 @@ static void saction_channel_rgn_msg_sub(const WinRgnMsgSubParams *params)
   }
 }
 
-static void action_main_rgn_listener(const WinRgnListenerParams *params)
+static void act_main_rgn_listener(const WinRgnListenerParams *params)
 {
   ARgn *rgn = params->rgn;
   const Notifier *winn = params->notifier;
@@ -399,7 +399,7 @@ static void action_main_rgn_listener(const WinRgnListenerParams *params)
       break;
     case NC_SCENE:
       switch (winn->data) {
-        case ND_RENDER_OPTIONS:
+        case ND_RNDR_OPTIONS:
         case ND_OB_ACTIVE:
         case ND_FRAME:
         case ND_FRAME_RANGE:
@@ -424,7 +424,7 @@ static void action_main_rgn_listener(const WinRgnListenerParams *params)
     case NC_NODE:
       switch (winn->action) {
         case NA_EDITED:
-          ed_rgn_tag_redraw(rgn);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
@@ -435,7 +435,7 @@ static void action_main_rgn_listener(const WinRgnListenerParams *params)
       break;
     case NC_SCREEN:
       if (ELEM(winn->data, ND_LAYER)) {
-        ed_rgn_tag_redraw(rgn);
+        ed_rgn_tag_redrw(rgn);
       }
       break;
     default:
@@ -446,16 +446,16 @@ static void action_main_rgn_listener(const WinRgnListenerParams *params)
   }
 }
 
-static void saction_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
+static void sact_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
   WinMsgBus *mbus = params->msg_bus;
   Scene *scene = params->scene;
   ARgn *rgn = params->rgn;
 
   WinMsgSubVal msg_sub_val_rgn_tag_redrw{};
-  msg_sub_val_rgn_tag_redraw.owner = rgn;
-  msg_sub_val_rgn_tag_redraw.user_data = rgn;
-  msg_sub_val_rgn_tag_redraw.notify = ed_rgn_do_msg_notify_tag_redrw;
+  msg_sub_val_rgn_tag_redrw.owner = rgn;
+  msg_sub_val_rgn_tag_redrw.user_data = rgn;
+  msg_sub_val_rgn_tag_redrw.notify = ed_rgn_do_msg_notify_tag_redrw;
 
   /* Timeline depends on scene props. */
   {
@@ -475,15 +475,15 @@ static void saction_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
   }
 
   /* Now run the general "channels rgn" one - since channels and main should be in sync */
-  saction_channel_rgn_msg_sub(params);
+  sact_channel_rgn_msg_sub(params);
 }
 
 /* editor level listener */
-static void action_listener(const WinSpaceTypeListenerParams *params)
+static void act_listener(const WinSpaceTypeListenerParams *params)
 {
   ScrArea *area = params->area;
   const WinNotifier *winn = params->notifier;
-  SpaceAction *saction = (SpaceAction *)area->spacedata.first;
+  SpaceAct *saction = (SpaceAction *)area->spacedata.first;
 
   /* cxt changes */
   switch (winn->category) {
