@@ -76,9 +76,9 @@ static AnimListElem *actkeys_find_list_element_at_position(AnimCxt *ac,
   return ale;
 }
 
-static void actkeys_list_element_to_keylist(AnimCxt *ac,
-                                            AnimKeylist *keylist,
-                                            AnimListElem *ale)
+static void actkeys_list_elem_to_keylist(AnimCxt *ac,
+                                         AnimKeylist *keylist,
+                                         AnimListElem *ale)
 {
   AnimData *adt = anim_nla_mapping_get(ac, ale);
 
@@ -100,8 +100,8 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
         break;
       }
       case ALE_ACT: {
-        Action *act = (Action *)ale->key_data;
-        action_to_keylist(adt, act, keylist, 0);
+        Action *act = (Act *)ale->key_data;
+        act_to_keylist(adt, act, keylist, 0);
         break;
       }
       case ALE_FCURVE: {
@@ -117,8 +117,8 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
   }
   else if (ale->type == ANIMTYPE_GROUP) {
     /* TODO: why don't we just give groups key_data too? */
-    ActionGroup *agrp = (ActionGroup *)ale->data;
-    action_group_to_keylist(adt, agrp, keylist, 0);
+    ActGroup *agrp = (ActGroup *)ale->data;
+    act_group_to_keylist(adt, agrp, keylist, 0);
   }
   else if (ale->type == ANIMTYPE_PEN_LAYER) {
     /* TODO: why don't we just give pen layers key_data too? */
@@ -131,13 +131,13 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
         adt, static_cast<const PenLayerTreeGroup *>(ale->data), keylist, 0);
   }
   else if (ale->type == ANIMTYPE_PEN_DATABLOCK) {
-    /* TODO: why don't we just give grease pen layers key_data too? */
+    /* TODO: why don't we just give pen layers key_data too? */
     pen_data_block_to_keylist(
         adt, static_cast<const Pen *>(ale->data), keylist, 0, false);
   }
   else if (ale->type == ANIMTYPE_PENLAYER) {
     /* TODO: why don't we just give penlayers key_data too? */
-    PenDataLayer *penlayer = (PenDataLayer *)ale->data;
+    PenLayer *penlayer = (PenLayer *)ale->data;
     gpl_to_keylist(ads, penlayer, keylist);
   }
   else if (ale->type == ANIMTYPE_MASKLAYER) {
@@ -148,19 +148,19 @@ static void actkeys_list_element_to_keylist(AnimCxt *ac,
 }
 
 static void actkeys_find_key_in_list_elem(AnimCxt *ac,
-                                             AnimListElem *ale,
-                                             float rgn_x,
-                                             float *r_selx,
-                                             float *r_frame,
-                                             bool *r_found,
-                                             bool *r_is_sel)
+                                          AnimListElem *ale,
+                                          float rgn_x,
+                                          float *r_selx,
+                                          float *r_frame,
+                                          bool *r_found,
+                                          bool *r_is_sel)
 {
   *r_found = false;
 
   View2D *v2d = &ac->rgn->v2d;
 
   AnimKeylist *keylist = er_keylist_create();
-  actkeys_list_element_to_keylist(ac, keylist, ale);
+  actkeys_list_elem_to_keylist(ac, keylist, ale);
   ed_keylist_prepare_for_direct_access(keylist);
 
   AnimData *adt = anim_nla_mapping_get(ac, ale);
@@ -171,8 +171,8 @@ static void actkeys_find_key_in_list_elem(AnimCxt *ac,
   key_hsize = roundf(key_hsize / 2.0f);
 
   const Range2f range = {
-      ui_view2d_rgn_to_view_x(v2d, region_x - int(key_hsize)),
-      ui_view2d_rgn_to_view_x(v2d, region_x + int(key_hsize)),
+      ui_view2d_rgn_to_view_x(v2d, rgn_x - int(key_hsize)),
+      ui_view2d_rgn_to_view_x(v2d, rgn_x + int(key_hsize)),
   };
   const ActKeyColumn *ak = ed_keylist_find_any_between(keylist, range);
   if (ak) {
@@ -202,10 +202,10 @@ static void actkeys_find_key_at_position(AnimCxt *ac,
 
 {
   *r_found = false;
-  *r_ale = actkeys_find_list_element_at_position(ac, filter, rgn_x, rgn_y);
+  *r_ale = actkeys_find_list_elem_at_position(ac, filter, rgn_x, rgn_y);
 
   if (*r_ale != nullptr) {
-    actkeys_find_key_in_list_element(
+    actkeys_find_key_in_list_elem(
         ac, *r_ale, rgn_x, r_selx, r_frame, r_found, r_is_sel);
   }
 }
@@ -234,11 +234,11 @@ static bool actkeys_is_key_at_position(AnimCxt *ac, float rgn_x, float rgn_y)
  * 2) invert all (CTRL-IKEY) - invert sel of all keyframes.
  * 3) (de)sel all - no testing is done; only for use internal tools as normal fn. */
 
-/* Desels keyframes in the action editor
+/* Desels keyframes in the act editor
  * - This is called by the desel all op, as well as other on
  * - test: check if sel or deselect all
  * - sel: how to sel keyframes (SEL_*)*/
-static void desel_action_keys(AnimCxt *ac, short test, short sel)
+static void desel_act_keys(AnimCxt *ac, short test, short sel)
 {
   List anim_data = {nullptr, nullptr};
   eAnimFilter_Flags filter;
@@ -327,19 +327,18 @@ static int actkeys_deselall_ex(Cxt *C, WinOp *op)
   }
 
   /* 'standard' behavior - check if sel, then apply relevant selection */
-  const int action = api_enum_get(op->ptr, "action");
-  switch (action) {
+  const int act = api_enum_get(op->ptr, "action");
+  switch (act) {
     case SEL_TOGGLE:
-      desel_action_keys(&ac, 1, SEL_ADD);
+      desel_act_keys(&ac, 1, SEL_ADD);
       break;
     case SEL_SEL:
-      desel_action_keys(&ac, 0, SEL_ADD);
+      desel_act_keys(&ac, 0, SEL_ADD);
       break;
     case SEL_DESEL:
-      deselect_action_keys(&ac, 0, SEL_SUBTRACT);
-      break;
+      desel_act_keys(&ac, 0, SEL_SUBTRACT);
     case SEL_INVERT:
-      desel_action_keys(&ac, 0, SEL_INVERT);
+      desel_actl_keys(&ac, 0, SEL_INVERT);
       break;
     default:
       lib_assert(0);
@@ -354,16 +353,16 @@ static int actkeys_deselall_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void action_ot_sel_all(WinOpType *ot)
+void act_ot_sel_all(WinOpType *ot)
 {
   /* ids */
   ot->name = "Sel All";
-  ot->idname = "action_ot_sel_all";
+  ot->idname = "act_ot_sel_all";
   ot->description = "Toggle sel of all keyframes";
 
   /* api cbs */
   ot->ex = actkeys_deselall_ex;
-  ot->poll = ed_op_action_active;
+  ot->poll = ed_op_act_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
