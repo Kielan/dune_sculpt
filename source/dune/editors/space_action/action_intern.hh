@@ -7,52 +7,48 @@ struct Scene;
 struct SpaceAction;
 struct AnimCxt;
 struct Cxt;
-struct wmOpType;
+struct WinOpType;
 
 /* internal exports only */
 
 /* **************************************** */
-/* `space_action.cc` / `action_buttons.cc` */
+/* `space_action.cc` / `act_btns.cc` */
 
-void action_buttons_register(ARegionType *art);
-
-/* ***************************************** */
-/* `action_draw.cc` */
-
-/**
- * Left hand part.
- */
-void draw_channel_names(bContext *C, bAnimContext *ac, ARegion *region);
-/**
- * Draw keyframes in each channel.
- */
-void draw_channel_strips(bAnimContext *ac, SpaceAction *saction, ARegion *region);
-
-void timeline_draw_cache(const SpaceAction *saction, const Object *ob, const Scene *scene);
+void act_btns_register(ARgnType *art);
 
 /* ***************************************** */
-/* `action_select.cc` */
+/* `act_drw.cc` */
 
-void ACTION_OT_select_all(wmOperatorType *ot);
-void ACTION_OT_select_box(wmOperatorType *ot);
-void ACTION_OT_select_lasso(wmOperatorType *ot);
-void ACTION_OT_select_circle(wmOperatorType *ot);
-void ACTION_OT_select_column(wmOperatorType *ot);
+/* Left hand part. */
+void drw_channel_names(Cxt *C, AnimCxt *ac, ARgn *rgn);
+/* Drw keyframes in each channel. */
+void drw_channel_strips(AnimCxt *ac, SpaceAction *saction, ARgn *rgn);
+
+void timeline_drw_cache(const SpaceAction *sact, const Ob *ob, const Scene *scene);
+
+/* ***************************************** */
+/* `act_sel.cc` */
+
+void act_ot_sel_all(wmOpType *ot);
+void act_ot_sel_box(wmOpType *ot);
+void act_ot_sel_lasso(wmOpType *ot);
+void ACTION_OT_select_circle(wmOpType *ot);
+void ACTION_OT_select_column(wmOpType *ot);
 void ACTION_OT_select_linked(wmOperatorType *ot);
-void ACTION_OT_select_more(wmOperatorType *ot);
-void ACTION_OT_select_less(wmOperatorType *ot);
-void ACTION_OT_select_leftright(wmOperatorType *ot);
-void ACTION_OT_clickselect(wmOperatorType *ot);
+void ACTION_OT_select_more(wmOpType *ot);
+void ACTION_OT_select_less(wmOpType *ot);
+void ACTION_OT_select_leftright(wmOpType *ot);
+void ACTION_OT_clickselect(wmOpType *ot);
 
-/* defines for left-right select tool */
-enum eActKeys_LeftRightSelect_Mode {
+/* defines for left-right sel tool */
+enum eActKeys_LeftRightSelMode {
   ACTKEYS_LRSEL_TEST = 0,
   ACTKEYS_LRSEL_LEFT,
   ACTKEYS_LRSEL_RIGHT,
 };
 
 /* defines for column-select mode */
-enum eActKeys_ColumnSelect_Mode {
+enum eActKeys_ColumnSel_Mode {
   ACTKEYS_COLUMNSEL_KEYS = 0,
   ACTKEYS_COLUMNSEL_CFRA,
   ACTKEYS_COLUMNSEL_MARKERS_COLUMN,
@@ -60,48 +56,47 @@ enum eActKeys_ColumnSelect_Mode {
 };
 
 /* ***************************************** */
-/* `action_edit.cc` */
+/* `act_edit.cc` */
 
-void ACTION_OT_previewrange_set(wmOperatorType *ot);
-void ACTION_OT_view_all(wmOperatorType *ot);
-void ACTION_OT_view_selected(wmOperatorType *ot);
-void ACTION_OT_view_frame(wmOperatorType *ot);
+void act_ot_previewrange_set(wmOperatorType *ot);
+void act_ot_view_all(wmOperatorType *ot);
+void act_OT_view_selected(wmOperatorType *ot);
+void act_OT_view_frame(wmOperatorType *ot);
 
-void ACTION_OT_copy(wmOperatorType *ot);
+void act_OT_copy(wmOperatorType *ot);
 void ACTION_OT_paste(wmOperatorType *ot);
 
-void ACTION_OT_keyframe_insert(wmOperatorType *ot);
-void ACTION_OT_duplicate(wmOperatorType *ot);
-void ACTION_OT_delete(wmOperatorType *ot);
-void ACTION_OT_clean(wmOperatorType *ot);
-void ACTION_OT_bake_keys(wmOperatorType *ot);
+void act_OT_keyframe_insert(wmOperatorType *ot);
+void act_OT_duplicate(wmOperatorType *ot);
+void act_OT_delete(wmOperatorType *ot);
+void act_OT_clean(wmOperatorType *ot);
+void act_OT_bake_keys(wmOperatorType *ot);
 
-void ACTION_OT_keyframe_type(wmOperatorType *ot);
-void ACTION_OT_handle_type(wmOperatorType *ot);
-void ACTION_OT_interpolation_type(wmOperatorType *ot);
-void ACTION_OT_extrapolation_type(wmOperatorType *ot);
-void ACTION_OT_easing_type(wmOperatorType *ot);
+void act_OT_keyframe_type(wmOperatorType *ot);
+void act_OT_handle_type(wmOperatorType *ot);
+void act_OT_interpolation_type(wmOperatorType *ot);
+void act_OT_extrapolation_type(wmOperatorType *ot);
+void act_OT_easing_type(wmOperatorType *ot);
 
-void ACTION_OT_frame_jump(wmOperatorType *ot);
+void act_OT_frame_jump(wmOperatorType *ot);
 
-void ACTION_OT_snap(wmOperatorType *ot);
-void ACTION_OT_mirror(wmOperatorType *ot);
+void act_OT_snap(wmOperatorType *ot);
+void act_OT_mirror(wmOperatorType *ot);
 
-void ACTION_OT_new(wmOperatorType *ot);
-void ACTION_OT_unlink(wmOperatorType *ot);
+void act_OT_new(wmOperatorType *ot);
+void act_OT_unlink(wmOperatorType *ot);
 
-void ACTION_OT_push_down(wmOperatorType *ot);
-void ACTION_OT_stash(wmOperatorType *ot);
-void ACTION_OT_stash_and_create(wmOperatorType *ot);
+void act_OT_push_down(wmOperatorType *ot);
+void act_OT_stash(wmOperatorType *ot);
+void act_OT_stash_and_create(wmOperatorType *ot);
 
-void ACTION_OT_layer_next(wmOperatorType *ot);
-void ACTION_OT_layer_prev(wmOperatorType *ot);
+void act_OT_layer_next(wmOperatorType *ot);
+void act_OT_layer_prev(wmOperatorType *ot);
 
-void ACTION_OT_markers_make_local(wmOperatorType *ot);
+void act_OT_markers_make_local(wmOperatorType *ot);
 
 /* defines for snap keyframes
- * NOTE: keep in sync with eEditKeyframes_Snap (in ED_keyframes_edit.hh)
- */
+ * keep in sync w eEditKeyframes_Snap (in ed_keyframes_edit.hh) */
 enum eActKeys_Snap_Mode {
   ACTKEYS_SNAP_CFRA = 1,
   ACTKEYS_SNAP_NEAREST_FRAME,
@@ -110,8 +105,7 @@ enum eActKeys_Snap_Mode {
 };
 
 /* defines for mirror keyframes
- * NOTE: keep in sync with eEditKeyframes_Mirror (in ED_keyframes_edit.hh)
- */
+ * keep in sync w eEditKeyframes_Mirror (in ed_keyframes_edit.hh) */
 enum eActKeys_Mirror_Mode {
   ACTKEYS_MIRROR_CFRA = 1,
   ACTKEYS_MIRROR_YAXIS,
@@ -120,7 +114,7 @@ enum eActKeys_Mirror_Mode {
 };
 
 /* ***************************************** */
-/* `action_ops.cc` */
+/* `act_ops.cc` */
 
-void action_operatortypes();
-void action_keymap(wmKeyConfig *keyconf);
+void act_optypes();
+void act_keymap(WinKeyConfig *keyconf);
