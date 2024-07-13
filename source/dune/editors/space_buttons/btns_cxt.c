@@ -18,14 +18,14 @@
 #include "types_window.h"
 #include "types_world.h"
 
-#include "dune_action.h"
+#include "dune_act.h"
 #include "dune_armature.h"
 #include "dune_cxt.h"
 #include "dune_layer.h"
 #include "dune_linestyle.h"
 #include "dune_material.h"
 #include "dune_mod.h"
-#include "dune_object.h"
+#include "dune_ob.h"
 #include "dune_paint.h"
 #include "dune_particle.h"
 #include "dune_screen.h"
@@ -40,7 +40,7 @@
 #include "ui_interface.h"
 #include "ui_resources.h"
 
-#include "wm_api.h"
+#include "win_api.h"
 
 #include "btns_intern.h" /* own include */
 
@@ -71,8 +71,7 @@ static ApiPtr *get_ptr_type(BtnsCxtPath *path, ApiStruct *type)
   return NULL;
 }
 
-/************************* Creating the Path ************************/
-
+/** Creating the Path */
 static bool btns_cxt_path_scene(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
@@ -104,13 +103,13 @@ static bool btns_cxt_path_view_layer(BtnsCxtPath *path, Window *win)
   return false;
 }
 
-/* NOTE: this function can return true without adding a world to the path
- * so the btns stay visible, but be sure to check the ID type if a ID_WO */
+/* This fn can return true wo adding a world to the path
+ * so the btns stay visible, but be sure to check the Id type if a ID_WO */
 static bool btns_cxt_path_world(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
-  /* if we already have a (pinned) world, we're done */
+  /* if we alrdy have a (pinned) world, we're done */
   if (api_struct_is_a(ptr->type, &ApiWorld)) {
     return true;
   }
@@ -134,7 +133,7 @@ static bool btns_cxt_path_world(BtnsCxtPath *path)
 
 static bool btns_cxt_path_collection(const Cxt *C,
                                      BtnsCxtPath *path,
-                                     Window *window)
+                                     Win *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -166,7 +165,7 @@ static bool btns_cxt_path_collection(const Cxt *C,
   return false;
 }
 
-static bool btns_cxt_path_linestyle(BtnsCxtPath *path, Window *window)
+static bool btns_cxt_path_linestyle(BtnsCxtPath *path, Win *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -193,8 +192,8 @@ static bool btns_cxt_path_object(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
-  /* if we already have a (pinned) object, we're done */
-  if (api_struct_is_a(ptr->type, &ApiObject)) {
+  /* if we alrdy have a (pinned) ob, we're done */
+  if (api_struct_is_a(ptr->type, &ApiOb)) {
     return true;
   }
   if (!api_struct_is_a(ptr->type, &ApiViewLayer)) {
@@ -202,7 +201,7 @@ static bool btns_cxt_path_object(BtnsCxtPath *path)
   }
 
   ViewLayer *view_layer = ptr->data;
-  Object *ob = (view_layer->basact) ? view_layer->basact->object : NULL;
+  Ob *ob = (view_layer->basact) ? view_layer->basact->object : NULL;
 
   if (ob) {
     api_id_ptr_create(&ob->id, &path->ptr[path->len]);
@@ -211,7 +210,7 @@ static bool btns_cxt_path_object(BtnsCxtPath *path)
     return true;
   }
 
-  /* no path to a object possible */
+  /* no path to a ob possible */
   return false;
 }
 
@@ -220,55 +219,55 @@ static bool btns_cxt_path_data(BtnsCxtPath *path, int type)
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a data, we're done */
-  if (api_struct_is_a(ptr->type, &ApiMesh) && (ELEM(type, -1, OB_MESH))) {
+  if (api_struct_is_a(ptr->type, &ApiMesh) && (elem(type, -1, OB_MESH))) {
     return true;
   }
   if (api_struct_is_a(ptr->type, &ApiCurve) &&
       (type == -1 || ELEM(type, OB_CURVES_LEGACY, OB_SURF, OB_FONT))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiArmature) && (ELEM(type, -1, OB_ARMATURE))) {
+  if (api_struct_is_a(ptr->type, &ApiArmature) && (elem(type, -1, OB_ARMATURE))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiMetaBall) && (ELEM(type, -1, OB_MBALL))) {
+  if (api_struct_is_a(ptr->type, &ApiMetaBall) && (elem(type, -1, OB_MBALL))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiLattice) && (ELEM(type, -1, OB_LATTICE))) {
+  if (api_struct_is_a(ptr->type, &ApiLattice) && (elem(type, -1, OB_LATTICE))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiCamera) && (ELEM(type, -1, OB_CAMERA))) {
+  if (api_struct_is_a(ptr->type, &ApiCamera) && (elem(type, -1, OB_CAMERA))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiLight) && (ELEM(type, -1, OB_LAMP))) {
+  if (api_struct_is_a(ptr->type, &ApiLight) && (elem(type, -1, OB_LAMP))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiSpeaker) && (ELEM(type, -1, OB_SPEAKER))) {
+  if (api_struct_is_a(ptr->type, &ApiSpeaker) && (elem(type, -1, OB_SPEAKER))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiLightProbe) && (ELEM(type, -1, OB_LIGHTPROBE))) {
+  if (api_struct_is_a(ptr->type, &ApiLightProbe) && (elem(type, -1, OB_LIGHTPROBE))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiPen) && (ELEM(type, -1, OB_PEN))) {
+  if (api_struct_is_a(ptr->type, &ApiPen) && (elem(type, -1, OB_PEN))) {
     return true;
   }
 #ifdef WITH_NEW_CURVES_TYPE
-  if (api_struct_is_a(ptr->type, &ApiCurves) && (ELEM(type, -1, OB_CURVES))) {
+  if (api_struct_is_a(ptr->type, &ApiCurves) && (elem(type, -1, OB_CURVES))) {
     return true;
   }
 #endif
 #ifdef WITH_POINT_CLOUD
-  if (api_struct_is_a(ptr->type, &ApiPointCloud) && (ELEM(type, -1, OB_POINTCLOUD))) {
+  if (api_struct_is_a(ptr->type, &ApiPointCloud) && (elem(type, -1, OB_POINTCLOUD))) {
     return true;
   }
 #endif
-  if (api_struct_is_a(ptr->type, &ApiVolume) && (ELEM(type, -1, OB_VOLUME))) {
+  if (api_struct_is_a(ptr->type, &ApiVolume) && (elem(type, -1, OB_VOLUME))) {
     return true;
   }
   /* try to get an object in the path, no pinning supported here */
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
 
-    if (ob && (ELEM(type, -1, ob->type))) {
+    if (ob && (elem(type, -1, ob->type))) {
       api_id_ptr_create(ob->data, &path->ptr[path->len]);
       path->len++;
 
@@ -279,13 +278,13 @@ static bool btns_cxt_path_data(BtnsCxtPath *path, int type)
   /* no path to data possible */
   return false;
 }
-/* path modifier */
+/* path mod */
 static bool btns_cxt_path_mod(BtnsCxtPath *path)
 {
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
 
-    if (ELEM(ob->type,
+    if (elem(ob->type,
              OB_MESH,
              OB_CURVES_LEGACY,
              OB_FONT,
@@ -295,7 +294,7 @@ static bool btns_cxt_path_mod(BtnsCxtPath *path)
              OB_CURVES,
              OB_POINTCLOUD,
              OB_VOLUME)) {
-      ModData *md = dune_object_active_mod(ob);
+      ModData *md = dune_ob_active_mod(ob);
       if (md != NULL) {
         api_ptr_create(&ob->id, &ApiMod, md, &path->ptr[path->len]);
         path->len++;
@@ -310,10 +309,10 @@ static bool btns_cxt_path_mod(BtnsCxtPath *path)
 
 static bool btns_cxt_path_shaderfx(BtnsCxtPath *path)
 {
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
 
-    if (ob && ELEM(ob->type, OB_PEN)) {
+    if (ob && elem(ob->type, OB_PEN)) {
       return true;
     }
   }
@@ -325,16 +324,16 @@ static bool btns_cxt_path_material(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
-  /* if we already have a (pinned) material, we're done */
+  /* if we alrdy have a (pinned) material, we're done */
   if (api_struct_is_a(ptr->type, &ApiMaterial)) {
     return true;
   }
-  /* if we have an object, use the object material slot */
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  /* if we have an ob, use the ob material slot */
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
 
     if (ob && OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
-      Material *ma = dune_object_material_get(ob, ob->actcol);
+      Material *ma = dune_ob_material_get(ob, ob->actcol);
       if (ma != NULL) {
         api_id_ptr_create(&ma->id, &path->ptr[path->len]);
         path->len++;
@@ -378,14 +377,14 @@ static bool btns_cxt_path_pose_bone(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
-  /* if we already have a (pinned) PoseBone, we're done */
+  /* if we alrdy have a (pinned) PoseBone, we're done */
   if (api_struct_is_a(ptr->type, &ApiPoseBone)) {
     return true;
   }
 
   /* if we have an armature, get the active bone */
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
     Armature *arm = ob->data; /* path->ptr[path->len-1].data - works too */
 
     if (ob->type != OB_ARMATURE || arm->edbo) {
@@ -410,24 +409,24 @@ static bool btns_cxt_path_particle(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
-  /* if we already have (pinned) particle settings, we're done */
+  /* if we alrdy have (pinned) particle settings, we're done */
   if (api_struct_is_a(ptr->type, &ApiParticleSettings)) {
     return true;
   }
-  /* if we have an object, get the active particle system */
-  if (btns_cxt_path_object(path)) {
-    Object *ob = path->ptr[path->len - 1].data;
+  /* if we have an ob, get the active particle system */
+  if (btns_cxt_path_ob(path)) {
+    Ob *ob = path->ptr[path->len - 1].data;
 
     if (ob && ob->type == OB_MESH) {
-      ParticleSystem *psys = psys_get_current(ob);
+      ParticleSys *psys = psys_get_current(ob);
 
-      api_ptr_create(&ob->id, &ApiParticleSystem, psys, &path->ptr[path->len]);
+      api_ptr_create(&ob->id, &ApiParticleSys, psys, &path->ptr[path->len]);
       path->len++;
       return true;
     }
   }
 
-  /* no path to a particle system possible */
+  /* no path to a particle sys possible */
   return false;
 }
 
@@ -445,8 +444,8 @@ static bool btns_cxt_path_brush(const Cxt *C, BtnsCxtPath *path)
 
     Brush *br = NULL;
     if (scene) {
-      wmWindow *window = cxt_wm_window(C);
-      ViewLayer *view_layer = wm_window_get_active_view_layer(window);
+      Win *window = cxt_win(C);
+      ViewLayer *view_layer = win_get_active_view_layer(win);
       br = dune_paint_brush(dune_paint_get_active(scene, view_layer));
     }
 
@@ -472,7 +471,7 @@ static bool btns_cxt_path_texture(const Cxt *C,
     return false;
   }
 
-  /* if we already have a (pinned) texture, we're done */
+  /* if we alrdy have a (pinned) texture, we're done */
   if (api_struct_is_a(ptr->type, &ApiTexture)) {
     return true;
   }
@@ -491,7 +490,7 @@ static bool btns_cxt_path_texture(const Cxt *C,
       btns_cxt_path_particle(path);
     }
     else if (GS(id->name) == ID_OB) {
-      btns_cxt_path_object(path);
+      btns_cxt_path_ob(path);
     }
     else if (GS(id->name) == ID_LS) {
       btns_cxt_path_linestyle(path, cxt_wm_window(C));
@@ -522,7 +521,7 @@ static bool btns_cxt_linestyle_pinnable(const Cxt *C, ViewLayer *view_layer)
     return false;
   }
   /* if the scene has already been pinned */
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
   if (sbtns->pinid && sbtns->pinid == &scene->id) {
     return false;
   }
@@ -533,11 +532,11 @@ static bool btns_cxt_linestyle_pinnable(const Cxt *C, ViewLayer *view_layer)
 static bool btns_cxt_path(
     const Cxt *C, SpaceProps *sbtns, BtnsCxtPath *path, int mainb, int flag)
 {
-  /* Note we don't use cxt_data here, instead we get it from the window.
+  /* We don't use cxt_data here, instead we get it from the win.
    * Otherwise there is a loop reading the cxt that we are setting. */
-  Window *window = cxt_wm_window(C);
-  Scene *scene = wm_window_get_active_scene(window);
-  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
+  Win *window = cxt_win(C);
+  Scene *scene = win_get_active_scene(window);
+  ViewLayer *view_layer = win_get_active_view_layer(window);
 
   memset(path, 0, sizeof(*path));
   path->flag = flag;
@@ -554,9 +553,9 @@ static bool btns_cxt_path(
     api_id_ptr_create(&scene->id, &path->ptr[0]);
     path->len++;
 
-    if (!ELEM(mainb,
+    if (!elem(mainb,
               CXT_SCENE,
-              CXT_RENDER,
+              CXT_RNDR,
               CXT_OUTPUT,
               CXT_VIEW_LAYER,
               CXT_WORLD)) {
@@ -570,7 +569,7 @@ static bool btns_cxt_path(
   bool found;
   switch (mainb) {
     case CXT_SCENE:
-    case CXT_RENDER:
+    case CXT_RNDR:
     case CXT_OUTPUT:
       found = btns_cxt_path_scene(path);
       break;
@@ -594,7 +593,7 @@ static bool btns_cxt_path(
     case CXT_TOOL:
       found = true;
       break;
-    case CXT_OBJECT:
+    case CXT_OB:
     case CXT_PHYS:
     case CXT_CONSTRAINT:
       found = btns_cxt_path_object(path);
@@ -636,14 +635,14 @@ static bool btns_cxt_path(
 
 static bool btns_shading_cxt(const Cxt *C, int mainb)
 {
-  wmWindow *window = cxt_wm_window(C);
-  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
-  Object *ob = OBACT(view_layer);
+  Win *window = cxt_win(C);
+  ViewLayer *view_layer = win_get_active_view_layer(win);
+  Ob *ob = OBACT(view_layer);
 
-  if (ELEM(mainb, CXT_MATERIAL, CXT_WORLD, CXT_TEXTURE)) {
+  if (elem(mainb, CXT_MATERIAL, CXT_WORLD, CXT_TEXTURE)) {
     return true;
   }
-  if (mainb == CXT_DATA && ob && ELEM(ob->type, OB_LAMP, OB_CAMERA)) {
+  if (mainb == CXT_DATA && ob && elem(ob->type, OB_LAMP, OB_CAMERA)) {
     return true;
   }
 
@@ -652,21 +651,21 @@ static bool btns_shading_cxt(const Cxt *C, int mainb)
 
 static int btns_shading_new_cxt(const Cxt *C, int flag)
 {
-  wmWindow *window = cxt_wm_window(C);
-  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
-  Object *ob = OBACT(view_layer);
+  Win *window = cxt_win(C);
+  ViewLayer *view_layer = win_get_active_view_layer(window);
+  Ob *ob = OBACT(view_layer);
 
   if (flag & (1 << CXT_MATERIAL)) {
     return CXT_MATERIAL;
   }
-  if (ob && ELEM(ob->type, OB_LAMP, OB_CAMERA) && (flag & (1 << BCONTEXT_DATA))) {
+  if (ob && {elem(ob->type, OB_LAMP, OB_CAMERA) && (flag & (1 << BCONTEXT_DATA))) {
     return CXT_DATA;
   }
   if (flag & (1 << CXT_WORLD)) {
     return CXT_WORLD;
   }
 
-  return CXT_RENDER;
+  return CXT_RNDR;
 }
 
 void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
@@ -721,8 +720,8 @@ void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
       /* try to keep showing shading related btns */
       sbtns->mainb = btns_shading_new_cxt(C, flag);
     }
-    else if (flag & CXT_OBJECT) {
-      sbtns->mainb = CXT_OBJECT;
+    else if (flag & CXT_OB) {
+      sbtns->mainb = CXT_OB;
     }
     else {
       for (int i = 0; i < CXT_TOT; i++) {
@@ -737,8 +736,8 @@ void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
   btns_cxt_path(C, sbtns, path, sbtns->mainb, pflag);
 
   if (!(flag & (1 << sbtns->mainb))) {
-    if (flag & (1 << CXT_OBJECT)) {
-      sbtns->mainb = CXT_OBJECT;
+    if (flag & (1 << CXT_OB)) {
+      sbtns->mainb = CXT_OB;
     }
     else {
       sbtns->mainb = CXT_SCENE;
@@ -769,7 +768,7 @@ bool ed_btns_should_sync_with_outliner(const Cxt *C,
                                        const SpaceProps *sbtns,
                                        ScrArea *area)
 {
-  ScrArea *active_area = cxt_wm_area(C);
+  ScrArea *active_area = cxt_win_area(C);
   const bool auto_sync = ed_area_has_shared_border(active_area, area) &&
                          sbtns->outliner_sync == PROPS_SYNC_AUTO;
   return auto_sync || sbtns->outliner_sync == PROPS_SYNC_ALWAYS;
@@ -787,12 +786,12 @@ void ed_btns_set_cxt(const Cxt *C,
   }
 }
 
-/** Context Callback **/
+/* Cxt Cb */
 const char *btns_cxt_dir[] = {
     "texture_slot",
     "scene",
     "world",
-    "object",
+    "ob",
     "mesh",
     "armature",
     "lattice",
@@ -810,8 +809,8 @@ const char *btns_cxt_dir[] = {
     "bone",
     "edit_bone",
     "pose_bone",
-    "particle_system",
-    "particle_system_editable",
+    "particle_sys",
+    "particle_sys_editable",
     "particle_settings",
     "cloth",
     "soft_body",
@@ -836,7 +835,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
                             const char *member,
                             CxtDataResult *result)
 {
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
   if (sbtns && sbtns->path == NULL) {
     /* path is cleared for SCREEN_OT_redo_last, when global undo does a file-read which clears the
      * path (see lib_link_workspace_layout_restore). */
@@ -856,7 +855,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
   if (cxt_data_dir(member)) {
     /* in case of new shading system we skip texture_slot, complex python
      * UI script logic depends on checking if this is available */
-    if (sbuts->texuser) {
+    if (sbtns->texuser) {
       cxt_data_dir_set(result, btns_cxt_dir + 1);
     }
     else {
@@ -878,8 +877,8 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
      * in this case we want to get default cxt collection! */
     return set_ptr_type(path, result, &ApiCollection);
   }
-  if (cxt_data_equals(member, "object")) {
-    set_ptr_type(path, result, &ApiObject);
+  if (cxt_data_equals(member, "ob")) {
+    set_ptr_type(path, result, &ApiOb);
     return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "mesh")) {
@@ -955,7 +954,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
 
       if (ob && OB_TYPE_SUPPORT_MATERIAL(ob->type) && ob->totcol) {
         /* a valid actcol isn't ensured T27526. */
@@ -1086,10 +1085,10 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "cloth")) {
-    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
+    ApiPtr *ptr = get_ptr_type(path, &ApiOb);
 
     if (ptr && ptr->data) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
       ModData *md = dune_mods_findby_type(ob, eModType_Cloth);
       cxt_data_ptr_set(result, &ob->id, &ApiClothMod, md);
       return CXT_RESULT_OK;
@@ -1097,10 +1096,10 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     return CXT_RESULT_NO_DATA;
   }
   if (cxt_data_equals(member, "soft_body")) {
-    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
+    ApiPtr *ptr = get_ptr_type(path, &ApiOb);
 
     if (ptr && ptr->data) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
       ModData *md = dune_mods_findby_type(ob, eModType_Softbody);
       cxt_data_ptr_set(result, &ob->id, &ApiSoftBodyMod, md);
       return CXT_RESULT_OK;
@@ -1112,7 +1111,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
       ModData *md = dune_mods_findby_type(ob, eModType_Fluid);
       cxt_data_ptr_set(result, &ob->id, &ApiFluidMod, md);
       return CXT_RESULT_OK;
@@ -1123,7 +1122,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
       ModData *md = dune_mods_findby_type(ob, eModType_Collision);
       cxt_data_ptr_set(result, &ob->id, &ApiCollisionMod, md);
       return CXT_RESULT_OK;
@@ -1138,7 +1137,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
-      Object *ob = ptr->data;
+      Ob *ob = ptr->data;
       ModData *md = dune_mods_findby_type(ob, eModType_DynamicPaint);
       cxt_data_ptr_set(result, &ob->id, &ApiDynamicPaintMod, md);
       return CXT_RESULT_OK;
@@ -1156,17 +1155,16 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
   return CXT_RESULT_MEMBER_NOT_FOUND;
 }
 
-/************************* Drawing the Path ************************/
-
-static bool btns_panel_cxt_poll(const Cxt *C, PanelType *UNUSED(pt))
+/* Drawing the Path */
+static bool btns_pnl_cxt_poll(const Cxt *C, PnlType *UNUSED(pt))
 {
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
   return sbtns->mainb != CXT_TOOL;
 }
 
-static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
+static void btns_pnl_cxt_drw(const Cxt *C, Pnl *pnl)
 {
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
   BtnsCxtPath *path = sbtns->path;
 
   if (!path) {
@@ -1181,8 +1179,8 @@ static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
     ApiPtr *ptr = &path->ptr[i];
 
     /* Skip scene and view layer to save space. */
-    if ((!ELEM(sbtns->mainb,
-               CXT_RENDER,
+    if ((!elem(sbtns->mainb,
+               CXT_RNDR,
                CXT_OUTPUT,
                CXT_SCENE,
                CXT_VIEW_LAYER,
@@ -1190,8 +1188,8 @@ static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
          ptr->type == &ApiScene)) {
       continue;
     }
-    if ((!ELEM(sbtns->mainb,
-               CXT_RENDER,
+    if ((!elem(sbtns->mainb,
+               CXT_RNDR,
                CXT_OUTPUT,
                CXT_SCENE,
                CXT_VIEW_LAYER,
@@ -1238,21 +1236,21 @@ static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
           "btns_ot_toggle_pin");
 }
 
-void btns_cxt_register(ARegionType *art)
+void btns_cxt_register(ARgnType *art)
 {
-  PanelType *pt = mem_callocn(sizeof(PanelType), "spacetype btns panel cxt");
+  PanelType *pt = mem_callocn(sizeof(PnlType), "spacetype btns panel cxt");
   strcpy(pt->idname, "props_pt_cxt");
   strcpy(pt->label, N_("Cxt")); /* XXX C panels unavailable through API bpy.types! */
   strcpy(pt->lang_cxt, LANG_CXT_DEFAULT_API);
-  pt->poll = btns_panel_cxt_poll;
-  pt->draw = btns_panel_cxt_draw;
-  pt->flag = PANEL_TYPE_NO_HEADER | PANEL_TYPE_NO_SEARCH;
-  lib_addtail(&art->paneltypes, pt);
+  pt->poll = btns_pnl_cxt_poll;
+  pt->drw = btns_pnl_cxt_draw;
+  pt->flag = PANEL_TYPE_NO_HEADER | PNL_TYPE_NO_SEARCH;
+  lib_addtail(&art->pnltypes, pt);
 }
 
 Id *btns_cxt_id_path(const Cxt *C)
 {
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
   BtnsCxtPath *path = sbtns->path;
 
   if (path->len == 0) {
@@ -1264,15 +1262,15 @@ Id *btns_cxt_id_path(const Cxt *C)
 
     /* Pin particle settings instead of system, since only settings are an idblock. */
     if (sbtns->mainb == CXT_PARTICLE && sbtns->flag & SB_PIN_CXT) {
-      if (ptr->type == &Api_ParticleSystem && ptr->data) {
-        ParticleSystem *psys = ptr->data;
+      if (ptr->type == &Api_ParticleSys && ptr->data) {
+        ParticleSys *psys = ptr->data;
         return &psys->part->id;
       }
     }
 
     /* There is no valid image ID panel, Image Empty objects need this workaround. */
     if (sbtns->mainb == CXT_DATA && sbtns->flag & SB_PIN_CXT) {
-      if (ptr->type == &Api_Image && ptr->data) {
+      if (ptr->type == &Api_Img && ptr->data) {
         continue;
       }
     }
