@@ -4,7 +4,7 @@
 #include "types_list.h"
 #include "api_types.h"
 
-struct ARegionType;
+struct ARgnType;
 struct Id;
 struct SpaceProps;
 struct Tex;
@@ -13,7 +13,7 @@ struct CxtDataResult;
 struct Node;
 struct NodeSocket;
 struct NodeTree;
-struct wmOpType;
+struct WinOpType;
 
 struct SpacePropsRuntime {
   /* For filtering props displayed in the space. */
@@ -23,7 +23,7 @@ struct SpacePropsRuntime {
   lib_bitmap *tab_search_results;
 };
 
-/* context data */
+/* cxt data */
 typedef struct BtnsCxtPath {
   ApiPtr ptr[8];
   int len;
@@ -61,9 +61,9 @@ typedef struct BtnsCxtTexture {
 /* btns_cxt.c */
 void btns_cxt_compute(const struct Cxt *C, struct SpaceProps *sbtns);
 int btns_cxt(const struct Cxt *C,
-              const char *member,
-              struct CxtDataResult *result);
-void btns_cxt_register(struct ARegionType *art);
+             const char *member,
+             struct CxtDataResult *result);
+void btns_cxt_register(struct ARgnType *art);
 struct Id *btns_cxt_id_path(const struct Cxt *C);
 
 extern const char *btns_cxt_dir[]; /* doc access */
@@ -72,10 +72,10 @@ extern const char *btns_cxt_dir[]; /* doc access */
 void btns_texture_cxt_compute(const struct Cxt *C, struct SpaceProps *sbtns);
 
 /* btns_ops.c */
-void btns_ot_start_filter(struct wmOpType *ot);
-void btns_ot_clear_filter(struct wmOpType *ot);
-void btns_ot_toggle_pin(struct wmOpType *ot);
-void btns_ot_file_browse(struct wmOpType *ot);
+void btns_ot_start_filter(struct WinOpType *ot);
+void btns_ot_clear_filter(struct WinOpType *ot);
+void btns_ot_toggle_pin(struct WinOpType *ot);
+void btns_ot_file_browse(struct WinOpType *ot);
 /* Second op, only difference from btns_ot_file_browse is MESH_FILESEL_DIRECTORY. */
-void btns_ot_dir_browse(struct wmOpType *ot);
-void btns_ot_cxt_menu(struct wmOpType *ot);
+void btns_ot_dir_browse(struct WinOpType *ot);
+void btns_ot_cxt_menu(struct WinOpType *ot);
