@@ -17,8 +17,8 @@
 #include "dune_report.h"
 #include "dune_screen.h"
 
-#include "wm_api.h"
-#include "wm_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "ed_screen.h"
 #include "ed_undo.h"
@@ -33,118 +33,117 @@
 
 /* Start / Clear Search Filter Operators
  *  Almost a duplicate of the file browser op file_ot_start_filter **/
-static int btns_start_filter_ex(Cxt *C, wmOp *UNUSED(op))
+static int btns_start_filter_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  SpaceProps *space = cxt_wm_space_props(C);
-  ScrArea *area = cxt_wm_area(C);
-  ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HEADER);
+  SpaceProps *space = cxt_win_space_props(C);
+  ScrArea *area = cxt_win_area(C);
+  ARgn *rgn = dune_area_find_rgn_type(area, RGN_TYPE_HEADER);
 
-  ARegion *region_cxt = cxt_wm_region(C);
-  cxt_wm_region_set(C, region);
-  ui_textbtn_activate_api(C, region, space, "search_filter");
-  cxt_wm_region_set(C, region_ctx);
+  ARgn *rgn_cxt = cxt_win_rgn(C);
+  cxt_win_rgn_set(C, rgn);
+  ui_txtbtn_activate_api(C, rgn, space, "search_filter");
+  cxt_win_rgn_set(C, rgn_ctx);
 
   return OP_FINISHED;
 }
 
-void btns_ot_start_filter(struct wmOpType *ot)
+void btns_ot_start_filter(struct WinOpType *ot)
 {
   /* Ids. */
   ot->name = "Filter";
   ot->description = "Start entering filter text";
   ot->idname = "btns_ot_start_filter";
 
-  /* Callbacks. */
+  /* Cbs. */
   ot->exec = btns_start_filter_ex;
   ot->poll = ed_op_btns_active;
 }
 
-static int btns_clear_filter_ex(Cxt *C, wmOp *UNUSED(op))
+static int btns_clear_filter_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  SpaceProps *space = cxt_wm_space_props(C);
+  SpaceProps *space = cxt_win_space_props(C);
 
   space->runtime->search_string[0] = '\0';
 
-  ScrArea *area = cxt_wm_area(C);
-  ed_region_search_filter_update(area, ctx_wm_region(C));
-  ed_area_tag_redraw(area);
+  ScrArea *area = cxt_win_area(C);
+  ed_rgn_search_filter_update(area, ctx_win_rgn(C));
+  ed_area_tag_redrw(area);
 
   return OP_FINISHED;
 }
 
-void btns_ot_clear_filter(struct wmOpType *ot)
+void btns_ot_clear_filter(struct WinOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Clear Filter";
   ot->description = "Clear the search filter";
   ot->idname = "btns_ot_clear_filter";
 
-  /* Callbacks. */
+  /* Cbs. */
   ot->ex = btns_clear_filter_ex;
   ot->poll = ed_op_btns_active;
 }
 
-/* Pin id Operator */
-
-static int toggle_pin_ex(Cxt *C, wmOp *UNUSED(op))
+/* Pin id Op */
+static int toggle_pin_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  SpaceProps *sbtns = cxt_wm_space_props(C);
+  SpaceProps *sbtns = cxt_win_space_props(C);
 
   sbuts->flag ^= SB_PIN_CXT;
 
   /* Create the props space pointer. */
   ApiPtr sbtns_ptr;
-  Screen *screen = cxt_wm_screen(C);
+  Screen *screen = cxt_win_screen(C);
   api_ptr_create(&screen->id, &ApiSpaceProps, sbtns, &sbtns_ptr);
 
   /* Create the new id pointer and set the pin id with api
-   * so we can use the property's api update functionality. */
+   * so we can use the prop's api update functionality. */
   Id *new_id = (sbuts->flag & SB_PIN_CXT) ? btns_cxt_id_path(C) : NULL;
   ApiPtr new_id_ptr;
   api_id_ptr_create(new_id, &new_id_ptr);
   api_ptr_set(&sbtns_ptr, "pin_id", new_id_ptr);
 
-  ed_area_tag_redraw(cxt_wm_area(C));
+  ed_area_tag_redrw(cxt_win_area(C));
 
   return OP_FINISHED;
 }
 
-void btns_ot_toggle_pin(wmOpType *ot)
+void btns_ot_toggle_pin(WinOpType *ot)
 {
-  /* Identifiers. */
+  /* Ids. */
   ot->name = "Toggle Pin ID";
   ot->description = "Keep the current data-block displayed";
   ot->idname = "btns_ot_toggle_pin";
 
-  /* Callbacks. */
+  /* Cbs. */
   ot->exec = toggle_pin_ex;
   ot->poll = ed_op_btns_active;
 }
 
-/* Context Menu Operator */
-static int cxt_menu_invoke(Cxt *C, wmOpType *ot) {
+/* Context Menu Op */
+static int cxt_menu_invoke(Cxt *C, WinOpType *ot) {
   uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Cxt Menu"), ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
 
-  uiItemM(layout, "INFO_MT_area", NULL, ICON_NONE);
+  uiItemM(layout, "info_mt_area", NULL, ICON_NONE);
   ui_popup_menu_end(C, pup);
 
   return OP_INTERFACE;
 }
 
-void btns_ot_ctx_menu(wmOpType *ot)
+void btns_ot_ctx_menu(WinOpType *ot)
 {
-  /* Identifiers. */
-  ot->name = "Context Menu";
+  /* Ids. */
+  ot->name = "Cxt Menu";
   ot->description = "Display props editor cxt_menu";
   ot->idname = "btns_ot_cxt_menu";
 
-  /* Callbacks. */
+  /* Cbs. */
   ot->invoke = cxt_menu_invoke;
   ot->poll = ed_op_btns_active;
 }
 
-/* File Browse Operator */
+/* File Browse Op */
 typedef struct FileBrowseOp {
   ApiPtr ptr;
   ApiProp *prop;
@@ -152,7 +151,7 @@ typedef struct FileBrowseOp {
   bool is_userdef;
 } FileBrowseOp;
 
-static int file_browse_ex(Cxt *C, wmOp *op)
+static int file_browse_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
   FileBrowseOp *fbo = op->customdata;
@@ -182,7 +181,7 @@ static int file_browse_ex(Cxt *C, wmOp *op)
       lib_path_slash_ensure(path);
       if (is_relative) {
         const int path_len = lib_strncpy_rlen(path, str, FILE_MAX);
-        lib_path_rel(path, dune_main_blendfile_path(bmain));
+        lib_path_rel(path, dune_main_file_path(main));
         str = mem_reallocn(str, path_len + 2);
         lib_strncpy(str, path, FILE_MAX);
       }
@@ -209,7 +208,7 @@ static int file_browse_ex(Cxt *C, wmOp *op)
 
   /* Special annoying exception, filesel on redo panel T26618. */
   {
-    wmOp *redo_op = wm_op_last_redo(C);
+    WinOp *redo_op = win_op_last_redo(C);
     if (redo_op) {
       if (fbo->ptr.data == redo_op->ptr->data) {
         ed_undo_op_repeat(C, redo_op);
@@ -217,7 +216,7 @@ static int file_browse_ex(Cxt *C, wmOp *op)
     }
   }
 
-  /* Tag user preferences as dirty. */
+  /* Tag user prefs as dirty. */
   if (fbo->is_userdef) {
     U.runtime.is_dirty = true;
   }
@@ -233,7 +232,7 @@ static void file_browse_cancel(Cxt *UNUSED(C), wmOp *op)
   op->customdata = NULL;
 }
 
-static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
+static int file_browse_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ApiPtr ptr;
   ApiProp *prop;
@@ -242,12 +241,12 @@ static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   FileBrowseOp *fbo;
   char *str;
 
-  if (cxt_wm_space_file(C)) {
-    dune_report(op->reports, RPT_ERROR, "Cannot activate a file selector, one already open");
+  if (cxt_win_space_file(C)) {
+    dune_report(op->reports, RPT_ERR, "Cannot activate a file selector, one already open");
     return OP_CANCELLED;
   }
 
-  ui_ctx_active_btn_prop_get_filebrowser(C, &ptr, &prop, &is_undo, &is_userdef);
+  ui_cxt_active_btn_prop_get_filebrowser(C, &ptr, &prop, &is_undo, &is_userdef);
 
   if (!prop) {
     return OP_CANCELLED;
@@ -257,21 +256,21 @@ static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
 
   /* Useful yet irritating feature, Shift+Click to open the file
    * Alt+Click to browse a folder in the OS's browser. */
-  if (event->mod & (KM_SHIFT | KM_ALT)) {
-    wmOpType *ot = wm_optype_find("wm_ot_path_open", true);
+  if (ev->mod & (KM_SHIFT | KM_ALT)) {
+    WinOpType *ot = win_optype_find("win_ot_path_open", true);
     ApiPtr props_ptr;
 
-    if (event->mod & KM_ALT) {
+    if (ev->mod & KM_ALT) {
       char *lslash = (char *)lib_path_slash_rfind(str);
       if (lslash) {
         *lslash = '\0';
       }
     }
 
-    wm_op_props_create_ptr(&props_ptr, ot);
+    win_op_props_create_ptr(&props_ptr, ot);
     api_string_set(&props_ptr, "filepath", str);
-    wm_op_name_call_ptr(C, ot, WM_OP_EX_DEFAULT, &props_ptr, NULL);
-    wm_op_props_free(&props_ptr);
+    win_op_name_call_ptr(C, ot, WM_OP_EX_DEFAULT, &props_ptr, NULL);
+    win_op_props_free(&props_ptr);
 
     mem_freen(str);
     return OP_CANCELLED;
@@ -279,7 +278,7 @@ static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
 
   ApiProp *prop_relpath;
   const char *path_prop = api_struct_find_prop(op->ptr, "directory") ? "directory" :
-                                                                           "filepath";
+                                                                       "filepath";
   fbo = mem_callocn(sizeof(FileBrowseOp), "FileBrowseOp");
   fbo->ptr = ptr;
   fbo->prop = prop;
@@ -287,8 +286,8 @@ static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   fbo->is_userdef = is_userdef;
   op->customdata = fbo;
 
-  /* Normally ed_fileselect_get_params would handle this but we need to because of stupid
-   * user-prefs exception. */
+  /* Normally ed_filesel_get_params would handle this but 
+  we needed bc of user-prefs exception. */
   if ((prop_relpath = api_struct_find_prop(op->ptr, "relative_path"))) {
     if (!api_prop_is_set(op->ptr, prop_relpath)) {
       bool is_relative = (U.flag & USER_RELPATHS) != 0;
@@ -311,20 +310,20 @@ static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   api_string_set(op->ptr, path_prop, str);
   mem_freen(str);
 
-  wm_event_add_fileselect(C, op);
+  win_ev_add_filesel(C, op);
 
   return OP_RUNNING_MODAL;
 }
 
-void btns_ot_file_browse(wmOpType *ot)
+void btns_ot_file_browse(WinOpType *ot)
 {
-  /* Identifiers. */
+  /* Ids. */
   ot->name = "Accept";
   ot->description =
       "Open a file browser, hold Shift to open the file, Alt to browse containing directory";
   ot->idname = "btns_ot_file_browse";
 
-  /* Callbacks. */
+  /* Cbs. */
   ot->invoke = file_browse_invoke;
   ot->ex = file_browse_ex;
   ot->cancel = file_browse_cancel;
@@ -332,38 +331,38 @@ void btns_ot_file_browse(wmOpType *ot)
   /* Conditional undo based on button flag. */
   ot->flag = 0;
 
-  /* Properties. */
-  wm_op_props_filesel(ot,
+  /* Props. */
+  win_op_props_filesel(ot,
                       0,
                       FILE_SPECIAL,
                       FILE_OPENFILE,
-                      WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
+                      WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH,
                       FILE_DEFAULTDISPLAY,
                       FILE_SORT_DEFAULT);
 }
 
-void btns_ot_directory_browse(wmOpType *ot)
+void btns_ot_dir_browse(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Accept";
   ot->description =
-      "Open a directory browser, hold Shift to open the file, Alt to browse containing directory";
-  ot->idname = "btns_it_directory_browse";
+      "Open a dir browser, hold Shift to open the file, Alt to browse containing dir";
+  ot->idname = "btns_ot_dir_browse";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = file_browse_invoke;
   ot->ex = file_browse_ex;
   ot->cancel = file_browse_cancel;
 
-  /* conditional undo based on button flag */
+  /* conditional undo based on btn flag */
   ot->flag = 0;
 
-  /* properties */
-  wm_op_props_filesel(ot,
+  /* props */
+  win_op_props_filesel(ot,
                       0,
                       FILE_SPECIAL,
                       FILE_OPENFILE,
-                      WM_FILESEL_DIRECTORY | WM_FILESEL_RELPATH,
+                      WIN_FILESEL_DIR | WIN_FILESEL_RELPATH,
                       FILE_DEFAULTDISPLAY,
                       FILE_SORT_DEFAULT);
 }
