@@ -990,7 +990,7 @@ static const EnumPropItem *api_KeyMapItem_propvalue_itemf(Cxt *C,
                                                           ApiProp *UNUSED(prop),
                                                           bool *UNUSED(r_free))
 {
-  wmWindowManager *wm = cxt_wm_manager(C);
+  wmWindowManager *wm = cx_wm_mngr(C);
   wmKeyConfig *kc;
   wmKeyMap *km;
 
@@ -1022,7 +1022,7 @@ static bool api_KeyMapItem_any_get(ApiPtr *ptr)
   }
 }
 
-static void api_KeyMapItem_any_set(ApiPtr *ptr, bool value)
+static void api_KeyMapItem_any_set(ApiPtr *ptr, bool val)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
 
@@ -1439,7 +1439,7 @@ static char *api_op_description_cb(Cxt *C, wmOpType *ot, ApiPtr *prop_ptr)
   char *result;
 
   api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
-  fn = &api_op_description_fn; /* api_struct_find_function(&ptr, "description"); */
+  fn = &api_op_description_fn; /* api_struct_find_fn(&ptr, "description"); */
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "cxt", &C);
@@ -1474,7 +1474,7 @@ static ApiStruct *api_op_register(Main *main,
                                   StructCbFn call,
                                   StructFreeFn free)
 {
-  const char *error_prefix = "Registering op class:";
+  const char *err_prefix = "Registering op class:";
   wmOpType dummy_ot = {NULL};
   wmOp dummy_op = {NULL};
   ApiPtr dummy_op_ptr;
@@ -1484,18 +1484,18 @@ static ApiStruct *api_op_register(Main *main,
     char idname[OP_MAX_TYPENAME];
     char name[OP_MAX_TYPENAME];
     char description[API_DYN_DESCR_MAX];
-    char lang_cxt[DUNE_ST_MAXNAME];
+    char lang_cx[DUNE_ST_MAXNAME];
     char undo_group[OP_MAX_TYPENAME];
   } temp_buffers;
 
-  /* setup dummy operator & operator type to store static properties in */
+  /* setup dummy operator & operator type to store static props in */
   dummy_op.type = &dummy_ot;
-  dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
-  dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
-  dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.lang_cxt =
-      temp_buffers.lang_cxt;          /* only assign the pointer, string is NULL'd */
-  dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
+  dummy_ot.idname = temp_buffers.idname;           /* only assign the ptr, string is NULL'd */
+  dummy_ot.name = temp_buffers.name;               /* only assign the ptr, string is NULL'd */
+  dummy_ot.description = temp_buffers.description; /* only assign the ptr, string is NULL'd */
+  dummy_ot.lang_cx =
+      temp_buffers.lang_cx;          /* only assign the pointer, string is NULL'd */
+  dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the ptr, string is NULL'd */
   api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_op_ptr);
 
   /* clear in case they are left unset */
@@ -1507,14 +1507,14 @@ static ApiStruct *api_op_register(Main *main,
     return NULL;
   }
 
-  /* check if we have registered this operator type before, and remove it */
+  /* check if we have registered this op type before, and remove it */
   {
     wmOpType *ot = wm_optype_find(dummy_ot.idname, true);
     if (ot) {
       ApiStruct *sapi = ot->api_ext.sapi;
       if (!(sapi && api_op_unregister(main, sapi))) {
         dune_reportf(reports,
-                    RPT_ERROR,
+                    RPT_ERR,
                     "%s '%s', bl_idname '%s' %s",
                     error_prefix,
                     id,
@@ -2006,7 +2006,7 @@ static void api_def_macro_op(DuneApi *dapi)
   ApiStruct *sapi;
 
   sapi = api_def_struct(dapi, "Macro", NULL);
-  api_def_struct_ui_text(
+  api_def_struct_ui_txt(
       sapi,
       "Macro Op",
       "Storage of a macro operator being executed, or registered after execution");
@@ -2016,7 +2016,7 @@ static void api_def_macro_op(DuneApi *dapi)
   api_def_struct_register_fns(
       sapi, "api_MacroOp_register", "api_op_unregister", "api_op_instance");
 #  endif
-  api_def_struct_translation_cxt(sapi, LANG_OP_DEFAULT);
+  api_def_struct_translation_cx(sapi, LANG_OP_DEFAULT);
   api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   api_def_op_common(sapi);
@@ -2030,7 +2030,7 @@ static void api_def_op_type_macro(DuneApi *dapi)
   ApiProp *prop;
 
   srna = api_def_struct(dapi, "OpMacro", NULL);
-  api_def_struct_ui_text(
+  api_def_struct_ui_txt(
       sapi, "Operator Macro", "Storage of a sub operator in a macro after it has been added");
   api_def_struct_stype(sapi, "wmOpTypeMacro");
 
@@ -2173,32 +2173,32 @@ static void api_def_event(DuneApi *dapi)
   prop = api_def_prop(sapi, "mouse_region_y", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "mval[1]");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Mouse Y Position", "The region relative vertical location of the mouse");
 
   prop = api_def_prop(sapi, "mouse_prev_x", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "prev_xy[0]");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Mouse Previous X Position", "The window relative horizontal location of the mouse");
 
   prop = api_def_prop(sapi, "mouse_prev_y", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "prev_xy[1]");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Mouse Previous Y Position", "The window relative vertical location of the mouse");
 
   prop = api_def_prop(sapi, "mouse_prev_press_x", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "prev_press_xy[0]");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop,
+  api_def_prop_ui_txt(prop,
                            "Mouse Previous X Press Position",
                            "The window relative horizontal location of the last press event");
 
   prop = apo_def_prop(sapi, "mouse_prev_press_y", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "prev_press_xy[1]");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop,
+  api_def_prop_ui_txt(prop,
                        "Mouse Previous Y Press Position",
                        "The window relative vertical location of the last press event");
 
@@ -2206,14 +2206,14 @@ static void api_def_event(DuneApi *dapi)
   api_def_prop_float_default(prop, 1.0f);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_float_fns(prop, "api_Event_pressure_get", NULL, NULL);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Tablet Pressure", "The pressure of the tablet or 1.0 if no tablet present");
 
   prop = api_def_prop(sapi, "tilt", PROP_FLOAT, PROP_XYZ_LENGTH);
   api_def_prop_array(prop, 2);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_float_fns(prop, "api_Event_tilt_get", NULL, NULL);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Tablet Tilt", "The pressure of the tablet or zeroes if no tablet present");
 
   prop = api_def_prop(sapi, "is_tablet", PROP_BOOL, PROP_NONE);
@@ -2381,29 +2381,29 @@ static void api_def_window(DuneApi *dapi)
   prop = api_def_prop(sapi, "workspace", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "WorkSpace");
-  api_def_prop_ui_text(prop, "Workspace", "Active workspace showing in the window");
+  api_def_prop_ui_txt(prop, "Workspace", "Active workspace showing in the window");
   api_def_prop_ptr_fns(
       prop, "api_Window_workspace_get", "rna_Window_workspace_set", NULL, NULL);
-  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CX_UPDATE);
   api_def_prop_update(prop, 0, "rna_Window_workspace_update");
 
-  prop = api_def_prop(sapi, "screen", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "screen", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "Screen");
-  api_def_prop_ui_text(prop, "Screen", "Active workspace screen showing in the window");
+  api_def_prop_ui_txt(prop, "Screen", "Active workspace screen showing in the window");
   api_def_prop_ptr_fns(prop,
                        "api_Window_screen_get",
                        "api_Window_screen_set",
                        NULL,
                        "api_Window_screen_assign_poll");
-  api_def_prop_lang_cxt(prop, LANG_CXT_ID_SCREEN);
-  api_def_prop_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CONTEXT_UPDATE);
+  api_def_prop_lang_cx(prop, LANG_CX_ID_SCREEN);
+  api_def_prop_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CX_UPDATE);
   api_def_prop_update(prop, 0, "api_workspace_screen_update");
 
-  prop = api_def_prop(sapi, "view_layer", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "view_layer", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "ViewLayer");
   api_def_prop_ptr_fns(
       prop, "api_Window_view_layer_get", "rna_Window_view_layer_set", NULL, NULL);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Active View Layer", "The active workspace view layer showing in the window");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
   api_def_prop_update(prop, NC_SCREEN | ND_LAYER, NULL);
@@ -2411,7 +2411,7 @@ static void api_def_window(DuneApi *dapi)
   prop = api_def_prop(sapi, "x", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "posx");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop, "X Position", "Horizontal location of the window");
+  api_def_prop_ui_txt(prop, "X Position", "Horizontal location of the window");
 
   prop = api_def_prop(sapi, "y", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "posy");
@@ -2456,17 +2456,17 @@ static void api_def_wm_keyconfigs(DuneApi *dapi, ApiProp *cprop)
                        NULL,
                        NULL);
   api_def_prop_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop, "Active KeyConfig", "Active key configuration (preset)");
+  api_def_prop_ui_txt(prop, "Active KeyConfig", "Active key configuration (preset)");
 
   prop = api_def_prop(sapi, "default", PROP_PTR, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "defaultconf");
   api_def_prop_struct_type(prop, "KeyConfig");
-  api_def_prop_ui_text(prop, "Default Key Configuration", "Default builtin key configuration");
+  api_def_prop_ui_txt(prop, "Default Key Configuration", "Default builtin key configuration");
 
   prop = api_def_prop(sapi, "addon", PROP_PTR, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "addonconf");
   api_def_prop_struct_type(prop, "KeyConfig");
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop,
       "Add-on Key Configuration",
       "Key configuration that can be extended by add-ons, and is added to the active "
@@ -2475,7 +2475,7 @@ static void api_def_wm_keyconfigs(DuneApi *dapi, ApiProp *cprop)
   prop = api_def_prop(sapi, "user", PROP_PTR, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "userconf");
   api_def_prop_struct_type(prop, "KeyConfig");
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop,
       "User Key Configuration",
       "Final key configuration that combines keymaps from the active and add-on configurations, "
@@ -2486,7 +2486,7 @@ static void api_def_wm_keyconfigs(DuneApi *dapi, ApiProp *cprop)
 
 static void api_def_windowmanager(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "WindowManager", "ID");
@@ -2533,7 +2533,7 @@ static void api_def_keymap_items(DuneApi *dapi, ApiProp *cprop)
   api_def_prop_sapi(cprop, "KeyMapItems");
   sapi = api_def_struct(sapi, "KeyMapItems", NULL);
   api_def_struct_stype(sapi, "wmKeyMap");
-  api_def_struct_ui_text(sapi, "KeyMap Items", "Collection of keymap items");
+  api_def_struct_ui_txt(sapi, "KeyMap Items", "Collection of keymap items");
 
   api_api_keymapitems(sapi);
 }
@@ -2545,7 +2545,7 @@ static void api_def_wm_keymaps(DuneApi *dapi, ApiProp *cprop)
   api_def_prop_sapi(cprop, "KeyMaps");
   sapi = api_def_struct(dapi, "KeyMaps", NULL);
   api_def_struct_stype(sapi, "wmKeyConfig");
-  api_def_struct_ui_text(sapi, "Key Maps", "Collection of keymaps");
+  api_def_struct_ui_txt(sapi, "Key Maps", "Collection of keymaps");
 
   api_api_keymaps(sapi);
 }
@@ -2605,7 +2605,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   prop = api_def_prop(sapi, "is_user_defined", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", KEYCONF_USER);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "User Defined", "Indicates that a keyconfig was defined by the user");
 
   /* Collection active property */
@@ -2618,17 +2618,17 @@ static void api_def_keyconfig(DuneApi *dapi)
   /* KeyMap */
   sapi = api_def_struct(dapi, "KeyMap", NULL);
   api_def_struct_stype(sapi, "wmKeyMap");
-  api_def_struct_ui_text(sapi, "Key Map", "Input configuration, including keymaps");
+  api_def_struct_ui_txt(sapi, "Key Map", "Input configuration, including keymaps");
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "idname");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop, "Name", "Name of the key map");
+  api_def_prop_ui_txt(prop, "Name", "Name of the key map");
   api_def_struct_name_prop(sapi, prop);
 
   prop = api_def_prop(sapi, "bl_owner_id", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "owner_id");
-  api_def_prop_ui_text(prop, "Owner", "Internal owner");
+  api_def_prop_ui_txt(prop, "Owner", "Internal owner");
 
   prop = api_def_prop(sapi, "space_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "spaceid");
@@ -2637,17 +2637,17 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Space Type", "Optional space type keymap is associated with");
 
   prop = api_def_prop(sapi, "region_type", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_stype(prop, NULL, "regionid");
+  api_def_prop_enum_stype(prop, NULL, "rgnid");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_enum_items(prop, api_enum_region_type_items);
+  api_def_prop_enum_items(prop, api_enum_rgn_type_items);
 
-  api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
+  api_def_prop_ui_txt(prop, "Region Type", "Optional region type keymap is associated with");
 
   prop = api_def_prop(sapi, "keymap_items", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_stype(prop, NULL, "items", NULL);
   api_def_prop_struct_type(prop, "KeyMapItem");
-  api_def_prop_ui_text(
-      prop, "Items", "Items in the keymap, linking an operator to an input event");
+  api_def_prop_ui_txt(
+      prop, "Items", "Items in the keymap, linking an op to an input event");
   api_def_keymap_items(dapi, prop);
 
   prop = api_def_prop(sapi, "is_user_modified", PROP_BOOL, PROP_NONE);
@@ -2734,7 +2734,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "type");
   api_def_prop_enum_items(prop, api_enum_event_type_items);
-  api_def_prop_lang_cxt(prop, LANG_CTX_UI_EVENTS);
+  api_def_prop_lang_cx(prop, LANG_CX_UI_EVENTS);
   api_def_prop_enum_fns(prop, NULL, NULL, "rna_KeyMapItem_type_itemf");
   api_def_prop_ui_txt(prop, "Type", "Type of event");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
@@ -2766,7 +2766,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "shift");
   api_def_prop_range(prop, KM_ANY, KM_MOD_HELD);
   api_def_prop_ui_txt(prop, "Shift", "Shift key pressed, -1 for any state");
-  api_def_prop_lang_cx(prop, LANG_CXT_ID_WINDOWMANAGER);
+  api_def_prop_lang_cx(prop, LANG_CX_ID_WINDOWMANAGER);
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "ctrl", PROP_INT, PROP_NONE);
@@ -2794,7 +2794,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_bool_fns(prop, "api_KeyMapItem_shift_get", NULL);
   /* api_def_prop_enum_items(prop, keymap_mod_items); */
   api_def_prop_ui_text(prop, "Shift", "Shift key pressed");
-  api_def_prop_lang_cxt(prop, LANG_CXT_ID_WM);
+  api_def_prop_lang_cx(prop, LANG_CX_ID_WM);
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "ctrl_ui", PROP_BOOL, PROP_NONE);
@@ -2806,7 +2806,7 @@ static void api_def_keyconfig(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "alt_ui", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "alt", 0);
-  api_def_prop_bool_fns(prop, "rna_KeyMapItem_alt_get", NULL);
+  api_def_prop_bool_fns(prop, "api_KeyMapItem_alt_get", NULL);
   /*  api_def_prop_enum_items(prop, keymap_mod_items); */
   api_def_prop_ui_txt(prop, "Alt", "Alt key pressed");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
@@ -2824,7 +2824,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_enum_items(prop, api_enum_event_type_items);
   api_def_prop_lang_cx(prop, LANG_CX_UI_EVENTS);
   api_def_prop_enum_fns(prop, NULL, "api_wmKeyMapItem_keymod_set", NULL);
-  api_def_prop_ui_text(prop, "Key Modifier", "Regular key pressed as a modifier");
+  api_def_prop_ui_txt(prop, "Key Modifier", "Regular key pressed as a modifier");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "repeat", PROP_BOOL, PROP_NONE);
@@ -2845,9 +2845,9 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_enum_stype(prop, NULL, "propvalue");
   api_def_prop_enum_items(prop, api_enum_keymap_propvalue_items);
   api_def_prop_enum_fns(prop, NULL, NULL, "api_KeyMapItem_propvalue_itemf");
-  api_def_prop_ui_text(
-      prop, "Prop Value", "The value this event translates to in a modal keymap");
-  api_def_prop_lang_cx(prop, LANG_CXT_ID_WM);
+  api_def_prop_ui_txt(
+      prop, "Prop Val", "The val this event translates to in a modal keymap");
+  api_def_prop_lang_cx(prop, LANG_CX_ID_WM);
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "active", PROP_BOOL, PROP_NONE);
