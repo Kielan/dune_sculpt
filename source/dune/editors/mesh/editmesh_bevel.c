@@ -7,7 +7,7 @@
 
 #include "lang.h"
 
-#include "dune_cxt.h"
+#include "dune_cx.h"
 #include "dune_editmesh.h"
 #include "dune_global.h"
 #include "dune_layer.h"
