@@ -877,72 +877,72 @@ static const EnumPropItem *api_EnumProp_default_itemf(Cx *C,
 }
 
 /* XXX: not sure this is needed? */
-static int api_EnumProp_default_get(PointerRNA *ptr)
+static int api_EnumProp_default_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((EnumPropertyRNA *)prop)->defaultvalue;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((ApiEnumProp *)prop)->defaultvalue;
 }
 
-static int rna_enum_check_separator(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_enum_check_separator(CollectionPropIter *UNUSED(iter), void *data)
 {
-  EnumPropertyItem *item = (EnumPropertyItem *)data;
+  EnumPropItem *item = (EnumPropItem *)data;
 
   return (item->identifier[0] == 0);
 }
 
-static void rna_EnumProperty_items_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_EnumProp_items_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  /* EnumPropertyRNA *eprop; */ /* UNUSED */
-  const EnumPropertyItem *item = NULL;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  /* ApiEnumProp *eprop; */ /* UNUSED */
+  const EnumPropItem *item = NULL;
   int totitem;
   bool free;
 
-  prop = rna_ensure_property(prop);
-  /* eprop = (EnumPropertyRNA *)prop; */
+  prop = api_ensure_prop(prop);
+  /* eprop = (ApiEnumProp *)prop; */
 
-  RNA_property_enum_items_ex(
+  api_prop_enum_items_ex(
       NULL, ptr, prop, STREQ(iter->prop->identifier, "enum_items_static"), &item, &totitem, &free);
-  rna_iterator_array_begin(
-      iter, (void *)item, sizeof(EnumPropertyItem), totitem, free, rna_enum_check_separator);
+  api_iter_arr_begin(
+      iter, (void *)item, sizeof(EnumPropItem), totitem, free, api_enum_check_separator);
 }
 
-static void rna_EnumPropertyItem_identifier_get(PointerRNA *ptr, char *value)
+static void api_EnumPropItem_identifier_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((EnumPropertyItem *)ptr->data)->identifier);
+  strcpy(val, ((EnumPropItem *)ptr->data)->identifier);
 }
 
-static int rna_EnumPropertyItem_identifier_length(PointerRNA *ptr)
+static int api_EnumPropItem_identifier_length(ApiPtr *ptr)
 {
-  return strlen(((EnumPropertyItem *)ptr->data)->identifier);
+  return strlen(((EnumPropItem *)ptr->data)->identifier);
 }
 
-static void rna_EnumPropertyItem_name_get(PointerRNA *ptr, char *value)
+static void api_EnumPropItem_name_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((EnumPropertyItem *)ptr->data)->name);
+  strcpy(val, ((EnumPropItem *)ptr->data)->name);
 }
 
-static int rna_EnumPropertyItem_name_length(PointerRNA *ptr)
+static int api_EnumPropItem_name_length(ApiPtr *ptr)
 {
   return strlen(((EnumPropertyItem *)ptr->data)->name);
 }
 
-static void rna_EnumPropertyItem_description_get(PointerRNA *ptr, char *value)
+static void api_EnumPropItem_description_get(ApiPtr *ptr, char *val)
 {
-  EnumPropertyItem *eprop = (EnumPropertyItem *)ptr->data;
+  EnumPropItem *eprop = (EnumPropItem *)ptr->data;
 
   if (eprop->description) {
-    strcpy(value, eprop->description);
+    strcpy(val, eprop->description);
   }
   else {
-    value[0] = '\0';
+    val[0] = '\0';
   }
 }
 
-static int rna_EnumPropertyItem_description_length(PointerRNA *ptr)
+static int api_EnumPropItem_description_length(ApiPtr *ptr)
 {
-  EnumPropertyItem *eprop = (EnumPropertyItem *)ptr->data;
+  EnumPropItem *eprop = (EnumPropItem *)ptr->data;
 
   if (eprop->description) {
     return strlen(eprop->description);
@@ -952,124 +952,123 @@ static int rna_EnumPropertyItem_description_length(PointerRNA *ptr)
   }
 }
 
-static int rna_EnumPropertyItem_value_get(PointerRNA *ptr)
+static int api_EnumPropItem_val_get(ApiPtr *ptr)
 {
-  return ((EnumPropertyItem *)ptr->data)->value;
+  return ((EnumPropItem *)ptr->data)->val;
 }
 
-static int rna_EnumPropertyItem_icon_get(PointerRNA *ptr)
+static int api_EnumPropItem_icon_get(ApiPtr *ptr)
 {
-  return ((EnumPropertyItem *)ptr->data)->icon;
+  return ((EnumPropItem *)ptr->data)->icon;
 }
 
-static PointerRNA rna_PointerProperty_fixed_type_get(PointerRNA *ptr)
+static ApiPtr api_PtrProp_fixed_type_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, ((PointerPropertyRNA *)prop)->type);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return api_ptr_inherit_refine(ptr, &Api_Struct, ((ApiPtrProp *)prop)->type);
 }
 
-static PointerRNA rna_CollectionProperty_fixed_type_get(PointerRNA *ptr)
+static ApiPtr api_CollectionProp_fixed_type_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, ((CollectionPropertyRNA *)prop)->item_type);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return api_ptr_inherit_refine(ptr, &Api_Struct, ((ApiCollectionProp *)prop)->item_type);
 }
 
 /* Function */
-
-static void rna_Function_identifier_get(PointerRNA *ptr, char *value)
+static void api_Fn_id_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((FunctionRNA *)ptr->data)->identifier);
+  strcpy(val, ((ApiFn *)ptr->data)->identifier);
 }
 
-static int rna_Function_identifier_length(PointerRNA *ptr)
+static int api_Fn_id_length(ApiPtr *ptr)
 {
-  return strlen(((FunctionRNA *)ptr->data)->identifier);
+  return strlen(((ApiFn *)ptr->data)->identifier);
 }
 
-static void rna_Function_description_get(PointerRNA *ptr, char *value)
+static void api_Fn_description_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((FunctionRNA *)ptr->data)->description);
+  strcpy(val, ((ApiFn *)ptr->data)->description);
 }
 
-static int rna_Function_description_length(PointerRNA *ptr)
+static int api_Fn_description_length(ApiPtr *ptr)
 {
-  return strlen(((FunctionRNA *)ptr->data)->description);
+  return strlen(((ApiFn *)ptr->data)->description);
 }
 
-static void rna_Function_parameters_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Fn_params_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   rna_iterator_listbase_begin(
       iter, &((FunctionRNA *)ptr->data)->cont.properties, rna_property_builtin);
 }
 
-static bool rna_Function_registered_get(PointerRNA *ptr)
+static bool api_Fn_registered_get(ApiPtr *ptr)
 {
-  FunctionRNA *func = (FunctionRNA *)ptr->data;
+  FunctionRNA *fn = (ApiFn *)ptr->data;
   return 0 != (func->flag & FUNC_REGISTER);
 }
 
-static bool rna_Function_registered_optional_get(PointerRNA *ptr)
+static bool api_Fn_registered_optional_get(PointerRNA *ptr)
 {
   FunctionRNA *func = (FunctionRNA *)ptr->data;
   return 0 != (func->flag & (FUNC_REGISTER_OPTIONAL & ~FUNC_REGISTER));
 }
 
-static bool rna_Function_no_self_get(PointerRNA *ptr)
+static bool api_Function_no_self_get(PointerRNA *ptr)
 {
   FunctionRNA *func = (FunctionRNA *)ptr->data;
   return !(func->flag & FUNC_NO_SELF);
 }
 
-static int rna_Function_use_self_type_get(PointerRNA *ptr)
+static int api_Function_use_self_type_get(PointerRNA *ptr)
 {
-  FunctionRNA *func = (FunctionRNA *)ptr->data;
-  return 0 != (func->flag & FUNC_USE_SELF_TYPE);
+  ApiFn *fn = (ApiFn *)ptr->data;
+  return 0 != (fn->flag & FN_USE_SELF_TYPE);
 }
 
-/* Blender RNA */
-
-static int rna_struct_is_publc(CollectionPropertyIterator *UNUSED(iter), void *data)
+/* Dune Api */
+static int api_struct_is_publc(CollectionPropIter *UNUSED(iter), void *data)
 {
-  StructRNA *srna = data;
+  SApi *sapi = data;
 
-  return !(srna->flag & STRUCT_PUBLIC_NAMESPACE);
+  return !(sapi->flag & STRUCT_PUBLIC_NAMESPACE);
 }
 
-static void rna_BlenderRNA_structs_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_DuneApi_structs_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  BlenderRNA *brna = ptr->data;
-  rna_iterator_listbase_begin(iter, &brna->structs, rna_struct_is_publc);
+  DuneApi *dapi = ptr->data;
+  api_iter_list_begin(iter, &dapi->structs, api_struct_is_publc);
 }
 
 /* optional, for faster lookups */
-static int rna_BlenderRNA_structs_length(PointerRNA *ptr)
+static int api_DuneApi_structs_length(ApiPtr *ptr)
 {
-  BlenderRNA *brna = ptr->data;
-  BLI_assert(brna->structs_len == BLI_listbase_count(&brna->structs));
-  return brna->structs_len;
+  DuneApi *dapi = ptr->data;
+  lib_assert(dapi->structs_len == lib_list_count(&dapi->structs));
+  return dapi->structs_len;
 }
-static int rna_BlenderRNA_structs_lookup_int(PointerRNA *ptr, int index, PointerRNA *r_ptr)
+static int api_DuneApi_structs_lookup_int(ApiPtr *ptr, int index, ApiPtr *r_ptr)
 {
-  BlenderRNA *brna = ptr->data;
-  StructRNA *srna = index < brna->structs_len ? BLI_findlink(&brna->structs, index) : NULL;
-  if (srna != NULL) {
-    RNA_pointer_create(NULL, &RNA_Struct, srna, r_ptr);
+  DuneApi *dapi = ptr->data;
+  SApi *sapi = index < dapi->structs_len ? lib_findlink(&dapi->structs, index) : NULL;
+
+  if (sapi != NULL) {
+    api_ptr_create(NULL, &Api_Struct, sapi, r_ptr);
     return true;
   }
   else {
     return false;
   }
 }
-static int rna_BlenderRNA_structs_lookup_string(PointerRNA *ptr,
-                                                const char *key,
-                                                PointerRNA *r_ptr)
+static int api_DuneApi_structs_lookup_string(ApiPtr *ptr,
+                                            const char *key,
+                                            ApiPtr *r_ptr)
 {
-  BlenderRNA *brna = ptr->data;
-  StructRNA *srna = BLI_ghash_lookup(brna->structs_map, (void *)key);
-  if (srna != NULL) {
-    RNA_pointer_create(NULL, &RNA_Struct, srna, r_ptr);
+  DuneApi *dapi = ptr->data;
+  SApi *sapi = lib_ghash_lookup(dapi->structs_map, (void *)key);
+  if (sapi != NULL) {
+    api_ptr_create(NULL, &Api_Struct, sapi, r_ptr);
     return true;
   }
 
@@ -1079,47 +1078,47 @@ static int rna_BlenderRNA_structs_lookup_string(PointerRNA *ptr,
 /* Default override (and compare) callbacks. */
 
 /* Ensures it makes sense to go inside the pointers to compare their content
- * (if they are IDs, or have different names or RNA type, then this would be meaningless). */
-static bool rna_property_override_diff_propptr_validate_diffing(PointerRNA *propptr_a,
-                                                                PointerRNA *propptr_b,
-                                                                const bool no_ownership,
-                                                                const bool no_prop_name,
-                                                                bool *r_is_id,
-                                                                bool *r_is_null,
-                                                                bool *r_is_type_diff,
-                                                                char **r_propname_a,
-                                                                char *propname_a_buff,
-                                                                size_t propname_a_buff_size,
-                                                                char **r_propname_b,
-                                                                char *propname_b_buff,
-                                                                size_t propname_b_buff_size)
+ * (if they are IDs, or have different names or Api type, then this would be meaningless). */
+static bool api_prop_override_diff_propptr_validate_diffing(ApiPtr *propptr_a,
+                                                            ApiPtr *propptr_b,
+                                                            const bool no_ownership,
+                                                            const bool no_prop_name,
+                                                            bool *r_is_id,
+                                                            bool *r_is_null,
+                                                            bool *r_is_type_diff,
+                                                            char **r_propname_a,
+                                                            char *propname_a_buff,
+                                                            size_t propname_a_buff_size,
+                                                            char **r_propname_b,
+                                                            char *propname_b_buff,
+                                                            size_t propname_b_buff_size)
 {
-  BLI_assert(propptr_a != NULL);
+  lib_assert(propptr_a != NULL);
 
   bool is_valid_for_diffing = true;
   const bool do_force_name = !no_prop_name && r_propname_a != NULL;
 
   if (do_force_name) {
-    BLI_assert(r_propname_a != NULL);
-    BLI_assert(r_propname_b != NULL);
+    lib_assert(r_propname_a != NULL);
+    lib_assert(r_propname_b != NULL);
   }
 
   *r_is_id = *r_is_null = *r_is_type_diff = false;
 
-  /* Beware, PointerRNA_NULL has no type and is considered a 'blank page'! */
+  /* Beware, PtrAPI_NULL has no type and is considered a 'blank page'! */
   if (ELEM(NULL, propptr_a->type, propptr_a->data)) {
     if (ELEM(NULL, propptr_b, propptr_b->type, propptr_b->data)) {
       *r_is_null = true;
     }
     else {
-      *r_is_id = RNA_struct_is_ID(propptr_b->type);
+      *r_is_id = api_struct_is_ID(propptr_b->type);
       *r_is_null = true;
       *r_is_type_diff = propptr_a->type != propptr_b->type;
     }
     is_valid_for_diffing = false;
   }
   else {
-    *r_is_id = RNA_struct_is_ID(propptr_a->type);
+    *r_is_id = api_struct_is_ID(propptr_a->type);
     *r_is_null = (ELEM(NULL, propptr_b, propptr_b->type, propptr_b->data));
     *r_is_type_diff = (propptr_b == NULL || propptr_b->type != propptr_a->type);
     is_valid_for_diffing = !((*r_is_id && no_ownership) || *r_is_null);
@@ -1128,19 +1127,18 @@ static bool rna_property_override_diff_propptr_validate_diffing(PointerRNA *prop
   if (propptr_b == NULL || propptr_a->type != propptr_b->type) {
     *r_is_type_diff = true;
     is_valid_for_diffing = false;
-    //      printf("%s: different pointer RNA types\n", rna_path ? rna_path : "<UNKNOWN>");
+    //      printf("%s: different ptr Api types\n", api_path ? api_path : "<UNKNOWN>");
   }
 
-  /* We do a generic quick first comparison checking for "name" and/or "type" properties.
+  /* We do a generic quick first comparison checking for "name" and/or "type" props.
    * We assume that is any of those are false, then we are not handling the same data.
-   * This helps a lot in library override case, especially to detect inserted items in collections.
-   */
+   * This helps a lot in library override case, especially to detect inserted items in collections. */
   if (!no_prop_name && (is_valid_for_diffing || do_force_name)) {
-    PropertyRNA *nameprop_a = (propptr_a->type != NULL) ?
-                                  RNA_struct_name_property(propptr_a->type) :
+    ApiProp *nameprop_a = (propptr_a->type != NULL) ?
+                                  api_struct_name_prop(propptr_a->type) :
                                   NULL;
-    PropertyRNA *nameprop_b = (propptr_b != NULL && propptr_b->type != NULL) ?
-                                  RNA_struct_name_property(propptr_b->type) :
+    ApiProp *nameprop_b = (propptr_b != NULL && propptr_b->type != NULL) ?
+                                  api_struct_name_prop(propptr_b->type) :
                                   NULL;
 
     int propname_a_len = 0, propname_b_len = 0;
@@ -1169,7 +1167,7 @@ static bool rna_property_override_diff_propptr_validate_diffing(PointerRNA *prop
         propname_b_buff_size = sizeof(buff_b);
       }
 
-      propname_b = RNA_property_string_get_alloc(
+      propname_b = api_prop_string_get_alloc(
           propptr_b, nameprop_b, propname_b_buff, propname_b_buff_size, &propname_b_len);
 
       if (r_propname_b != NULL) {
@@ -1186,35 +1184,35 @@ static bool rna_property_override_diff_propptr_validate_diffing(PointerRNA *prop
   }
 
   if (*r_is_id) {
-    BLI_assert(propptr_a->data == propptr_a->owner_id && propptr_b->data == propptr_b->owner_id);
+    lib_assert(propptr_a->data == propptr_a->owner_id && propptr_b->data == propptr_b->owner_id);
   }
 
   return is_valid_for_diffing;
 }
 
-/* Used for both Pointer and Collection properties. */
-static int rna_property_override_diff_propptr(Main *bmain,
-                                              ID *owner_id_a,
-                                              ID *owner_id_b,
-                                              PointerRNA *propptr_a,
-                                              PointerRNA *propptr_b,
-                                              eRNACompareMode mode,
-                                              const bool no_ownership,
-                                              const bool no_prop_name,
-                                              IDOverrideLibrary *override,
-                                              const char *rna_path,
-                                              size_t rna_path_len,
-                                              const uint property_type,
-                                              const char *rna_itemname_a,
-                                              const char *rna_itemname_b,
-                                              const int rna_itemindex_a,
-                                              const int rna_itemindex_b,
-                                              const int flags,
-                                              bool *r_override_changed)
+/* Used for both Ptr and Collection props. */
+static int api_prop_override_diff_propptr(Main *main,
+                                            ID *owner_id_a,
+                                            ID *owner_id_b,
+                                            ApiPtr *propptr_a,
+                                            ApiPtr *propptr_b,
+                                            eApiCompareMode mode,
+                                            const bool no_ownership,
+                                            const bool no_prop_name,
+                                            IDOverrideLib *override,
+                                            const char *api_path,
+                                            size_t api_path_len,
+                                            const uint prop_type,
+                                            const char *api_itemname_a,
+                                            const char *api_itemname_b,
+                                            const int api_itemindex_a,
+                                            const int api_itemindex_b,
+                                            const int flags,
+                                            bool *r_override_changed)
 {
-  BLI_assert(ELEM(property_type, PROP_POINTER, PROP_COLLECTION));
+  lib_assert(ELEM(prop_type, PROP_POINTER, PROP_COLLECTION));
 
-  const bool do_create = override != NULL && (flags & RNA_OVERRIDE_COMPARE_CREATE) != 0 &&
+  const bool do_create = override != NULL && (flags & API_OVERRIDE_CMPR_CREATE) != 0 &&
                          rna_path != NULL;
 
   bool is_id = false;
@@ -1222,69 +1220,69 @@ static int rna_property_override_diff_propptr(Main *bmain,
   bool is_type_diff = false;
   /* If false, it means that the whole data itself is different,
    * so no point in going inside of it at all! */
-  bool is_valid_for_diffing = rna_property_override_diff_propptr_validate_diffing(propptr_a,
-                                                                                  propptr_b,
-                                                                                  no_ownership,
-                                                                                  no_prop_name,
-                                                                                  &is_id,
-                                                                                  &is_null,
-                                                                                  &is_type_diff,
-                                                                                  NULL,
-                                                                                  NULL,
-                                                                                  0,
-                                                                                  NULL,
-                                                                                  NULL,
-                                                                                  0);
+  bool is_valid_for_diffing = api_prop_override_diff_propptr_validate_diffing(propptr_a,
+                                                                                propptr_b,
+                                                                                no_ownership,
+                                                                                no_prop_name,
+                                                                                &is_id,
+                                                                                &is_null,
+                                                                                &is_type_diff,
+                                                                                NULL,
+                                                                                NULL,
+                                                                                0,
+                                                                                NULL,
+                                                                                NULL,
+                                                                                0);
 
   if (is_id) {
-    /* Owned IDs (the ones we want to actually compare in depth, instead of just comparing pointer
-     * values) should be always properly tagged as 'virtual' overrides. */
+    /* Owned IDs (the ones we want to actually compare in depth, instead of just cmpr'ing ptr
+     * vals) should be always properly tagged as 'virtual' overrides. */
     ID *id = propptr_a->owner_id;
-    if (id != NULL && !ID_IS_OVERRIDE_LIBRARY(id)) {
+    if (id != NULL && !ID_IS_OVERRIDE_LIB(id)) {
       id = propptr_b->owner_id;
-      if (id != NULL && !ID_IS_OVERRIDE_LIBRARY(id)) {
+      if (id != NULL && !ID_IS_OVERRIDE_LIB(id)) {
         id = NULL;
       }
     }
 
-    BLI_assert(no_ownership || id == NULL || ID_IS_OVERRIDE_LIBRARY_VIRTUAL(id));
+    lib_assert(no_ownership || id == NULL || ID_IS_OVERRIDE_LIB_VIRTUAL(id));
     UNUSED_VARS_NDEBUG(id);
   }
 
   if (override) {
     if (no_ownership || is_null || is_type_diff || !is_valid_for_diffing) {
-      /* In case this pointer prop does not own its data (or one is NULL), do not compare structs!
+      /* In case this ptr prop does not own its data (or one is NULL), do not cmpr structs!
        * This is a quite safe path to infinite loop, among other nasty issues.
        * Instead, just compare pointers themselves. */
       const int comp = (propptr_a->data != propptr_b->data);
 
       if (do_create && comp != 0) {
         bool created = false;
-        IDOverrideLibraryProperty *op = BKE_lib_override_library_property_get(
-            override, rna_path, &created);
+        IdOverrideLibProp *op = dune_lib_override_lib_prop_get(
+            override, api_path, &created);
 
         /* If not yet overridden, or if we are handling sub-items (inside a collection)... */
         if (op != NULL) {
-          if (created || op->rna_prop_type == 0) {
-            op->rna_prop_type = property_type;
+          if (created || op->api_prop_type == 0) {
+            op->api_prop_type = prop_type;
           }
           else {
-            BLI_assert(op->rna_prop_type == property_type);
+            lib_assert(op->api_prop_type == prop_type);
           }
 
-          IDOverrideLibraryPropertyOperation *opop = NULL;
-          if (created || rna_itemname_a != NULL || rna_itemname_b != NULL ||
-              rna_itemindex_a != -1 || rna_itemindex_b != -1) {
-            opop = BKE_lib_override_library_property_operation_get(op,
-                                                                   IDOVERRIDE_LIBRARY_OP_REPLACE,
-                                                                   rna_itemname_b,
-                                                                   rna_itemname_a,
-                                                                   rna_itemindex_b,
-                                                                   rna_itemindex_a,
-                                                                   true,
-                                                                   NULL,
-                                                                   &created);
-            /* Do not use BKE_lib_override_library_operations_tag here, we do not want to validate
+          IDOverrideLibPropOp *opop = NULL;
+          if (created || api_itemname_a != NULL || api_itemname_b != NULL ||
+              api_itemindex_a != -1 || api_itemindex_b != -1) {
+            opop = dune_lib_override_lib_prop_op_get(op,
+                                                IDOVERRIDE_LIB_OP_REPLACE,
+                                                api_itemname_b,
+                                                api_itemname_a,
+                                                api_itemindex_b,
+                                                api_itemindex_a,
+                                                true,
+                                                NULL,
+                                                &created);
+            /* Do not use dune_lib_override_lib_ops_tag here, we do not want to validate
              * as used all of its operations. */
             op->tag &= ~IDOVERRIDE_LIBRARY_TAG_UNUSED;
             opop->tag &= ~IDOVERRIDE_LIBRARY_TAG_UNUSED;
@@ -1298,44 +1296,44 @@ static int rna_property_override_diff_propptr(Main *bmain,
 
           if (is_id && no_ownership) {
             if (opop == NULL) {
-              opop = BKE_lib_override_library_property_operation_find(op,
-                                                                      rna_itemname_b,
-                                                                      rna_itemname_a,
-                                                                      rna_itemindex_b,
-                                                                      rna_itemindex_a,
-                                                                      true,
-                                                                      NULL);
-              BLI_assert(opop != NULL);
+              opop = dune_lib_override_library_prop_op_find(op,
+                                                            api_itemname_b,
+                                                            api_itemname_a,
+                                                            api_itemindex_b,
+                                                            api_itemindex_a,
+                                                            true,
+                                                            NULL);
+              lib_assert(opop != NULL);
             }
 
-            BLI_assert(propptr_a->data == propptr_a->owner_id);
-            BLI_assert(propptr_b->data == propptr_b->owner_id);
+            lib_assert(propptr_a->data == propptr_a->owner_id);
+            lib_assert(propptr_b->data == propptr_b->owner_id);
             ID *id_a = propptr_a->data;
             ID *id_b = propptr_b->data;
             if (ELEM(NULL, id_a, id_b)) {
               /* In case one of the pointer is NULL and not the other, we consider that the
                * override is not matching its reference anymore. */
-              opop->flag &= ~IDOVERRIDE_LIBRARY_FLAG_IDPOINTER_MATCH_REFERENCE;
+              opop->flag &= ~IDOVERRIDE_LIBRARY_FLAG_IDPTR_MATCH_REF;
             }
             else if ((owner_id_a->tag & LIB_TAG_LIB_OVERRIDE_NEED_RESYNC) != 0 ||
                      (owner_id_b->tag & LIB_TAG_LIB_OVERRIDE_NEED_RESYNC) != 0) {
               /* In case one of the owner of the checked property is tagged as needing resync, do
                * not change the 'match reference' status of its ID pointer properties overrides,
                * since many non-matching ones are likely due to missing resync. */
-              CLOG_INFO(&LOG_COMPARE_OVERRIDE,
+              CLOG_INFO(&LOG_CMPR_OVERRIDE,
                         4,
-                        "Not checking matching ID pointer properties, since owner %s is tagged as "
+                        "Not checking matching ID ptr props, since owner %s is tagged as "
                         "needing resync.\n",
                         id_a->name);
             }
-            else if (id_a->override_library != NULL && id_a->override_library->reference == id_b) {
-              opop->flag |= IDOVERRIDE_LIBRARY_FLAG_IDPOINTER_MATCH_REFERENCE;
+            else if (id_a->override_lib != NULL && id_a->override_lib->ref == id_b) {
+              opop->flag |= IDOVERRIDE_LIB_FLAG_IDPTR_MATCH_REF;
             }
-            else if (id_b->override_library != NULL && id_b->override_library->reference == id_a) {
-              opop->flag |= IDOVERRIDE_LIBRARY_FLAG_IDPOINTER_MATCH_REFERENCE;
+            else if (id_b->override_lib != NULL && id_b->override_lib->ref == id_a) {
+              opop->flag |= IDOVERRIDE_LIB_FLAG_IDPTR_MATCH_REF;
             }
             else {
-              opop->flag &= ~IDOVERRIDE_LIBRARY_FLAG_IDPOINTER_MATCH_REFERENCE;
+              opop->flag &= ~IDOVERRIDE_LIB_FLAG_IDPTR_MATCH_REF;
             }
           }
         }
@@ -1345,84 +1343,83 @@ static int rna_property_override_diff_propptr(Main *bmain,
     }
     else {
       /* In case we got some array/collection like items identifiers, now is the time to generate a
-       * proper rna path from those. */
-#  define RNA_PATH_BUFFSIZE 8192
+       * proper api path from those. */
+#  define API_PATH_BUFFSIZE 8192
 
-      char extended_rna_path_buffer[RNA_PATH_BUFFSIZE];
-      char *extended_rna_path = extended_rna_path_buffer;
-      size_t extended_rna_path_len = 0;
+      char extended_api_path_buffer[API_PATH_BUFFSIZE];
+      char *extended_api_path = extended_api_path_buffer;
+      size_t extended_api_path_len = 0;
 
       /* There may be a propname defined in some cases, while no actual name set
-       * (e.g. happens with point cache), in that case too we want to fall back to index.
-       * Note that we do not need the RNA path for insertion operations. */
-      if (rna_path) {
-        if ((rna_itemname_a != NULL && rna_itemname_a[0] != '\0') &&
-            (rna_itemname_b != NULL && rna_itemname_b[0] != '\0')) {
-          BLI_assert(STREQ(rna_itemname_a, rna_itemname_b));
+       * (e.g. happens w point cache), in that case too we want to fall back to index.
+       * Note that we do not need the API path for insertion operations. */
+      if (api_path) {
+        if ((api_itemname_a != NULL && api_itemname_a[0] != '\0') &&
+            (api_itemname_b != NULL && api_itemname_b[0] != '\0')) {
+          lib_assert(STREQ(api_itemname_a, api_itemname_b));
 
-          char esc_item_name[RNA_PATH_BUFFSIZE];
-          const size_t esc_item_name_len = BLI_str_escape(
-              esc_item_name, rna_itemname_a, RNA_PATH_BUFFSIZE);
-          extended_rna_path_len = rna_path_len + 2 + esc_item_name_len + 2;
-          if (extended_rna_path_len >= RNA_PATH_BUFFSIZE) {
-            extended_rna_path = MEM_mallocN(extended_rna_path_len + 1, __func__);
+          char esc_item_name[API_PATH_BUFFSIZE];
+          const size_t esc_item_name_len = lib_str_escape(
+              esc_item_name, api_itemname_a, API_PATH_BUFFSIZE);
+          extended_api_path_len = api_path_len + 2 + esc_item_name_len + 2;
+          if (extended_api_path_len >= API_PATH_BUFFSIZE) {
+            extended_api_path = mem_mallocN(extended_api_path_len + 1, __func__);
           }
 
-          memcpy(extended_rna_path, rna_path, rna_path_len);
-          extended_rna_path[rna_path_len] = '[';
-          extended_rna_path[rna_path_len + 1] = '"';
-          memcpy(extended_rna_path + rna_path_len + 2, esc_item_name, esc_item_name_len);
-          extended_rna_path[rna_path_len + 2 + esc_item_name_len] = '"';
-          extended_rna_path[rna_path_len + 2 + esc_item_name_len + 1] = ']';
-          extended_rna_path[extended_rna_path_len] = '\0';
+          memcpy(extended_api_path, api_path, api_path_len);
+          extended_api_path[api_path_len] = '[';
+          extended_api_path[api_path_len + 1] = '"';
+          memcpy(extended_api_path + api_path_len + 2, esc_item_name, esc_item_name_len);
+          extended_api_path[api_path_len + 2 + esc_item_name_len] = '"';
+          extended_api_path[api_path_len + 2 + esc_item_name_len + 1] = ']';
+          extended_api_path[extended_api_path_len] = '\0';
         }
-        else if (rna_itemindex_a != -1) { /* Based on index... */
-          BLI_assert(rna_itemindex_a == rna_itemindex_b);
+        else if (api_itemindex_a != -1) { /* Based on index... */
+          lib_assert(api_itemindex_a == api_itemindex_b);
 
           /* low-level specific highly-efficient conversion of positive integer to string. */
           char item_index_buff[32];
           size_t item_index_buff_len = 0;
-          if (rna_itemindex_a == 0) {
+          if (api_itemindex_a == 0) {
             item_index_buff[0] = '0';
             item_index_buff_len = 1;
           }
           else {
             uint index;
-            for (index = rna_itemindex_a;
+            for (index = api_itemindex_a;
                  index > 0 && item_index_buff_len < sizeof(item_index_buff);
                  index /= 10) {
               item_index_buff[item_index_buff_len++] = '0' + (char)(index % 10);
             }
-            BLI_assert(index == 0);
+            lib_assert(index == 0);
           }
 
-          extended_rna_path_len = rna_path_len + item_index_buff_len + 2;
-          if (extended_rna_path_len >= RNA_PATH_BUFFSIZE) {
-            extended_rna_path = MEM_mallocN(extended_rna_path_len + 1, __func__);
+          extended_api_path_len = api_path_len + item_index_buff_len + 2;
+          if (extended_api_path_len >= API_PATH_BUFFSIZE) {
+            extended_rna_path = mem_mallocN(extended_api_path_len + 1, __func__);
           }
 
-          memcpy(extended_rna_path, rna_path, rna_path_len);
-          extended_rna_path[rna_path_len] = '[';
+          memcpy(extended_api_path, api_path, api_path_len);
+          extended_api_path[api_path_len] = '[';
           for (size_t i = 1; i <= item_index_buff_len; i++) {
-            /* The first loop above generated inverted string representation of our index number.
-             */
-            extended_rna_path[rna_path_len + i] = item_index_buff[item_index_buff_len - i];
+            /* The first loop above generated inverted string representation of our index number.*/
+            extended_api_path[api_path_len + i] = item_index_buff[item_index_buff_len - i];
           }
-          extended_rna_path[rna_path_len + 1 + item_index_buff_len] = ']';
-          extended_rna_path[extended_rna_path_len] = '\0';
+          extended_api_path[api_path_len + 1 + item_index_buff_len] = ']';
+          extended_api_path[extended_api_path_len] = '\0';
         }
         else {
-          extended_rna_path = (char *)rna_path;
-          extended_rna_path_len = rna_path_len;
+          extended_api_path = (char *)api_path;
+          extended_api_path_len = api_path_len;
         }
       }
 
-      eRNAOverrideMatchResult report_flags = 0;
-      const bool match = RNA_struct_override_matches(bmain,
+      eApiOverrideMatchResult report_flags = 0;
+      const bool match = api_struct_override_matches(main,
                                                      propptr_a,
                                                      propptr_b,
-                                                     extended_rna_path,
-                                                     extended_rna_path_len,
+                                                     extended_api_path,
+                                                     extended_api_path_len,
                                                      override,
                                                      flags,
                                                      &report_flags);
@@ -1434,91 +1431,91 @@ static int rna_property_override_diff_propptr(Main *bmain,
         MEM_freeN(extended_rna_path);
       }
 
-#  undef RNA_PATH_BUFFSIZE
+#  undef API_PATH_BUFFSIZE
 
       return !match;
     }
   }
   else {
-    /* We could also use is_diff_pointer, but then we potentially lose the greater-than/less-than
+    /* We could also use is_diff_ptr, but then we potentially lose the greater-than/less-than
      * info - and don't think performances are critical here for now anyway. */
-    return !RNA_struct_equals(bmain, propptr_a, propptr_b, mode);
+    return !api_struct_equals(main, propptr_a, propptr_b, mode);
   }
 }
 
-#  define RNA_PROPERTY_GET_SINGLE(_typename, _ptr, _prop, _index) \
-    (is_array ? RNA_property_##_typename##_get_index((_ptr), (_prop), (_index)) : \
-                RNA_property_##_typename##_get((_ptr), (_prop)))
-#  define RNA_PROPERTY_SET_SINGLE(_typename, _ptr, _prop, _index, _value) \
-    (is_array ? RNA_property_##_typename##_set_index((_ptr), (_prop), (_index), (_value)) : \
-                RNA_property_##_typename##_set((_ptr), (_prop), (_value)))
+#  define API_PROPERTY_GET_SINGLE(_typename, _ptr, _prop, _index) \
+    (is_array ? API_prop_##_typename##_get_index((_ptr), (_prop), (_index)) : \
+                API_prop_##_typename##_get((_ptr), (_prop)))
+#  define API_PROP_SET_SINGLE(_typename, _ptr, _prop, _index, _val) \
+    (is_array ? API_prop_##_typename##_set_index((_ptr), (_prop), (_index), (_val)) : \
+                API_prop_##_typename##_set((_ptr), (_prop), (_val)))
 
-int rna_property_override_diff_default(Main *bmain,
-                                       PropertyRNAOrID *prop_a,
-                                       PropertyRNAOrID *prop_b,
+int api_prop_override_diff_default(Main *bmain,
+                                       ApiPropOrID *prop_a,
+                                       ApiPropOrID *prop_b,
                                        const int mode,
-                                       IDOverrideLibrary *override,
-                                       const char *rna_path,
-                                       const size_t rna_path_len,
+                                       IDOverrideLib *override,
+                                       const char *api_path,
+                                       const size_t api_path_len,
                                        const int flags,
                                        bool *r_override_changed)
 {
-  PointerRNA *ptr_a = &prop_a->ptr;
-  PointerRNA *ptr_b = &prop_b->ptr;
-  PropertyRNA *rawprop_a = prop_a->rawprop;
-  PropertyRNA *rawprop_b = prop_b->rawprop;
+  ApiPtr *ptr_a = &prop_a->ptr;
+  ApiPtr *ptr_b = &prop_b->ptr;
+  ApiProp *rawprop_a = prop_a->rawprop;
+  ApiProp *rawprop_b = prop_b->rawprop;
   const uint len_a = prop_a->array_len;
   const uint len_b = prop_b->array_len;
 
-  BLI_assert(len_a == len_b);
+  lib_assert(len_a == len_b);
 
   /* NOTE: at this point, we are sure that when len_a is zero,
    * we are not handling an (empty) array. */
 
-  const bool do_create = override != NULL && (flags & RNA_OVERRIDE_COMPARE_CREATE) != 0 &&
-                         rna_path != NULL;
+  const bool do_create = override != NULL && (flags & API_OVERRIDE_CMPR_CREATE) != 0 &&
+                         api_path != NULL;
 
-  const bool no_ownership = (prop_a->rnaprop->flag & PROP_PTR_NO_OWNERSHIP) != 0;
+  const bool no_ownership = (prop_a->apiprop->flag & PROP_PTR_NO_OWNERSHIP) != 0;
 
   /* NOTE: we assume we only insert in ptr_a (i.e. we can only get new items in ptr_a),
    * and that we never remove anything. */
-  const bool use_collection_insertion = (prop_a->rnaprop->flag_override &
-                                         PROPOVERRIDE_LIBRARY_INSERTION) &&
+  const bool use_collection_insertion = (prop_a->apiprop->flag_override &
+                                         PROPOVERRIDE_LIB_INSERTION) &&
                                         do_create;
 
-  const uint rna_prop_type = RNA_property_type(prop_a->rnaprop);
+  const uint api_prop_type = api_prop_type(prop_a->apiprop);
   bool created = false;
-  IDOverrideLibraryProperty *op = NULL;
+  IDOverrideLibProp *op = NULL;
 
-  switch (rna_prop_type) {
-    case PROP_BOOLEAN: {
+  switch (api_prop_type) {
+    case PROP_BOOL: {
       if (len_a) {
-        bool array_stack_a[RNA_STACK_ARRAY], array_stack_b[RNA_STACK_ARRAY];
-        bool *array_a, *array_b;
+        bool arr_stack_a[API_STACK_ARRAY], arr_stack_b[API_STACK_ARRAY];
+        bool *arr_a, *arr_b;
 
-        array_a = (len_a > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(bool) * len_a, "RNA equals") :
-                                              array_stack_a;
-        array_b = (len_b > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(bool) * len_b, "RNA equals") :
-                                              array_stack_b;
+        arr_a = (len_a > API_STACK_ARRAY) ? MEM_mallocN(sizeof(bool) * len_a, "Api equals") :
+                                              arr_stack_a;
+        arr_b = (len_b > API_STACK_ARRAY) ? MEM_mallocN(sizeof(bool) * len_b, "Api equals") :
+                                              arr_stack_b;
 
-        RNA_property_boolean_get_array(ptr_a, rawprop_a, array_a);
-        RNA_property_boolean_get_array(ptr_b, rawprop_b, array_b);
+        api_prop_bool_get_array(ptr_a, rawprop_a, arr_a);
+        api_prop_bool_get_array(ptr_b, rawprop_b, arr_b);
 
         const int comp = memcmp(array_a, array_b, sizeof(bool) * len_a);
 
         if (do_create && comp != 0) {
           /* XXX TODO: this will have to be refined to handle array items. */
-          op = BKE_lib_override_library_property_get(override, rna_path, &created);
+          op = dune_lib_override_lib_prop_get(override, api_path, &created);
 
           if (op != NULL && created) {
-            BKE_lib_override_library_property_operation_get(
-                op, IDOVERRIDE_LIBRARY_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
+            dune_lib_override_lib_prop_op_get(
+                op, IDOVERRIDE_LIB_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
             if (r_override_changed) {
               *r_override_changed = created;
             }
           }
           else {
-            /* Already overridden prop, we'll have to check arrays items etc. */
+            /* Alrdy overridden prop, we'll have to check arrays items etc. */
           }
         }
 
@@ -1532,16 +1529,16 @@ int rna_property_override_diff_default(Main *bmain,
         return comp;
       }
       else {
-        const bool value_a = RNA_property_boolean_get(ptr_a, rawprop_a);
-        const bool value_b = RNA_property_boolean_get(ptr_b, rawprop_b);
-        const int comp = (value_a < value_b) ? -1 : (value_a > value_b) ? 1 : 0;
+        const bool val_a = api_prop_bool_get(ptr_a, rawprop_a);
+        const bool val_b = api_prop_bool_get(ptr_b, rawprop_b);
+        const int comp = (val_a < val_b) ? -1 : (val_a > val_b) ? 1 : 0;
 
         if (do_create && comp != 0) {
-          op = BKE_lib_override_library_property_get(override, rna_path, &created);
+          op = dune_lib_override_lib_prop_get(override, api_path, &created);
 
           if (op != NULL && created) { /* If not yet overridden... */
-            BKE_lib_override_library_property_operation_get(
-                op, IDOVERRIDE_LIBRARY_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
+            dune_lib_override_lib_prop_op_get(
+                op, IDOVERRIDE_LIB_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
             if (r_override_changed) {
               *r_override_changed = created;
             }
@@ -1554,26 +1551,26 @@ int rna_property_override_diff_default(Main *bmain,
 
     case PROP_INT: {
       if (len_a) {
-        int array_stack_a[RNA_STACK_ARRAY], array_stack_b[RNA_STACK_ARRAY];
-        int *array_a, *array_b;
+        int arr_stack_a[API_STACK_ARR], arr_stack_b[API_STACK_ARR];
+        int *arr_a, *arr_b;
 
-        array_a = (len_a > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(int) * len_a, "RNA equals") :
-                                              array_stack_a;
-        array_b = (len_b > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(int) * len_b, "RNA equals") :
-                                              array_stack_b;
+        arr_a = (len_a > API_STACK_ARR) ? MEM_mallocN(sizeof(int) * len_a, "Api equals") :
+                                              arr_stack_a;
+        arr_b = (len_b > API_STACK_ARR) ? MEM_mallocN(sizeof(int) * len_b, "Api equals") :
+                                              arr_stack_b;
 
-        RNA_property_int_get_array(ptr_a, rawprop_a, array_a);
-        RNA_property_int_get_array(ptr_b, rawprop_b, array_b);
+        api_prop_int_get_arr(ptr_a, rawprop_a, arr_a);
+        api_prop_int_get_arr(ptr_b, rawprop_b, arr_b);
 
         const int comp = memcmp(array_a, array_b, sizeof(int) * len_a);
 
         if (do_create && comp != 0) {
           /* XXX TODO: this will have to be refined to handle array items. */
-          op = BKE_lib_override_library_property_get(override, rna_path, &created);
+          op = dune_lib_override_lib_prop_get(override, api_path, &created);
 
           if (op != NULL && created) {
-            BKE_lib_override_library_property_operation_get(
-                op, IDOVERRIDE_LIBRARY_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
+            dune_lib_override_lib_prop_op_get(
+                op, IDOVERRIDE_LIB_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
             if (r_override_changed) {
               *r_override_changed = created;
             }
@@ -1583,26 +1580,26 @@ int rna_property_override_diff_default(Main *bmain,
           }
         }
 
-        if (array_a != array_stack_a) {
+        if (arr_a != arr_stack_a) {
           MEM_freeN(array_a);
         }
-        if (array_b != array_stack_b) {
-          MEM_freeN(array_b);
+        if (arr_b != arr_stack_b) {
+          MEM_freeN(arr_b);
         }
 
-        return comp;
+        return cmpr;
       }
       else {
-        const int value_a = RNA_property_int_get(ptr_a, rawprop_a);
-        const int value_b = RNA_property_int_get(ptr_b, rawprop_b);
-        const int comp = (value_a < value_b) ? -1 : (value_a > value_b) ? 1 : 0;
+        const int val_a = api_prop_int_get(ptr_a, rawprop_a);
+        const int val_b = api_prop_int_get(ptr_b, rawprop_b);
+        const int cmpr = (val_a < val_b) ? -1 : (val_a > val_b) ? 1 : 0;
 
         if (do_create && comp != 0) {
-          op = BKE_lib_override_library_property_get(override, rna_path, &created);
+          op = dune_lib_override_lib_prop_get(override, api_path, &created);
 
           if (op != NULL && created) { /* If not yet overridden... */
-            BKE_lib_override_library_property_operation_get(
-                op, IDOVERRIDE_LIBRARY_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
+            dune_lib_override_lib_prop_op_get(
+                op, IDOVERRIDE_LIB_OP_REPLACE, NULL, NULL, -1, -1, true, NULL, NULL);
             if (r_override_changed) {
               *r_override_changed = created;
             }
@@ -1615,16 +1612,16 @@ int rna_property_override_diff_default(Main *bmain,
 
     case PROP_FLOAT: {
       if (len_a) {
-        float array_stack_a[RNA_STACK_ARRAY], array_stack_b[RNA_STACK_ARRAY];
-        float *array_a, *array_b;
+        float arr_stack_a[API_STACK_ARR], arr_stack_b[API_STACK_ARR];
+        float *arr_a, *arr_b;
 
-        array_a = (len_a > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(float) * len_a, "RNA equals") :
-                                              array_stack_a;
-        array_b = (len_b > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(float) * len_b, "RNA equals") :
-                                              array_stack_b;
+        arr_a = (len_a > API_STACK_ARR) ? MEM_mallocN(sizeof(float) * len_a, "Api equals") :
+                                              arr_stack_a;
+        arr_b = (len_b > API_STACK_AR) ? MEM_mallocN(sizeof(float) * len_b, "Api equals") :
+                                              arr_stack_b;
 
-        RNA_property_float_get_array(ptr_a, rawprop_a, array_a);
-        RNA_property_float_get_array(ptr_b, rawprop_b, array_b);
+        api_prop_float_get_arr(ptr_a, rawprop_a, arr_a);
+        api_prop_float_get_arr(ptr_b, rawprop_b, arr_b);
 
         const int comp = memcmp(array_a, array_b, sizeof(float) * len_a);
 
