@@ -1,34 +1,31 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_layer.h"
-#include "BKE_report.h"
+#include "dune_context.h"
+#include "dune_editmesh.h"
+#include "dune_layer.h"
+#include "dune_report.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_types.h"
+#include "Wwm_types.h"
 
-#include "ED_mesh.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_mesh.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
 #include "mesh_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Screw Operator
- * \{ */
-
-static int edbm_screw_exec(bContext *C, wmOperator *op)
+/* Screw Op */
+static int edbm_screw_exec(Cx *C, wmOp *op)
 {
-  BMEdge *eed;
-  BMVert *eve, *v1, *v2;
-  BMIter iter, eiter;
+  MEdge *eed;
+  MVert *eve, *v1, *v2;
+  MIter iter, eiter;
   float dvec[3], nor[3], cent[3], axis[3], v1_co_global[3], v2_co_global[3];
   int steps, turns;
   int valence;
@@ -36,23 +33,23 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
   uint failed_axis_len = 0;
   uint failed_vertices_len = 0;
 
-  turns = RNA_int_get(op->ptr, "turns");
-  steps = RNA_int_get(op->ptr, "steps");
-  RNA_float_get_array(op->ptr, "center", cent);
-  RNA_float_get_array(op->ptr, "axis", axis);
+  turns = api_int_get(op->ptr, "turns");
+  steps = api_int_get(op->ptr, "steps");
+  api_float_get_array(op->ptr, "center", cent);
+  api_float_get_array(op->ptr, "axis", axis);
 
   uint objects_len = 0;
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  ViewLayer *view_layer = cx_data_view_layer(C);
+  Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, cx_wm_view3d(C), &objects_len);
 
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
-    BMesh *bm = em->bm;
+    EditMesh *em = dune_editmesh_from_object(obedit);
+    Mesh *dm = em->dm;
 
-    if (bm->totvertsel < 2) {
-      if (bm->totvertsel == 0) {
+    if (dm->totvertsel < 2) {
+      if (dm->totvertsel == 0) {
         objects_empty_len++;
       }
       continue;
@@ -63,14 +60,14 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
       continue;
     }
 
-    /* find two vertices with valence count == 1, more or less is wrong */
+    /* find 2 verts w valence count == 1, more or less is wrong */
     v1 = NULL;
     v2 = NULL;
 
-    BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+    M_ITER_MESH (eve, &iter, em->dm, M_VERTS_OF_MESH) {
       valence = 0;
-      BM_ITER_ELEM (eed, &eiter, eve, BM_EDGES_OF_VERT) {
-        if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+      M_ITER_ELEM (eed, &eiter, eve, M_EDGES_OF_VERT) {
+        if (mesh_elem_flag_test(eed, M_ELEM_SELECT)) {
           valence++;
         }
       }
@@ -106,13 +103,13 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
       negate_v3(dvec);
     }
 
-    BMOperator spinop;
-    if (!EDBM_op_init(
+    MOp spinop;
+    if (!edbm_op_init(
             em,
             &spinop,
             op,
             "spin geom=%hvef cent=%v axis=%v dvec=%v steps=%i angle=%f space=%m4 use_duplicate=%b",
-            BM_ELEM_SELECT,
+            MESH_ELEM_SELECT,
             cent,
             axis,
             dvec,
