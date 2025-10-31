@@ -147,27 +147,27 @@ typedef enum eFModGeneratorFns {
 
 /* envelope mod - envelope data */
 typedef struct FCMEnvelopeData {
-  /* Min/max vals for envelope at this point (absolute values). */
+  /* Min/max vals for envelope at this point (absolute vals). */
   float min, max;
   /* Time for that this sample-point occurs. */
   float time;
 
-  /* Settings for 'min' control point. */
+  /* Settings for 'min' ctrl point. */
   short f1;
-  /* Settings for 'max' control point. */
+  /* Settings for 'max' ctrl point. */
   short f2;
 } FCMEnvelopeData;
 
-/* envelope-like adjustment to values (for fade in/out) */
+/* envelope-like adjustment to vals (for fade in/out) */
 typedef struct FModEnvelope {
   /* Data-points defining envelope to apply (array). */
   FCMEnvelopeData *data;
-  /* Number of envelope points. */
+  /* Nmbr of envelope points. */
   int totvert;
 
   /* Value that envelope's influence is centered around / based on. */
   float midval;
-  /* Distances from 'middle-value' for 1:1 envelope influence. */
+  /* Distances from 'middle-val' for 1:1 envelope influence. */
   float min, max;
 } FModEnvelope;
 
@@ -178,9 +178,9 @@ typedef struct FModCycles {
   short before_mode;
   /* Extrapolation mode to use after last keyframe. */
   short after_mode;
-  /* Number of 'cycles' before first keyframe to do. */
+  /* Nmbr of 'cycles' before first keyframe to do. */
   short before_cycles;
-  /* Number of 'cycles' after last keyframe to do. */
+  /* Nmbr of 'cycles' after last keyframe to do. */
   short after_cycles;
 } FModCycles;
 
@@ -206,7 +206,7 @@ typedef struct FMod_Python {
 
 /* limits mod data */
 typedef struct FModLimits {
-  /* Rect defining the min/max values. */
+  /* Rect defining the min/max vals. */
   rctf rect;
   /* Settings for limiting. */
   int flag;
@@ -405,7 +405,7 @@ typedef enum eDriverVarTypes {
 /* Driver Var Flags */
 typedef enum eDriverVarFlags {
   /* var is not set up correctly */
-  DVAR_FLAG_ERROR = (1 << 0),
+  DVAR_FLAG_ERR = (1 << 0),
 
   /* var name doesn't pass the validation tests */
   DVAR_FLAG_INVALID_NAME = (1 << 1),
@@ -438,7 +438,7 @@ typedef enum eDriverVarFlags {
  * use that (optionally combined with its own F-Curve for modification of results) to define
  * the value of some setting semi-procedurally.
  *
- * Drivers are stored as part of F-Curve data, so that the F-Curve's RNA-path settings (for storing
+ * Drivers are stored as part of F-Curve data, so that the F-Curve's api-path settings (for storing
  * what setting the driver will affect). The order in which they are stored defines the order that
  * they're eval in. This order is set by the Depsgraph's sorting stuff. */
 typedef struct ChannelDriver {
@@ -455,7 +455,7 @@ typedef struct ChannelDriver {
   /* Compiled simple arithmetic expression. */
   struct ExprPyLike_Parsed *expr_simple;
 
-  /* Result of previous evaluation. */
+  /* Result of prev eval. */
   float curval;
   /* to be implemented... this is like the constraint influence setting. */
   /* Influence of driver on result.
@@ -481,12 +481,12 @@ typedef enum eDriverTypes {
   DRIVER_TYPE_MAX,
 } eDriverTypes;
 
-/** Driver flags. */
+/* Driver flags. */
 typedef enum eDriverFlags {
   /* Driver has invalid settings (internal flag). */
   DRIVER_FLAG_INVALID = (1 << 0),
   DRIVER_FLAG_DEPRECATED = (1 << 1),
-  /** Driver does replace value, but overrides (for layering of animation over driver) */
+  /* Driver does replace val, but overrides (for layering of anim over driver) */
   /* TODO: this needs to be implemented at some stage or left out... */
   // DRIVER_FLAG_LAYERING  = (1 << 2),
   /* Use when the expression needs to be recompiled. */
@@ -498,14 +498,14 @@ typedef enum eDriverFlags {
   DRIVER_FLAG_USE_SELF = (1 << 6),
 } eDriverFlags;
 
-/* F-Curves -------------------------------------- */
+/* F-Curves */
 
 /* When active_keyframe_index is set to this, the FCurve does not have an active keyframe. */
 #define FCURVE_ACTIVE_KEYFRAME_NONE -1
 
 /* FPoint (fpt)
  *
- * This is the bare-minimum data required storing motion samples. Should be more efficient
+ * This is the bare-min data required storing motion samples. Should be more efficient
  * than using Points, which contain a lot of other unnecessary data... */
 typedef struct FPoint {
   /* Time + val. */
@@ -560,8 +560,7 @@ typedef struct FCurve {
   /* When the api prop from `api_path` is an array, use this to access the arr index.
    *
    * This may be negative (as it wasn't prevented in 2.91 and older).
-   * Currently it silently fails to resolve the data-path in this case.
-   */
+   * Currently it silently fails to resolve the data-path in this case. */
   int array_index;
   /* api-path to resolve data-access, see: api_path_resolve_prop.
    * String look-ups for collection and custom-properties are escaped using lib_str_escape. */
@@ -578,15 +577,15 @@ typedef struct FCurve {
 
 /* user-editable flags/settings */
 typedef enum eFCurve_Flags {
-  /** Curve/keyframes are visible in editor */
+  /* Curve/keyframes are visible in editor */
   FCURVE_VISIBLE = (1 << 0),
-  /** Curve is selected for editing. */
+  /* Curve is selected for editing. */
   FCURVE_SELECTED = (1 << 1),
-  /** Curve is active one. */
+  /* Curve is active one. */
   FCURVE_ACTIVE = (1 << 2),
-  /** Keyframes (beztriples) cannot be edited. */
+  /* Keyframes (beztriples) cannot be edited. */
   FCURVE_PROTECTED = (1 << 3),
-  /** FCurve will not be evaluated for the next round. */
+  /* FCurve will not be evaluated for the next round. */
   FCURVE_MUTED = (1 << 4),
 
 #ifdef DNA_DEPRECATED_ALLOW
@@ -594,7 +593,7 @@ typedef enum eFCurve_Flags {
   FCURVE_AUTO_HANDLES = (1 << 5), /* Dirty. */
 #endif
   FCURVE_MOD_OFF = (1 << 6),
-  /** skip evaluation, as RNA-path cannot be resolved
+  /* skip evaluation, as RNA-path cannot be resolved
    * (similar to muting, but cannot be set by user) */
   FCURVE_DISABLED = (1 << 10),
   /** curve can only have whole-number values (integer types) */
@@ -603,7 +602,7 @@ typedef enum eFCurve_Flags {
    * (no interpolation at all, for enums/booleans) */
   FCURVE_DISCRETE_VALUES = (1 << 12),
 
-  /** temporary tag for editing */
+  /* temp tag for editing */
   FCURVE_TAGGED = (1 << 15),
 } eFCurve_Flags;
 
@@ -635,75 +634,68 @@ typedef enum eFCurve_Smoothing {
   FCURVE_SMOOTH_CONT_ACCEL = 1,
 } eFCurve_Smoothing;
 
-/* ************************************************ */
 /* 'Action' Datatypes */
 
 /* NOTE: Although these are part of the Animation System,
- * they are not stored here... see DNA_action_types.h instead
- */
+ * they are not stored here... see s_action_types.h instead */
 
-/* ************************************************ */
 /* NLA - Non-Linear Animation */
 
-/* NLA Strips ------------------------------------- */
+/* NLA Strips */
 
-/**
- * NLA Strip (strip)
- *
- * A NLA Strip is a container for the reuse of Action data, defining parameters
- * to control the remapping of the Action data to some destination.
- */
+/* NLA Strip (strip) is a container for the reuse of Action data, defining parameters
+ * to control the remapping of the Action data to some destination. */
 typedef struct NlaStrip {
   struct NlaStrip *next, *prev;
 
-  /** 'Child' strips (used for 'meta' strips). */
-  ListBase strips;
-  /** Action that is referenced by this strip (strip is 'user' of the action). */
-  bAction *act;
+  /* 'Child' strips (used for 'meta' strips). */
+  List strips;
+  /* Action that is referenced by this strip (strip is 'user' of the action). */
+  sAction *act;
 
-  /** F-Curves for controlling this strip's influence and timing */ /* TODO: move out? */
-  ListBase fcurves;
-  /** F-Curve modifiers to be applied to the entire strip's referenced F-Curves. */
-  ListBase modifiers;
+  /* F-Curves for controlling this strip's influence and timing */ /* TODO: move out? */
+  List fcurves;
+  /* F-Curve modifiers to be applied to the entire strip's referenced F-Curves. */
+  List modifiers;
 
-  /** User-Visible Identifier for Strip - `MAX_ID_NAME - 2`. */
+  /* User-Visible Identifier for Strip - `MAX_ID_NAME - 2`. */
   char name[64];
 
-  /** Influence of strip. */
+  /* Influence of strip. */
   float influence;
-  /** Current 'time' within action being used (automatically evaluated, but can be overridden). */
+  /* Current 'time' within action being used (automatically evaluated, but can be overridden). */
   float strip_time;
 
-  /** Extents of the strip. */
+  /* Extents of the strip. */
   float start, end;
-  /** Range of the action to use. */
+  /* Range of the action to use. */
   float actstart, actend;
 
-  /** The number of times to repeat the action range (only when no F-Curves). */
+  /* The number of times to repeat the action range (only when no F-Curves). */
   float repeat;
-  /** The amount the action range is scaled by (only when no F-Curves). */
+  /* The amount the action range is scaled by (only when no F-Curves). */
   float scale;
 
-  /** Strip blending length (only used when there are no F-Curves). */
+  /* Strip blending length (only used when there are no F-Curves). */
   float blendin, blendout;
-  /** Strip blending mode (layer-based mixing). */
+  /* Strip blending mode (layer-based mixing). */
   short blendmode;
 
-  /** Strip extrapolation mode (time-based mixing). */
+  /* Strip extrapolation mode (time-based mixing). */
   short extendmode;
   char _pad1[2];
 
-  /** Type of NLA strip. */
+  /* Type of NLA strip. */
   short type;
 
-  /** Handle for speaker objects. */
+  /* Handle for speaker objects. */
   void *speaker_handle;
 
-  /** Settings. */
+  /* Settings. */
   int flag;
   char _pad2[4];
 
-  /* Pointer to an original NLA strip. */
+  /* Ptr to an original NLA strip. */
   struct NlaStrip *orig_strip;
 
   void *_pad3;
@@ -718,9 +710,9 @@ typedef enum eNlaStrip_Blend_Mode {
   NLASTRIP_MODE_COMBINE,
 } eNlaStrip_Blend_Mode;
 
-/** NLA Strip Extrpolation Mode. */
+/* NLA Strip Extrpolation Mode. */
 typedef enum eNlaStrip_Extrapolate_Mode {
-  /* extend before first frame if no previous strips in track,
+  /* extend before first frame if no prev strips in track,
    * and always hold+extend last frame */
   NLASTRIP_EXTEND_HOLD = 0,
   /* only hold+extend last frame */
@@ -729,22 +721,22 @@ typedef enum eNlaStrip_Extrapolate_Mode {
   NLASTRIP_EXTEND_NOTHING = 2,
 } eNlaStrip_Extrapolate_Mode;
 
-/** NLA Strip Settings. */
+/* NLA Strip Settings. */
 typedef enum eNlaStrip_Flag {
   /* UI selection flags */
-  /** NLA strip is the active one in the track (also indicates if strip is being tweaked) */
+  /* NLA strip is the active one in the track (also indicates if strip is being tweaked) */
   NLASTRIP_FLAG_ACTIVE = (1 << 0),
   /* NLA strip is selected for editing */
   NLASTRIP_FLAG_SELECT = (1 << 1),
   // NLASTRIP_FLAG_SELECT_L      = (1 << 2),   /* left handle selected. */
   // NLASTRIP_FLAG_SELECT_R      = (1 << 3),   /* right handle selected. */
 
-  /** NLA strip uses the same action that the action being tweaked uses
+  /* NLA strip uses the same action that the action being tweaked uses
    * (not set for the tweaking one though). */
   NLASTRIP_FLAG_TWEAKUSER = (1 << 4),
 
   /* controls driven by local F-Curves */
-  /** strip influence is controlled by local F-Curve */
+  /* strip influence is controlled by local F-Curve */
   NLASTRIP_FLAG_USR_INFLUENCE = (1 << 5),
   NLASTRIP_FLAG_USR_TIME = (1 << 6),
   NLASTRIP_FLAG_USR_TIME_CYCLIC = (1 << 7),
@@ -753,17 +745,17 @@ typedef enum eNlaStrip_Flag {
   NLASTRIP_FLAG_SYNC_LENGTH = (1 << 9),
 
   /* playback flags (may be overridden by F-Curves) */
-  /** NLA strip blendin/out values are set automatically based on overlaps */
+  /* NLA strip blendin/out values are set automatically based on overlaps */
   NLASTRIP_FLAG_AUTO_BLENDS = (1 << 10),
-  /** NLA strip is played back in reverse order */
+  /* NLA strip is played back in reverse order */
   NLASTRIP_FLAG_REVERSE = (1 << 11),
-  /** NLA strip is muted (i.e. doesn't contribute in any way) */
+  /* NLA strip is muted (i.e. doesn't contribute in any way) */
   NLASTRIP_FLAG_MUTED = (1 << 12),
-  /** NLA Strip is played back in 'ping-pong' style */
+  /* NLA Strip is played back in 'ping-pong' style */
   /* NLASTRIP_FLAG_MIRROR = (1 << 13), */ /* UNUSED */
 
-  /* temporary editing flags */
-  /** NLA strip should ignore frame range and hold settings, and evaluate at global time. */
+  /* temp editing flags */
+  /* NLA strip should ignore frame range and hold settings, and evaluate at global time. */
   NLASTRIP_FLAG_NO_TIME_MAP = (1 << 29),
   /** NLA-Strip is really just a temporary meta used to facilitate easier transform code */
   NLASTRIP_FLAG_TEMP_META = (1 << 30),
@@ -783,35 +775,33 @@ typedef enum eNlaStrip_Type {
   NLASTRIP_TYPE_SOUND,
 } eNlaStrip_Type;
 
-/* NLA Tracks ------------------------------------- */
+/* NLA Tracks */
 
-/**
- * NLA Track (nlt)
+/* NLA Track (nlt)
  *
  * A track groups a bunch of 'strips', which should form a continuous set of
  * motion, on top of which other such groups can be layered. This should allow
  * for animators to work in a non-destructive manner, layering tweaks, etc. over
- * 'rough' blocks of their work.
- */
+ * 'rough' blocks of their work. */
 typedef struct NlaTrack {
   struct NlaTrack *next, *prev;
 
-  /** BActionStrips in this track. */
-  ListBase strips;
+  /* BActionStrips in this track. */
+  List strips;
 
-  /** Settings for this track. */
+  /* Settings for this track. */
   int flag;
-  /** Index of the track in the stack
-   * \note not really useful, but we need a '_pad' var anyways! */
+  /* Index of the track in the stack
+   * not really useful, but we need a '_pad' var anyways! */
   int index;
 
-  /** Short user-description of this track - `MAX_ID_NAME - 2`. */
+  /* Short user-description of this track - `MAX_ID_NAME - 2`. */
   char name[64];
 } NlaTrack;
 
 /* settings for track */
 typedef enum eNlaTrack_Flag {
-  /** track is the one that settings can be modified on,
+  /* track is the one that settings can be modified on,
    * also indicates if track is being 'tweaked' */
   NLATRACK_ACTIVE = (1 << 0),
   /** track is selected in UI for relevant editing operations */
@@ -823,16 +813,15 @@ typedef enum eNlaTrack_Flag {
   /** track's settings (and strips) cannot be edited (to guard against unwanted changes) */
   NLATRACK_PROTECTED = (1 << 4),
 
-  /** track is not allowed to execute,
+  /* track is not allowed to execute,
    * usually as result of tweaking being enabled (internal flag) */
   NLATRACK_DISABLED = (1 << 10),
 
-  /** This NLA track is added to an override ID, which means it is fully editable.
+  /* This NLA track is added to an override ID, which means it is fully editable.
    * Irrelevant in case the owner ID is not an override. */
   NLATRACK_OVERRIDELIBRARY_LOCAL = 1 << 16,
 } eNlaTrack_Flag;
 
-/* ************************************ */
 /* KeyingSet Datatypes */
 
 /* Path for use in KeyingSet definitions (ksp)
@@ -845,27 +834,27 @@ typedef enum eNlaTrack_Flag {
 typedef struct KS_Path {
   struct KS_Path *next, *prev;
 
-  /** ID block that keyframes are for. */
+  /* ID block that keyframes are for. */
   ID *id;
-  /** Name of the group to add to - `MAX_ID_NAME - 2`. */
+  /* Name of the group to add to - `MAX_ID_NAME - 2`. */
   char group[64];
 
-  /** ID-type that path can be used on. */
+  /* ID-type that path can be used on. */
   int idtype;
 
-  /** Group naming (eKSP_Grouping). */
+  /* Group naming (eKSP_Grouping). */
   short groupmode;
-  /** Various settings, etc. */
+  /* Various settings, etc. */
   short flag;
 
-  /** Dynamically (or statically in the case of predefined sets) path. */
+  /* Dynamically (or statically in the case of predefined sets) path. */
   char *api_path;
-  /** Index that path affects. */
+  /* Index that path affects. */
   int array_index;
 
-  /** (eInsertKeyFlags) settings to supply insertkey() with. */
+  /* (eInsertKeyFlags) settings to supply insertkey() with. */
   short keyingflag;
-  /** (eInsertKeyFlags) for each flag set, the relevant keyingflag bit overrides the default. */
+  /* (eInsertKeyFlags) for each flag set, the relevant keyingflag bit overrides the default. */
   short keyingoverride;
 } KS_Path;
 
@@ -903,27 +892,27 @@ typedef enum eKSP_Grouping {
 typedef struct KeyingSet {
   struct KeyingSet *next, *prev;
 
-  /** (KS_Path) paths to keyframe to. */
+  /* (KS_Path) paths to keyframe to. */
   List paths;
 
-  /** Unique name (for search, etc.) - `MAX_ID_NAME - 2`. */
+  /* Unique name (for search, etc.) - `MAX_ID_NAME - 2`. */
   char idname[64];
-  /** User-viewable name for KeyingSet (for menus, etc.) - `MAX_ID_NAME - 2`. */
+  /* User-viewable name for KeyingSet (for menus, etc.) - `MAX_ID_NAME - 2`. */
   char name[64];
-  /** (RNA_DYN_DESCR_MAX) short help text. */
+  /* (RNA_DYN_DESCR_MAX) short help text. */
   char description[240];
-  /** Name of the typeinfo data used for the relative paths - `MAX_ID_NAME - 2`. */
+  /* Name of the typeinfo data used for the relative paths - `MAX_ID_NAME - 2`. */
   char typeinfo[64];
 
-  /** Index of the active path. */
+  /* Index of the active path. */
   int active_path;
 
-  /** Settings for KeyingSet. */
+  /* Settings for KeyingSet. */
   short flag;
 
-  /** (eInsertKeyFlags) settings to supply insertkey() with. */
+  /* (eInsertKeyFlags) settings to supply insertkey() with. */
   short keyingflag;
-  /** (eInsertKeyFlags) for each flag set, the relevant keyingflag bit overrides the default. */
+  /* (eInsertKeyFlags) for each flag set, the relevant keyingflag bit overrides the default. */
   short keyingoverride;
 
   char _pad[6];
@@ -931,47 +920,43 @@ typedef struct KeyingSet {
 
 /* KeyingSet settings */
 typedef enum eKS_Settings {
-  /** Keyingset cannot be removed (and doesn't need to be freed). */
+  /* Keyingset cannot be removed (and doesn't need to be freed). */
   /* KEYINGSET_BUILTIN = (1 << 0), */ /* UNUSED */
-  /** Keyingset does not depend on context info (i.e. paths are absolute). */
+  /* Keyingset does not depend on context info (i.e. paths are absolute). */
   KEYINGSET_ABSOLUTE = (1 << 1),
 } eKS_Settings;
 
 /* Flags for use by keyframe creation/deletion calls */
 typedef enum eInsertKeyFlags {
   INSERTKEY_NOFLAGS = 0,
-  /** only insert keyframes where they're needed */
+  /* only insert keyframes where they're needed */
   INSERTKEY_NEEDED = (1 << 0),
-  /** insert 'visual' keyframes where possible/needed */
+  /* insert 'visual' keyframes where possible/needed */
   INSERTKEY_MATRIX = (1 << 1),
-  /** don't recalculate handles,etc. after adding key */
+  /* don't recalculate handles,etc. after adding key */
   INSERTKEY_FAST = (1 << 2),
-  /** don't realloc mem (or increase count, as array has already been set out) */
+  /* don't realloc mem (or increase count, as array has already been set out) */
   /* INSERTKEY_FASTR = (1 << 3), */ /* UNUSED */
-  /** only replace an existing keyframe (this overrides INSERTKEY_NEEDED) */
+  /* only replace an existing keyframe (this overrides INSERTKEY_NEEDED) */
   INSERTKEY_REPLACE = (1 << 4),
-  /** transform F-Curves should have XYZ->RGB color mode */
+  /* transform F-Curves should have XYZ->RGB color mode */
   INSERTKEY_XYZ2RGB = (1 << 5),
-  /** ignore user-prefs (needed for predictable API use) */
+  /* ignore user-prefs (needed for predictable API use) */
   INSERTKEY_NO_USERPREF = (1 << 6),
-  /** Allow to make a full copy of new key into existing one, if any,
+  /* Allow to make a full copy of new key into existing one, if any,
    * instead of 'reusing' existing handles.
    * Used by copy/paste code. */
   INSERTKEY_OVERWRITE_FULL = (1 << 7),
-  /** for driver FCurves, use driver's "input" value - for easier corrective driver setup */
+  /* for driver FCurves, use driver's "input" value - for easier corrective driver setup */
   INSERTKEY_DRIVER = (1 << 8),
-  /** for cyclic FCurves, adjust key timing to preserve the cycle period and flow */
+  /* for cyclic FCurves, adjust key timing to preserve the cycle period and flow */
   INSERTKEY_CYCLE_AWARE = (1 << 9),
-  /** don't create new F-Curves (implied by INSERTKEY_REPLACE) */
+  /* don't create new F-Curves (implied by INSERTKEY_REPLACE) */
   INSERTKEY_AVAILABLE = (1 << 10),
 } eInsertKeyFlags;
 
-/* ************************************************ */
-/* Animation Data */
-
-/* AnimOverride ------------------------------------- */
-
-/* Animation Override (aor)
+/* Anim Data */
+/* Anim Override (aor)
  *
  * This is used to as temporary storage of values which have been changed by the user, but not
  * yet keyframed (thus, would get overwritten by the animation system before the user had a chance
@@ -982,18 +967,17 @@ typedef enum eInsertKeyFlags {
 typedef struct AnimOverride {
   struct AnimOverride *next, *prev;
 
-  /** api-path to use to resolve data-access. */
+  /* api-path to use to resolve data-access. */
   char *api_path;
-  /** If applicable, the index of the RNA-array item to get. */
+  /* If applicable, the index of the api-array item to get. */
   int array_index;
 
-  /** Value to override setting with. */
+  /* Val to override setting with. */
   float value;
 } AnimOverride;
 
-/* AnimData ------------------------------------- */
 
-/* Animation data for some ID block (adt)
+/* Anim data for some ID block (adt)
  *
  * This block of data is used to provide all of the necessary animation data for a data-block.
  * Currently, this data will not be reusable, as there shouldn't be any need to do so.
@@ -1006,13 +990,12 @@ typedef struct AnimOverride {
  * the code which retrieves this data can do so in an easier manner.
  * See dune/intern/anim_sys.c for details */
 typedef struct AnimData {
-  /**
-   * Active action - acts as the 'tweaking track' for the NLA.
+  /* Active action - acts as the 'tweaking track' for the NLA.
    * Either use dune_animdata_set_action() to set this, or call dune_animdata_action_ensure_idroot()
    * after setting. */
   Action *action;
 
-  /** temp-storage for the 'real' active action (i.e. the one used before the tweaking-action
+  /* temp-storage for the 'real' active action (i.e. the one used before the tweaking-action
    * took over to be edited in the Animation Editors) */
   Action *tmpact;
 
@@ -1028,72 +1011,68 @@ typedef struct AnimData {
   /* 'drivers' for this ID-block's settings - FCurves, but are completely
    * separate from those for animation data
    */
-  /** Standard user-created Drivers/Expressions (used as part of a rig). */
+  /* Standard user-created Drivers/Expressions (used as part of a rig). */
   List drivers;
-  /** Temp storage (AnimOverride) of values for settings that are animated
+  /* Temp storage (AnimOverride) of values for settings that are animated
    * (but the value hasn't been keyframed). */
   List overrides;
 
-  /** Runtime data, for depsgraph evaluation. */
+  /* Runtime data, for depsgraph evaluation. */
   FCurve **driver_array;
 
   /* settings for animation evaluation */
-  /** User-defined settings. */
+  /* User-defined settings. */
   int flag;
   char _pad[4];
 
   /* settings for active action evaluation (based on NLA strip settings) */
-  /** Accumulation mode for active action. */
+  /* Accumulation mode for active action. */
   short act_blendmode;
-  /** Extrapolation mode for active action. */
+  /* Extrapolation mode for active action. */
   short act_extendmode;
-  /** Influence for active action. */
+  /* Influence for active action. */
   float act_influence;
 } AnimData;
 
-/* Animation Data settings (mostly for NLA) */
+/* Anim Data settings (mostly for NLA) */
 typedef enum eAnimData_Flag {
-  /** Only evaluate a single track in the NLA. */
+  /* Only eval a single track in the NLA. */
   ADT_NLA_SOLO_TRACK = (1 << 0),
-  /** Don't use NLA */
+  /* Don't use NLA */
   ADT_NLA_EVAL_OFF = (1 << 1),
-  /** NLA is being 'tweaked' (i.e. in EditMode). */
+  /* NLA is being 'tweaked' (i.e. in EditMode). */
   ADT_NLA_EDIT_ON = (1 << 2),
-  /** Active Action for 'tweaking' does not have mapping applied for editing. */
+  /* Active Action for 'tweaking' does not have mapping applied for editing. */
   ADT_NLA_EDIT_NOMAP = (1 << 3),
-  /** NLA-Strip F-Curves are expanded in UI. */
+  /* NLA-Strip F-Curves are expanded in UI. */
   ADT_NLA_SKEYS_COLLAPSED = (1 << 4),
 
-  /** Drivers expanded in UI. */
+  /* Drivers expanded in UI. */
   ADT_DRIVERS_COLLAPSED = (1 << 10),
-  /** Don't execute drivers. */
+  /* Don't execute drivers. */
   /* ADT_DRIVERS_DISABLED = (1 << 11), */ /* UNUSED */
 
-  /** AnimData block is selected in UI. */
+  /* AnimData block is selected in UI. */
   ADT_UI_SELECTED = (1 << 14),
-  /** AnimData block is active in UI. */
+  /* AnimData block is active in UI. */
   ADT_UI_ACTIVE = (1 << 15),
 
-  /** F-Curves from this AnimData block are not visible in the Graph Editor. */
+  /* F-Curves from this AnimData block are not visible in the Graph Editor. */
   ADT_CURVES_NOT_VISIBLE = (1 << 16),
 
-  /** F-Curves from this AnimData block are always visible. */
+  /* F-Curves from this AnimData block are always visible. */
   ADT_CURVES_ALWAYS_VISIBLE = (1 << 17),
 } eAnimData_Flag;
 
-/* Base Struct for Anim ------------------------------------- */
+/* Base Struct for Anim */
 
-/**
- * Used for #BKE_animdata_from_id()
+/* Used for dune_animdata_from_id()
  * All ID-data-blocks which have their own 'local' AnimData
- * should have the same arrangement in their structs.
- */
+ * should have the same arrangement in their structs. */
 typedef struct IdAdtTemplate {
   ID id;
   AnimData *adt;
 } IdAdtTemplate;
-
-/* ************************************************ */
 
 #ifdef __cplusplus
 };
