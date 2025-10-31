@@ -106,7 +106,7 @@ void paintface_flush_flags(struct Cx *C, Object *ob, short flag)
   wm_event_add_notifier(C, NC_GEOM | ND_SELECT, ob->data);
 }
 
-void paintface_hide(Cxt *C, Object *ob, const bool unselected)
+void paintface_hide(Cx *C, Object *ob, const bool unselected)
 {
   Mesh *me;
   MPoly *mpoly;
@@ -138,13 +138,13 @@ void paintface_hide(Cxt *C, Object *ob, const bool unselected)
   paintface_flush_flags(C, ob, SELECT | ME_HIDE);
 }
 
-void paintface_reveal(Cxt *C, Object *ob, const bool select)
+void paintface_reveal(Cx *C, Object *ob, const bool select)
 {
   Mesh *me;
   MPoly *mpoly;
   int a;
 
-  me = _mesh_from_object(ob);
+  me = dune_mesh_from_object(ob);
   if (me == NULL || me->totpoly == 0) {
     return;
   }
