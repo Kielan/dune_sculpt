@@ -11,7 +11,7 @@
 #include "types_meshdata.h"
 #include "types_object.h"
 
-#include "dune_cxt.h"
+#include "dune_cx.h"
 #include "dune_customdata.h"
 #include "dune_global.h"
 #include "dune_mesh.h"
@@ -29,7 +29,7 @@
 #include "graph_query.h"
 
 /* own include */
-void paintface_flush_flags(struct Cxt *C, Object *ob, short flag)
+void paintface_flush_flags(struct Cx *C, Object *ob, short flag)
 {
   Mesh *me = dune_mesh_from_object(ob);
   MPoly *polys, *mp_orig;
@@ -239,7 +239,7 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
   mem_freen(poly_tag);
 }
 
-void paintface_select_linked(Cxt *C, Object *ob, const int mval[2], const bool select)
+void paintface_select_linked(Cx *C, Object *ob, const int mval[2], const bool select)
 {
   Mesh *me;
   uint index = (uint)-1;
@@ -260,7 +260,7 @@ void paintface_select_linked(Cxt *C, Object *ob, const int mval[2], const bool s
   paintface_flush_flags(C, ob, SELECT);
 }
 
-bool paintface_deselect_all_visible(Cxt *C, Object *ob, int action, bool flush_flags)
+bool paintface_deselect_all_visible(Cx *C, Object *ob, int action, bool flush_flags)
 {
   Mesh *me;
   MPoly *mpoly;
@@ -358,7 +358,7 @@ bool paintface_minmax(Object *ob, float r_min[3], float r_max[3])
   return ok;
 }
 
-bool paintface_mouse_select(struct DuneContext *C,
+bool paintface_mouse_select(struct Cx *C,
                             const int mval[2],
                             const struct SelectPick_Params *params,
                             Object *ob)
