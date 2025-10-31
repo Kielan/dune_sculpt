@@ -43,18 +43,18 @@
 #define SEGMENTS_HARD_MAX 1000
 
 /* which value is mouse movement and numeric input controlling? */
-#define OFFSET_VALUE 0
-#define OFFSET_VALUE_PERCENT 1
-#define PROFILE_VALUE 2
-#define SEGMENTS_VALUE 3
-#define NUM_VALUE_KINDS 4
+#define OFFSET_VAL 0
+#define OFFSET_VAL_PERCENT 1
+#define PROFILE_VAL 2
+#define SEGMENTS_VAL 3
+#define NUM_VAL_KINDS 4
 
-static const char *value_api_name[NUM_VALUE_KINDS] = {
+static const char *val_api_name[NUM_VAL_KINDS] = {
     "offset", "offset_pct", "profile", "segments"};
-static const float value_clamp_min[NUM_VALUE_KINDS] = {0.0f, 0.0f, PROFILE_HARD_MIN, 1.0f};
-static const float value_clamp_max[NUM_VALUE_KINDS] = {1e6, 100.0f, 1.0f, SEGMENTS_HARD_MAX};
-static const float value_start[NUM_VALUE_KINDS] = {0.0f, 0.0f, 0.5f, 1.0f};
-static const float value_scale_per_inch[NUM_VALUE_KINDS] = {0.0f, 100.0f, 1.0f, 4.0f};
+static const float val_clamp_min[NUM_VAL_KINDS] = {0.0f, 0.0f, PROFILE_HARD_MIN, 1.0f};
+static const float val_clamp_max[NUM_VAL_KINDS] = {1e6, 100.0f, 1.0f, SEGMENTS_HARD_MAX};
+static const float val_start[NUM_VAL_KINDS] = {0.0f, 0.0f, 0.5f, 1.0f};
+static const float val_scale_per_inch[NUM_VAL_KINDS] = {0.0f, 100.0f, 1.0f, 4.0f};
 
 typedef struct {
   /* Every object must have a valid MeshEdit. */
@@ -67,7 +67,7 @@ typedef struct {
   float scale[NUM_VALUE_KINDS];
   NumInput num_input[NUM_VALUE_KINDS];
   /* The current value when shift is pressed. Negative when shift not active. */
-  float shift_value[NUM_VALUE_KINDS];
+  float shift_val[NUM_VALUE_KINDS];
   float max_obj_scale;
   bool is_modal;
 
@@ -87,9 +87,9 @@ typedef struct {
 enum {
   BEV_MODAL_CANCEL = 1,
   BEV_MODAL_CONFIRM,
-  BEV_MODAL_VALUE_OFFSET,
-  BEV_MODAL_VALUE_PROFILE,
-  BEV_MODAL_VALUE_SEGMENTS,
+  BEV_MODAL_VAL_OFFSET,
+  BEV_MODAL_VAL_PROFILE,
+  BEV_MODAL_VAL_SEGMENTS,
   BEV_MODAL_SEGMENTS_UP,
   BEV_MODAL_SEGMENTS_DOWN,
   BEV_MODAL_OFFSET_MODE_CHANGE,
@@ -101,7 +101,7 @@ enum {
   BEV_MODAL_OUTER_MITER_CHANGE,
   BEV_MODAL_INNER_MITER_CHANGE,
   BEV_MODAL_PROFILE_TYPE_CHANGE,
-  BEV_MODAL_VERTEX_MESH_CHANGE,
+  BEV_MODAL_VERT_MESH_CHANGE,
 };
 
 static float get_bevel_offset(wmOp *op)
@@ -112,13 +112,13 @@ static float get_bevel_offset(wmOp *op)
   return api_float_get(op->ptr, "offset");
 }
 
-static void edbm_bevel_update_status_text(Cxt *C, wmOp *op)
+static void edbm_bevel_update_status_txt(Cx *C, wmOp *op)
 {
-  char status_text[UI_MAX_DRAW_STR];
-  char buf[UI_MAX_DRAW_STR];
+  char status_text[UI_MAX_DRW_STR];
+  char buf[UI_MAX_DRW_STR];
   char *p = buf;
   int available_len = sizeof(buf);
-  Scene *sce = cxt_data_scene(C);
+  Scene *sce = cx_data_scene(C);
 
 #define WM_MODALKEY(_id) \
   wm_modalkeymap_op_items_to_string_buf( \
@@ -208,15 +208,15 @@ static void edbm_bevel_update_status_text(Cxt *C, wmOp *op)
 
 #undef WM_MODALKEY
 
-  ED_workspace_status_text(C, status_text);
+  ed_workspace_status_text(C, status_text);
 }
 
 static bool edm_bevel_init(Cxt *C, wmOp *op, const bool is_modal)
 {
-  Scene *scene = cxt_data_scene(C);
-  View3D *v3d = cxt_wm_view3d(C);
-  ToolSettings *ts = cxt_data_tool_settings(C);
-  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Scene *scene = cx_data_scene(C);
+  View3D *v3d = cx_wm_view3d(C);
+  ToolSettings *ts = cx_data_tool_settings(C);
+  ViewLayer *view_layer = cx_data_view_layer(C);
 
   if (is_modal) {
     api_float_set(op->ptr, "offset", 0.0f);
@@ -233,7 +233,7 @@ static bool edm_bevel_init(Cxt *C, wmOp *op, const bool is_modal)
 
   {
     uint ob_store_len = 0;
-    Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+    Object **objects = dune_view_layer_arr_from_objects_in_edit_mode_unique_data(
         view_layer, v3d, &ob_store_len);
     opdata->ob_store = mem_malloc_arrayn(ob_store_len, sizeof(*opdata->ob_store), __func__);
     for (uint ob_index = 0; ob_index < ob_store_len; ob_index++) {
@@ -252,24 +252,24 @@ static bool edm_bevel_init(Cxt *C, wmOp *op, const bool is_modal)
 
   opdata->is_modal = is_modal;
   int otype = api_enum_get(op->ptr, "offset_type");
-  opdata->value_mode = (otype == BEVEL_AMT_PERCENT) ? OFFSET_VALUE_PERCENT : OFFSET_VALUE;
+  opdata->value_mode = (otype == BEVEL_AMT_PERCENT) ? OFFSET_VAL_PERCENT : OFFSET_VAL;
   opdata->segments = (float)api_int_get(op->ptr, "segments");
   float pixels_per_inch = U.dpi * U.pixelsize;
 
-  for (int i = 0; i < NUM_VALUE_KINDS; i++) {
-    opdata->shift_value[i] = -1.0f;
+  for (int i = 0; i < NUM_VAL_KINDS; i++) {
+    opdata->shift_val[i] = -1.0f;
     opdata->initial_length[i] = -1.0f;
-    /* NOTE: scale for OFFSET_VALUE will get overwritten in #edbm_bevel_invoke. */
-    opdata->scale[i] = value_scale_per_inch[i] / pixels_per_inch;
+    /* NOTE: scale for OFFSET_VAL will get overwritten in #edbm_bevel_invoke. */
+    opdata->scale[i] = val_scale_per_inch[i] / pixels_per_inch;
 
     initNumInput(&opdata->num_input[i]);
     opdata->num_input[i].idx_max = 0;
     opdata->num_input[i].val_flag[0] |= NUM_NO_NEGATIVE;
     opdata->num_input[i].unit_type[0] = B_UNIT_NONE;
-    if (i == SEGMENTS_VALUE) {
+    if (i == SEGMENTS_VAL) {
       opdata->num_input[i].val_flag[0] |= NUM_NO_FRACTION | NUM_NO_ZERO;
     }
-    if (i == OFFSET_VALUE) {
+    if (i == OFFSET_VAL) {
       opdata->num_input[i].unit_sys = scene->unit.system;
       opdata->num_input[i].unit_type[0] = B_UNIT_LENGTH;
     }
@@ -277,15 +277,15 @@ static bool edm_bevel_init(Cxt *C, wmOp *op, const bool is_modal)
 
   /* avoid the cost of allocating a bm copy */
   if (is_modal) {
-    ARegion *region = cxt_wm_region(C);
+    ARgn *rgn = cx_wm_rgn(C);
 
     for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
       Object *obedit = opdata->ob_store[ob_index].ob;
       MeshEdit *em = dune_editmesh_from_object(obedit);
       opdata->ob_store[ob_index].mesh_backup = editmesh_redo_state_store(em);
     }
-    opdata->draw_handle_pixel = ed_region_draw_cb_activate(
-        region->type, ed_region_draw_mouse_line_cb, opdata->mcenter, REGION_DRAW_POST_PIXEL);
+    opdata->draw_handle_pixel = ed_rgn_drw_cb_activate(
+        rgn->type, ed_regn_drw_mouse_line_cb, opdata->mcenter, RGN_DRW_POST_PIXEL);
     G.moving = G_TRANSFORM_EDIT;
   }
 
@@ -408,11 +408,11 @@ static void edbm_bevel_exit(Cxt *C, wmOp *op)
   }
 
   if (opdata->is_modal) {
-    ARegion *region = cxt_wm_region(C);
+    ARgn *rgn = cx_wm_rgn(C);
     for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
       EDBM_redo_state_free(&opdata->ob_store[ob_index].mesh_backup);
     }
-    ed_region_draw_cb_exit(region->type, opdata->draw_handle_pixel);
+    ed_rgn_drw_cb_exit(region->type, opdata->drw_handle_pixel);
     G.moving = 0;
   }
   MEM_SAFE_FREE(opdata->ob_store);
@@ -440,11 +440,11 @@ static void edmesh_bevel_cancel(Cxt *C, wmOp *op)
   edmesh_bevel_exit(C, op);
 
   /* need to force redisplay or we may still view the modified result */
-  ed_region_tag_redraw(cxt_wm_region(C));
+  ed_rgn_tag_redrw(cx_wm_rgn(C));
 }
 
 /* bevel! yay!! */
-static int edbm_bevel_ex(Cxt *C, wmOp *op)
+static int edbm_bevel_ex(Cx *C, wmOp *op)
 {
   if (!edbm_bevel_init(C, op, false)) {
     return OP_CANCELLED;
@@ -460,7 +460,7 @@ static int edbm_bevel_ex(Cxt *C, wmOp *op)
   return OP_FINISHED;
 }
 
-static void edbm_bevel_calc_initial_length(wmOperator *op, const wmEvent *event, bool mode_changed)
+static void edbm_bevel_calc_initial_length(wmOp *op, const wmEvent *event, bool mode_changed)
 {
   BevelData *opdata = op->customdata;
   const float mlen[2] = {
@@ -473,7 +473,7 @@ static void edbm_bevel_calc_initial_length(wmOperator *op, const wmEvent *event,
     /* If current value is not default start value, adjust len so that
      * the scaling and offset in edbm_bevel_mouse_set_value will
      * start at current value */
-    float value = (vmode == SEGMENTS_VALUE) ? opdata->segments :
+    float value = (vmode == SEGMENTS_VAL) ? opdata->segments :
                                               RNA_float_get(op->ptr, value_rna_name[vmode]);
     float sc = opdata->scale[vmode];
     float st = value_start[vmode];
@@ -484,9 +484,9 @@ static void edbm_bevel_calc_initial_length(wmOperator *op, const wmEvent *event,
   opdata->initial_length[opdata->value_mode] = len;
 }
 
-static int edm_bevel_invoke(Cxt *C, wmOp *op, const wmEvent *event)
+static int edm_bevel_invoke(Cx *C, wmOp *op, const wmEvent *event)
 {
-  RegionView3D *rv3d = cxt_wm_region_view3d(C);
+  RgnView3D *rv3d = cx_wm_rgn_view3d(C);
 
   if (!edm_bevel_init(C, op, true)) {
     return OP_CANCELLED;
@@ -505,18 +505,18 @@ static int edm_bevel_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   }
 
   /* for OFFSET_VALUE only, the scale is the size of a pixel under the mouse in 3d space */
-  opdata->scale[OFFSET_VALUE] = rv3d ? ed_view3d_pixel_size(rv3d, center_3d) : 1.0f;
+  opdata->scale[OFFSET_VAL] = rv3d ? ed_view3d_pixel_size(rv3d, center_3d) : 1.0f;
   /* since we are affecting untransformed object but seeing in transformed space,
    * compensate for that */
-  opdata->scale[OFFSET_VALUE] /= opdata->max_obj_scale;
+  opdata->scale[OFFSET_VAL] /= opdata->max_obj_scale;
 
   edm_bevel_calc_initial_length(op, event, false);
 
-  edm_bevel_update_status_text(C, op);
+  edm_bevel_update_status_txt(C, op);
 
   if (!edm_bevel_calc(op)) {
     edm_bevel_cancel(C, op);
-    ed_workspace_status_text(C, NULL);
+    ed_workspace_status_txt(C, NULL);
     return OP_CANCELLED;
   }
 
@@ -525,7 +525,7 @@ static int edm_bevel_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   return OP_RUNNING_MODAL;
 }
 
-static void edm_bevel_mouse_set_value(wmOp *op, const wmEvent *event)
+static void edm_bevel_mouse_set_val(wmOp *op, const wmEvent *event)
 {
   BevelData *opdata = op->customdata;
   int vmode = opdata->value_mode;
@@ -535,56 +535,56 @@ static void edm_bevel_mouse_set_value(wmOp *op, const wmEvent *event)
       opdata->mcenter[1] - event->mval[1],
   };
 
-  float value = ((len_v2(mdiff) - MVAL_PIXEL_MARGIN) - opdata->initial_length[vmode]);
+  float val = ((len_v2(mdiff) - MVAL_PIXEL_MARGIN) - opdata->initial_length[vmode]);
 
   /* Scale according to value mode */
-  value = value_start[vmode] + value * opdata->scale[vmode];
+  val = value_start[vmode] + val * opdata->scale[vmode];
 
   /* Fake shift-transform... */
   if (event->mod & KM_SHIFT) {
-    if (opdata->shift_value[vmode] < 0.0f) {
-      opdata->shift_value[vmode] = (vmode == SEGMENTS_VALUE) ?
+    if (opdata->shift_val[vmode] < 0.0f) {
+      opdata->shift_val[vmode] = (vmode == SEGMENTS_VALUE) ?
                                        opdata->segments :
-                                       api_float_get(op->ptr, value_rna_name[vmode]);
+                                       api_float_get(op->ptr, val_api_name[vmode]);
     }
-    value = (value - opdata->shift_value[vmode]) * 0.1f + opdata->shift_value[vmode];
+    val = (val - opdata->shift_val[vmode]) * 0.1f + opdata->shift_val[vmode];
   }
-  else if (opdata->shift_value[vmode] >= 0.0f) {
+  else if (opdata->shift_val[vmode] >= 0.0f) {
     opdata->shift_value[vmode] = -1.0f;
   }
 
   /* Clamp according to value mode, and store value back. */
-  CLAMP(value, value_clamp_min[vmode], value_clamp_max[vmode]);
+  CLAMP(val, val_clamp_min[vmode], val_clamp_max[vmode]);
   if (vmode == SEGMENTS_VALUE) {
-    opdata->segments = value;
-    api_int_set(op->ptr, "segments", (int)(value + 0.5f));
+    opdata->segments = val;
+    api_int_set(op->ptr, "segments", (int)(val + 0.5f));
   }
   else {
-    api_float_set(op->ptr, value_rna_name[vmode], value);
+    api_float_set(op->ptr, val_api_name[vmode], val);
   }
 }
 
-static void edm_bevel_numinput_set_value(wmOp *op)
+static void edm_bevel_numinput_set_val(wmOp *op)
 {
   BevelData *opdata = op->customdata;
 
   int vmode = opdata->value_mode;
-  float value = (vmode == SEGMENTS_VALUE) ? opdata->segments :
-                                            api_float_get(op->ptr, value_rna_name[vmode]);
-  applyNumInput(&opdata->num_input[vmode], &value);
-  CLAMP(value, value_clamp_min[vmode], value_clamp_max[vmode]);
-  if (vmode == SEGMENTS_VALUE) {
-    opdata->segments = value;
-    api_int_set(op->ptr, "segments", (int)value);
+  float val = (vmode == SEGMENTS_VAL) ? opdata->segments :
+                                            api_float_get(op->ptr, value_api_name[vmode]);
+  applyNumInput(&opdata->num_input[vmode], &val);
+  CLAMP(val, val_clamp_min[vmode], val_clamp_max[vmode]);
+  if (vmode == SEGMENTS_VAL) {
+    opdata->segments = val;
+    api_int_set(op->ptr, "segments", (int)val);
   }
   else {
-    api_float_set(op->ptr, value_rna_name[vmode], value);
+    api_float_set(op->ptr, val_api_name[vmode], val);
   }
 }
 
 wmKeyMap *bevel_modal_keymap(wmKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {BEV_MODAL_CANCEL, "CANCEL", 0, "Cancel", "Cancel bevel"},
       {BEV_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", "Confirm bevel"},
       {BEV_MODAL_VALUE_OFFSET, "VALUE_OFFSET", 0, "Change Offset", "Value changes offset"},
@@ -650,14 +650,14 @@ wmKeyMap *bevel_modal_keymap(wmKeyConfig *keyconf)
 
   keymap = wm_modalkeymap_ensure(keyconf, "Bevel Modal Map", modal_items);
 
-  wm_modalkeymap_assign(keymap, "MESH_OT_bevel");
+  wm_modalkeymap_assign(keymap, "mesh_ot_bevel");
 
   return keymap;
 }
 
-static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int edbm_bev_modal(Cx *C, wmOp *op, const wmEvent *event)
 {
-  BevelData *opdata = op->customdata;
+  BevData *opdata = op->customdata;
   const bool has_numinput = hasNumInput(&opdata->num_input[opdata->value_mode]);
   bool handled = false;
   short etype = event->type;
@@ -679,9 +679,9 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
   }
   if (etype == MOUSEMOVE) {
     if (!has_numinput) {
-      edbm_bevel_mouse_set_value(op, event);
-      edbm_bevel_calc(op);
-      edbm_bevel_update_status_text(C, op);
+      edbm_bev_mouse_set_val(op, event);
+      edbm_bev_calc(op);
+      edbm_bev_update_status_txt(C, op);
       handled = true;
     }
   }
@@ -694,36 +694,36 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
       opdata->segments += delta;
     }
     api_int_set(op->ptr, "segments", (int)opdata->segments);
-    edm_bevel_calc(op);
-    edm_bevel_update_status_text(C, op);
+    edm_bev_calc(op);
+    edm_bev_update_status_txt(C, op);
     handled = true;
   }
   else if (etype == EVT_MODAL_MAP) {
     switch (eval) {
       case BEV_MODAL_CANCEL:
-        edbm_bevel_cancel(C, op);
-        ED_workspace_status_text(C, NULL);
+        edbm_bev_cancel(C, op);
+        ed_workspace_status_txt(C, NULL);
         return OP_CANCELLED;
 
       case BEV_MODAL_CONFIRM:
-        edbm_bevel_calc(op);
-        edbm_bevel_exit(C, op);
-        ed_workspace_status_text(C, NULL);
+        edbm_bev_calc(op);
+        edbm_bev_exit(C, op);
+        ed_workspace_status_txt(C, NULL);
         return OP_FINISHED;
 
       case BEV_MODAL_SEGMENTS_UP:
         opdata->segments = opdata->segments + 1;
         api_int_set(op->ptr, "segments", (int)opdata->segments);
-        edbm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        edbm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
 
       case BEV_MODAL_SEGMENTS_DOWN:
         opdata->segments = max_ff(opdata->segments - 1, 1);
-        RNA_int_set(op->ptr, "segments", (int)opdata->segments);
-        edbm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        api_int_set(op->ptr, "segments", (int)opdata->segments);
+        edbm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
 
@@ -733,23 +733,23 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
         if (type > BEVEL_AMT_PERCENT) {
           type = BEVEL_AMT_OFFSET;
         }
-        if (opdata->value_mode == OFFSET_VALUE && type == BEVEL_AMT_PERCENT) {
-          opdata->value_mode = OFFSET_VALUE_PERCENT;
+        if (opdata->val_mode == OFFSET_VAL && type == BEV_AMT_PERCENT) {
+          opdata->val_mode = OFFSET_VALUE_PERCENT;
         }
-        else if (opdata->value_mode == OFFSET_VALUE_PERCENT && type != BEVEL_AMT_PERCENT) {
-          opdata->value_mode = OFFSET_VALUE;
+        else if (opdata->val_mode == OFFSET_VAL_PERCENT && type != BEVEL_AMT_PERCENT) {
+          opdata->val_mode = OFFSET_VALUE;
         }
         api_enum_set(op->ptr, "offset_type", type);
         if (opdata->initial_length[opdata->value_mode] == -1.0f) {
-          edm_bevel_calc_initial_length(op, event, true);
+          edm_bev_calc_initial_length(op, event, true);
         }
       }
         /* Update offset accordingly to new offset_type. */
-        if (!has_numinput && (ELEM(opdata->value_mode, OFFSET_VALUE, OFFSET_VALUE_PERCENT))) {
-          edm_bevel_mouse_set_value(op, event);
+        if (!has_numinput && (ELEM(opdata->value_mode, OFFSET_VAL, OFFSET_VALUE_PERCENT))) {
+          edm_bev_mouse_set_val(op, event);
         }
-        edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edm_bev_update_status_txt(C, op);
         handled = true;
         break;
 
@@ -757,35 +757,35 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
         bool clamp_overlap = api_bool_get(op->ptr, "clamp_overlap");
         api_bool_set(op->ptr, "clamp_overlap", !clamp_overlap);
         edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bevel_update_status_txt(C, op);
         handled = true;
         break;
       }
 
-      case BEV_MODAL_VALUE_OFFSET:
-        opdata->value_mode = OFFSET_VALUE;
+      case BEV_MODAL_VAL_OFFSET:
+        opdata->val_mode = OFFSET_VAL;
         edm_bevel_calc_initial_length(op, event, true);
         break;
 
-      case BEV_MODAL_VALUE_PROFILE:
-        opdata->value_mode = PROFILE_VALUE;
-        edm_bevel_calc_initial_length(op, event, true);
+      case BEV_MODAL_VAL_PROFILE:
+        opdata->val_mode = PROFILE_VAL;
+        edm_bev_calc_initial_length(op, event, true);
         break;
 
-      case BEV_MODAL_VALUE_SEGMENTS:
-        opdata->value_mode = SEGMENTS_VALUE;
-        edm_bevel_calc_initial_length(op, event, true);
+      case BEV_MODAL_VAL_SEGMENTS:
+        opdata->val_mode = SEGMENTS_VAL;
+        edm_bev_calc_initial_length(op, event, true);
         break;
 
       case BEV_MODAL_AFFECT_CHANGE: {
         int affect_type = api_enum_get(op->ptr, "affect");
         affect_type++;
-        if (affect_type > BEVEL_AFFECT_EDGES) {
-          affect_type = BEVEL_AFFECT_VERTICES;
+        if (affect_type > BEV_AFFECT_EDGES) {
+          affect_type = BEV_AFFECT_VERTICES;
         }
         api_enum_set(op->ptr, "affect", affect_type);
-        edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
@@ -793,8 +793,8 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
       case BEV_MODAL_MARK_SEAM_TOGGLE: {
         bool mark_seam = api_bool_get(op->ptr, "mark_seam");
         api_bool_set(op->ptr, "mark_seam", !mark_seam);
-        edbm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        edbm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
@@ -802,24 +802,24 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
       case BEV_MODAL_MARK_SHARP_TOGGLE: {
         bool mark_sharp = api_bool_get(op->ptr, "mark_sharp");
         api_bool_set(op->ptr, "mark_sharp", !mark_sharp);
-        edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
 
       case BEV_MODAL_INNER_MITER_CHANGE: {
-        int miter_inner = RNA_enum_get(op->ptr, "miter_inner");
+        int miter_inner = api_enum_get(op->ptr, "miter_inner");
         miter_inner++;
-        if (miter_inner == BEVEL_MITER_PATCH) {
+        if (miter_inner == BEV_MITER_PATCH) {
           miter_inner++; /* no patch option for inner miter */
         }
-        if (miter_inner > BEVEL_MITER_ARC) {
-          miter_inner = BEVEL_MITER_SHARP;
+        if (miter_inner > BEV_MITER_ARC) {
+          miter_inner = BEV_MITER_SHARP;
         }
         api_enum_set(op->ptr, "miter_inner", miter_inner);
-        edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
@@ -827,12 +827,12 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
       case BEV_MODAL_OUTER_MITER_CHANGE: {
         int miter_outer = api_enum_get(op->ptr, "miter_outer");
         miter_outer++;
-        if (miter_outer > BEVEL_MITER_ARC) {
-          miter_outer = BEVEL_MITER_SHARP;
+        if (miter_outer > BEV_MITER_ARC) {
+          miter_outer = BEV_MITER_SHARP;
         }
         api_enum_set(op->ptr, "miter_outer", miter_outer);
-        edm_bevel_calc(op);
-        edm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
@@ -840,34 +840,34 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
       case BEV_MODAL_HARDEN_NORMALS_TOGGLE: {
         bool harden_normals = api_bool_get(op->ptr, "harden_normals");
         api_bool_set(op->ptr, "harden_normals", !harden_normals);
-        edm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        edm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
 
       case BEV_MODAL_PROFILE_TYPE_CHANGE: {
-        int profile_type = RNA_enum_get(op->ptr, "profile_type");
+        int profile_type = api_enum_get(op->ptr, "profile_type");
         profile_type++;
-        if (profile_type > BEVEL_PROFILE_CUSTOM) {
-          profile_type = BEVEL_PROFILE_SUPERELLIPSE;
+        if (profile_type > BEV_PROFILE_CUSTOM) {
+          profile_type = BEV_PROFILE_SUPERELLIPSE;
         }
-        RNA_enum_set(op->ptr, "profile_type", profile_type);
-        edbm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        api_enum_set(op->ptr, "profile_type", profile_type);
+        edbm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
 
-      case BEV_MODAL_VERTEX_MESH_CHANGE: {
-        int vmesh_method = RNA_enum_get(op->ptr, "vmesh_method");
+      case BEV_MODAL_VERT_MESH_CHANGE: {
+        int vmesh_method = api_enum_get(op->ptr, "vmesh_method");
         vmesh_method++;
-        if (vmesh_method > BEVEL_VMESH_CUTOFF) {
-          vmesh_method = BEVEL_VMESH_ADJ;
+        if (vmesh_method > BEV_VMESH_CUTOFF) {
+          vmesh_method = BEV_VMESH_ADJ;
         }
-        RNA_enum_set(op->ptr, "vmesh_method", vmesh_method);
-        edbm_bevel_calc(op);
-        edbm_bevel_update_status_text(C, op);
+        api_enum_set(op->ptr, "vmesh_method", vmesh_method);
+        edbm_bev_calc(op);
+        edbm_bev_update_status_txt(C, op);
         handled = true;
         break;
       }
@@ -876,25 +876,25 @@ static int edbm_bevel_modal(bContext *C, wmOperator *op, const wmEvent *event)
 
   /* Modal numinput inactive, try to handle numeric inputs last... */
   if (!handled && eval == KM_PRESS &&
-      handleNumInput(C, &opdata->num_input[opdata->value_mode], event)) {
-    edbm_bevel_numinput_set_value(op);
-    edbm_bevel_calc(op);
-    edbm_bevel_update_status_text(C, op);
-    return OPERATOR_RUNNING_MODAL;
+      handleNumInput(C, &opdata->num_input[opdata->val_mode], event)) {
+    edbm_bev_numinput_set_val(op);
+    edbm_bev_calc(op);
+    edbm_bev_update_status_txt(C, op);
+    return OP_RUNNING_MODAL;
   }
 
   return OPERATOR_RUNNING_MODAL;
 }
 
-static void edbm_bevel_ui(bContext *C, wmOperator *op)
+static void edbm_bev_ui(Cx *C, wmOp *op)
 {
   uiLayout *layout = op->layout;
   uiLayout *col, *row;
-  PointerRNA toolsettings_ptr;
+  ApiPtr toolsettings_ptr;
 
-  int profile_type = RNA_enum_get(op->ptr, "profile_type");
-  int offset_type = RNA_enum_get(op->ptr, "offset_type");
-  bool affect_type = RNA_enum_get(op->ptr, "affect");
+  int profile_type = api_enum_get(op->ptr, "profile_type");
+  int offset_type = api_enum_get(op->ptr, "offset_type");
+  bool affect_type = api_enum_get(op->ptr, "affect");
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -906,7 +906,7 @@ static void edbm_bevel_ui(bContext *C, wmOperator *op)
 
   uiItemR(layout, op->ptr, "offset_type", 0, NULL, ICON_NONE);
 
-  if (offset_type == BEVEL_AMT_PERCENT) {
+  if (offset_type == BEV_AMT_PERCENT) {
     uiItemR(layout, op->ptr, "offset_pct", 0, NULL, ICON_NONE);
   }
   else {
@@ -914,7 +914,7 @@ static void edbm_bevel_ui(bContext *C, wmOperator *op)
   }
 
   uiItemR(layout, op->ptr, "segments", 0, NULL, ICON_NONE);
-  if (ELEM(profile_type, BEVEL_PROFILE_SUPERELLIPSE, BEVEL_PROFILE_CUSTOM)) {
+  if (ELEM(profile_type, BEV_PROFILE_SUPERELLIPSE, BEV_PROFILE_CUSTOM)) {
     uiItemR(layout,
             op->ptr,
             "profile",
@@ -930,24 +930,24 @@ static void edbm_bevel_ui(bContext *C, wmOperator *op)
   uiItemR(col, op->ptr, "loop_slide", 0, NULL, ICON_NONE);
 
   col = uiLayoutColumnWithHeading(layout, true, IFACE_("Mark"));
-  uiLayoutSetActive(col, affect_type == BEVEL_AFFECT_EDGES);
+  uiLayoutSetActive(col, affect_type == BEV_AFFECT_EDGES);
   uiItemR(col, op->ptr, "mark_seam", 0, IFACE_("Seams"), ICON_NONE);
   uiItemR(col, op->ptr, "mark_sharp", 0, IFACE_("Sharp"), ICON_NONE);
 
   uiItemS(layout);
 
   col = uiLayoutColumn(layout, false);
-  uiLayoutSetActive(col, affect_type == BEVEL_AFFECT_EDGES);
+  uiLayoutSetActive(col, affect_type == BEV_AFFECT_EDGES);
   uiItemR(col, op->ptr, "miter_outer", 0, IFACE_("Miter Outer"), ICON_NONE);
   uiItemR(col, op->ptr, "miter_inner", 0, IFACE_("Inner"), ICON_NONE);
-  if (api_enum_get(op->ptr, "miter_inner") == BEVEL_MITER_ARC) {
+  if (api_enum_get(op->ptr, "miter_inner") == BEV_MITER_ARC) {
     uiItemR(col, op->ptr, "spread", 0, NULL, ICON_NONE);
   }
 
   uiItemS(layout);
 
   col = uiLayoutColumn(layout, false);
-  uiLayoutSetActive(col, affect_type == BEVEL_AFFECT_EDGES);
+  uiLayoutSetActive(col, affect_type == BEV_AFFECT_EDGES);
   uiItemR(col, op->ptr, "vmesh_method", 0, IFACE_("Intersection Type"), ICON_NONE);
 
   uiItemR(layout, op->ptr, "face_strength_mode", 0, IFACE_("Face Strength"), ICON_NONE);
@@ -956,28 +956,28 @@ static void edbm_bevel_ui(bContext *C, wmOperator *op)
 
   row = uiLayoutRow(layout, false);
   uiItemR(row, op->ptr, "profile_type", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
-  if (profile_type == BEVEL_PROFILE_CUSTOM) {
+  if (profile_type == BEV_PROFILE_CUSTOM) {
     /* Get an RNA pointer to ToolSettings to give to the curve profile template code. */
-    Scene *scene = cxt_data_scene(C);
+    Scene *scene = cx_data_scene(C);
     api_ptr_create(&scene->id, &Api_ToolSettings, scene->toolsettings, &toolsettings_ptr);
-    uiTemplateCurveProfile(layout, &toolsettings_ptr, "custom_bevel_profile_preset");
+    uiTemplateCurveProfile(layout, &toolsettings_ptr, "custom_bev_profile_preset");
   }
 }
 
-void MESH_OT_bevel(wmOpType *ot)
+void mesh_ot_bev(wmOpType *ot)
 {
   ApiProp *prop;
 
   static const EnumPropItem offset_type_items[] = {
-      {BEVEL_AMT_OFFSET, "OFFSET", 0, "Offset", "Amount is offset of new edges from original"},
-      {BEVEL_AMT_WIDTH, "WIDTH", 0, "Width", "Amount is width of new face"},
-      {BEVEL_AMT_DEPTH,
+      {BEV_AMT_OFFSET, "OFFSET", 0, "Offset", "Amount is offset of new edges from original"},
+      {BEV_AMT_WIDTH, "WIDTH", 0, "Width", "Amount is width of new face"},
+      {BEV_AMT_DEPTH,
        "DEPTH",
        0,
        "Depth",
        "Amount is perpendicular distance from original edge to bevel face"},
-      {BEVEL_AMT_PERCENT, "PERCENT", 0, "Percent", "Amount is percent of adjacent edge length"},
-      {BEVEL_AMT_ABSOLUTE,
+      {BEV_AMT_PERCENT, "PERCENT", 0, "Percent", "Amount is percent of adjacent edge length"},
+      {BEV_AMT_ABSOLUTE,
        "ABSOLUTE",
        0,
        "Absolute",
@@ -986,12 +986,12 @@ void MESH_OT_bevel(wmOpType *ot)
   };
 
   static const EnumPropItem prop_profile_type_items[] = {
-      {BEVEL_PROFILE_SUPERELLIPSE,
+      {BEV_PROFILE_SUPERELLIPSE,
        "SUPERELLIPSE",
        0,
        "Superellipse",
        "The profile can be a concave or convex curve"},
-      {BEVEL_PROFILE_CUSTOM,
+      {BEV_PROFILE_CUSTOM,
        "CUSTOM",
        0,
        "Custom",
@@ -1000,33 +1000,33 @@ void MESH_OT_bevel(wmOpType *ot)
   };
 
   static const EnumPropItem face_strength_mode_items[] = {
-      {BEVEL_FACE_STRENGTH_NONE, "NONE", 0, "None", "Do not set face strength"},
-      {BEVEL_FACE_STRENGTH_NEW, "NEW", 0, "New", "Set face strength on new faces only"},
-      {BEVEL_FACE_STRENGTH_AFFECTED,
+      {BEV_FACE_STRENGTH_NONE, "NONE", 0, "None", "Do not set face strength"},
+      {BEV_FACE_STRENGTH_NEW, "NEW", 0, "New", "Set face strength on new faces only"},
+      {BEV_FACE_STRENGTH_AFFECTED,
        "AFFECTED",
        0,
        "Affected",
        "Set face strength on new and modified faces only"},
-      {BEVEL_FACE_STRENGTH_ALL, "ALL", 0, "All", "Set face strength on all faces"},
+      {BEV_FACE_STRENGTH_ALL, "ALL", 0, "All", "Set face strength on all faces"},
       {0, NULL, 0, NULL, NULL},
   };
 
   static const EnumPropItem miter_outer_items[] = {
-      {BEVEL_MITER_SHARP, "SHARP", 0, "Sharp", "Outside of miter is sharp"},
-      {BEVEL_MITER_PATCH, "PATCH", 0, "Patch", "Outside of miter is squared-off patch"},
-      {BEVEL_MITER_ARC, "ARC", 0, "Arc", "Outside of miter is arc"},
+      {BEV_MITER_SHARP, "SHARP", 0, "Sharp", "Outside of miter is sharp"},
+      {BEV_MITER_PATCH, "PATCH", 0, "Patch", "Outside of miter is squared-off patch"},
+      {BEV_MITER_ARC, "ARC", 0, "Arc", "Outside of miter is arc"},
       {0, NULL, 0, NULL, NULL},
   };
 
   static const EnumPropItem miter_inner_items[] = {
-      {BEVEL_MITER_SHARP, "SHARP", 0, "Sharp", "Inside of miter is sharp"},
-      {BEVEL_MITER_ARC, "ARC", 0, "Arc", "Inside of miter is arc"},
+      {BEV_MITER_SHARP, "SHARP", 0, "Sharp", "Inside of miter is sharp"},
+      {BEV_MITER_ARC, "ARC", 0, "Arc", "Inside of miter is arc"},
       {0, NULL, 0, NULL, NULL},
   };
 
   static EnumPropItem vmesh_method_items[] = {
-      {BEVEL_VMESH_ADJ, "ADJ", 0, "Grid Fill", "Default patterned fill"},
-      {BEVEL_VMESH_CUTOFF,
+      {BEV_VMESH_ADJ, "ADJ", 0, "Grid Fill", "Default patterned fill"},
+      {BEV_VMESH_CUTOFF,
        "CUTOFF",
        0,
        "Cutoff",
@@ -1035,38 +1035,38 @@ void MESH_OT_bevel(wmOpType *ot)
   };
 
   static const EnumPropItem prop_affect_items[] = {
-      {BEVEL_AFFECT_VERTICES, "VERTICES", 0, "Vertices", "Affect only vertices"},
-      {BEVEL_AFFECT_EDGES, "EDGES", 0, "Edges", "Affect only edges"},
+      {BEV_AFFECT_VERTS, "VERTS", 0, "Verts", "Affect only verts"},
+      {BEV_AFFECT_EDGES, "EDGES", 0, "Edges", "Affect only edges"},
       {0, NULL, 0, NULL, NULL},
   };
 
   /* identifiers */
   ot->name = "Bevel";
   ot->description = "Cut into selected items at an angle to create bevel or chamfer";
-  ot->idname = "MESH_OT_bevel";
+  ot->idname = "mesh_ot_bev";
 
   /* api callbacks */
-  ot->exec = edbm_bevel_exec;
-  ot->invoke = edbm_bevel_invoke;
-  ot->modal = edbm_bevel_modal;
-  ot->cancel = edbm_bevel_cancel;
-  ot->poll = ED_operator_editmesh;
-  ot->ui = edbm_bevel_ui;
+  ot->exec = edbm_bev_exec;
+  ot->invoke = edbm_bev_invoke;
+  ot->modal = edbm_bev_modal;
+  ot->cancel = edbm_bev_cancel;
+  ot->poll = ed_op_editmesh;
+  ot->ui = edbm_bev_ui;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_GRAB_CURSOR_XY | OPTYPE_BLOCKING;
 
-  /* properties */
-  RNA_def_enum(ot->srna,
+  /* props */
+  api_def_enum(ot->sapi,
                "offset_type",
                offset_type_items,
                0,
                "Width Type",
                "The method for determining the size of the bevel");
-  prop = RNA_def_property(ot->srna, "offset", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0.0, 1e6);
-  RNA_def_property_ui_range(prop, 0.0, 100.0, 1, 3);
-  RNA_def_property_ui_text(prop, "Width", "Bevel amount");
+  prop = api_def_prop(ot->sapi, "offset", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0.0, 1e6);
+  api_def_prop_ui_range(prop, 0.0, 100.0, 1, 3);
+  api_def_prop_ui_txt(prop, "Width", "Bevel amount");
 
   RNA_def_enum(ot->srna,
                "profile_type",
@@ -1135,28 +1135,28 @@ void MESH_OT_bevel(wmOpType *ot)
                   "Harden Normals",
                   "Match normals of new faces to adjacent faces");
 
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "face_strength_mode",
                face_strength_mode_items,
                BEVEL_FACE_STRENGTH_NONE,
                "Face Strength Mode",
                "Whether to set face strength, and which faces to set face strength on");
 
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "miter_outer",
                miter_outer_items,
                BEVEL_MITER_SHARP,
                "Outer Miter",
                "Pattern to use for outside of miters");
 
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "miter_inner",
                miter_inner_items,
                BEVEL_MITER_SHARP,
                "Inner Miter",
                "Pattern to use for inside of miters");
 
-  RNA_def_float(ot->srna,
+  api_def_float(ot->sapi,
                 "spread",
                 0.1f,
                 0.0f,
@@ -1166,13 +1166,13 @@ void MESH_OT_bevel(wmOpType *ot)
                 0.0f,
                 100.0f);
 
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "vmesh_method",
                vmesh_method_items,
                BEVEL_VMESH_ADJ,
                "Vertex Mesh Method",
                "The method to use to create meshes at intersections");
 
-  prop = RNA_def_boolean(ot->srna, "release_confirm", 0, "Confirm on Release", "");
-  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "release_confirm", 0, "Confirm on Release", "");
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
