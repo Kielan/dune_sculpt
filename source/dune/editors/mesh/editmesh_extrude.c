@@ -1,42 +1,39 @@
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "types_modifier_types.h"
+#include "types_object_types.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
+#include "lib_list.h"
+#include "lib_math.h"
 
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_layer.h"
-#include "BKE_report.h"
+#include "dune_cx.h"
+#include "dune_editmesh.h"
+#include "dune_layer.h"
+#include "dune_report.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_mesh.h"
-#include "ED_screen.h"
-#include "ED_transform.h"
-#include "ED_view3d.h"
+#include "ed_mesh.h"
+#include "ed_screen.h"
+#include "ed_transform.h"
+#include "ed_view3d.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "mesh_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Extrude Internal Utilities
- * \{ */
+/* Extrude Internal Utils */
 
 static void edbm_extrude_edge_exclude_mirror(
-    Object *obedit, BMEditMesh *em, const char hflag, BMOperator *op, BMOpSlot *slot_edges_exclude)
+    Object *obedit, MEditMesh *em, const char hflag, MOp *op, MOpSlot *slot_edges_exclude)
 {
-  BMesh *bm = em->bm;
+  Mesh *dm = em->dm;
   ModifierData *md;
 
   /* If a mirror modifier with clipping is on, we need to adjust some
-   * of the cases above to handle edges on the line of symmetry.
-   */
+   * of the cases above to handle edges on the line of symmetry. */
   for (md = obedit->modifiers.first; md; md = md->next) {
     if ((md->type == eModifierType_Mirror) && (md->mode & eModifierMode_Realtime)) {
       MirrorModifierData *mmd = (MirrorModifierData *)md;
@@ -52,7 +49,7 @@ static void edbm_extrude_edge_exclude_mirror(
           mul_m4_m4m4(mtx, imtx, obedit->obmat);
         }
 
-        BM_ITER_MESH (edge, &iter, bm, BM_EDGES_OF_MESH) {
+        BM_ITER_MESH (edge, &iter, dm, BM_EDGES_OF_MESH) {
           if (BM_elem_flag_test(edge, hflag) && BM_edge_is_boundary(edge) &&
               BM_elem_flag_test(edge->l->f, hflag)) {
             float co1[3], co2[3];
@@ -67,17 +64,17 @@ static void edbm_extrude_edge_exclude_mirror(
 
             if (mmd->flag & MOD_MIR_AXIS_X) {
               if ((fabsf(co1[0]) < mmd->tolerance) && (fabsf(co2[0]) < mmd->tolerance)) {
-                BMO_slot_map_empty_insert(op, slot_edges_exclude, edge);
+                MOp_slot_map_empty_insert(op, slot_edges_exclude, edge);
               }
             }
             if (mmd->flag & MOD_MIR_AXIS_Y) {
               if ((fabsf(co1[1]) < mmd->tolerance) && (fabsf(co2[1]) < mmd->tolerance)) {
-                BMO_slot_map_empty_insert(op, slot_edges_exclude, edge);
+                MOp_slot_map_empty_insert(op, slot_edges_exclude, edge);
               }
             }
             if (mmd->flag & MOD_MIR_AXIS_Z) {
               if ((fabsf(co1[2]) < mmd->tolerance) && (fabsf(co2[2]) < mmd->tolerance)) {
-                BMO_slot_map_empty_insert(op, slot_edges_exclude, edge);
+                MOp_slot_map_empty_insert(op, slot_edges_exclude, edge);
               }
             }
           }
@@ -89,27 +86,27 @@ static void edbm_extrude_edge_exclude_mirror(
 
 /* individual face extrude */
 /* will use vertex normals for extrusion directions, so *nor is unaffected */
-static bool edbm_extrude_discrete_faces(BMEditMesh *em, wmOperator *op, const char hflag)
+static bool edbm_extrude_discrete_faces(MEditMesh *em, wmOp *op, const char hflag)
 {
-  BMOIter siter;
-  BMIter liter;
-  BMFace *f;
-  BMLoop *l;
-  BMOperator bmop;
+  DMOIter siter;
+  DMIter liter;
+  DMFace *f;
+  DMLoop *l;
+  DMOp dmop;
 
-  EDBM_op_init(
+  edbm_op_init(
       em, &bmop, op, "extrude_discrete_faces faces=%hf use_select_history=%b", hflag, true);
 
   /* deselect original verts */
-  EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+  edbm_flag_disable_all(em, MESH_ELEM_SELECT);
 
-  BMO_op_exec(em->bm, &bmop);
+  mesh_op_exec(em->dm, &dmop);
 
-  BMO_ITER (f, &siter, bmop.slots_out, "faces.out", BM_FACE) {
-    BM_face_select_set(em->bm, f, true);
+  MO_ITER (f, &siter, dmop.slots_out, "faces.out", BM_FACE) {
+    mesh_face_select_set(em->dm, f, true);
 
     /* set face vertex normals to face normal */
-    BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+    DM_ITER_ELEM (l, &liter, f, DM_LOOPS_OF_FACE) {
       copy_v3_v3(l->v->no, f->no);
     }
   }
@@ -121,15 +118,15 @@ static bool edbm_extrude_discrete_faces(BMEditMesh *em, wmOperator *op, const ch
   return true;
 }
 
-bool edbm_extrude_edges_indiv(BMEditMesh *em,
-                              wmOperator *op,
+bool edbm_extrude_edges_indiv(EditMesh *em,
+                              wmOp *op,
                               const char hflag,
                               const bool use_normal_flip)
 {
   BMesh *bm = em->bm;
   BMOperator bmop;
 
-  EDBM_op_init(em,
+  edbm_op_init(em,
                &bmop,
                op,
                "extrude_edge_only edges=%he use_normal_flip=%b use_select_history=%b",
