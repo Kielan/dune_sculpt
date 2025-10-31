@@ -15,7 +15,7 @@
 
 #include "lib_hash.h"
 
-#include "drw_render.h"
+#include "drw_rndr.h"
 #include "gpu_shader.h"
 
 #include "ed_view3d.h"
@@ -25,9 +25,9 @@
 void overlay_wireframe_init(OverlayData *vedata)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DrwCtxState *drw_ctx = drw_cxt_state_get();
+  const DrwCxState *drw_ctx = drw_cx_state_get();
   DrwView *default_view = (DrwView *)drw_view_default_get();
-  pd->view_wires = drw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
+  pd->view_wires = drw_view_create_with_zoffset(default_view, draw_cx->rv3d, 0.5f);
 }
 
 void overlay_wireframe_cache_init(OverlayData *vedata)
@@ -35,10 +35,10 @@ void overlay_wireframe_cache_init(OverlayData *vedata)
   OverlayPassList *psl = vedata->psl;
   OverlayTextureList *txl = vedata->txl;
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DrwCtxState *drw_ctx = drw_cxt_state_get();
+  const DrwCxState *drw_cx = drw_cx_state_get();
   DrwShadingGroup *grp = NULL;
 
-  View3DShading *shading = &draw_ctx->v3d->shading;
+  View3DShading *shading = &draw_cx->v3d->shading;
 
   pd->shdata.wire_step_param = pd->overlay.wireframe_threshold - 254.0f / 255.0f;
   pd->shdata.wire_opacity = pd->overlay.wireframe_opacity;
