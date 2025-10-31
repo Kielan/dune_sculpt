@@ -1,4 +1,4 @@
-#include "funr_curves.hh"
+#include "dune_curves.hh"
 
 #include "node_api_define.hh"
 
@@ -39,7 +39,7 @@ static void node_decl(NodeDeclBuilder &b)
   b.add_output<decl::Geo>("Curve");
 }
 
-static void node_layout(uiLayout *layout, Cxt * /*C*/, ApiPtr *ptr)
+static void node_layout(uiLayout *layout, Cx * /*C*/, ApiPtr *ptr)
 {
   uiItemR(layout, ptr, "mode", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 }
