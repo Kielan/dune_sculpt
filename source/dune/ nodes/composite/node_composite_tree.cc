@@ -6,7 +6,7 @@
 #include "types_node_types.h"
 #include "types_scene_types.h"
 
-#include "dune_cxt.hh"
+#include "dune_cx.hh"
 #include "dune_global.h"
 #include "dunr_img.h"
 #include "dune_main.hh"
