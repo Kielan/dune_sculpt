@@ -12,7 +12,7 @@ struct Action;
 struct Ipo;
 struct Txt;
 
-/* channels reside in Ob or Action (ListBase) constraintChannels */
+/* channels reside in Ob or Action (List) constraintChannels */
 /* Deprecated. old AnimSys. */
 typedef struct ConstraintChannel {
   struct ConstraintChannel *next, *prev;
@@ -219,11 +219,11 @@ typedef struct ArmatureConstraint {
   int flag;
   char _pad[4];
 
-  /* A list of targets that this constraint has (bConstraintTarget-s). */
+  /* A list of targets that this constraint has (ConstraintTarget-s). */
   List targets;
 } ArmatureConstraint;
 
-/* Single-target subobject constraints --------------------- */
+/* Single-target subobject constraints */
 
 /* Track To Constraint */
 typedef struct TrackToConstraint {
@@ -479,7 +479,7 @@ typedef struct PivotConstraint {
   short flag;
 } PivotConstraint;
 
-/* transform limiting constraints - zero target ---------------------------- */
+/* transform limiting constraints - zero target */
 /* Limit Location Constraint */
 typedef struct LocLimitConstraint {
   float xmin, xmax;
@@ -1005,7 +1005,7 @@ typedef enum eSplineIKXZScaleModes {
   CONSTRAINT_SPLINEIK_XZS_VOLUMETRIC = 3,
 } eSplineIKXZScaleModes;
 
-/* bSplineIKConstraint->yScaleMode */
+/* SplineIKConstraint->yScaleMode */
 typedef enum eSplineIKYScaleModes {
   /* no y scaling */
   CONSTRAINT_SPLINEIK_YS_NONE = 0,
