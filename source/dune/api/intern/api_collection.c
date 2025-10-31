@@ -413,7 +413,7 @@ void api_def_collections(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "Collection", "ID");
-  api_def_struct_ui_text(sapi, "Collection", "Collection of Object data-blocks");
+  api_def_struct_ui_txt(sapi, "Collection", "Collection of Object data-blocks");
   api_def_struct_ui_icon(sapi, ICON_OUTLINER_COLLECTION);
   /* This is done on save/load in readfile.c,
    * removed if no objects are in the collection and not in a scene. */
@@ -422,15 +422,15 @@ void api_def_collections(DuneApi *dapi)
   api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "instance_offset", PROP_FLOAT, PROP_TRANSLATION);
-  api_def_prop_ui_text(
+  api_def_prop_ui_txt(
       prop, "Instance Offset", "Offset from the origin to use when instancing");
   api_def_prop_ui_range(prop, -10000.0, 10000.0, 10, API_TRANSLATION_PREC_DEFAULT);
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJ | ND_DRW, NULL);
 
   prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "Object");
   api_def_prop_override_fns(prop, NULL, NULL, "api_Collection_objects_override_apply");
-  api_def_prop_ui_text(prop, "Objects", "Objects that are directly in this collection");
+  api_def_prop_ui_txt(prop, "Objects", "Objects that are directly in this collection");
   api_def_prop_collection_fns(prop,
                                     "rna_Collection_objects_begin",
                                     "rna_iterator_listbase_next",
@@ -495,7 +495,7 @@ void api_def_collections(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "flag", COLLECTION_HIDE_RENDER);
   api_def_prop_bool_fns(prop, NULL, "api_Collection_hide_render_set");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_ui_icon(prop, ICON_RESTRICT_RENDER_OFF, -1);
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_RNDR_OFF, -1);
   api_def_prop_ui_text(prop, "Disable in Renders", "Globally disable in renders");
   api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "api_Collection_flag_update");
 
