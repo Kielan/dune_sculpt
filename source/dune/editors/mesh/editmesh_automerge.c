@@ -1,8 +1,6 @@
 /* Util fns for merging geometry once transform has finished:
- *
  * - edm_automerge
- * - edm_automerge_and_split
- */
+ * - edm_automerge_and_split */
 
 #include "dune_editmesh.h"
 
@@ -17,12 +15,12 @@
 #  include "PIL_time.h"
 #endif
 
-/* use mesh operator flags for a few operators */
+/* use mesh op flags for a few ops */
 #define MO_ELE_TAG 1
 
 /* Auto-Merge Selection
  *
- * Used after transform operations. */
+ * Used after transform ops. */
 
 void mesh_automerge(Object *obedit, bool update, const char hflag, const float dist)
 {
@@ -95,7 +93,7 @@ void mesh_automerge_and_split(Object *obedit,
 
   GHash *ghash_targetmap = MO_SLOT_AS_GHASH(slot_targetmap);
 
-  ok = Mesh_mesh_intersect_edges(bm, hflag, dist, split_faces, ghash_targetmap);
+  ok = mesh_intersect_edges(bm, hflag, dist, split_faces, ghash_targetmap);
 
   if (ok) {
     MeshOp_op_ex(mesh, &weldop);
