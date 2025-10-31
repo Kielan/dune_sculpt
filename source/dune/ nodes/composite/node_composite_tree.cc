@@ -23,7 +23,7 @@
 #include "api_access.hh"
 #include "api_prototypes.h"
 
-#include "NOD_composite.hh"
+#include "node_composite.hh"
 #include "node_composite_util.hh"
 
 #ifdef WITH_COMPOSITOR_CPU
@@ -31,16 +31,16 @@
 #endif
 
 static void composite_get_from_cxt(
-    const Cxt *C, NodeTreeType * /*treetype*/, NodeTree **r_ntree, Id **r_id, Id **r_from)
+    const Cx *C, NodeTreeType * /*treetype*/, NodeTree **r_ntree, Id **r_id, Id **r_from)
 {
-  Scene *scene = cxt_data_scene(C);
+  Scene *scene = cx_data_scene(C);
 
   *r_from = nullptr;
   *r_id = &scene->id;
   *r_ntree = scene->nodetree;
 }
 
-static void foreach_nodeclass(Scene * /*scene*/, void *calldata, NodeClassCallback func)
+static void foreach_nodeclass(Scene * /*scene*/, void *calldata, NodeClassCb fn)
 {
   func(calldata, NODE_CLASS_INPUT, N_("Input"));
   func(calldata, NODE_CLASS_OUTPUT, N_("Output"));
@@ -56,11 +56,11 @@ static void foreach_nodeclass(Scene * /*scene*/, void *calldata, NodeClassCallba
 }
 
 /* local tree then owns all compbufs */
-static void localize(bNodeTree *localtree, bNodeTree *ntree)
+static void localize(NodeTree *localtree, NodeTree *ntree)
 {
 
-  bNode *node = (bNode *)ntree->nodes.first;
-  bNode *local_node = (bNode *)localtree->nodes.first;
+  Node *node = (bNode *)ntree->nodes.first;
+  Node *local_node = (bNode *)localtree->nodes.first;
   while (node != nullptr) {
 
     /* Ensure new user input gets handled ok. */
@@ -68,7 +68,7 @@ static void localize(bNodeTree *localtree, bNodeTree *ntree)
     local_node->runtime->original = node;
 
     /* move over the compbufs */
-    /* right after #blender::bke::ntreeCopyTree() `oldsock` pointers are valid */
+    /* right after #dune::ntreeCopyTree() `oldsock` ptrs are valid */
 
     if (node->type == CMP_NODE_VIEWER) {
       if (node->id) {
@@ -86,26 +86,26 @@ static void localize(bNodeTree *localtree, bNodeTree *ntree)
   }
 }
 
-static void local_merge(Main *bmain, bNodeTree *localtree, bNodeTree *ntree)
+static void local_merge(Main *main, NodeTree *localtree, NodeTree *ntree)
 {
   /* move over the compbufs and previews */
-  blender::bke::node_preview_merge_tree(ntree, localtree, true);
+  dune::node_preview_merge_tree(ntree, localtree, true);
 
-  LISTBASE_FOREACH (bNode *, lnode, &localtree->nodes) {
-    if (bNode *orig_node = nodeFindNodebyName(ntree, lnode->name)) {
+  LIST_FOREACH (Node *, lnode, &localtree->nodes) {
+    if (Node *orig_node = nodeFindNodebyName(ntree, lnode->name)) {
       if (lnode->type == CMP_NODE_VIEWER) {
         if (lnode->id && (lnode->flag & NODE_DO_OUTPUT)) {
           /* image_merge does sanity check for pointers */
-          BKE_image_merge(bmain, (Image *)orig_node->id, (Image *)lnode->id);
+          dune_img_merge(main, (Image *)orig_node->id, (Image *)lnode->id);
         }
       }
       else if (lnode->type == CMP_NODE_MOVIEDISTORTION) {
-        /* special case for distortion node: distortion context is allocating in exec function
-         * and to achieve much better performance on further calls this context should be
+        /* special case for distortion node: distortion context is allocating in exec fn
+         * and to achieve much better performance on further calls this cx should be
          * copied back to original node */
         if (lnode->storage) {
           if (orig_node->storage) {
-            BKE_tracking_distortion_free((MovieDistortion *)orig_node->storage);
+            dune_tracking_distortion_free((MovieDistortion *)orig_node->storage);
           }
 
           orig_node->storage = BKE_tracking_distortion_copy((MovieDistortion *)lnode->storage);
@@ -132,18 +132,18 @@ static void composite_node_add_init(bNodeTree * /*bnodetree*/, bNode *bnode)
   }
 }
 
-static bool composite_node_tree_socket_type_valid(bNodeTreeType * /*ntreetype*/,
-                                                  bNodeSocketType *socket_type)
+static bool composite_node_tree_socket_type_valid(NodeTreeType * /*ntreetype*/,
+                                                  NodeSocketType *socket_type)
 {
-  return blender::bke::nodeIsStaticSocketType(socket_type) &&
+  return dime::nodeIsStaticSocketType(socket_type) &&
          ELEM(socket_type->type, SOCK_FLOAT, SOCK_VECTOR, SOCK_RGBA);
 }
 
-bNodeTreeType *ntreeType_Composite;
+NodeTreeType *ntreeType_Composite;
 
 void register_node_tree_type_cmp()
 {
-  bNodeTreeType *tt = ntreeType_Composite = MEM_cnew<bNodeTreeType>(__func__);
+  NodeTreeType *tt = ntreeType_Composite = MEM_cnew<NodeTreeType>(__func__);
 
   tt->type = NTREE_COMPOSIT;
   STRNCPY(tt->idname, "CompositorNodeTree");
@@ -156,49 +156,47 @@ void register_node_tree_type_cmp()
   tt->localize = localize;
   tt->local_merge = local_merge;
   tt->update = update;
-  tt->get_from_context = composite_get_from_context;
+  tt->get_from_cx = composite_get_from_cx;
   tt->node_add_init = composite_node_add_init;
   tt->valid_socket_type = composite_node_tree_socket_type_valid;
 
-  tt->rna_ext.srna = &RNA_CompositorNodeTree;
+  tt->rna_ext.srna = &Api_CompositorNodeTree;
 
   ntreeTypeAdd(tt);
 }
 
-void ntreeCompositExecTree(Render *render,
+void ntreeCompositExecTree(Rndr *render,
                            Scene *scene,
-                           bNodeTree *ntree,
-                           RenderData *rd,
-                           bool rendering,
+                           NodeTree *ntree,
+                           RndrData *rd,
+                           bool rndring,
                            int do_preview,
                            const char *view_name,
-                           blender::realtime_compositor::RenderContext *render_context)
+                           dune::realtime_compositor::RndrCx *rndr_cx)
 {
 #ifdef WITH_COMPOSITOR_CPU
-  COM_execute(render, rd, scene, ntree, rendering, view_name, render_context);
+  COM_execute(rndr, rd, scene, ntree, rndring, view_name, rndr_cx);
 #else
-  UNUSED_VARS(render, scene, ntree, rd, rendering, view_name, render_context);
+  UNUSED_VARS(rndr, scene, ntree, rd, rndring, view_name, rndr_cx);
 #endif
 
   UNUSED_VARS(do_preview);
 }
 
-/* *********************************************** */
-
-void ntreeCompositUpdateRLayers(bNodeTree *ntree)
+void ntreeCompositeUpdateRLayers(NodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
   }
 
-  for (bNode *node : ntree->all_nodes()) {
+  for (Node *node : ntree->all_nodes()) {
     if (node->type == CMP_NODE_R_LAYERS) {
       node_cmp_rlayers_outputs(ntree, node);
     }
   }
 }
 
-void ntreeCompositTagRender(Scene *scene)
+void ntreeCompositeTagRndr(Scene *scene)
 {
   /* XXX Think using G_MAIN here is valid, since you want to update current file's scene nodes,
    * not the ones in temp main generated for rendering?
@@ -222,7 +220,7 @@ void ntreeCompositTagRender(Scene *scene)
   dune_ntree_update_main(G_MAIN, nullptr);
 }
 
-void ntreeCompositClearTags(NodeTree *ntree)
+void ntreeCompositeClearTags(NodeTree *ntree)
 {
   /* XXX: after render animation sys gets a refresh, this call allows composite to end clean. */
   if (ntree == nullptr) {
@@ -232,12 +230,12 @@ void ntreeCompositClearTags(NodeTree *ntree)
   for (bNode *node : ntree->all_nodes()) {
     node->runtime->need_exec = 0;
     if (node->type == NODE_GROUP) {
-      ntreeCompositClearTags((bNodeTree *)node->id);
+      ntreeCompositClearTags((NodeTree *)node->id);
     }
   }
 }
 
-void ntreeCompositTagNeedExec(bNode *node)
+void ntreeCompositTagNeedExec(Node *node)
 {
   node->runtime->need_exec = true;
 }
