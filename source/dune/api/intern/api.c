@@ -26,7 +26,6 @@ const EnumPropItem DummyApi_DEFAULT_items[] = {
 };
 
 /* Api Enum's */
-
 const EnumPropItem api_enum_prop_type_items[] = {
     {PROP_BOOL, "BOOL", 0, "Bool", ""},
     {PROP_INT, "INT", 0, "Int", ""},
@@ -119,10 +118,9 @@ const EnumPropItem api_enum_prop_unit_items[] = {
 static LogRef LOG_COMPARE_OVERRIDE = {"api.api_compare_override"};
 
 /* Struct */
-
-static void api_Struct_id_get(ApiPtr *ptr, char *value)
+static void api_Struct_id_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((ApiStruct *)ptr->data)->id);
+  strcpy(val, ((ApiStruct *)ptr->data)->id);
 }
 
 static int api_Struct_id_length(ApiPtr *ptr)
@@ -130,9 +128,9 @@ static int api_Struct_id_length(ApiPtr *ptr)
   return strlen(((ApiStruct *)ptr->data)->id);
 }
 
-static void api_Struct_description_get(ApiPtr *ptr, char *value)
+static void api_Struct_description_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((ApiStruct *)ptr->data)->description);
+  strcpy(val, ((ApiStruct *)ptr->data)->description);
 }
 
 static int api_Struct_description_length(ApiPtr *ptr)
@@ -140,9 +138,9 @@ static int api_Struct_description_length(ApiPtr *ptr)
   return strlen(((ApiStruct *)ptr->data)->description);
 }
 
-static void api_Struct_name_get(ApiPtr *ptr, char *value)
+static void api_Struct_name_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((ApiStruct *)ptr->data)->name);
+  strcpy(val, ((ApiStruct *)ptr->data)->name);
 }
 
 static int api_Struct_name_length(ApiPtr *ptr)
@@ -150,14 +148,14 @@ static int api_Struct_name_length(ApiPtr *ptr)
   return strlen(((ApiStruct *)ptr->data)->name);
 }
 
-static void api_Struct_translation_ctx_get(ApiPtr *ptr, char *value)
+static void api_Struct_translation_cx_get(ApiPtr *ptr, char *val)
 {
-  strcpy(value, ((ApiStruct *)ptr->data)->translation_cxt);
+  strcpy(val, ((ApiStruct *)ptr->data)->translation_cx);
 }
 
-static int api_Struct_translation_cxt_length(ApiPtr *ptr)
+static int api_Struct_translation_cx_length(ApiPtr *ptr)
 {
-  return strlen(((ApiStruct *)ptr->data)->translation_cxt);
+  return strlen(((ApiStruct *)ptr->data)->translation_cx);
 }
 
 static ApiPtr api_Struct_base_get(ApiPtr *ptr)
@@ -172,13 +170,12 @@ static ApiPtr api_Struct_nested_get(ApiPtr *ptr)
 
 static ApiPtr api_Struct_name_prop_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &ApiProp, ((StructRNA *)ptr->data)->nameproperty);
+  return api_ptr_inherit_refine(ptr, &ApiProp, ((StructApi *)ptr->data)->nameprop);
 }
 
 /* Struct prop iter. Is complicated, the purpose is to
  * iter over props of all inheritance levels, and for each struct to
  * also iter over id props not known by Api. */
-
 static int api_idprop_known(CollectionPropIter *iter, void *data)
 {
   IdProp *idprop = (IdProp *)data;
@@ -427,7 +424,7 @@ int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_ptr)
         }
       }
     }
-  } while ((srna = srna->base));
+  } while ((srna = sapi->base));
   return false;
 }
 
@@ -461,7 +458,7 @@ static ApiStruct *api_Prop_refine(ApiPtr *ptr)
   }
 }
 
-static void api_prop_id_get(ApiPtr *ptr, char *value)
+static void api_prop_id_get(ApiPtr *ptr, char *val)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   strcpy(value, api_prop_id(prop));
@@ -473,7 +470,7 @@ static int api_prop_id_length(ApiPtr *ptr)
   return strlen(api_prop_id(prop));
 }
 
-static void api_prop_name_get(ApiPtr *ptr, char *value)
+static void api_prop_name_get(ApiPtr *ptr, char *val)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   const char *name = api_prop_ui_name_raw(prop);
@@ -500,13 +497,13 @@ static int api_prop_description_length(ApiPtr *ptr)
   return description ? strlen(description) : 0;
 }
 
-static void api_prop_translation_cxt_get(ApiPtr *ptr, char *val)
+static void api_prop_translation_cx_get(ApiPtr *ptr, char *val)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   strcpy(val, api_prop_translation_cxt(prop));
 }
 
-static int api_prop_translation_cxt_length(ApiPtr *ptr)
+static int api_prop_translation_cx_length(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   return strlen(api_prop_translation_cxt(prop));
@@ -561,7 +558,7 @@ static bool api_prop_animatable_get(ApiPtr *ptr)
   return (prop->flag & PROP_ANIMATABLE) != 0;
 }
 
-static bool api_Prop_overridable_get(ApiPtr *ptr)
+static bool api_prop_overridable_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
 
@@ -577,103 +574,103 @@ static bool api_prop_use_output_get(ApiPotr *ptr)
   return (prop->flag_param & PARM_OUTPUT) != 0;
 }
 
-static bool api_Prop_is_required_get(ApiPtr *ptr)
+static bool api_prop_is_required_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag_param & PARM_REQUIRED) != 0;
 }
 
-static bool api_Prop_is_arg_optional_get(ApiPtr *ptr)
+static bool api_prop_is_arg_optional_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
-  return (prop->flag_param & PARM_PYFUNC_OPTIONAL) != 0;
+  return (prop->flag_param & PARM_PYFN_OPTIONAL) != 0;
 }
 
-static bool api_Prop_is_never_none_get(ApiPtr *ptr)
+static bool api_prop_is_never_none_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  PropApi *prop = (PropApi *)ptr->data;
   return (prop->flag & PROP_NEVER_NULL) != 0;
 }
 
-static bool rna_Property_is_hidden_get(PointerRNA *ptr)
+static bool api_prop_is_hidden_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_HIDDEN) != 0;
 }
 
-static bool rna_Property_is_skip_save_get(PointerRNA *ptr)
+static bool api_prop_is_skip_save_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_SKIP_SAVE) != 0;
 }
 
-static bool rna_Property_is_enum_flag_get(PointerRNA *ptr)
+static bool api_prop_is_enum_flag_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_ENUM_FLAG) != 0;
 }
 
-static bool rna_Property_is_library_editable_flag_get(PointerRNA *ptr)
+static bool api_prop_is_lib_editable_flag_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_LIB_EXCEPTION) != 0;
 }
 
-static int rna_Property_tags_get(PointerRNA *ptr)
+static int api_Prop_tags_get(ApiPtr *ptr)
 {
-  return RNA_property_tags(ptr->data);
+  return api_prop_tags(ptr->data);
 }
 
-static const EnumPropertyItem *rna_Property_tags_itemf(bContext *UNUSED(C),
-                                                       PointerRNA *ptr,
-                                                       PropertyRNA *UNUSED(prop),
-                                                       bool *r_free)
+static const EnumPropItem *api_prop_tags_itemf(Cx *UNUSED(C),
+                                                ApiPtr *ptr,
+                                                ApiProp *UNUSED(prop),
+                                                bool *r_free)
 {
-  PropertyRNA *this_prop = (PropertyRNA *)ptr->data;
-  const StructRNA *srna = RNA_property_pointer_type(ptr, this_prop);
-  EnumPropertyItem *prop_tags;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  ApiProp *this_prop = (ApiProp *)ptr->data;
+  const SApi *sapi = api_prop_ptr_type(ptr, this_prop);
+  EnumPropItem *prop_tags;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
-  for (const EnumPropertyItem *struct_tags = RNA_struct_property_tag_defines(srna);
+  for (const EnumPropItem *struct_tags = api_struct_prop_tag_defines(sapi);
        struct_tags != NULL && struct_tags->identifier != NULL;
        struct_tags++) {
     memcpy(&tmp, struct_tags, sizeof(tmp));
-    RNA_enum_item_add(&prop_tags, &totitem, &tmp);
+    api_enum_item_add(&prop_tags, &totitem, &tmp);
   }
-  RNA_enum_item_end(&prop_tags, &totitem);
+  api_enum_item_end(&prop_tags, &totitem);
   *r_free = true;
 
   return prop_tags;
 }
 
-static int rna_Property_array_length_get(PointerRNA *ptr)
+static int api_prop_array_length_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
   return prop->totarraylength;
 }
 
-static void rna_Property_array_dimensions_get(PointerRNA *ptr,
-                                              int dimensions[RNA_MAX_ARRAY_DIMENSION])
+static void api_prop_array_dimensions_get(ApiPtr *ptr,
+                                        int dimensions[API_MAX_ARRAY_DIMENSION])
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
 
   if (prop->arraydimension > 1) {
-    for (int i = RNA_MAX_ARRAY_DIMENSION; i--;) {
+    for (int i = API_MAX_ARRAY_DIMENSION; i--;) {
       dimensions[i] = (i >= prop->arraydimension) ? 0 : prop->arraylength[i];
     }
   }
   else {
-    memset(dimensions, 0, sizeof(*dimensions) * RNA_MAX_ARRAY_DIMENSION);
+    memset(dimensions, 0, sizeof(*dimensions) * API_MAX_ARRAY_DIMENSION);
     dimensions[0] = prop->totarraylength;
   }
 }
 
-static bool rna_Property_is_registered_get(PointerRNA *ptr)
+static bool api_prop_is_registered_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_REGISTER) != 0;
 }
 
@@ -689,188 +686,188 @@ static bool api_prop_is_runtime_get(ApiPtr *ptr)
   return (prop->flag_internal & PROP_INTERN_RUNTIME) != 0;
 }
 
-static bool rna_BoolProperty_default_get(PointerRNA *ptr)
+static bool api_BoolProp_default_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((BoolPropertyRNA *)prop)->defaultvalue;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((BoolPropApi *)prop)->defaultval;
 }
 
-static int rna_IntProperty_default_get(PointerRNA *ptr)
+static int api_IntProp_default_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->defaultvalue;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((ApiIntProp *)prop)->defaultval;
 }
 /* int/float/bool */
-static int rna_NumberProperty_default_array_get_length(PointerRNA *ptr,
-                                                       int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_NmbrProp_default_arr_get_length(ApiPtrApi *ptr,
+                                            int length[API_MAX_ARR_DIMENSION])
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
 
   length[0] = prop->totarraylength;
 
   return length[0];
 }
-static bool rna_NumberProperty_is_array_get(PointerRNA *ptr)
+static bool api_NmbrProp_is_arr_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
 
   return RNA_property_array_check(prop);
 }
 
-static void rna_IntProperty_default_array_get(PointerRNA *ptr, int *values)
+static void api_IntProp_default_arr_get(ApiPtr *ptr, int *vals)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
   if (prop->totarraylength > 0) {
-    PointerRNA null_ptr = PointerRNA_NULL;
-    RNA_property_int_get_default_array(&null_ptr, prop, values);
+    ApiPtr null_ptr = PtrAPI_NULL;
+    api_prop_int_get_default_arr(&null_ptr, prop, vals);
   }
 }
 
-static void rna_BoolProperty_default_array_get(PointerRNA *ptr, bool *values)
+static void api_BoolProp_default_arr_get(ApiPtr *ptr, bool *vals)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
   if (prop->totarraylength > 0) {
-    PointerRNA null_ptr = PointerRNA_NULL;
-    RNA_property_boolean_get_default_array(&null_ptr, prop, values);
+    ApiPtr null_ptr = PtrAPI_NULL;
+    api_prop_bool_get_default_arr(&null_ptr, prop, vals);
   }
 }
 
-static void rna_FloatProperty_default_array_get(PointerRNA *ptr, float *values)
+static void api_FloatProp_default_arr_get(ApiPtr *ptr, float *vals)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
   if (prop->totarraylength > 0) {
-    PointerRNA null_ptr = PointerRNA_NULL;
-    RNA_property_float_get_default_array(&null_ptr, prop, values);
+    ApiPtr null_ptr = PtrAPI_NULL;
+    api_prop_float_get_default_arr(&null_ptr, prop, vals);
   }
 }
 
-static int rna_IntProperty_hard_min_get(PointerRNA *ptr)
+static int api_IntProp_hard_min_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->hardmin;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_property(prop);
+  return ((IntPropApi *)prop)->hardmin;
 }
 
-static int rna_IntProperty_hard_max_get(PointerRNA *ptr)
+static int api_IntProp_hard_max_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->hardmax;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((IntPropApi *)prop)->hardmax;
 }
 
-static int rna_IntProperty_soft_min_get(PointerRNA *ptr)
+static int api_IntProp_soft_min_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->softmin;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((IntPropApi *)prop)->softmin;
 }
 
-static int rna_IntProperty_soft_max_get(PointerRNA *ptr)
+static int api_IntProp_soft_max_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->softmax;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((IntPropApi *)prop)->softmax;
 }
 
-static int rna_IntProperty_step_get(PointerRNA *ptr)
+static int api_IntProp_step_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((IntPropertyRNA *)prop)->step;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((IntPropApi *)prop)->step;
 }
 
-static float rna_FloatProperty_default_get(PointerRNA *ptr)
+static float api_FloatProp_default_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->defaultvalue;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->defaultval;
 }
-static float rna_FloatProperty_hard_min_get(PointerRNA *ptr)
+static float api_FloatProp_hard_min_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->hardmin;
-}
-
-static float rna_FloatProperty_hard_max_get(PointerRNA *ptr)
-{
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->hardmax;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->hardmin;
 }
 
-static float rna_FloatProperty_soft_min_get(PointerRNA *ptr)
+static float api_FloatProp_hard_max_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->softmin;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->hardmax;
 }
 
-static float rna_FloatProperty_soft_max_get(PointerRNA *ptr)
+static float api_FloatProp_soft_min_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->softmax;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatProp *)prop)->softmin;
 }
 
-static float rna_FloatProperty_step_get(PointerRNA *ptr)
+static float api_FloatProp_soft_max_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->step;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->softmax;
 }
 
-static int rna_FloatProperty_precision_get(PointerRNA *ptr)
+static float api_FloatProp_step_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((FloatPropertyRNA *)prop)->precision;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->step;
 }
 
-static void rna_StringProperty_default_get(PointerRNA *ptr, char *value)
+static int api_FloatProp_precision_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  strcpy(value, ((StringPropertyRNA *)prop)->defaultvalue);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return ((FloatPropApi *)prop)->precision;
 }
-static int rna_StringProperty_default_length(PointerRNA *ptr)
+
+static void api_StringProp_default_get(ApiPtr *ptr, char *val)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  strcpy(val, ((StringPropApi *)prop)->defaultval);
+}
+static int api_StringProp_default_length(ApiPtr *ptr)
+{
+  ApiProp *prop = (ApiProp *)ptr->data;
   prop = rna_ensure_property(prop);
   return strlen(((StringPropertyRNA *)prop)->defaultvalue);
 }
 
-static int rna_StringProperty_max_length_get(PointerRNA *ptr)
+static int api_StringProp_max_length_get(PointerRNA *ptr)
 {
   PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return ((StringPropertyRNA *)prop)->maxlength;
+  prop = api_ensure_prop(prop);
+  return ((StringPropApi *)prop)->maxlength;
 }
 
-static const EnumPropertyItem *rna_EnumProperty_default_itemf(bContext *C,
-                                                              PointerRNA *ptr,
-                                                              PropertyRNA *prop_parent,
-                                                              bool *r_free)
+static const EnumPropItem *api_EnumProp_default_itemf(Cx *C,
+                                                    ApiPtr *ptr,
+                                                    ApiProp *prop_parent,
+                                                    bool *r_free)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  EnumPropertyRNA *eprop;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  EnumPropApi *eprop;
 
-  prop = rna_ensure_property(prop);
-  eprop = (EnumPropertyRNA *)prop;
+  prop = api_ensure_prop(prop);
+  eprop = (ApiEnumProp *)prop;
 
   /* incompatible default attributes */
   if ((prop_parent->flag & PROP_ENUM_FLAG) != (prop->flag & PROP_ENUM_FLAG)) {
-    return DummyRNA_NULL_items;
+    return DummyAPI_NULL_items;
   }
 
-  if ((eprop->item_fn == NULL) || (eprop->item_fn == rna_EnumProperty_default_itemf) ||
-      (ptr->type == &RNA_EnumProperty) || (C == NULL)) {
+  if ((eprop->item_fn == NULL) || (eprop->item_fn == api_EnumProp_default_itemf) ||
+      (ptr->type == &Api_EnumProp) || (C == NULL)) {
     if (eprop->item) {
       return eprop->item;
     }
@@ -880,7 +877,7 @@ static const EnumPropertyItem *rna_EnumProperty_default_itemf(bContext *C,
 }
 
 /* XXX: not sure this is needed? */
-static int rna_EnumProperty_default_get(PointerRNA *ptr)
+static int api_EnumProp_default_get(PointerRNA *ptr)
 {
   PropertyRNA *prop = (PropertyRNA *)ptr->data;
   prop = rna_ensure_property(prop);
