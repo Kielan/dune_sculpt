@@ -25,7 +25,7 @@ static bool api_Main_use_autopack_get(ApiPtr *UNUSED(ptr))
   return 0;
 }
 
-static void api_Main_use_autopack_set(ApiPtr *UNUSED(ptr), bool value)
+static void api_Main_use_autopack_set(ApiPtr *UNUSED(ptr), bool val)
 {
   if (value) {
     G.fileflags |= G_FILE_AUTOPACK;
@@ -53,10 +53,10 @@ static bool api_Main_is_dirty_get(ApiPtr *ptr)
   return true;
 }
 
-static void api_Main_filepath_get(ApiPtr *ptr, char *value)
+static void api_Main_filepath_get(ApiPtr *ptr, char *val)
 {
   Main *main = (Main *)ptr->data;
-  lib_strncpy(value, main->filepath, sizeof(main->filepath));
+  lib_strncpy(val, main->filepath, sizeof(main->filepath));
 }
 
 static int api_Main_filepath_length(ApiPtr *ptr)
@@ -66,10 +66,10 @@ static int api_Main_filepath_length(ApiPtr *ptr)
 }
 
 #  if 0
-static void api_Main_filepath_set(ApiPtr *ptr, const char *value)
+static void api_Main_filepath_set(ApiPtr *ptr, const char *val)
 {
   Main *main = (Main *)ptr->data;
-  STRNCPY(main->filepath, value);
+  STRNCPY(main->filepath, val);
 }
 #  endif
 
@@ -406,29 +406,29 @@ void api_def_main(DuneApi *dapi)
   sapi = api_def_struct(dapi, "DuneData", NULL);
   api_def_struct_ui_text(sapi,
                          "Dune-File Data",
-                         "Main data structure representing a .blend file and all its data-blocks");
+                         "Main data structure representing a .dune file and all its data-blocks");
   api_def_struct_ui_icon(sapi, ICON_DUNE);
 
   prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_FILEPATH);
   api_def_prop_string_maxlength(prop, FILE_MAX);
   api_def_prop_string_fns(
-      prop, "api_Main_filepath_get", "rna_Main_filepath_length", "rna_Main_filepath_set");
+      prop, "api_Main_filepath_get", "api_Main_filepath_length", "api_Main_filepath_set");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop, "Filename", "Path to the .blend file");
+  api_def_prop_ui_text(prop, "Filename", "Path to the .dune file");
 
-  prop = api_def_prop(sapi, "is_dirty", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_dirty", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_bool_fns(prop, "api_Main_is_dirty_get", NULL);
   api_def_prop_ui_text(
       prop, "File Has Unsaved Changes", "Have recent edits been saved to disk");
 
-  prop = api_def_prop(sapi, "is_saved", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_saved", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_bool_fns(prop, "api_Main_is_saved_get", NULL);
   api_def_prop_ui_text(
       prop, "File is Saved", "Has the current session been saved to disk as a .blend file");
 
-  prop = api_def_prop(sapi, "use_autopack", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_autopack", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(prop, "api_Main_use_autopack_get", "rna_Main_use_autopack_set");
   api_def_prop_ui_text(
       prop, "Use Auto-Pack", "Automatically pack all external data into .blend file");
@@ -459,7 +459,7 @@ void api_def_main(DuneApi *dapi)
                                 NULL,
                                 NULL,
                                 NULL);
-    api_def_prop_ui_text(prop, lists[i].name, lists[i].description);
+    api_def_prop_ui_txt(prop, lists[i].name, lists[i].description);
 
     /* collection fns */
     fn = lists[i].fn;
