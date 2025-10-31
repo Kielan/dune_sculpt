@@ -1,6 +1,6 @@
 #include <atomic>
 
-#include "BKE_curves.hh"
+#include "dune_curves.hh"
 
 #include "UI_interface.hh"
 #include "UI_resources.hh"
