@@ -2273,102 +2273,102 @@ bool rna_property_override_store_default(Main *UNUSED(bmain),
   return changed;
 }
 
-bool rna_property_override_apply_default(Main *UNUSED(bmain),
-                                         PointerRNA *ptr_dst,
-                                         PointerRNA *ptr_src,
-                                         PointerRNA *ptr_storage,
-                                         PropertyRNA *prop_dst,
-                                         PropertyRNA *prop_src,
-                                         PropertyRNA *prop_storage,
+bool rna_property_override_apply_default(Main *UNUSED(main),
+                                         ApiPtr *ptr_dst,
+                                         ApiPtr *ptr_src,
+                                         ApiPtr *ptr_storage,
+                                         ApiProp *prop_dst,
+                                         ApiProp *prop_src,
+                                         ApiProp *prop_storage,
                                          const int len_dst,
                                          const int len_src,
                                          const int len_storage,
-                                         PointerRNA *UNUSED(ptr_item_dst),
-                                         PointerRNA *UNUSED(ptr_item_src),
-                                         PointerRNA *UNUSED(ptr_item_storage),
-                                         IDOverrideLibraryPropertyOperation *opop)
+                                         ApiPtr *UNUSED(ptr_item_dst),
+                                         ApiPtr *UNUSED(ptr_item_src),
+                                         ApiPtr *UNUSED(ptr_item_storage),
+                                         IDOverrideLibPropOp *opop)
 {
-  BLI_assert(len_dst == len_src && (!ptr_storage || len_dst == len_storage));
+  lib_assert(len_dst == len_src && (!ptr_storage || len_dst == len_storage));
   UNUSED_VARS_NDEBUG(len_src, len_storage);
 
-  const bool is_array = len_dst > 0;
-  const int index = is_array ? opop->subitem_reference_index : 0;
-  const short override_op = opop->operation;
+  const bool is_arr = len_dst > 0;
+  const int index = is_arr ? opop->subitem_ref_index : 0;
+  const short override_op = opop->op;
 
-  switch (RNA_property_type(prop_dst)) {
-    case PROP_BOOLEAN:
-      if (is_array && index == -1) {
-        bool array_stack_a[RNA_STACK_ARRAY];
-        bool *array_a;
+  switch (api_prop_type(prop_dst)) {
+    case PROP_BOOL:
+      if (is_arr && index == -1) {
+        bool arr_stack_a[API_STACK_ARR];
+        bool *arr_a;
 
-        array_a = (len_dst > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(*array_a) * len_dst, __func__) :
-                                                array_stack_a;
+        arr_a = (len_dst > API_STACK_ARR) ? MEM_mallocN(sizeof(*arr_a) * len_dst, __func__) :
+                                                arr_stack_a;
 
-        RNA_property_boolean_get_array(ptr_src, prop_src, array_a);
+        api_prop_bool_get_arr(ptr_src, prop_src, arr_a);
 
         switch (override_op) {
-          case IDOVERRIDE_LIBRARY_OP_REPLACE:
-            RNA_property_boolean_set_array(ptr_dst, prop_dst, array_a);
+          case IDOVERRIDE_LIB_OP_REPLACE:
+            api_prop_bool_set_arr(ptr_dst, prop_dst, arr_a);
             break;
           default:
-            BLI_assert_msg(0, "Unsupported RNA override operation on boolean");
+            lib_assert_msg(0, "Unsupported api override op on bool");
             return false;
         }
 
-        if (array_a != array_stack_a) {
-          MEM_freeN(array_a);
+        if (array_a != arr_stack_a) {
+          MEM_freeN(arr_a);
         }
       }
       else {
-        const bool value = RNA_PROPERTY_GET_SINGLE(boolean, ptr_src, prop_src, index);
+        const bool val = API_PROP_GET_SINGLE(bool, ptr_src, prop_src, index);
 
         switch (override_op) {
-          case IDOVERRIDE_LIBRARY_OP_REPLACE:
-            RNA_PROPERTY_SET_SINGLE(boolean, ptr_dst, prop_dst, index, value);
+          case IDOVERRIDE_LIB_OP_REPLACE:
+            API_PROP_SET_SINGLE(bool, ptr_dst, prop_dst, index, val);
             break;
           default:
-            BLI_assert_msg(0, "Unsupported RNA override operation on boolean");
+            lib_assert_msg(0, "Unsupported Api override operation on bool");
             return false;
         }
       }
       return true;
     case PROP_INT:
-      if (is_array && index == -1) {
-        int array_stack_a[RNA_STACK_ARRAY], array_stack_b[RNA_STACK_ARRAY];
-        int *array_a, *array_b;
+      if (is_arr && index == -1) {
+        int arr_stack_a[API_STACK_ARR], arr_stack_b[API_STACK_ARR];
+        int *arr_a, *arr_b;
 
-        array_a = (len_dst > RNA_STACK_ARRAY) ? MEM_mallocN(sizeof(*array_a) * len_dst, __func__) :
-                                                array_stack_a;
+        arr_a = (len_dst > API_STACK_ARR) ? MEM_mallocN(sizeof(*arr_a) * len_dst, __func__) :
+                                                arr_stack_a;
 
         switch (override_op) {
-          case IDOVERRIDE_LIBRARY_OP_REPLACE:
-            RNA_property_int_get_array(ptr_src, prop_src, array_a);
-            RNA_property_int_set_array(ptr_dst, prop_dst, array_a);
+          case IDOVERRIDE_LIB_OP_REPLACE:
+            api_prop_int_get_arr(ptr_src, prop_src, arr_a);
+            api_prop_int_set_arr(ptr_dst, prop_dst, arr_a);
             break;
-          case IDOVERRIDE_LIBRARY_OP_ADD:
-          case IDOVERRIDE_LIBRARY_OP_SUBTRACT:
-            RNA_property_int_get_array(ptr_dst, prop_dst, array_a);
-            array_b = (len_dst > RNA_STACK_ARRAY) ?
-                          MEM_mallocN(sizeof(*array_b) * len_dst, __func__) :
-                          array_stack_b;
-            RNA_property_int_get_array(ptr_storage, prop_storage, array_b);
-            if (override_op == IDOVERRIDE_LIBRARY_OP_ADD) {
+          case IDOVERRIDE_LIB_OP_ADD:
+          case IDOVERRIDE_LIB_OP_SUBTRACT:
+            api_prop_int_get_arr(ptr_dst, prop_dst, arr_a);
+            array_b = (len_dst > API_STACK_ARR) ?
+                          MEM_mallocN(sizeof(*arr_b) * len_dst, __func__) :
+                          arr_stack_b;
+            api_prop_int_get_arr(ptr_storage, prop_storage, arr_b);
+            if (override_op == IDOVERRIDE_LIB_OP_ADD) {
               for (int i = len_dst; i--;) {
-                array_a[i] += array_b[i];
+                arr_a[i] += arr_b[i];
               }
             }
             else {
               for (int i = len_dst; i--;) {
-                array_a[i] -= array_b[i];
+                array_a[i] -= arr_b[i];
               }
             }
-            RNA_property_int_set_array(ptr_dst, prop_dst, array_a);
-            if (array_b != array_stack_b) {
-              MEM_freeN(array_b);
+            api_prop_int_set_arr(ptr_dst, prop_dst, arr_a);
+            if (array_b != arr_stack_b) {
+              MEM_freeN(arr_b);
             }
             break;
           default:
-            BLI_assert_msg(0, "Unsupported RNA override operation on integer");
+            lib_assert_msg(0, "Unsupported RNA override operation on integer");
             return false;
         }
 
@@ -2533,7 +2533,7 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
     }
     case PROP_STRING: {
       char buff[256];
-      char *value = RNA_property_string_get_alloc(ptr_src, prop_src, buff, sizeof(buff), NULL);
+      char *val = api_prop_string_get_alloc(ptr_src, prop_src, buff, sizeof(buff), NULL);
 
       switch (override_op) {
         case IDOVERRIDE_LIBRARY_OP_REPLACE:
@@ -2551,12 +2551,12 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
     }
     case PROP_COLLECTION: {
       /* We only support IDProperty-based collection insertion here. */
-      const bool is_src_idprop = (prop_src->magic != RNA_MAGIC) ||
-                                 (prop_src->flag & PROP_IDPROPERTY) != 0;
+      const bool is_src_idprop = (prop_src->magic != API_MAGIC) ||
+                                 (prop_src->flag & PROP_IDPROP) != 0;
       const bool is_dst_idprop = (prop_dst->magic != RNA_MAGIC) ||
                                  (prop_dst->flag & PROP_IDPROPERTY) != 0;
       if (!(is_src_idprop && is_dst_idprop)) {
-        BLI_assert_msg(0, "You need to define a specific override apply callback for collections");
+        lib_assert_msg(0, "You need to define a specific override apply callback for collections");
         return false;
       }
 
@@ -2568,11 +2568,11 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
           if (opop->subitem_local_name != NULL && opop->subitem_local_name[0] != '\0') {
             /* Find from name. */
             int item_index_src, item_index_ref;
-            if (RNA_property_collection_lookup_string_index(
+            if (api_prop_collection_lookup_string_index(
                     ptr_src, prop_src, opop->subitem_local_name, &item_ptr_src, &item_index_src) &&
-                RNA_property_collection_lookup_int(
+                api_prop_collection_lookup_int(
                     ptr_src, prop_src, item_index_src + 1, &item_ptr_src) &&
-                RNA_property_collection_lookup_string_index(
+                api_prop_collection_lookup_string_index(
                     ptr_dst, prop_dst, opop->subitem_local_name, &item_ptr_ref, &item_index_ref)) {
               is_valid = true;
               item_index_dst = item_index_ref + 1;
@@ -2580,9 +2580,9 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
           }
           if (!is_valid && opop->subitem_local_index >= 0) {
             /* Find from index. */
-            if (RNA_property_collection_lookup_int(
+            if (api_prop_collection_lookup_int(
                     ptr_src, prop_src, opop->subitem_local_index + 1, &item_ptr_src) &&
-                RNA_property_collection_lookup_int(
+                api_prop_collection_lookup_int(
                     ptr_dst, prop_dst, opop->subitem_local_index, &item_ptr_ref)) {
               item_index_dst = opop->subitem_local_index + 1;
               is_valid = true;
@@ -2590,7 +2590,7 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
           }
           if (!is_valid) {
             /* Assume it is inserted in first position. */
-            if (RNA_property_collection_lookup_int(ptr_src, prop_src, 0, &item_ptr_src)) {
+            if (api_prop_collection_lookup_int(ptr_src, prop_src, 0, &item_ptr_src)) {
               item_index_dst = 0;
               is_valid = true;
             }
@@ -2599,9 +2599,9 @@ bool rna_property_override_apply_default(Main *UNUSED(bmain),
             return false;
           }
 
-          RNA_property_collection_add(ptr_dst, prop_dst, &item_ptr_dst);
+          api_prop_collection_add(ptr_dst, prop_dst, &item_ptr_dst);
           const int item_index_added = RNA_property_collection_length(ptr_dst, prop_dst) - 1;
-          BLI_assert(item_index_added >= 0);
+          lib_assert(item_index_added >= 0);
 
           /* This is the section of code that makes it specific to IDProperties (the rest could be
            * used with some regular RNA/DNA data too, if `RNA_property_collection_add` where
