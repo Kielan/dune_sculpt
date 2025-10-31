@@ -54,7 +54,7 @@ static void set_handle_type(bke::CurvesGeometry &curves,
                             const HandleType new_handle_type,
                             const Field<bool> &selection_field)
 {
-  const bke::CurvesFieldContext field_context{curves, AttrDomain::Point};
+  const dune::CurvesFieldContext field_cx{curves, AttrDomain::Point};
   fn::FieldEvaluator evaluator{field_context, curves.points_num()};
   evaluator.set_selection(selection_field);
   evaluator.evaluate();
@@ -93,7 +93,7 @@ static void node_geo_exec(GeoNodeExecParams params)
 
   geometry_set.modify_geometry_sets([&](GeometrySet &geometry_set) {
     if (Curves *curves_id = geometry_set.get_curves_for_write()) {
-      bke::CurvesGeometry &curves = curves_id->geometry.wrap();
+      dune::CurvesGeometry &curves = curves_id->geometry.wrap();
       has_curves = true;
       const AttributeAccessor attributes = curves.attributes();
       if (!attributes.contains("handle_type_left") || !attributes.contains("handle_type_right")) {
@@ -119,7 +119,7 @@ static void node_register()
       &ntype, GEO_NODE_CURVE_SET_HANDLE_TYPE, "Set Handle Type", NODE_CLASS_GEOMETRY);
   ntype.declare = node_declare;
   ntype.geometry_node_execute = node_geo_exec;
-  ntype.initfunc = node_init;
+  ntype.initfn = node_init;
   node_type_storage(&ntype,
                     "NodeGeometryCurveSetHandles",
                     node_free_standard_storage,
@@ -130,4 +130,4 @@ static void node_register()
 }
 NOD_REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_curve_set_handle_type_cc
+}  // namespace dune::nodes::node_geo_curve_set_handle_type_cc
