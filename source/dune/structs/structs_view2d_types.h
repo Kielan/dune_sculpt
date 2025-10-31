@@ -1,51 +1,49 @@
 #pragma once
 
-#include "DNA_vec_types.h"
+#include "s_vec_types.h"
 
-/* ---------------------------------- */
-
-/** View 2D data - stored per region. */
+/* View 2D data - stored per rgn. */
 typedef struct View2D {
-  /** Tot - area that data can be drawn in; cur - region of tot that is visible in viewport. */
+  /* Tot - area that data can be drawn in; cur - rgn of tot that is visible in viewport. */
   rctf tot, cur;
-  /** Vert - vertical scrollbar region; hor - horizontal scrollbar region. */
+  /* Vert - vert scrollbar rgn; hor - horizontal scrollbar rgn. */
   rcti vert, hor;
-  /** Mask - region (in screenspace) within which 'cur' can be viewed. */
+  /* Mask - rgn (in screenspace) within which 'cur' can be viewed. */
   rcti mask;
 
-  /** Min/max sizes of 'cur' rect (only when keepzoom not set). */
+  /* Min/max sizes of 'cur' rect (only when keepzoom not set). */
   float min[2], max[2];
-  /** Allowable zoom factor range (only when (keepzoom & V2D_LIMITZOOM)) is set. */
+  /* Allowable zoom factor range (only when (keepzoom & V2D_LIMITZOOM)) is set. */
   float minzoom, maxzoom;
 
-  /** Scroll - scrollbars to display (bitflag). */
+  /* Scroll - scrollbars to display (bitflag). */
   short scroll;
-  /** Scroll_ui - temp settings used for UI drawing of scrollers. */
+  /* Scroll_ui - temp settings used for UI drawing of scrollers. */
   short scroll_ui;
 
-  /** Keeptot - 'cur' rect cannot move outside the 'tot' rect? */
+  /* Keeptot - 'cur' rect cannot move outside the 'tot' rect? */
   short keeptot;
-  /** Keepzoom - axes that zooming cannot occur on, and also clamp within zoom-limits. */
+  /* Keepzoom - axes that zooming cannot occur on, and also clamp within zoom-limits. */
   short keepzoom;
-  /** Keepofs - axes that translation is not allowed to occur on. */
+  /* Keepofs - axes that translation is not allowed to occur on. */
   short keepofs;
 
-  /** Settings. */
+  /* Settings. */
   short flag;
-  /** Alignment of content in totrect. */
+  /* Alignment of content in totrect. */
   short align;
 
-  /** Storage of current winx/winy values, set in UI_view2d_size_update. */
+  /* Storage of current winx/winy values, set in UI_view2d_size_update. */
   short winx, winy;
-  /** Storage of previous winx/winy values encountered by UI_view2d_curRect_validate(),
+  /* Storage of previous winx/winy values encountered by UI_view2d_curRect_validate(),
    * for keepaspect. */
   short oldwinx, oldwiny;
 
-  /** Pivot point for transforms (rotate and scale). */
+  /* Pivot point for transforms (rotate and scale). */
   short around;
 
   /* Usually set externally (as in, not in view2d files). */
-  /** Alpha of vertical and horizontal scrollbars (range is [0, 255]). */
+  /* Alpha of vertical and horizontal scrollbars (range is [0, 255]). */
   char alpha_vert, alpha_hor;
   char _pad[6];
 
@@ -54,9 +52,7 @@ typedef struct View2D {
   struct wmTimer *smooth_timer;
 } View2D;
 
-/* ---------------------------------- */
-
-/** View zooming restrictions, per axis (#View2D.keepzoom) */
+/* View zooming restrictions, per axis (#View2D.keepzoom) */
 enum {
   /* zoom is clamped to lie within limits set by minzoom and maxzoom */
   V2D_LIMITZOOM = (1 << 0),
@@ -70,7 +66,7 @@ enum {
   V2D_LOCKZOOM_Y = (1 << 9),
 };
 
-/** View panning restrictions, per axis (#View2D.keepofs). */
+/* View panning restrictions, per axis (#View2D.keepofs). */
 enum {
   /* panning on x-axis is not allowed */
   V2D_LOCKOFS_X = (1 << 1),
@@ -82,18 +78,18 @@ enum {
   V2D_KEEPOFS_Y = (1 << 4),
 };
 
-/** View extent restrictions (#View2D.keeptot). */
+/* View extent restrictions (#View2D.keeptot). */
 enum {
-  /** 'cur' view can be out of extents of 'tot' */
+  /* 'cur' view can be out of extents of 'tot' */
   V2D_KEEPTOT_FREE = 0,
-  /** 'cur' rect is adjusted so that it satisfies the extents of 'tot', with some compromises */
+  /* 'cur' rect is adjusted so that it satisfies the extents of 'tot', with some compromises */
   V2D_KEEPTOT_BOUNDS = 1,
-  /** 'cur' rect is moved so that the 'minimum' bounds of the 'tot' rect are always respected
+  /* 'cur' rect is moved so that the 'minimum' bounds of the 'tot' rect are always respected
    * (particularly in x-axis) */
   V2D_KEEPTOT_STRICT = 2,
 };
 
-/** General refresh settings (#View2D.flag). */
+/* General refresh settings (#View2D.flag). */
 enum {
   /* global view2d horizontal locking (for showing same time interval) */
   /* TODO: this flag may be set in old files but is not accessible currently,
@@ -111,46 +107,44 @@ enum {
   V2D_IS_INIT = (1 << 10),
 };
 
-/** Scroller flags for View2D (#View2D.scroll). */
+/* Scroller flags for View2D (#View2D.scroll). */
 enum {
   /* left scrollbar */
   V2D_SCROLL_LEFT = (1 << 0),
   V2D_SCROLL_RIGHT = (1 << 1),
-  V2D_SCROLL_VERTICAL = (V2D_SCROLL_LEFT | V2D_SCROLL_RIGHT),
+  V2D_SCROLL_VERT = (V2D_SCROLL_LEFT | V2D_SCROLL_RIGHT),
   /* horizontal scrollbar */
   V2D_SCROLL_TOP = (1 << 2),
   V2D_SCROLL_BOTTOM = (1 << 3),
   /* UNUSED                    = (1 << 4), */
-  V2D_SCROLL_HORIZONTAL = (V2D_SCROLL_TOP | V2D_SCROLL_BOTTOM),
+  V2D_SCROLL_HOR = (V2D_SCROLL_TOP | V2D_SCROLL_BOTTOM),
   /* display vertical scale handles */
-  V2D_SCROLL_VERTICAL_HANDLES = (1 << 5),
+  V2D_SCROLL_VERT_HANDLES = (1 << 5),
   /* display horizontal scale handles */
-  V2D_SCROLL_HORIZONTAL_HANDLES = (1 << 6),
-  /* induce hiding of scrollbars - set by region drawing in response to size of region */
-  V2D_SCROLL_VERTICAL_HIDE = (1 << 7),
-  V2D_SCROLL_HORIZONTAL_HIDE = (1 << 8),
+  V2D_SCROLL_HOR_HANDLES = (1 << 6),
+  /* induce hiding of scrollbars - set by rgn drawing in response to size of rgn */
+  V2D_SCROLL_VERT_HIDE = (1 << 7),
+  V2D_SCROLL_HOR_HIDE = (1 << 8),
   /* scrollbar extends beyond its available window -
    * set when calculating scrollbars for drawing */
-  V2D_SCROLL_VERTICAL_FULLR = (1 << 9),
-  V2D_SCROLL_HORIZONTAL_FULLR = (1 << 10),
+  V2D_SCROLL_VERT_FULLR = (1 << 9),
+  V2D_SCROLL_HOR_FULLR = (1 << 10),
 };
 
-/** scroll_ui, activate flag for drawing. */
+/* scroll_ui, activate flag for drawing. */
 enum {
   V2D_SCROLL_H_ACTIVE = (1 << 0),
   V2D_SCROLL_V_ACTIVE = (1 << 1),
 };
 
-/**
- * Alignment flags for `totrect`, flags use 'shading-out' convention (#View2D.align).
- */
+/* Alignment flags for `totrect`, flags use 'shading-out' convention (#View2D.align). */
 enum {
   /* all quadrants free */
   V2D_ALIGN_FREE = 0,
-  /* horizontal restrictions */
+  /* hor restrictions */
   V2D_ALIGN_NO_POS_X = (1 << 0),
   V2D_ALIGN_NO_NEG_X = (1 << 1),
-  /* vertical restrictions */
+  /* vert restrictions */
   V2D_ALIGN_NO_POS_Y = (1 << 2),
   V2D_ALIGN_NO_NEG_Y = (1 << 3),
 };
