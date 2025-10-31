@@ -21,13 +21,13 @@ struct GPUViewport;
 struct Id;
 struct Main;
 struct Ob;
-struct Render;
-struct RenderEngine;
-struct RenderEngineType;
+struct Rndr;
+struct RndrEngine;
+struct RndrEngineType;
 struct Scene;
 struct View3D;
 struct ViewLayer;
-struct Cxt;
+struct Cx;
 struct rcti;
 
 void drw_engines_register(void);
@@ -46,7 +46,7 @@ typedef struct DrwUpdateCxt {
   struct View3D *v3d;
   struct RenderEngineType *engine_type;
 } DrwUpdateCxt;
-void drw_notify_view_update(const DrwUpdateCxt *update_cxt);
+void drw_notify_view_update(const DrwUpdateCx *update_cx);
 
 typedef enum eDrwSelStage {
   DRW_SEL_PASS_PRE = 1,
@@ -65,7 +65,7 @@ void drw_rgn_engine_info(int xoffset, int *yoffset, int line_height);
 /* Used for both regular and off-screen drwing.
  * Need to reset DST before calling this fn */
 void drw_render_loop_ex(struct Graph *graph,
-                         struct RenderEngineType *engine_type,
+                         struct RndrEngineType *engine_type,
                          struct ARgn *rgn,
                          struct View3D *v3d,
                          struct GPUViewport *viewport,
@@ -76,7 +76,7 @@ void drw_render_loop(struct Graph *graph,
                       struct GPUViewport *viewport);
 /* param viewport: can be NULL, in this case we create one. **/
 void drw_render_loop_offscreen(struct Graph *graph,
-                                struct RenderEngineType *engine_type,
+                                struct RndrEngineType *engine_type,
                                 struct ARgn *rgn,
                                 struct View3D *v3d,
                                 bool is_img_render,
@@ -125,26 +125,26 @@ void drw_sel_id(struct Graph *graph,
 
 /* pen render. */
 /* Helper to check if exit ob type to render. **/
-bool drw_render_check_pen(struct Graph *graph);
-void drw_render_dpen(struct RenderEngine *engine, struct Graph *graph);
+bool drw_rndr_check_pen(struct Graph *graph);
+void drw_rndr_dpen(struct RndrEngine *engine, struct Graph *graph);
 
 /* This is here bc GPUViewport needs it. */
 struct DrwInstanceDataList *drw_instance_data_list_create(void);
 void drw_instance_data_list_free(struct DrwInstanceDataList *idatalist);
 void drw_uniform_attrs_pool_free(struct GHash *table);
 
-void drw_render_cxt_enable(struct Render *render);
-void drw_render_cxt_disable(struct Render *render);
+void drw_render_cx_enable(struct Render *rndr);
+void drw_render_cx_disable(struct Render *rndr);
 
-void drw_opengl_cxt_create(void);
-void drw_opengl_cxt_destroy(void);
-void drw_opengl_cxt_enable(void);
-void drw_opengl_cxt_disable(void);
+void drw_opengl_cx_create(void);
+void drw_opengl_cx_destroy(void);
+void drw_opengl_cx_enable(void);
+void drw_opengl_cx_disable(void);
 
 #ifdef WITH_XR_OPENXR
-/* see comment on drw_xr_opengl_cxt_get() */
-void *drw_xr_opengl_cxt_get(void);
-void *drw_xr_gpu_cxt_get(void);
+/* see comment on drw_xr_opengl_cx_get() */
+void *drw_xr_opengl_cx_get(void);
+void *drw_xr_gpu_cx_get(void);
 void drw_xr_drwing_begin(void);
 void drw_xr_drwing_end(void);
 #endif
@@ -157,15 +157,15 @@ void drw_cache_free_old_subdiv(void);
 void drw_subdiv_free(void);
 
 /* Never use this. Only for closing dune. */
-void drw_opengl_cxt_enable_ex(bool restore);
-void drw_opengl_cxt_disable_ex(bool restore);
+void drw_opengl_cx_enable_ex(bool restore);
+void drw_opengl_cx_disable_ex(bool restore);
 
-void drw_opengl_render_cxt_enable(void *re_gl_cxt);
-void drw_opengl_render_cxt_disable(void *re_gl_cxt);
-/* Needs to be called AFTER drw_opengl_render_cxt_enable(). */
-void drw_gpu_render_cxt_enable(void *re_gpu_cxt);
-/* Needs to be called BEFORE draw_opengl_render_ctx_disable(). */
-void drw_gpu_render_cxt_disable(void *re_gpu_cxt);
+void drw_opengl_render_cx_enable(void *re_gl_cx);
+void drw_opengl_render_cx_disable(void *re_gl_cx);
+/* Needs to be called AFTER drw_opengl_render_cx_enable(). */
+void drw_gpu_render_cx_enable(void *re_gpu_cx);
+/* Needs to be called BEFORE draw_opengl_render_cx_disable(). */
+void drw_gpu_render_cx_disable(void *re_gpu_cx);
 
 void drw_deferred_shader_remove(struct GPUMaterial *mat);
 
