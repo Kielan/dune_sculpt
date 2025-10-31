@@ -53,7 +53,7 @@ typedef enum PropType {
   PROP_COLLECTION = 6,
 } PropType;
 
-/* also update rna_property_subtype_unit when you change this */
+/* also update api_prop_subtype_unit when you change this */
 typedef enum PropUnit {
   PROP_UNIT_NONE = (0 << 16),
   PROP_UNIT_LENGTH = (1 << 16),        /* m */
@@ -70,28 +70,28 @@ typedef enum PropUnit {
   PROP_UNIT_TEMPERATURE = (12 << 16),  /* C */
 } PropUnit;
 
-/* Use values besides PROP_SCALE_LINEAR
- * so the movement of the mouse doesn't map linearly to the value of the slider.
+/* Use vals besides PROP_SCALE_LINEAR
+ * so the movement of the mouse doesn't map linearly to the val of the slider.
  *
  * For some settings it's useful to space motion in a non-linear way, see T77868.
  *
- * NOTE: The scale types are available for all float sliders.
- * For integer sliders they are only available if they use the visible value bar.
- * Sliders with logarithmic scale and value bar must have a range > 0
- * while logarithmic sliders without the value bar can have a range of >= 0. */
+ * The scale types are available for all float sliders.
+ * For int sliders they are only available if they use the visible value bar.
+ * Sliders with logarithmic scale and val bar must have a range > 0
+ * while logarithmic sliders without the val bar can have a range of >= 0. */
 typedef enum PropScaleType {
   /* Linear scale (default). */
   PROP_SCALE_LINEAR = 0,
   /* Logarithmic scale
-   * - Maximum range: `0 <= x < inf */
+   * - Max range: `0 <= x < inf */
   PROP_SCALE_LOG = 1,
   /* Cubic scale.
-   * - Maximum range: `-inf < x < inf` */
+   * - Max range: `-inf < x < inf` */
   PROP_SCALE_CUBIC = 2,
 } PropScaleType;
 
 #define API_SUBTYPE_UNIT(subtype) ((subtype)&0x00FF0000)
-#define API_SUBTYPE_VALUE(subtype) ((subtype) & ~0x00FF0000)
+#define API_SUBTYPE_VAL(subtype) ((subtype) & ~0x00FF0000)
 #define API_SUBTYPE_UNIT_VALUE(subtype) ((subtype) >> 16)
 
 #define API_ENUM_BITFLAG_SIZE 32
@@ -100,8 +100,8 @@ typedef enum PropScaleType {
 
 #define API_STACK_ARRAY 32
 
-/* note Also update enums in bpy_props.c and rna_rna.c when adding items here.
- * Watch it: these values are written to files as part of node socket button subtypes! */
+/* note Also update enums in bpy_props.c and api.c when adding items here.
+ * Watch it: these vals are written to files as part of node socket btn subtypes! */
 typedef enum PropSubType {
   PROP_NONE = 0,
 
@@ -117,7 +117,7 @@ typedef enum PropSubType {
 
   /* numbers */
   /* A dimension in pixel units, possibly before DPI scaling (so value may not be the final pixel
-   * value but the one to apply DPI scale to). */
+   * val but the one to apply DPI scale to). */
   PROP_PIXEL = 12,
   PROP_UNSIGNED = 13,
   PROP_PERCENTAGE = 14,
@@ -146,7 +146,7 @@ typedef enum PropSubType {
   /* Generic array, no units applied, only that x/y/z/w are used (Python vector). */
   PROP_COORDS = 31,
 
-  /* booleans */
+  /* bools */
   PROP_LAYER = 40,
   PROP_LAYER_MEMBER = 41,
 
@@ -157,7 +157,7 @@ typedef enum PropSubType {
   PROP_TEMPERATURE = 43 | PROP_UNIT_TEMPERATURE,
 } PropSubType;
 
-/* Make sure enums are updated with these */
+/* Make sure enums are updated w these */
 /* HIGHEST FLAG IN USE: 1 << 31
  * FREE FLAGS: 2, 9, 11, 13, 14, 15, 30 */
 typedef enum PropFlag {
@@ -176,7 +176,7 @@ typedef enum PropFlag {
   PROP_ANIMATABLE = (1 << 1),
   /* This flag means when the prop's widget is in 'text-edit' mode, it will be updated
    * after every typed char, instead of waiting final validation. Used e.g. for text search-box.
-   * It will also cause UI_BUT_VALUE_CLEAR to be set for text btns. We could add an own flag
+   * It will also cause UI_BUT_VAL_CLEAR to be set for text btns. We could add an own flag
    * for search/filter props, but this works just fine for now. */
   PROP_TEXTEDIT_UPDATE = (1u << 31),
 
@@ -227,34 +227,34 @@ typedef enum PropFlag {
   PROP_ENUM_FLAG = (1 << 21),
 
   /* need cxt for update function */
-  PROP_CXT_UPDATE = (1 << 22),
-  PROP_CXT_PROP_UPDATE = PROP_CXT_UPDATE | (1 << 27),
+  PROP_CX_UPDATE = (1 << 22),
+  PROP_CX_PROP_UPDATE = PROP_CX_UPDATE | (1 << 27),
 
   /* registering */
   PROP_REGISTER = (1 << 4),
   PROP_REGISTER_OPTIONAL = PROP_REGISTER | (1 << 5),
 
-  /* Use for allocated function return values of arrays or strings
-   * for any data that should not have a reference kept.
+  /* Use for allocated fn return vals of arrays or strings
+   * for any data that should not have a ref kept.
    *
-   * It can be used for properties which are dynamically allocated too.
+   * It can be used for props which are dynamically allocated too.
    *
-   * note Currently dynamic sized thick wrapped data isn't supported.
-   * This would be a useful addition and avoid a fixed maximum sized as in done at the moment */
+   * Currently dynamic sized thick wrapped data isn't supported.
+   * This would be a useful addition and avoid a fixed max sized as in done at the moment */
   PROP_THICK_WRAP = (1 << 23),
 
-  /* This is an IdProp, not a DNA one. */
+  /* This is an IdProp, not a STypes one. */
   PROP_IDPROP = (1 << 10),
   /* For dynamic arrays, and retvals of type string. */
   PROP_DYNAMIC = (1 << 17),
   /* For enum that shouldn't be contextual */
-  PROP_ENUM_NO_CXT = (1 << 24),
+  PROP_ENUM_NO_CX = (1 << 24),
   /* For enums not to be translated (e.g. viewlayers' names in nodes). */
   PROP_ENUM_NO_TRANSLATE = (1 << 29),
 
-  /* Don't do dependency graph tag from a property update callback.
-   * Use this for properties which defines interface state, for example,
-   * properties which denotes whether modifier panel is collapsed or not. */
+  /* Don't do dependency graph tag from a prop update cb.
+   * Use this for props which defines interface state, for example,
+   * props which denotes whether modifier pnl is collapsed or not. */
   PROP_NO_GRAPH_UPDATE = (1 << 30),
 } PropFlag;
 
@@ -265,28 +265,28 @@ typedef enum PropOverrideFlag {
   /* Means that the property can be overridden by a local override of some linked datablock. */
   PROPOVERRIDE_OVERRIDABLE_LIB = (1 << 0),
 
-  /* Forbid usage of this property in comparison (& hence override) code.
+  /* Forbid usage of this prop in comparison (& hence override) code.
    * Useful e.g. for collections of data like mesh's geometry, particles, etc.
    * Also for runtime data that should never be considered as part of actual Dune data (e.g.
    * depsgraph from ViewLayers...). */
   PROPOVERRIDE_NO_COMPARISON = (1 << 1),
 
   /* Means the prop can be fully ignored by override process.
-   * Unlike NO_COMPARISON, it can still be used by diffing code, but no override operation will be
+   * Unlike NO_COMPARISON, it can still be used by diffing code, but no override op will be
    * created for it, and no attempt to restore the data from linked reference either.
    *
    * WARNING: This flag should be used with a lot of caution, as it completely by-passes override
    * system. It is currently only used for ID's names, since we cannot prevent local override to
-   * get a different name from the linked ref, and ID names are 'rna name property' (i.e. are
+   * get a different name from the linked ref, and ID names are 'api name prop' (i.e. are
    * used in overrides of collections of IDs). See also `dune_lib_override_lib_update()` where
-   * we deal manually with the value of that property at DNA level. */
+   * we deal manually with the val of that prop at Types level. */
   PROPOVERRIDE_IGNORE = (1 << 2),
 
   /* Collections-related */
   /* The prop supports insertion (collections only). */
   PROPOVERRIDE_LIB_INSERTION = (1 << 10),
 
-  /* Only use indices to compare items in the property, never names (collections only).
+  /* Only use indices to compare items in the prop, never names (collections only).
    * Useful when nameprop of the items is generated from other data
    * (e.g. name of material slots is actually name of assigned material). */
   PROPOVERRIDE_NO_PROP_NAME = (1 << 11),
@@ -299,11 +299,11 @@ typedef enum ParamFlag {
   PARM_OUTPUT = (1 << 1),
   PARM_APIPTR = (1 << 2),
   /* This allows for non-breaking API updates,
-   * when adding non-critical new parameter to a callback function.
-   * This way, old py code defining funcs without that parameter would still work.
-   * WARNING: any parameter after the first PYFUNC_OPTIONAL one will be considered as optional!
+   * when adding non-critical new param to a cb fn.
+   * This way, old py code defining fns wout that param would still work.
+   * WARNING: any param after the first PYFUNC_OPTIONAL one will be considered as optional!
    * note only for input params!  */
-  PARM_PYFUNC_OPTIONAL = (1 << 3),
+  PARM_PYFN_OPTIONAL = (1 << 3),
 } ParamFlag;
 
 struct CollectionPropIter;
@@ -318,19 +318,19 @@ typedef struct ListIter {
 
 typedef struct ArrayIter {
   char *ptr;
-  /* Past the last valid pointer, only for comparisons, ignores skipped values. */
+  /* Past the last valid ptr, only for comparisons, ignores skipped vals. */
   char *endptr;
   /* Will be freed if set. */
   void *free_ptr;
   int itemsize;
 
-  /* Array length with no skip functions applied,
+  /* Array length w no skip fns applied,
    * take care not to compare against index from animsys or Python indice  */
   int length;
 
-  /* Optional skip function,
+  /* Optional skip fn,
    * when set the array as viewed by rna can contain only a subset of the members.
-   * this changes indices so quick array index lookups are not possible when skip function is used.  */
+   * this changes indices so quick array index lookups are not possible when skip fn is used.  */
   IterSkipFn skip;
 } ArrayIter;
 
@@ -385,12 +385,12 @@ typedef struct RawArray {
   int stride;
 } RawArray;
 
-/* This struct is are typically defined in arrays which define an *enum* for RNA,
+/* This struct is are typically defined in arrays which define an *enum* for Api,
  * which is used by the api api both for user-interface and the Python AP */
 typedef struct EnumPropItem {
   /* The internal value of the enum, not exposed to users. */
   int value;
-  /* Note that identifiers must be unique within the array,
+  /* Identifiers must be unique w/in the array,
    * by convention they're upper case with underscores for separators.
    * - An empty string is used to define menu separators.
    * - NULL denotes the end of the array of items. */
@@ -403,7 +403,7 @@ typedef struct EnumPropItem {
   const char *description;
 } EnumPropItem;
 
-/* extended versions with ApiProp argument */
+/* extended versions w ApiProp arg */
 typedef bool (*BoolPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*BoolPropSetFn)(struct ApiPtr *ptr,
                               struct ApiProp *prop,
@@ -437,7 +437,7 @@ typedef void (*FloatArrayPropGetFn)(struct ApiPtr *ptr,
                                     float *values);
 typedef void (*FloatArrayPropSetFn)(struct ApiPtr *ptr,
                                     struct ApiProp *prop,
-                                    const float *values);
+                                    const float *vals);
 typedef void (*FloatPropRangeFn)(struct ApiPtr *ptr,
                                  struct ApiProp *prop,
                                  float *min,
@@ -446,13 +446,13 @@ typedef void (*FloatPropRangeFn)(struct ApiPtr *ptr,
                                  float *softmax);
 typedef void (*StringPropGetFn)(struct ApiPtr *ptr,
                                 struct ApiProp *prop,
-                                char *value);
+                                char *val);
 typedef int (*StringPropLengthFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*StringPropSetFn)(struct ApiPtr *ptr,
                                 struct ApiProp *prop,
-                                const char *value);
-typedef int (*EnumPropGetFn)(struct ApiPtr *ptr, struct ApiPropA *prop);
-typedef void (*EnumPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
+                                const char *val);
+typedef int (*EnumPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*EnumPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int val);
 /* same as PropEnumItemFn */
 typedef const EnumPropItem *(*EnumPropItemFn)(struct Cxt *C,
                                               ApiPtr *ptr,
@@ -515,14 +515,14 @@ typedef enum FnFlag {
 
   /* Pass Main, Cxt and/or ReportList. */
   FN_USE_MAIN = (1 << 2),
-  FN_USE_CXT = (1 << 3),
+  FN_USE_CX = (1 << 3),
   FN_USE_REPORTS = (1 << 4),
 
-  /* Registering of Python subclasses. *****/
-  /* This function is part of the registerable class' interface,
+  /* Registering of Python subclasses. */
+  /* This fn is part of the registerable class' interface,
    * and can be implemented/redefined in Python. */
   FN_REGISTER = (1 << 5),
-  /** Subclasses can choose not to implement this function. */
+  /* Subclasses can choose not to implement this fn. */
   FN_REGISTER_OPTIONAL = FN_REGISTER | (1 << 6),
   /* If not set, the Python function implementing this call
    * is not allowed to write into data-blocks.
@@ -541,7 +541,7 @@ typedef enum FnFlag {
   FN_FREE_PTRS = (1 << 10),
 } FnFlag;
 
-typedef void (*CallFn)(struct Cxt *C,
+typedef void (*CallFn)(struct Cx *C,
                          struct ReportList *reports,
                          ApiPtr *ptr,
                          ParamList *parms);
@@ -577,7 +577,7 @@ typedef enum StructFlag {
 } StructFlag;
 
 typedef int (*StructValidateFn)(struct ApiPtr *ptr, void *data, int *have_fn);
-typedef int (*StructCbFn)(struct Cxt *C,
+typedef int (*StructCbFn)(struct Cx *C,
                           struct ApiPtr *ptr,
                           struct ApiFn *fn,
                           ParamList *list);
