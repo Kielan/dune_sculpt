@@ -1,49 +1,47 @@
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_report.h"
+#include "dune_cx.h"
+#include "dune_editmesh.h"
+#include "dune_global.h"
+#include "dune_layer.h"
+#include "dune_report.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_gizmo_utils.h"
-#include "ED_mesh.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_gizmo_utils.h"
+#include "ed_mesh.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "mesh_intern.h" /* own include */
 
 #define USE_GIZMO
 
 #ifdef USE_GIZMO
-#  include "ED_gizmo_library.h"
-#  include "ED_undo.h"
+#  include "ed_gizmo_lib.h"
+#  include "ed_undo.h"
 #endif
 
-static int mesh_bisect_exec(bContext *C, wmOperator *op);
+static int mesh_bisect_exec(Cx *C, wmOp *op);
 
-/* -------------------------------------------------------------------- */
 /* Model Helpers */
-
 typedef struct {
   /* modal only */
 
-  /* Aligned with objects array. */
+  /* Aligned with objects arr. */
   struct {
     BMBackup mesh_backup;
     bool is_valid;
@@ -52,33 +50,33 @@ typedef struct {
   int backup_len;
 } BisectData;
 
-static void mesh_bisect_interactive_calc(bContext *C,
-                                         wmOperator *op,
+static void mesh_bisect_interactive_calc(Cx *C,
+                                         wmO *op,
                                          float plane_co[3],
                                          float plane_no[3])
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  ARegion *region = CTX_wm_region(C);
-  RegionView3D *rv3d = region->regiondata;
+  View3D *v3d = cx_wm_view3d(C);
+  ARgn *rgn = cx_wm_rgn(C);
+  RgnView3D *rv3d = rgn->rgndata;
 
-  int x_start = RNA_int_get(op->ptr, "xstart");
-  int y_start = RNA_int_get(op->ptr, "ystart");
-  int x_end = RNA_int_get(op->ptr, "xend");
-  int y_end = RNA_int_get(op->ptr, "yend");
-  const bool use_flip = RNA_boolean_get(op->ptr, "flip");
+  int x_start = api_int_get(op->ptr, "xstart");
+  int y_start = api_int_get(op->ptr, "ystart");
+  int x_end = api_int_get(op->ptr, "xend");
+  int y_end = api_int_get(op->ptr, "yend");
+  const bool use_flip = api_bool_get(op->ptr, "flip");
 
   /* reference location (some point in front of the view) for finding a point on a plane */
   const float *co_ref = rv3d->ofs;
   float co_a_ss[2] = {x_start, y_start}, co_b_ss[2] = {x_end, y_end}, co_delta_ss[2];
   float co_a[3], co_b[3];
-  const float zfac = ED_view3d_calc_zfac(rv3d, co_ref);
+  const float zfac = ed_view3d_calc_zfac(rv3d, co_ref);
 
   /* view vector */
-  ED_view3d_win_to_vector(region, co_a_ss, co_a);
+  ed_view3d_win_to_vector(rgn, co_a_ss, co_a);
 
   /* view delta */
   sub_v2_v2v2(co_delta_ss, co_a_ss, co_b_ss);
-  ED_view3d_win_to_delta(region, co_delta_ss, zfac, co_b);
+  ed_view3d_win_to_delta(rgn, co_delta_ss, zfac, co_b);
 
   /* cross both to get a normal */
   cross_v3_v3v3(plane_no, co_a, co_b);
@@ -88,18 +86,18 @@ static void mesh_bisect_interactive_calc(bContext *C,
   }
 
   /* point on plane, can use either start or endpoint */
-  ED_view3d_win_to_3d(v3d, region, co_ref, co_a_ss, plane_co);
+  ed_view3d_win_to_3d(v3d, rgn, co_ref, co_a_ss, plane_co);
 }
 
-static int mesh_bisect_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int mesh_bisect_invoke(Cx *C, wmOp *op, const wmEvent *event)
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  int valid_objects = 0;
+  ViewLayer *view_layer = cx_data_view_layer(C);
+  int valid_objs = 0;
 
   /* If the properties are set or there is no rv3d,
    * skip modal and exec immediately. */
-  if ((CTX_wm_region_view3d(C) == NULL) || (RNA_struct_property_is_set(op->ptr, "plane_co") &&
-                                            RNA_struct_property_is_set(op->ptr, "plane_no"))) {
+  if ((cx_wm_rgn_view3d(C) == NULL) || (api_struct_prop_is_set(op->ptr, "plane_co") &&
+                                            api_struct_prop_is_set(op->ptr, "plane_no"))) {
     return mesh_bisect_exec(C, op);
   }
 
