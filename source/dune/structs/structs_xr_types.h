@@ -1,8 +1,6 @@
 #pragma once
 
-#include "structs_view3d_types.h"
-
-/* -------------------------------------------------------------------- */
+#include "s_view3d_types.h"
 
 typedef struct XrSessionSettings {
   /** Shading settings, struct shared with 3D-View so settings are the same. */
@@ -11,18 +9,18 @@ typedef struct XrSessionSettings {
   float base_scale;
   char _pad[3];
   char base_pose_type; /* #eXRSessionBasePoseType */
-  /** Object to take the location and rotation as base position from. */
+  /* Object to take the location and rotation as base position from. */
   Object *base_pose_object;
   float base_pose_location[3];
   float base_pose_angle;
 
-  /** View3D draw flags (V3D_OFSDRAW_NONE, V3D_OFSDRAW_SHOW_ANNOTATION, ...). */
+  /* View3D draw flags (V3D_OFSDRAW_NONE, V3D_OFSDRAW_SHOW_ANNOTATION, ...). */
   char draw_flags;
-  /** Draw style for controller visualization. */
+  /* Draw style for ctrlr visualization. */
   char controller_draw_style;
   char _pad2[2];
 
-  /** Clipping distance. */
+  /* Clipping distance. */
   float clip_start, clip_end;
 
   int flag;
@@ -46,16 +44,16 @@ typedef enum eXrSessionControllerDrawStyle {
   XR_CONTROLLER_DRAW_LIGHT_RAY = 3,
 } eXrSessionControllerDrawStyle;
 
-/** XR action type. Enum values match those in GHOST_XrActionType enum for consistency. */
+/* XR action type. Enum vals match those in GHOST_XrActionType enum for consistency. */
 typedef enum eXrActionType {
-  XR_BOOLEAN_INPUT = 1,
+  XR_BOOL_INPUT = 1,
   XR_FLOAT_INPUT = 2,
   XR_VECTOR2F_INPUT = 3,
   XR_POSE_INPUT = 4,
   XR_VIBRATION_OUTPUT = 100,
 } eXrActionType;
 
-/** Determines how XR action operators are executed. */
+/* Determines how XR action ops are executed. */
 typedef enum eXrOpFlag {
   XR_OP_PRESS = 0,
   XR_OP_RELEASE = 1,
@@ -63,26 +61,22 @@ typedef enum eXrOpFlag {
 } eXrOpFlag;
 
 typedef enum eXrActionFlag {
-  /** Action depends on two sub-action paths (i.e. two-handed/bi-manual action). */
+  /* Action depends on two sub-action paths (i.e. two-handed/bi-manual action). */
   XR_ACTION_BIMANUAL = (1 << 0),
 } eXrActionFlag;
 
 typedef enum eXrHapticFlag {
-  /** Whether to apply haptics to corresponding user paths for an action and its haptic action. */
+  /* Whether to apply haptics to corresponding user paths for an action and its haptic action. */
   XR_HAPTIC_MATCHUSERPATHS = (1 << 0),
-  /**
-   * Determines how haptics will be applied
-   * ("repeat" is mutually exclusive with "press"/"release").
-   */
+  /* Determines how haptics will be applied
+   * ("repeat" is mutually exclusive with "press"/"release"). */
   XR_HAPTIC_PRESS = (1 << 1),
   XR_HAPTIC_RELEASE = (1 << 2),
   XR_HAPTIC_REPEAT = (1 << 3),
 } eXrHapticFlag;
 
-/**
- * For axis-based inputs (thumb-stick/track-pad/etc).
- * Determines the region for action execution (mutually exclusive per axis).
- */
+/* For axis-based inputs (thumb-stick/track-pad/etc).
+ * Determines the region for action execution (mutually exclusive per axis). */
 typedef enum eXrAxisFlag {
   XR_AXIS0_POS = (1 << 0),
   XR_AXIS0_NEG = (1 << 1),
@@ -96,17 +90,13 @@ typedef enum eXrPoseFlag {
   XR_POSE_AIM = (1 << 1),
 } eXrPoseFlag;
 
-/**
- * The following user and component path lengths are dependent on OpenXR's XR_MAX_PATH_LENGTH
+/* The following user and component path lengths are dependent on OpenXR's XR_MAX_PATH_LENGTH
  * (256). A user path will be combined with a component path to identify an action binding, and
  * that combined path should also have a max of XR_MAX_PATH_LENGTH (e.g. user_path =
  * /user/hand/left, component_path = /input/trigger/value, full_path =
- * /user/hand/left/input/trigger/value).
- */
+ * /user/hand/left/input/trigger/value). */
 #define XR_MAX_USER_PATH_LENGTH 64
 #define XR_MAX_COMPONENT_PATH_LENGTH 192
-
-/* -------------------------------------------------------------------- */
 
 typedef struct XrComponentPath {
   struct XrComponentPath *next, *prev;
@@ -116,25 +106,23 @@ typedef struct XrComponentPath {
 typedef struct XrActionMapBinding {
   struct XrActionMapBinding *next, *prev;
 
-  /** Unique name. */
+  /* Unique name. */
   char name[64]; /* MAX_NAME */
 
-  /** OpenXR interaction profile path. */
+  /* OpenXR interaction profile path. */
   char profile[256];
-  /** OpenXR component paths. */
+  /* OpenXR component paths. */
   ListBase component_paths; /* XrComponentPath */
 
-  /** Input threshold/region. */
+  /* Input threshold/rgn. */
   float float_threshold;
   short axis_flag; /* eXrAxisFlag */
   char _pad[2];
 
-  /** Pose action properties. */
+  /* Pose action props. */
   float pose_location[3];
   float pose_rotation[3];
 } XrActionMapBinding;
-
-/* -------------------------------------------------------------------- */
 
 typedef struct XrUserPath {
   struct XrUserPath *next, *prev;
@@ -144,30 +132,30 @@ typedef struct XrUserPath {
 typedef struct XrActionMapItem {
   struct XrActionMapItem *next, *prev;
 
-  /** Unique name. */
+  /* Unique name. */
   char name[64]; /* MAX_NAME */
-  /** Type. */
-  char type; /** eXrActionType */
+  /* Type. */
+  char type; /* eXrActionType */
   char _pad[7];
 
-  /** OpenXR user paths. */
-  ListBase user_paths; /* XrUserPath */
+  /* OpenXR user paths. */
+  List user_paths; /* XrUserPath */
 
-  /** Operator to be called on XR events. */
+  /* Op to be called on XR events. */
   char op[64]; /* OP_MAX_TYPENAME */
-  /** Operator properties, assigned to ptr->data and can be written to a file. */
-  IDProperty *op_properties;
-  /** RNA pointer to access properties. */
-  struct PointerRNA *op_properties_ptr;
+  /* Op props, assigned to ptr->data and can be written to a file. */
+  IDProp *op_props;
+  /* Api ptr to access props. */
+  struct PtrApi *op_props_ptr;
 
   short op_flag;     /* eXrOpFlag */
   short action_flag; /* eXrActionFlag */
   short haptic_flag; /* eXrHapticFlag */
 
-  /** Pose action properties. */
+  /* Pose action props. */
   short pose_flag; /* eXrPoseFlag */
 
-  /** Haptic properties. */
+  /* Haptic props. */
   char haptic_name[64]; /* MAX_NAME */
   float haptic_duration;
   float haptic_frequency;
@@ -175,18 +163,16 @@ typedef struct XrActionMapItem {
 
   short selbinding;
   char _pad3[2];
-  ListBase bindings; /* XrActionMapBinding */
+  List bindings; /* XrActionMapBinding */
 } XrActionMapItem;
-
-/* -------------------------------------------------------------------- */
 
 typedef struct XrActionMap {
   struct XrActionMap *next, *prev;
 
-  /** Unique name. */
+  /* Unique name. */
   char name[64]; /* MAX_NAME */
 
-  ListBase items; /* XrActionMapItem */
+  List items; /* XrActionMapItem */
   short selitem;
   char _pad[6];
 } XrActionMap;
