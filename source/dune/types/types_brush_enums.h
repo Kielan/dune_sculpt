@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 /* BrushPenSettings->preset_type.
- * Use a range for each group and not continuous values. */
+ * Use a range for each group and not continuous vals. */
 typedef enum eGPBrushPresets {
   P_BRUSH_PRESET_UNKNOWN = 0,
 
@@ -28,7 +28,7 @@ typedef enum eGPBrushPresets {
   /* Vertex Paint 100-199. */
   P_BRUSH_PRESET_VERT_DRW = 100,
   P_BRUSH_PRESET_VERT_BLUR = 101,
-  P_BRUSH_PRESET_VERT_AVERAGE = 102,
+  P_BRUSH_PRESET_VERT_AVG = 102,
   P_BRUSH_PRESET_VERT_SMEAR = 103,
   P_BRUSH_PRESET_VERT_REPLACE = 104,
 
@@ -48,67 +48,67 @@ typedef enum eGPBrushPresets {
 } ePenBrushPresets;
 
 /* BrushPenSettings->flag */
-typedef enum eGPDbrush_Flag {
+typedef enum ePenBrush_Flag {
   /* brush use pressure */
-  GP_BRUSH_USE_PRESSURE = (1 << 0),
+  P_BRUSH_USE_PRESSURE = (1 << 0),
   /* brush use pressure for alpha factor */
-  GP_BRUSH_USE_STRENGTH_PRESSURE = (1 << 1),
+  P_BRUSH_USE_STRENGTH_PRESSURE = (1 << 1),
   /* brush use pressure for alpha factor */
-  GP_BRUSH_USE_JITTER_PRESSURE = (1 << 2),
+  P_BRUSH_USE_JITTER_PRESSURE = (1 << 2),
   /* Disable automatic zoom for filling. */
-  GP_BRUSH_FILL_FIT_DISABLE = (1 << 3),
+  P_BRUSH_FILL_FIT_DISABLE = (1 << 3),
   /* Show extend fill help lines. */
-  GP_BRUSH_FILL_SHOW_EXTENDLINES = (1 << 4),
+  P_BRUSH_FILL_SHOW_EXTENDLINES = (1 << 4),
   /* fill hide transparent */
-  GP_BRUSH_FILL_HIDE = (1 << 6),
+  P_BRUSH_FILL_HIDE = (1 << 6),
   /* show fill help lines */
-  GP_BRUSH_FILL_SHOW_HELPLINES = (1 << 7),
+  P_BRUSH_FILL_SHOW_HELPLINES = (1 << 7),
   /* lazy mouse */
-  GP_BRUSH_STABILIZE_MOUSE = (1 << 8),
+  P_BRUSH_STABILIZE_MOUSE = (1 << 8),
   /* lazy mouse override (internal only) */
-  GP_BRUSH_STABILIZE_MOUSE_TEMP = (1 << 9),
+  P_BRUSH_STABILIZE_MOUSE_TEMP = (1 << 9),
   /* default eraser brush for quick switch */
-  GP_BRUSH_DEFAULT_ERASER = (1 << 10),
+  P_BRUSH_DEFAULT_ERASER = (1 << 10),
   /* settings group */
-  GP_BRUSH_GROUP_SETTINGS = (1 << 11),
+  P_BRUSH_GROUP_SETTINGS = (1 << 11),
   /* Random settings group */
-  GP_BRUSH_GROUP_RANDOM = (1 << 12),
+  P_BRUSH_GROUP_RANDOM = (1 << 12),
   /* Keep material assigned to brush */
-  GP_BRUSH_MATERIAL_PINNED = (1 << 13),
+  P_BRUSH_MATERIAL_PINNED = (1 << 13),
   /* Do not show fill color while drawing (no lasso mode) */
-  GP_BRUSH_DISSABLE_LASSO = (1 << 14),
+  P_BRUSH_DISSABLE_LASSO = (1 << 14),
   /* Do not erase strokes oLcluded */
-  GP_BRUSH_OCCLUDE_ERASER = (1 << 15),
+  P_BRUSH_OCCLUDE_ERASER = (1 << 15),
   /* Post process trim stroke */
-  GP_BRUSH_TRIM_STROKE = (1 << 16),
-} eGPDbrush_Flag;
+  P_BRUSH_TRIM_STROKE = (1 << 16),
+} ePenBrush_Flag;
 
-typedef enum eGPDbrush_Flag2 {
+typedef enum ePenBrush_Flag2 {
   /* Brush use random Hue at stroke level */
-  GP_BRUSH_USE_HUE_AT_STROKE = (1 << 0),
+  P_BRUSH_USE_HUE_AT_STROKE = (1 << 0),
   /* Brush use random Saturation at stroke level */
-  GP_BRUSH_USE_SAT_AT_STROKE = (1 << 1),
+  P_BRUSH_USE_SAT_AT_STROKE = (1 << 1),
   /* Brush use random Value at stroke level */
-  GP_BRUSH_USE_VAL_AT_STROKE = (1 << 2),
+  P_BRUSH_USE_VAL_AT_STROKE = (1 << 2),
   /* Brush use random Pressure at stroke level */
-  GP_BRUSH_USE_PRESS_AT_STROKE = (1 << 3),
+  P_BRUSH_USE_PRESS_AT_STROKE = (1 << 3),
   /* Brush use random Strength at stroke level */
-  GP_BRUSH_USE_STRENGTH_AT_STROKE = (1 << 4),
+  P_BRUSH_USE_STRENGTH_AT_STROKE = (1 << 4),
   /* Brush use random UV at stroke level */
-  GP_BRUSH_USE_UV_AT_STROKE = (1 << 5),
+  P_BRUSH_USE_UV_AT_STROKE = (1 << 5),
   /* Brush use Hue random pressure */
-  GP_BRUSH_USE_HUE_RAND_PRESS = (1 << 6),
+  P_BRUSH_USE_HUE_RAND_PRESS = (1 << 6),
   /* Brush use Saturation random pressure */
-  GP_BRUSH_USE_SAT_RAND_PRESS = (1 << 7),
-  /* Brush use Value random pressure */
-  GP_BRUSH_USE_VAL_RAND_PRESS = (1 << 8),
+  P_BRUSH_USE_SAT_RAND_PRESS = (1 << 7),
+  /* Brush use Val random pressure */
+  P_BRUSH_USE_VAL_RAND_PRESS = (1 << 8),
   /* Brush use Pressure random pressure */
-  GP_BRUSH_USE_PRESSURE_RAND_PRESS = (1 << 9),
+  P_BRUSH_USE_PRESSURE_RAND_PRESS = (1 << 9),
   /* Brush use Strength random pressure */
-  GP_BRUSH_USE_STRENGTH_RAND_PRESS = (1 << 10),
+  P_BRUSH_USE_STRENGTH_RAND_PRESS = (1 << 10),
   /* Brush use UV random pressure */
-  GP_BRUSH_USE_UV_RAND_PRESS = (1 << 11),
-} eGPDbrush_Flag2;
+  P_BRUSH_USE_UV_RAND_PRESS = (1 << 11),
+} ePenBrush_Flag2;
 
 /* BrushGpencilSettings->gp_fill_draw_mode */
 typedef enum eGP_FillDrawModes {
