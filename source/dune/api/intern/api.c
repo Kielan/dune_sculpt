@@ -1908,24 +1908,24 @@ int api_prop_override_diff_default(Main *bmain,
           }
           else if (is_id || is_valid_for_diffing) {
             if (equals || do_create) {
-              const int eq = rna_property_override_diff_propptr(bmain,
-                                                                ptr_a->owner_id,
-                                                                ptr_b->owner_id,
-                                                                &iter_a.ptr,
-                                                                &iter_b.ptr,
-                                                                mode,
-                                                                no_ownership,
-                                                                no_prop_name,
-                                                                override,
-                                                                rna_path,
-                                                                rna_path_len,
-                                                                PROP_COLLECTION,
-                                                                propname_a,
-                                                                propname_b,
-                                                                idx_a,
-                                                                idx_b,
-                                                                flags,
-                                                                r_override_changed);
+              const int eq = api_prop_override_diff_propptr(main,
+                                                            ptr_a->owner_id,
+                                                            ptr_b->owner_id,
+                                                            &iter_a.ptr,
+                                                            &iter_b.ptr,
+                                                            mode,
+                                                            no_ownership,
+                                                            no_prop_name,
+                                                            override,
+                                                            api_path,
+                                                            api_path_len,
+                                                            PROP_COLLECTION,
+                                                            propname_a,
+                                                            propname_b,
+                                                            idx_a,
+                                                            idx_b,
+                                                            flags,
+                                                            r_override_changed);
               equals = equals && eq;
             }
           }
@@ -1936,9 +1936,9 @@ int api_prop_override_diff_default(Main *bmain,
           }
           prev_propname_a[0] = '\0';
           if (propname_a != NULL &&
-              BLI_strncpy_rlen(prev_propname_a, propname_a, sizeof(buff_prev_a)) >=
+              lib_strncpy_rlen(prev_propname_a, propname_a, sizeof(buff_prev_a)) >=
                   sizeof(buff_prev_a) - 1) {
-            prev_propname_a = BLI_strdup(propname_a);
+            prev_propname_a = lib_strdup(propname_a);
           }
           if (propname_a != buff_a) {
             MEM_SAFE_FREE(propname_a);
@@ -1961,25 +1961,25 @@ int api_prop_override_diff_default(Main *bmain,
           }
 
           if (iter_a.valid) {
-            RNA_property_collection_next(&iter_a);
+            api_prop_collection_next(&iter_a);
             idx_a++;
           }
         } while (iter_a.valid);
 
         if (iter_a.valid) {
-          RNA_property_collection_next(&iter_a);
+          api_prop_collection_next(&iter_a);
           idx_a++;
         }
         if (iter_b.valid) {
-          RNA_property_collection_next(&iter_b);
+          api_prop_collection_next(&iter_b);
           idx_b++;
         }
       }
 
       /* Not same number of items in both collections. */
       equals = equals && !(iter_a.valid || iter_b.valid) && !abort;
-      RNA_property_collection_end(&iter_a);
-      RNA_property_collection_end(&iter_b);
+      api_prop_collection_end(&iter_a);
+      api_prop_collection_end(&iter_b);
 
       return (equals == false);
     }
@@ -1989,8 +1989,8 @@ int api_prop_override_diff_default(Main *bmain,
   }
 
   if (op != NULL) {
-    if (created || op->rna_prop_type == 0) {
-      op->rna_prop_type = rna_prop_type;
+    if (created || op->api_prop_type == 0) {
+      op->api_prop_type = api_prop_type;
     }
     else {
       BLI_assert(op->rna_prop_type == rna_prop_type);
