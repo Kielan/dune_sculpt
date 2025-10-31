@@ -9,11 +9,11 @@ extern "C" {
 
 #ifdef __cplusplus
 namespace dune {
-class CurvesGeometryRuntime;
+class CurvesGeomRuntime;
 }  // namespace dune
-using CurvesGeometryRuntimeHandle = blender::bke::CurvesGeometryRuntime;
+using CurvesGeomRuntimeHandle = dune::CurvesGeomRuntime;
 #else
-typedef struct CurvesGeometryRuntimeHandle CurvesGeometryRuntimeHandle;
+typedef struct CurvesGeomRuntimeHandle CurvesGeomRuntimeHandle;
 #endif
 
 typedef enum CurveType {
