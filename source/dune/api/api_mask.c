@@ -37,7 +37,7 @@
 
 #  include "wm_api.h"
 
-static void api_Mask_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Mask_update_data(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
@@ -96,9 +96,9 @@ static void api_Mask_update_parent(Main *main, Scene *scene, ApiPtr *ptr)
   api_Mask_update_data(main, scene, ptr);
 }
 
-/* NOTE: this function exists only to avoid id refcounting. */
+/* NOTE: this fn exists only to avoid id refcounting. */
 static void api_MaskParent_id_set(ApiPtr *ptr,
-                                  ApiPtr value,
+                                  ApiPtr val,
                                   struct ReportList *UNUSED(reports))
 {
   MaskParent *mpar = (MaskParent *)ptr->data;
@@ -113,7 +113,7 @@ static ApiStruct *api_MaskParent_id_typef(ApiPtr *ptr)
   return id_code_to_api_type(mpar->id_type);
 }
 
-static void api_MaskParent_id_type_set(ApiPtr *ptr, int value)
+static void api_MaskParent_id_type_set(ApiPtr *ptr, int val)
 {
   MaskParent *mpar = (MaskParent *)ptr->data;
 
@@ -140,11 +140,11 @@ static int api_Mask_layer_active_index_get(ApiPtr *ptr)
   return mask->masklay_act;
 }
 
-static void api_Mask_layer_active_index_set(ApiPtr *ptr, int value)
+static void api_Mask_layer_active_index_set(ApiPtr *ptr, int val)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
-  mask->masklay_act = value;
+  mask->masklay_act = val;
 }
 
 static void api_Mask_layer_active_index_range(
@@ -176,11 +176,11 @@ static ApiPtr api_Mask_layer_active_get(ApiPtr *ptr)
 }
 
 static void api_Mask_layer_active_set(ApiPtr *ptr,
-                                      ApiPtr value,
+                                      ApiPtr val,
                                       struct ReportList *UNUSED(reports))
 {
   Mask *mask = (Mask *)ptr->owner_id;
-  MaskLayer *masklay = (MaskLayer *)value.data;
+  MaskLayer *masklay = (MaskLayer *)val.data;
 
   dune_mask_layer_active_set(mask, masklay);
 }
@@ -192,7 +192,7 @@ static void api_MaskLayer_splines_begin(CollectionPropIter *iter, ApiPtr *ptr)
   api_iter_list_begin(iter, &masklay->splines, NULL);
 }
 
-static void api_MaskLayer_name_set(ApiPtr *ptr, const char *value)
+static void api_MaskLayer_name_set(ApiPtr *ptr, const char *val)
 {
   Mask *mask = (Mask *)ptr->owner_id;
   MaskLayer *masklay = (MaskLayer *)ptr->data;
@@ -200,7 +200,7 @@ static void api_MaskLayer_name_set(ApiPtr *ptr, const char *value)
 
   /* need to be on the stack */
   lib_strncpy(oldname, masklay->name, sizeof(masklay->name));
-  lib_strncpy_utf8(newname, value, sizeof(masklay->name));
+  lib_strncpy_utf8(newname, val, sizeof(masklay->name));
 
   dune_mask_layer_rename(mask, masklay, oldname, newname);
 }
@@ -213,11 +213,11 @@ static ApiPtr api_MaskLayer_active_spline_get(ApiPtr *ptr)
 }
 
 static void api_MaskLayer_active_spline_set(ApiPtr *ptr,
-                                            ApiPtr value,
+                                            ApiPtr val,
                                             struct ReportList *UNUSED(reports))
 {
   MaskLayer *masklay = (MaskLayer *)ptr->data;
-  MaskSpline *spline = (MaskSpline *)value.data;
+  MaskSpline *spline = (MaskSpline *)val.data;
   int index = lib_findindex(&masklay->splines, spline);
 
   if (index != -1) {
@@ -236,12 +236,12 @@ static ApiPtr api_MaskLayer_active_spline_point_get(ApiPtr *ptr)
 }
 
 static void api_MaskLayer_active_spline_point_set(ApiPtr *ptr,
-                                                  ApiPtr value,
+                                                  ApiPtr val,
                                                   struct ReportList *UNUSED(reports))
 {
   MaskLayer *masklay = (MaskLayer *)ptr->data;
   MaskSpline *spline;
-  MaskSplinePoint *point = (MaskSplinePoint *)value.data;
+  MaskSplinePoint *point = (MaskSplinePoint *)val.data;
 
   masklay->act_point = NULL;
 
@@ -254,46 +254,46 @@ static void api_MaskLayer_active_spline_point_set(ApiPtr *ptr,
   }
 }
 
-static void api_MaskSplinePoint_handle1_get(ApiPtr *ptr, float *values)
+static void api_MaskSplinePoint_handle1_get(ApiPtr *ptr, float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   copy_v2_v2(values, bezt->vec[0]);
 }
 
-static void api_MaskSplinePoint_handle1_set(ApiPtr *ptr, const float *values)
+static void api_MaskSplinePoint_handle1_set(ApiPtr *ptr, const float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   copy_v2_v2(bezt->vec[0], values);
 }
 
-static void api_MaskSplinePoint_handle2_get(ApiPtr *ptr, float *values)
+static void api_MaskSplinePoint_handle2_get(ApiPtr *ptr, float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   copy_v2_v2(values, bezt->vec[2]);
 }
 
-static void api_MaskSplinePoint_handle2_set(ApiPtr *ptr, const float *values)
+static void api_MaskSplinePoint_handle2_set(ApiPtr *ptr, const float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
-  copy_v2_v2(bezt->vec[2], values);
+  copy_v2_v2(bezt->vec[2], vals);
 }
 
-static void api_MaskSplinePoint_ctrlpoint_get(ApiPtr *ptr, float *values)
+static void api_MaskSplinePoint_ctrlpoint_get(ApiPtr *ptr, float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   copy_v2_v2(values, bezt->vec[1]);
 }
 
-static void api_MaskSplinePoint_ctrlpoint_set(ApiPtr *ptr, const float *values)
+static void api_MaskSplinePoint_ctrlpoint_set(ApiPtr *ptr, const float *vals)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
-  copy_v2_v2(bezt->vec[1], values);
+  copy_v2_v2(bezt->vec[1], vals);
 }
 
 static int api_MaskSplinePoint_handle_type_get(ApiPtr *ptr)
@@ -328,13 +328,13 @@ static void mask_point_check_stick(MaskSplinePoint *point)
   }
 }
 
-static void api_MaskSplinePoint_handle_type_set(ApiPtr *ptr, int value)
+static void api_MaskSplinePoint_handle_type_set(ApiPtr *ptr, int val)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   MaskSpline *spline = mask_spline_from_point((Mask *)ptr->owner_id, point);
 
-  bezt->h1 = bezt->h2 = value;
+  bezt->h1 = bezt->h2 = val;
   mask_point_check_stick(point);
   dune_mask_calc_handle_point(spline, point);
 }
@@ -347,13 +347,13 @@ static int api_MaskSplinePoint_handle_left_type_get(ApiPtr *ptr)
   return bezt->h1;
 }
 
-static void api_MaskSplinePoint_handle_left_type_set(ApiPtr *ptr, int value)
+static void api_MaskSplinePoint_handle_left_type_set(ApiPtr *ptr, int val)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   MaskSpline *spline = mask_spline_from_point((Mask *)ptr->owner_id, point);
 
-  bezt->h1 = value;
+  bezt->h1 = val;
   mask_point_check_stick(point);
   dune_mask_calc_handle_point(spline, point);
 }
@@ -366,13 +366,13 @@ static int api_MaskSplinePoint_handle_right_type_get(ApiPtr *ptr)
   return bezt->h2;
 }
 
-static void api_MaskSplinePoint_handle_right_type_set(ApiPtr *ptr, int value)
+static void api_MaskSplinePoint_handle_right_type_set(ApiPtr *ptr, int val)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
   MaskSpline *spline = mask_spline_from_point((Mask *)ptr->owner_id, point);
 
-  bezt->h2 = value;
+  bezt->h2 = val;
   mask_point_check_stick(point);
   dune_mask_calc_handle_point(spline, point);
 }
@@ -392,7 +392,7 @@ static void api_Mask_layers_remove(Mask *mask, ReportList *reports, ApiPtr *mask
   MaskLayer *masklay = masklay_ptr->data;
   if (lib_findindex(&mask->masklayers, masklay) == -1) {
     dune_reportf(reports,
-                RPT_ERROR,
+                RPT_ERR,
                 "Mask layer '%s' not found in mask '%s'",
                 masklay->name,
                 mask->id.name + 2);
@@ -443,19 +443,19 @@ static void api_MaskLayer_spline_remove(Id *id,
   graph_id_tag_update(&mask->id, ID_RECALC_GEOMETRY);
 }
 
-static void api_Mask_start_frame_set(ApiPtr *ptr, int value)
+static void api_Mask_start_frame_set(ApiPtr *ptr, int val)
 {
   Mask *data = (Mask *)ptr->data;
   /* MINFRAME not MINAFRAME, since some output formats can't taken negative frames */
   CLAMP(value, MINFRAME, MAXFRAME);
-  data->sfra = value;
+  data->sfra = val;
 
   if (data->sfra >= data->efra) {
     data->efra = MIN2(data->sfra, MAXFRAME);
   }
 }
 
-static void api_Mask_end_frame_set(ApiPtr *ptr, int value)
+static void api_Mask_end_frame_set(ApiPtr *ptr, int val)
 {
   Mask *data = (Mask *)ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
@@ -725,7 +725,7 @@ static void api_def_maskSplinePoint(DuneApi *dapi)
   /* handle_type */
   prop = api_def_prop(sapi, "handle_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_fns(
-      prop, "rna_MaskSplinePoint_handle_type_get", "api_MaskSplinePoint_handle_type_set", NULL);
+      prop, "api_MaskSplinePoint_handle_type_get", "api_MaskSplinePoint_handle_type_set", NULL);
   api_def_prop_enum_items(prop, handle_type_items);
   api_def_prop_ui_text(prop, "Handle Type", "Handle type");
   api_def_prop_update(prop, 0, "sapi_Mask_update_data");
@@ -917,7 +917,7 @@ static void api_def_maskSpline(DuneApi *dapi)
   api_def_prop_struct_type(prop, "MaskSplinePoint");
   api_def_prop_collection_stype(prop, NULL, "points", "tot_point");
   api_def_prop_ui_text(prop, "Points", "Collection of points");
-  api_def_prop_srna(prop, "MaskSplinePoints");
+  api_def_prop_sapi(prop, "MaskSplinePoints");
 }
 
 static void api_def_mask_layer(DuneApi *dapi)
@@ -1130,7 +1130,7 @@ static void api_def_mask(DuneApi *dapi)
   api_def_prop_ui_text(prop, "End Frame", "Final frame of the mask (used for sequencer)");
   api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
-  /* pointers */
+  /* ptrs */
   api_def_animdata_common(sapi);
 }
 
