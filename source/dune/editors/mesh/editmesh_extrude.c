@@ -653,7 +653,7 @@ static int edbm_extrude_faces_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void MESH_OT_extrude_faces_indiv(wmOperatorType *ot)
+void mesh_ot_extrude_faces_indiv(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Extrude Individual Faces";
@@ -667,30 +667,26 @@ void MESH_OT_extrude_faces_indiv(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
+  Transform_Props(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Dupli-Extrude Operator
+/** Dupli-Extrude Op
  *
- * Add-click-mesh (extrude) operator.
- * \{ */
+ * Add-click-mesh (extrude) op. */
 
-static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int edbm_dupli_extrude_cursor_invoke(Cx *C, wmOp *op, const wmEvent *event)
 {
-  struct Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc;
-  BMVert *v1;
-  BMIter iter;
+  struct Depsgraph *depsgraph = cx_data_ensure_evaluated_depsgraph(C);
+  ViewCx vc;
+  MeshVert *v1;
+  MeshIter iter;
   float center[3];
   uint verts_len;
 
-  em_setup_viewcontext(C, &vc);
+  em_setup_viewcx(C, &vc);
   const Object *object_active = vc.obact;
 
-  const bool rot_src = RNA_boolean_get(op->ptr, "rotate_source");
+  const bool rot_src = api_bool_get(op->ptr, "rotate_source");
   const bool use_proj = ((vc.scene->toolsettings->snap_flag & SCE_SNAP) &&
                          (vc.scene->toolsettings->snap_mode == SCE_SNAP_MODE_FACE));
 
@@ -699,12 +695,12 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
   verts_len = 0;
 
   uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+  Object **objects = dune_view_layer_arr_from_objects_in_edit_mode_unique_data(
       vc.view_layer, vc.v3d, &objects_len);
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
-    ED_view3d_viewcontext_init_object(&vc, obedit);
-    const int local_verts_len = vc.em->bm->totvertsel;
+    ed_view3d_viewcx_init_object(&vc, obedit);
+    const int local_verts_len = vc.em->dm->totvertsel;
 
     if (vc.em->bm->totvertsel == 0) {
       continue;
@@ -734,10 +730,10 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
   /* Then we process the meshes. */
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
-    ED_view3d_viewcontext_init_object(&vc, obedit);
+    ed_view3d_viewcx_init_object(&vc, obedit);
 
     if (verts_len != 0) {
-      if (vc.em->bm->totvertsel == 0) {
+      if (vc.em->dm->totvertsel == 0) {
         continue;
       }
     }
@@ -746,7 +742,7 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
     }
 
     invert_m4_m4(vc.obedit->imat, vc.obedit->obmat);
-    ED_view3d_init_mats_rv3d(vc.obedit, vc.rv3d);
+    ed_view3d_init_mats_rv3d(vc.obedit, vc.rv3d);
 
     float local_center[3];
     mul_v3_m4v3(local_center, vc.obedit->imat, center);
@@ -754,7 +750,7 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
     /* call extrude? */
     if (verts_len != 0) {
       const char extrude_htype = edbm_extrude_htype_from_em_select(vc.em);
-      BMEdge *eed;
+      MeshEdge *eed;
       float mat[3][3];
       float vec[3], ofs[3];
       float nor[3] = {0.0, 0.0, 0.0};
@@ -764,13 +760,13 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
 
       /* check for edges that are half selected, use for rotation */
       bool done = false;
-      BM_ITER_MESH (eed, &iter, vc.em->bm, BM_EDGES_OF_MESH) {
-        if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+      MESH_ITER_MESH (eed, &iter, vc.em->dm, MESH_EDGES_OF_MESH) {
+        if (mesh_elem_flag_test(eed, MESH_ELEM_SELECT)) {
           float co1[2], co2[2];
 
-          if ((ED_view3d_project_float_object(vc.region, eed->v1->co, co1, V3D_PROJ_TEST_NOP) ==
+          if ((ed_view3d_project_float_object(vc.ron, eed->v1->co, co1, V3D_PROJ_TEST_NOP) ==
                V3D_PROJ_RET_OK) &&
-              (ED_view3d_project_float_object(vc.region, eed->v2->co, co2, V3D_PROJ_TEST_NOP) ==
+              (ed_view3d_project_float_object(vc.rgn, eed->v2->co, co2, V3D_PROJ_TEST_NOP) ==
                V3D_PROJ_RET_OK)) {
             /* 2D rotate by 90d while adding.
              *  (x, y) = (y, -x)
@@ -837,82 +833,82 @@ static int edbm_dupli_extrude_cursor_invoke(bContext *C, wmOperator *op, const w
       }
 
       if (rot_src) {
-        EDBM_op_callf(
+        edbm_op_callf(
             vc.em, op, "rotate verts=%hv cent=%v matrix=%m3", BM_ELEM_SELECT, local_center, mat);
 
         /* also project the source, for retopo workflow */
         if (use_proj) {
-          EDBM_project_snap_verts(C, depsgraph, vc.region, vc.obedit, vc.em);
+          edbm_project_snap_verts(C, depsgraph, vc.region, vc.obedit, vc.em);
         }
       }
 
       edbm_extrude_ex(vc.obedit, vc.em, extrude_htype, BM_ELEM_SELECT, false, false, true, true);
-      EDBM_op_callf(
+      edbm_op_callf(
           vc.em, op, "rotate verts=%hv cent=%v matrix=%m3", BM_ELEM_SELECT, local_center, mat);
-      EDBM_op_callf(vc.em, op, "translate verts=%hv vec=%v", BM_ELEM_SELECT, ofs);
+      edbm_op_callf(vc.em, op, "translate verts=%hv vec=%v", BM_ELEM_SELECT, ofs);
     }
     else {
       /* This only runs for the active object. */
       const float *cursor = vc.scene->cursor.location;
-      BMOperator bmop;
-      BMOIter oiter;
+      MeshOp dmop;
+      MOIter oiter;
 
       copy_v3_v3(local_center, cursor);
-      ED_view3d_win_to_3d_int(vc.v3d, vc.region, local_center, event->mval, local_center);
+      ed_view3d_win_to_3d_int(vc.v3d, vc.rgn, local_center, event->mval, local_center);
 
       mul_m4_v3(vc.obedit->imat, local_center); /* back in object space */
 
-      EDBM_op_init(vc.em, &bmop, op, "create_vert co=%v", local_center);
-      BMO_op_exec(vc.em->bm, &bmop);
+      edbm_op_init(vc.em, &dmop, op, "create_vert co=%v", local_center);
+      meshobj_op_exec(vc.em->dm, &dmop);
 
-      BMO_ITER (v1, &oiter, bmop.slots_out, "vert.out", BM_VERT) {
-        BM_vert_select_set(vc.em->bm, v1, true);
+      MO_ITER (v1, &oiter, dmop.slots_out, "vert.out", MESH_VERT) {
+        mesh_vert_select_set(vc.em->dm, v1, true);
       }
 
-      if (!EDBM_op_finish(vc.em, &bmop, op, true)) {
+      if (!edbm_op_finish(vc.em, &dmop, op, true)) {
         continue;
       }
     }
 
     if (use_proj) {
-      EDBM_project_snap_verts(C, depsgraph, vc.region, vc.obedit, vc.em);
+      edbm_project_snap_verts(C, depsgraph, vc.rgn, vc.obedit, vc.em);
     }
 
     /* This normally happens when pushing undo but modal operators
      * like this one don't push undo data until after modal mode is done. */
-    EDBM_update(vc.obedit->data,
+    edbm_update(vc.obedit->data,
                 &(const struct EDBMUpdate_Params){
                     .calc_looptri = true,
                     .calc_normals = true,
                     .is_destructive = true,
                 });
 
-    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
-    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+    wm_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+    wm_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
   }
-  MEM_freeN(objects);
+  mem_freeN(objects);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_dupli_extrude_cursor(wmOperatorType *ot)
+void mesh_ot_dupli_extrude_cursor(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Extrude to Cursor or Add";
-  ot->idname = "MESH_OT_dupli_extrude_cursor";
+  ot->idname = "mesh_ot_dupli_extrude_cursor";
   ot->description =
-      "Duplicate and extrude selected vertices, edges or faces towards the mouse cursor";
+      "Duplicate and extrude selected verts, edges or faces towards the mouse cursor";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = edbm_dupli_extrude_cursor_invoke;
-  ot->poll = ED_operator_editmesh_region_view3d;
+  ot->poll = ed_op_editmesh_rgn_view3d;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_DEPENDS_ON_CURSOR;
 
-  RNA_def_boolean(ot->srna,
-                  "rotate_source",
-                  true,
-                  "Rotate Source",
-                  "Rotate initial selection giving better shape");
+  api_def_bool(ot->sapi,
+                "rotate_source",
+                true,
+                "Rotate Source",
+                "Rotate initial selection giving better shape");
 }
