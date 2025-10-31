@@ -30,7 +30,7 @@
 #  include "COM_compositor.hh"
 #endif
 
-static void composite_get_from_cxt(
+static void composite_get_from_cx(
     const Cx *C, NodeTreeType * /*treetype*/, NodeTree **r_ntree, Id **r_id, Id **r_from)
 {
   Scene *scene = cx_data_scene(C);
