@@ -743,42 +743,40 @@ void FieldEval::eval()
 {
   lib_assert_msg(!is_eval_, "Cannot eval fields twice.");
 
-  sel_mask_ = eval_sel(sel_field_, cxt_, mask_, scope_);
+  sel_mask_ = eval_sel(sel_field_, cx_, mask_, scope_);
 
-  Array<GFieldRef> fields(fields_to_eval_.size());
-  for (const int i : fields_to_eval_.index_range()) {
+  Arr<GFieldRef> fields(fields_to_eval_.size());
+  for (const int i : fields_to_eval_.idx_range()) {
     fields[i] = fields_to_eval_[i];
   }
-  eval_varrays_ = eval_fields(scope_, fields, sel_mask_, cxt_, dst_varrays_);
-  lib_assert(fields_to_evaluate_.size() == evaluated_varrays_.size());
-  for (const int i : fields_to_eval_.index_range()) {
-    OutputPointerInfo &info = output_ptr_infos_[i];
+  eval_varrs_ = eval_fields(scope_, fields, sel_mask_, cx_, dst_varrs_);
+  lib_assert(fields_to_evalua_.size() == evaluated_varrs_.size());
+  for (const int i : fields_to_eval_.idx_range()) {
+    OutputPtrInfo &info = output_ptr_infos_[i];
     if (info.dst != nullptr) {
-      info.set(info.dst, evaluated_varrays_[i], scope_);
+      info.set(info.dst, evaluated_varrs_[i], scope_);
     }
   }
   is_eval_ = true;
 }
 
-IndexMask FieldEval::get_eval_as_mask(const int field_index)
+IdxMask FieldEval::get_eval_as_mask(const int field_idx)
 {
-  VArray<bool> varray = this->get_eval(field_index).typed<bool>();
+  VArray<bool> varr = this->get_eval(field_idx).typed<bool>();
 
-  if (varray.is_single()) {
-    if (varray.get_internal_single()) {
-      return IndexRange(varray.size());
+  if (varr.is_single()) {
+    if (varr.get_internal_single()) {
+      return IdxRange(varr.size());
     }
-    return IndexRange(0);
+    return IdxRange(0);
   }
-  return index_mask_from_selection(mask_, varray, scope_);
+  return idx_mask_from_selection(mask_, varr, scope_);
 }
 
-IndexMask FieldEvaluator::get_evaluated_selection_as_mask()
+IdxMask FieldEvaluator::get_evaluated_selection_as_mask()
 {
-  BLI_assert(is_evaluated_);
+  lib_assert(is_evaluated_);
   return selection_mask_;
 }
 
-/** \} */
-
-}  // namespace blender::fn
+}  // namespace dune::fn
