@@ -1,4 +1,4 @@
-#include "lib_array_utils.hh"
+#include "lib_arr_utils.hh"
 #include "lib_map.hh"
 #include "lib_multi_val_map.hh"
 #include "lib_set.hh"
@@ -438,39 +438,39 @@ Vector<GVArr> eval_fields(ResourceScope &scope,
 
   /* Copy data to supplied destination arrays if necessary. In some cases the evaluation above
    * has written the computed data in the right place already. */
-  if (!dst_varrays.is_empty()) {
-    for (const int out_index : fields_to_eval.index_range()) {
-      GVMutableArray dst_varray = get_dst_varray(out_index);
-      if (!dst_varray) {
+  if (!dst_varrs.is_empty()) {
+    for (const int out_idx : fields_to_eval.idx_range()) {
+      GVMutableArr dst_varr = get_dst_varr(out_index);
+      if (!dst_varr) {
         /* Caller did not provide a destination for this output. */
         continue;
       }
-      const GVArray &computed_varray = r_varrays[out_index];
-      lib_assert(computed_varray.type() == dst_varray.type());
+      const GVArr &computed_varr = r_varrs[out_idx];
+      lib_assert(computed_varr.type() == dst_varr.type());
       if (is_output_written_to_dst[out_index]) {
         /* The result has been written into the destination provided by the caller already. */
         continue;
       }
       /* Still have to copy over the data in the destination provided by the caller. */
-      if (dst_varray.is_span()) {
-        array_utils::copy(computed_varray,
+      if (dst_varr.is_span()) {
+        arr_utils::copy(computed_varr,
                           mask,
-                          dst_varray.get_internal_span().take_front(mask.min_array_size()));
+                          dst_varr.get_internal_span().take_front(mask.min_arr_size()));
       }
       else {
         /* Slower materialize into a diff structure. */
-        const CPPType &type = computed_varray.type();
-        threading::parallel_for(mask.index_range(), 2048, [&](const IndexRange range) {
+        const CPPType &type = computed_varr.type();
+        threading::parallel_for(mask.idx_range(), 2048, [&](const IdxRange range) {
           BUF_FOR_CPP_TYPE_VAL(type, buf);
           mask.slice(range).foreach_segment([&](auto segment) {
             for (const int i : segment) {
-              computed_varray.get_to_uninitialized(i, buffer);
-              dst_varray.set_by_relocate(i, buffer);
+              computed_varr.get_to_uninitialized(i, buffer);
+              dst_varr.set_by_relocate(i, buffer);
             }
           });
         });
       }
-      r_varrays[out_index] = dst_varray;
+      r_varrays[out_idx] = dst_varr;
     }
   }
   return r_varrays;
