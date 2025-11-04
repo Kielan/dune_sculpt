@@ -38,7 +38,7 @@
 #include <mutex>
 #include <sstream>
 
-#include "lib_compute_cxt.hh"
+#include "lib_compute_cx.hh"
 #include "lib_enumerable_thread_specific.hh"
 #include "lib_fn_ref.hh"
 #include "lib_task.h"
@@ -350,7 +350,7 @@ class Executor {
   {
     Span<const Node *> nodes = self_.graph_.nodes();
     node_states_ = MutableSpan{
-        reinterpret_cast<NodeState **>(buffer + self_.init_buffer_info_.node_states_array_offset),
+        reinterpret_cast<NodeState **>(buffer + self_.init_buffer_info_.node_states_arr_offset),
         nodes.size()};
 
     threading::parallel_for(nodes.index_range(), 256, [&](const IndexRange range) {
@@ -422,8 +422,8 @@ class Executor {
 
   void set_defaulted_graph_outputs(const LocalData &local_data)
   {
-    for (const int graph_output_index : self_.graph_outputs_.index_range()) {
-      const InputSocket &socket = *self_.graph_outputs_[graph_output_index];
+    for (const int graph_output_idx : self_.graph_outputs_.idx_range()) {
+      const InputSocket &socket = *self_.graph_outputs_[graph_output_idx];
       if (socket.origin() != nullptr) {
         continue;
       }
@@ -432,22 +432,22 @@ class Executor {
       lib_assert(default_val != nullptr);
 
       if (self_.logger_ != nullptr) {
-        const Cxt cxt{cxt_->storage, cxt_->user_data, local_data.local_user_data};
-        self_.logger_->log_socket_val(socket, {type, default_val}, cxt);
+        const Cx cx{cx_->storage, cx_->user_data, local_data.local_user_data};
+        self_.logger_->log_socket_val(socket, {type, default_val}, cx);
       }
 
-      void *output_ptr = params_->get_output_data_ptr(graph_output_index);
-      type.copy_construct(default_value, output_ptr);
-      params_->output_set(graph_output_index);
+      void *output_ptr = params_->get_output_data_ptr(graph_output_idx);
+      type.copy_construct(default_val, output_ptr);
+      params_->output_set(graph_output_idx);
     }
   }
 
   void set_always_unused_graph_inputs()
   {
-    for (const int i : self_.graph_inputs_.index_range()) {
+    for (const int i : self_.graph_inputs_.idx_range()) {
       const OutputSocket &socket = *self_.graph_inputs_[i];
       const Node &node = socket.node();
-      const NodeState &node_state = *node_states_[node.index_in_graph()];
+      const NodeState &node_state = *node_states_[node.idx_in_graph()];
       const OutputState &output_state = node_state.outputs[socket.index()];
       if (output_state.usage == ValUsage::Unused) {
         params_->set_input_unused(i);
@@ -460,7 +460,7 @@ class Executor {
    *
    * Most importantly, this fn inits `InputState.usage` and
    * `OutputState.potential_target_sockets`. */
-  void initialize_static_value_usages(const Span<const FunctionNode *> side_effect_nodes)
+  void initialize_static_val_usages(const Span<const FnNode *> side_effect_nodes)
   {
     const Span<const Node *> all_nodes = self_.graph_.nodes();
 
@@ -472,16 +472,16 @@ class Executor {
     for (const InputSocket *socket : self_.graph_outputs_) {
       const Node &node = socket->node();
       const int node_index = node.index_in_graph();
-      if (!reachable_node_flags[node_index]) {
-        reachable_node_flags[node_index] = true;
+      if (!reachable_node_flags[node_idx]) {
+        reachable_node_flags[node_idx] = true;
         reachable_nodes_to_check.push(&node);
       }
     }
 
     /* Side effect nodes are always reachable. */
-    for (const FunctionNode *node : side_effect_nodes) {
-      const int node_index = node->index_in_graph();
-      reachable_node_flags[node_index] = true;
+    for (const FnNode *node : side_effect_nodes) {
+      const int node_idx = node->idx_in_graph();
+      reachable_node_flags[node_idx] = true;
       reachable_nodes_to_check.push(node);
     }
 
@@ -492,27 +492,27 @@ class Executor {
         const OutputSocket *origin_socket = input_socket->origin();
         if (origin_socket != nullptr) {
           const Node &origin_node = origin_socket->node();
-          const int origin_node_index = origin_node.index_in_graph();
-          if (!reachable_node_flags[origin_node_index]) {
-            reachable_node_flags[origin_node_index] = true;
+          const int origin_node_index = origin_node.idx_in_graph();
+          if (!reachable_node_flags[origin_node_idx]) {
+            reachable_node_flags[origin_node_idx] = true;
             reachable_nodes_to_check.push(&origin_node);
           }
         }
       }
     }
 
-    for (const int node_index : reachable_node_flags.index_range()) {
-      const Node &node = *all_nodes[node_index];
-      NodeState &node_state = *node_states_[node_index];
-      const bool node_is_reachable = reachable_node_flags[node_index];
+    for (const int node_idx : reachable_node_flags.idx_range()) {
+      const Node &node = *all_nodes[node_idx];
+      NodeState &node_state = *node_states_[node_idx];
+      const bool node_is_reachable = reachable_node_flags[node_idx];
       if (node_is_reachable) {
-        for (const int output_index : node.outputs().index_range()) {
-          const OutputSocket &output_socket = node.output(output_index);
-          OutputState &output_state = node_state.outputs[output_index];
+        for (const int output_idx : node.outputs().idx_range()) {
+          const OutputSocket &output_socket = node.output(output_idx);
+          OutputState &output_state = node_state.outputs[output_idx];
           int use_count = 0;
           for (const InputSocket *target_socket : output_socket.targets()) {
             const Node &target_node = target_socket->node();
-            const bool target_is_reachable = reachable_node_flags[target_node.index_in_graph()];
+            const bool target_is_reachable = reachable_node_flags[target_node.idx_in_graph()];
             /* Only count targets that are reachable. */
             if (target_is_reachable) {
               use_count++;
@@ -526,20 +526,20 @@ class Executor {
       }
       else {
         /* Inputs of unreachable nodes are unused. */
-        for (const int input_index : node.inputs().index_range()) {
-          node_state.inputs[input_index].usage = ValueUsage::Unused;
+        for (const int input_idx : node.inputs().idx_range()) {
+          node_state.inputs[input_idx].usage = ValUsage::Unused;
         }
       }
     }
   }
 
-  void schedule_side_effect_nodes(const Span<const FunctionNode *> side_effect_nodes,
+  void schedule_side_effect_nodes(const Span<const FnNode *> side_effect_nodes,
                                   CurrentTask &current_task,
                                   const LocalData &local_data)
   {
-    for (const FunctionNode *node : side_effect_nodes) {
-      NodeState &node_state = *node_states_[node->index_in_graph()];
-      this->with_locked_node(
+    for (const FnNode *node : side_effect_nodes) {
+      NodeState &node_state = *node_states_[node->idx_in_graph()];
+      this->w_locked_node(
           *node, node_state, current_task, local_data, [&](LockedNode &locked_node) {
             this->schedule_node(locked_node, current_task, false);
           });
@@ -548,12 +548,12 @@ class Executor {
 
   void forward_newly_provided_inputs(CurrentTask &current_task, const LocalData &local_data)
   {
-    for (const int graph_input_index : self_.graph_inputs_.index_range()) {
-      std::atomic<uint8_t> &was_loaded = loaded_inputs_[graph_input_index];
+    for (const int graph_input_idx : self_.graph_inputs_.idx_range()) {
+      std::atomic<uint8_t> &was_loaded = loaded_inputs_[graph_input_idx];
       if (was_loaded.load()) {
         continue;
       }
-      void *input_data = params_->try_get_input_data_ptr(graph_input_index);
+      void *input_data = params_->try_get_input_data_ptr(graph_input_idx);
       if (input_data == nullptr) {
         continue;
       }
@@ -570,7 +570,7 @@ class Executor {
                                     const int graph_input_index,
                                     void *input_data)
   {
-    const OutputSocket &socket = *self_.graph_inputs_[graph_input_index];
+    const OutputSocket &socket = *self_.graph_inputs_[graph_input_idx];
     const CPPType &type = socket.type();
     void *buf = local_data.allocator->alloc(type.size(), type.alignment());
     type.move_construct(input_data, buffer);
@@ -582,14 +582,14 @@ class Executor {
                               const LocalData &local_data)
   {
     const Node &node = socket.node();
-    const int index_in_node = socket.index();
-    NodeState &node_state = *node_states_[node.index_in_graph()];
-    OutputState &output_state = node_state.outputs[index_in_node];
+    const int idx_in_node = socket.idx();
+    NodeState &node_state = *node_states_[node.idx_in_graph()];
+    OutputState &output_state = node_state.outputs[idx_in_node];
 
     /* The notified output socket might be an input of the entire graph. In this case, notify the
      * caller that the input is required. */
     if (node.is_interface()) {
-      const int graph_input_index = self_.graph_input_index_by_socket_index_[socket.index()];
+      const int graph_input_index = self_.graph_input_idx_by_socket_idx_[socket.idx()];
       std::atomic<uint8_t> &was_loaded = loaded_inputs_[graph_input_index];
       if (was_loaded.load()) {
         return;
@@ -607,9 +607,9 @@ class Executor {
     }
 
     lib_assert(node.is_fn());
-    this->with_locked_node(
+    this->w_locked_node(
         node, node_state, current_task, local_data, [&](LockedNode &locked_node) {
-          if (output_state.usage == ValueUsage::Used) {
+          if (output_state.usage == ValUsage::Used) {
             return;
           }
           output_state.usage = ValUsage::Used;
@@ -622,11 +622,11 @@ class Executor {
                             const LocalData &local_data)
   {
     const Node &node = socket.node();
-    const int index_in_node = socket.index();
-    NodeState &node_state = *node_states_[node.index_in_graph()];
-    OutputState &output_state = node_state.outputs[index_in_node];
+    const int idx_in_node = socket.index();
+    NodeState &node_state = *node_states_[node.idx_in_graph()];
+    OutputState &output_state = node_state.outputs[idx_in_node];
 
-    this->with_locked_node(
+    this->w_locked_node(
         node, node_state, current_task, local_data, [&](LockedNode &locked_node) {
           output_state.potential_target_sockets -= 1;
           if (output_state.potential_target_sockets == 0) {
@@ -650,11 +650,11 @@ class Executor {
 
   void schedule_node(LockedNode &locked_node, CurrentTask &current_task, const bool is_priority)
   {
-    lib_assert(locked_node.node.is_function());
+    lib_assert(locked_node.node.is_fn());
     switch (locked_node.node_state.schedule_state) {
       case NodeScheduleState::NotScheduled: {
         locked_node.node_state.schedule_state = NodeScheduleState::Scheduled;
-        const FunctionNode &node = static_cast<const FnNode &>(locked_node.node);
+        const FnNode &node = static_cast<const FnNode &>(locked_node.node);
         if (this->use_multi_threading()) {
           std::lock_guard lock{current_task.mutex};
           current_task.scheduled_nodes.schedule(node, is_priority);
@@ -678,13 +678,13 @@ class Executor {
     }
   }
 
-  void with_locked_node(const Node &node,
+  void w_locked_node(const Node &node,
                         NodeState &node_state,
                         CurrentTask &current_task,
                         const LocalData &local_data,
                         const FnRef<void(LockedNode &)> f)
   {
-    lib_assert(&node_state == node_states_[node.index_in_graph()]);
+    lib_assert(&node_state == node_states_[node.idx_in_graph()]);
 
     LockedNode locked_node{node, node_state};
     if (this->use_multi_threading()) {
@@ -743,13 +743,13 @@ class Executor {
                      CurrentTask &current_task,
                      const LocalData &local_data)
   {
-    NodeState &node_state = *node_states_[node.index_in_graph()];
+    NodeState &node_state = *node_states_[node.idx_in_graph()];
     LinearAllocator<> &alloc = *local_data.allocator;
-    Cxt local_cxt{cxt_->storage, cxt_->user_data, local_data.local_user_data};
+    Cx local_cx{cx_->storage, cx_->user_data, local_data.local_user_data};
     const LazyFn &fn = node.fn();
 
     bool node_needs_ex = false;
-    this->with_locked_node(
+    this->w_locked_node(
         node, node_state, current_task, local_data, [&](LockedNode &locked_node) {
           lib_assert(node_state.schedule_state == NodeScheduleState::Scheduled);
           node_state.schedule_state = NodeScheduleState::Running;
@@ -759,7 +759,7 @@ class Executor {
           }
 
           bool required_uncomputed_output_exists = false;
-          for (const int output_index : node.outputs().index_range()) {
+          for (const int output_idx : node.outputs().idx_range()) {
             OutputState &output_state = node_state.outputs[output_index];
             output_state.usage_for_ex = output_state.usage;
             if (output_state.usage == ValUsage::Used && !output_state.has_been_computed) {
@@ -773,9 +773,9 @@ class Executor {
           if (!node_state.always_used_inputs_requested) {
             /* Request linked inputs that are always needed. */
             const Span<Input> fn_inputs = fn.inputs();
-            for (const int input_index : fn_inputs.index_range()) {
+            for (const int input_idx : fn_inputs.idx_range()) {
               const Input &fn_input = fn_inputs[input_index];
-              if (fn_input.usage == ValueUsage::Used) {
+              if (fn_input.usage == ValUsage::Used) {
                 const InputSocket &input_socket = node.input(input_index);
                 if (input_socket.origin() != nullptr) {
                   this->set_input_required(locked_node, input_socket);
