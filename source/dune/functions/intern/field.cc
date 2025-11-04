@@ -67,29 +67,29 @@ static FieldTreeInfo preproc_field_tree(Span<GFieldRef> entry_fields)
   return field_tree_info;
 }
 
-/* Retrieves the data from the cxt that is passed as input into the field */
-static Vector<GVArray> get_field_cxt_inputs(
+/* Retrieves the data from the cx that is passed as input into the field */
+static Vector<GVArr> get_field_cx_inputs(
     ResourceScope &scope,
     const IndexMask &mask,
-    const FieldCxt &cxt,
+    const FieldCx &cx,
     const Span<std::ref_wrapper<const FieldInput>> field_inputs)
 {
-  Vector<GVArray> field_cxt_inputs;
+  Vector<GVArr> field_cx_inputs;
   for (const FieldInput &field_input : field_inputs) {
-    GVArray varray = cxt.get_varray_for_input(field_input, mask, scope);
-    if (!varray) {
+    GVArr varr = cx.get_varr_for_input(field_input, mask, scope);
+    if (!varr) {
       const CPPType &type = field_input.cpp_type();
-      varray = GVArray::ForSingleDefault(type, mask.min_array_size());
+      varr = GVArr::ForSingleDefault(type, mask.min_arr_size());
     }
-    field_cxt_inputs.append(varray);
+    field_cx_inputs.append(varr);
   }
-  return field_cxt_inputs;
+  return field_cx_inputs;
 }
 
 /* return A set that contains all fields from the field tree that depend on an input that varies
  * for diff indices. */
 static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
-                                          Span<GVArray> field_cxt_inputs)
+                                          Span<GVArr> field_cx_inputs)
 {
   Set<GFieldRef> found_fields;
   Stack<GFieldRef> fields_to_check;
@@ -97,9 +97,9 @@ static Set<GFieldRef> find_varying_fields(const FieldTreeInfo &field_tree_info,
   /* The varying fields are the ones that depend on inputs that are not constant.
    * Start the tree search at the non-constant input fields and traverse through all fields that
    * depend on them. */
-  for (const int i : field_cxt_inputs.index_range()) {
-    const GVArray &varray = field_cxt_inputs[i];
-    if (varray.is_single()) {
+  for (const int i : field_cx_inputs.idx_range()) {
+    const GVArr &varr = field_cx_inputs[i];
+    if (varr.is_single()) {
       continue;
     }
     const FieldInput &field_input = field_tree_info.deduplicated_field_inputs[i];
@@ -149,11 +149,11 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
   for (GFieldRef field : output_fields) {
     /* Start a new stack for each output field to make sure that a field pushed later to the
      * stack does never depend on a field that was pushed before. */
-    Stack<FieldWithIndex> fields_to_check;
+    Stack<FieldWIdx> fields_to_check;
     fields_to_check.push({field, 0});
     while (!fields_to_check.is_empty()) {
-      FieldWithIndex &field_with_index = fields_to_check.peek();
-      const GFieldRef &field = field_with_index.field;
+      FieldWIdx &field_w_idx = fields_to_check.peek();
+      const GFieldRef &field = field_w_idx.field;
       if (var_by_field.contains(field)) {
         /* The field has been handled already. */
         fields_to_check.pop();
@@ -169,11 +169,11 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
           const FieldOp &op_node = static_cast<const FieldO &>(field.node());
           const Span<GField> op_inputs = op_node.inputs();
 
-          if (field_with_index.current_input_index < op_inputs.size()) {
+          if (field_w_idx.curr_input_idx < op_inputs.size()) {
             /* Not all inputs are handled yet. Push the next input field to the stack and increment
              * the input index. */
-            fields_to_check.push({op_inputs[field_with_index.current_input_index]});
-            field_with_index.current_input_index++;
+            fields_to_check.push({op_inputs[field_w_idx.current_input_idx]});
+            field_w_idx.curr_input_idx++;
           }
           else {
             /* All inputs vars are rdy, now gather all vars used by the
@@ -181,18 +181,18 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
             const mf::MultiFn &multi_fn = op_node.multi_fn();
             Vector<mf::Var *> vars(multi_fn.param_amount());
 
-            int param_input_index = 0;
-            int param_output_index = 0;
-            for (const int param_index : multi_fn.param_indices()) {
-              const mf::ParamType param_type = multi_fn.param_type(param_index);
+            int param_input_idx = 0;
+            int param_output_idx = 0;
+            for (const int param_idx : multi_fn.param_indices()) {
+              const mf::ParamType param_type = multi_fn.param_type(param_idx);
               const mf::ParamType::InterfaceType interface_type = param_type.interface_type();
               if (interface_type == mf::ParamType::Input) {
-                const GField &input_field = op_inputs[param_input_index];
-                vars[param_index] = var_by_field.lookup(input_field);
-                param_input_index++;
+                const GField &input_field = op_inputs[param_input_idx];
+                vars[param_idx] = var_by_field.lookup(input_field);
+                param_input_idx++;
               }
               else if (interface_type == mf::ParamType::Output) {
-                const GFieldRef output_field{op_node, param_output_index};
+                const GFieldRef output_field{op_node, param_output_idx};
                 const bool output_is_ignored =
                     field_tree_info.field_users.lookup(output_field).is_empty() &&
                     !output_fields.contains(output_field);
@@ -203,16 +203,16 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
                 else {
                   /* Create a new var for used outputs. */
                   mf::Var &new_var = proc.new_var(param_type.data_type());
-                  vars[param_index] = &new_var;
+                  vars[param_idx] = &new_var;
                   var_by_field.add_new(output_field, &new_var);
                 }
-                param_output_index++;
+                param_output_idx++;
               }
               else {
                 lib_assert_unreachable();
               }
             }
-            builder.add_call_with_all_vars(multi_fn, vars);
+            builder.add_call_w_all_vars(multi_fn, vars);
           }
           break;
         }
@@ -259,61 +259,61 @@ static void build_multi_fn_proc_for_fields(mf::Proc &proc,
   lib_assert(proc.validate());
 }
 
-Vector<GVArray> eval_fields(ResourceScope &scope,
-                            Span<GFieldRef> fields_to_eval,
-                            const IndexMask &mask,
-                            const FieldCxt &cxt,
-                            Span<GVMutableArray> dst_varrays)
+Vector<GVArr> eval_fields(ResourceScope &scope,
+                          Span<GFieldRef> fields_to_eval,
+                          const IdxMask &mask,
+                          const FieldCx &cx,
+                          Span<GVMutableArr> dst_varrs)
 {
-  Vector<GVArray> r_varrays(fields_to_evaluate.size());
+  Vector<GVArr> r_varrs(fields_to_eval.size());
   Array<bool> is_output_written_to_dst(fields_to_eval.size(), false);
-  const int array_size = mask.min_array_size();
+  const int arr_size = mask.min_arr_size();
 
   if (mask.is_empty()) {
-    for (const int i : fields_to_eval.index_range()) {
+    for (const int i : fields_to_eval.idx_range()) {
       const CPPType &type = fields_to_eval[i].cpp_type();
-      r_varrays[i] = GVArray::ForEmpty(type);
+      r_varrs[i] = GVArr::ForEmpty(type);
     }
-    return r_varrays;
+    return r_varrs;
   }
 
   /* Destination arrays are optional. Create a small util method to access them. */
-  auto get_dst_varray = [&](int index) -> GVMutableArray {
-    if (dst_varrays.is_empty()) {
+  auto get_dst_varr = [&](int idx) -> GVMutableArr {
+    if (dst_varrs.is_empty()) {
       return {};
     }
-    const GVMutableArray &varray = dst_varrays[index];
-    if (!varray) {
+    const GVMutableArr &varr = dst_varrs[index];
+    if (!varr) {
       return {};
     }
-    lib_assert(varray.size() >= array_size);
-    return varray;
+    lib_assert(varr.size() >= arr_size);
+    return varr;
   };
 
   /* Traverse the field tree and prepare some data that is used in later steps. */
-  FieldTreeInfo field_tree_info = preproc_field_tree(fields_to_evaluate);
+  FieldTreeInfo field_tree_info = preproc_field_tree(fields_to_eval);
 
   /* Get inputs that will be passed into the field when evald. */
-  Vector<GVArray> field_cxt_inputs = get_field_cxt_inputs(
-      scope, mask, cxt, field_tree_info.deduplicated_field_inputs);
+  Vector<GVArr> field_cx_inputs = get_field_cx_inputs(
+      scope, mask, cx, field_tree_info.deduplicated_field_inputs);
 
   /* Finish fields that don't need any proc'ing directly. */
-  for (const int out_index : fields_to_eval.index_range()) {
-    const GFieldRef &field = fields_to_eval[out_index];
+  for (const int out_idx : fields_to_eval.idx_range()) {
+    const GFieldRef &field = fields_to_eval[out_idx];
     const FieldNode &field_node = field.node();
     switch (field_node.node_type()) {
       case FieldNodeType::Input: {
         const FieldInput &field_input = static_cast<const FieldInput &>(field.node());
-        const int field_input_index = field_tree_info.deduplicated_field_inputs.index_of(
+        const int field_input_index = field_tree_info.deduplicated_field_inputs.idx_of(
             field_input);
-        const GVArray &varray = field_cxt_inputs[field_input_index];
-        r_varrays[out_index] = varray;
+        const GVArr &varr = field_cx_inputs[field_input_idx];
+        r_varrs[out_idx] = varr;
         break;
       }
       case FieldNodeType::Constant: {
         const FieldConstant &field_constant = static_cast<const FieldConstant &>(field.node());
-        r_varrays[out_index] = GVArray::ForSingleRef(
-            field_constant.type(), mask.min_array_size(), field_constant.value().get());
+        r_varrs[out_idx] = GVArr::ForSingleRef(
+            field_constant.type(), mask.min_arr_size(), field_constant.val().get());
         break;
       }
       case FieldNodeType::Operation: {
@@ -322,16 +322,16 @@ Vector<GVArray> eval_fields(ResourceScope &scope,
     }
   }
 
-  Set<GFieldRef> varying_fields = find_varying_fields(field_tree_info, field_context_inputs);
+  Set<GFieldRef> varying_fields = find_varying_fields(field_tree_info, field_cx_inputs);
 
   /* Separate fields into 2 categories. Those that are constant and need to be evald only
    * once, and those that need to be evald for every index. */
-  Vector<GFieldRef> varying_fields_to_evaluate;
+  Vector<GFieldRef> varying_fields_to_eval;
   Vector<int> varying_field_indices;
-  Vector<GFieldRef> constant_fields_to_evaluate;
+  Vector<GFieldRef> constant_fields_to_eval;
   Vector<int> constant_field_indices;
-  for (const int i : fields_to_evaluate.index_range()) {
-    if (r_varrays[i]) {
+  for (const int i : fields_to_eval.idx_range()) {
+    if (r_varrs[i]) {
       /* Already done. */
       continue;
     }
