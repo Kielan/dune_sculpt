@@ -1,6 +1,6 @@
 #pragma once
 
-/* MFCxt is passed w every call to a multi-fn.
+/* MFCx is passed w every call to a multi-fn.
  * It does nothing; it could be used for the purposes:
  * - Pass debug info up and down the fn call stack.
  * - Pass reusable mem bufs to sub-fns to increase performance.
@@ -10,35 +10,35 @@
 
 namespace dune::fn {
 
-class MFCxt
+class MFCx
 
-class MFCxtBuilder {
+class MFCxBuilder {
  private:
-  Map<std::string, const void *> global_cxts_;
+  Map<std::string, const void *> global_cxs_;
 
-  friend MFCxt;
+  friend MFCx;
 
  public:
-  template<typename T> void add_global_cxt(std::string name, const T *cxt)
+  template<typename T> void add_global_cx(std::string name, const T *cx)
   {
-    global_cxts_.add_new(std::move(name), static_cast<const void *>(cxt));
+    global_cxs_.add_new(std::move(name), static_cast<const void *>(cx));
   }
 };
 
-class MFCxt {
+class MFCx {
  private:
-  MFCxtBuilder &builder_;
+  MFCxBuilder &builder_;
 
  public:
-  MFCxt(MFCxtBuilder &builder) : builder_(builder)
+  MFCx(MFCxBuilder &builder) : builder_(builder)
   {
   }
 
-  template<typename T> const T *get_global_cxt(StringRef name) const
+  template<typename T> const T *get_global_cx(StringRef name) const
   {
-    const void *cxt = builder_.global_cxts_.lookup_default_as(name, nullptr);
+    const void *cx = builder_.global_cxs_.lookup_default_as(name, nullptr);
     /* TODO: Implem type checking. */
-    return static_cast<const T *>(cxt);
+    return static_cast<const T *>(cx);
   }
 };
 
