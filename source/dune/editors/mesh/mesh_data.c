@@ -1339,21 +1339,21 @@ void ED_mesh_loops_remove(Mesh *mesh, ReportList *reports, int count)
   mesh_remove_loops(mesh, count);
 }
 
-void ED_mesh_polys_remove(Mesh *mesh, ReportList *reports, int count)
+void ed_mesh_polys_remove(Mesh *mesh, ReportList *reports, int count)
 {
   if (mesh->edit_mesh) {
-    BKE_report(reports, RPT_ERROR, "Cannot remove polys in edit mode");
+    dune_report(reports, RPT_ERR, "Cannot remove polys in edit mode");
     return;
   }
   if (count > mesh->totpoly) {
-    BKE_report(reports, RPT_ERROR, "Cannot remove more polys than the mesh contains");
+    dune_report(reports, RPT_ERR, "Cannot remove more polys than the mesh contains");
     return;
   }
 
   mesh_remove_polys(mesh, count);
 }
 
-void ED_mesh_geometry_clear(Mesh *mesh)
+void ed_mesh_geometry_clear(Mesh *mesh)
 {
   mesh_remove_verts(mesh, mesh->totvert);
   mesh_remove_edges(mesh, mesh->totedge);
@@ -1361,16 +1361,14 @@ void ED_mesh_geometry_clear(Mesh *mesh)
   mesh_remove_polys(mesh, mesh->totpoly);
 }
 
-/** \} */
-
-void ED_mesh_report_mirror_ex(wmOperator *op, int totmirr, int totfail, char selectmode)
+void ed_mesh_report_mirror_ex(wmOp *op, int totmirr, int totfail, char selmode)
 {
   const char *elem_type;
 
-  if (selectmode & SCE_SELECT_VERTEX) {
+  if (selmode & SCE_SEL_VERT) {
     elem_type = "vertices";
   }
-  else if (selectmode & SCE_SELECT_EDGE) {
+  else if (selectmode & SCE_SEL_EDGE) {
     elem_type = "edges";
   }
   else {
@@ -1378,27 +1376,27 @@ void ED_mesh_report_mirror_ex(wmOperator *op, int totmirr, int totfail, char sel
   }
 
   if (totfail) {
-    BKE_reportf(
+    dune_reportf(
         op->reports, RPT_WARNING, "%d %s mirrored, %d failed", totmirr, elem_type, totfail);
   }
   else {
-    BKE_reportf(op->reports, RPT_INFO, "%d %s mirrored", totmirr, elem_type);
+    dune_reportf(op->reports, RPT_INFO, "%d %s mirrored", totmirr, elem_type);
   }
 }
 
-void ED_mesh_report_mirror(wmOperator *op, int totmirr, int totfail)
+void ed_mesh_report_mirror(wmOp *op, int totmirr, int totfail)
 {
-  ED_mesh_report_mirror_ex(op, totmirr, totfail, SCE_SELECT_VERTEX);
+  ed_mesh_report_mirror_ex(op, totmirr, totfail, SCE_SEL_VERT);
 }
 
-Mesh *ED_mesh_context(struct DuneContext *C)
+Mesh *ed_mesh_cx(struct Cx *C)
 {
-  Mesh *mesh = CTX_data_pointer_get_type(C, "mesh", &API_Mesh).data;
+  Mesh *mesh = cx_data_ptr_get_type(C, "mesh", &API_Mesh).data;
   if (mesh != NULL) {
     return mesh;
   }
 
-  Object *ob = ED_object_active_context(C);
+  Object *ob = ed_object_active_cx(C);
   if (ob == NULL) {
     return NULL;
   }
