@@ -110,13 +110,13 @@ void edm_sel_mirrored(MEditMesh *em,
       }
     }
   }
-  else if (em->selectmode & SCE_SELECT_EDGE) {
-    BMEdge *e;
-    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-      if (!BM_elem_flag_test(e, BM_ELEM_HIDDEN) && BM_elem_flag_test(e, BM_ELEM_TAG)) {
-        BMEdge *e_mirr = EDBM_verts_mirror_get_edge(em, e);
-        if (e_mirr && !BM_elem_flag_test(e_mirr, BM_ELEM_HIDDEN)) {
-          BM_edge_select_set(bm, e_mirr, true);
+  else if (em->selmode & SCE_SEL_EDGE) {
+    MEdge *e;
+    M_ITER_MESH (e, &iter, m, M_EDGES_OF_MESH) {
+      if (!m_elem_flag_test(e, M_ELEM_HIDDEN) && m_elem_flag_test(e, M_ELEM_TAG)) {
+        MEdge *e_mirr = editmesh_verts_mirror_get_edge(em, e);
+        if (e_mirr && !m_elem_flag_test(e_mirr, BM_ELEM_HIDDEN)) {
+          m_edge_sel_set(m, e_mirr, true);
           totmirr++;
         }
         else {
@@ -126,12 +126,12 @@ void edm_sel_mirrored(MEditMesh *em,
     }
   }
   else {
-    BMFace *f;
-    BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-      if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN) && BM_elem_flag_test(f, BM_ELEM_TAG)) {
-        BMFace *f_mirr = EDBM_verts_mirror_get_face(em, f);
-        if (f_mirr && !BM_elem_flag_test(f_mirr, BM_ELEM_HIDDEN)) {
-          BM_face_select_set(bm, f_mirr, true);
+    MFace *f;
+    M_ITER_MESH (f, &iter, m, M_FACES_OF_MESH) {
+      if (!n_elem_flag_test(f, M_ELEM_HIDDEN) && m_elem_flag_test(f, M_ELEM_TAG)) {
+        MFace *f_mirr = editmesh_verts_mirror_get_face(em, f);
+        if (f_mirr && !n_elem_flag_test(f_mirr, M_ELEM_HIDDEN)) {
+          n_face_sel_set(m, f_mirr, true);
           totmirr++;
         }
         else {
@@ -141,37 +141,32 @@ void edm_sel_mirrored(MEditMesh *em,
     }
   }
 
-  EDBM_verts_mirror_cache_end(em);
+  editmesh_verts_mirror_cache_end(em);
 
   *r_totmirr = totmirr;
   *r_totfail = totfail;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Back-Buffer OpenGL Selection
- * \{ */
-
-static BMElem *edbm_select_id_bm_elem_get(Base **bases, const uint sel_id, uint *r_base_index)
+/* Back-Buffer OpenGL Selection */
+static MElem *editmesh_sel_id_mesh_elem_get(Base **bases, const uint sel_id, uint *r_base_idx)
 {
   uint elem_id;
   char elem_type = 0;
-  bool success = DRW_select_buffer_elem_get(sel_id, &elem_id, r_base_index, &elem_type);
+  bool success = drw_sel_buf_elem_get(sel_id, &elem_id, r_base_idx, &elem_type);
 
   if (success) {
-    Object *obedit = bases[*r_base_index]->object;
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    Object *obedit = bases[*r_base_idx]->object;
+    MEditMesh *em = dune_editmesh_from_object(obedit);
 
     switch (elem_type) {
-      case SCE_SELECT_FACE:
-        return (BMElem *)BM_face_at_index_find_or_table(em->bm, elem_id);
-      case SCE_SELECT_EDGE:
-        return (BMElem *)BM_edge_at_index_find_or_table(em->bm, elem_id);
-      case SCE_SELECT_VERTEX:
-        return (BMElem *)BM_vert_at_index_find_or_table(em->bm, elem_id);
+      case SCE_SEL_FACE:
+        return (MElem *)m_face_at_idx_find_or_table(em->mesh, elem_id);
+      case SCE_SEL_EDGE:
+        return (MElem *)m_edge_at_idx_find_or_table(em->mesh, elem_id);
+      case SCE_SEL_VERT:
+        return (MElem *)BM_vert_at_idx_find_or_table(em->mesh, elem_id);
       default:
-        BLI_assert(0);
+        lib_assert(0);
         return NULL;
     }
   }
@@ -179,18 +174,14 @@ static BMElem *edbm_select_id_bm_elem_get(Base **bases, const uint sel_id, uint 
   return NULL;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Find Nearest Vert/Edge/Face
+/* Find Nearest Vert/Edge/Face
  *
  * \note Screen-space manhattan distances are used here,
  * since its faster and good enough for the purpose of selection.
  *
  * \note \a dist_bias is used so we can bias against selected items.
  * when choosing between elements of a single type, but return the real distance
- * to avoid the bias interfering with distance comparisons when mixing types.
- * \{ */
+ * to avoid the bias interfering with distance comparisons when mixing types. */
 
 #define FIND_NEAR_SELECT_BIAS 5
 #define FIND_NEAR_CYCLE_THRESHOLD_MIN 3
@@ -198,61 +189,61 @@ static BMElem *edbm_select_id_bm_elem_get(Base **bases, const uint sel_id, uint 
 struct NearestVertUserData_Hit {
   float dist;
   float dist_bias;
-  int index;
-  BMVert *vert;
+  int idx;
+  MVert *vert;
 };
 
 struct NearestVertUserData {
   float mval_fl[2];
-  bool use_select_bias;
+  bool use_sel_bias;
   bool use_cycle;
-  int cycle_index_prev;
+  int cycle_idx_prev;
 
   struct NearestVertUserData_Hit hit;
   struct NearestVertUserData_Hit hit_cycle;
 };
 
 static void findnearestvert__doClosest(void *userData,
-                                       BMVert *eve,
+                                       MVert *eve,
                                        const float screen_co[2],
-                                       int index)
+                                       int idx)
 {
   struct NearestVertUserData *data = userData;
   float dist_test, dist_test_bias;
 
   dist_test = dist_test_bias = len_manhattan_v2v2(data->mval_fl, screen_co);
 
-  if (data->use_select_bias && BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-    dist_test_bias += FIND_NEAR_SELECT_BIAS;
+  if (data->use_sel_bias && m_elem_flag_test(eve, M_ELEM_SEL)) {
+    dist_test_bias += FIND_NEAR_SEL_BIAS;
   }
 
   if (dist_test_bias < data->hit.dist_bias) {
     data->hit.dist_bias = dist_test_bias;
     data->hit.dist = dist_test;
-    data->hit.index = index;
+    data->hit.idx = idx;
     data->hit.vert = eve;
   }
 
   if (data->use_cycle) {
-    if ((data->hit_cycle.vert == NULL) && (index > data->cycle_index_prev) &&
+    if ((data->hit_cycle.vert == NULL) && (index > data->cycle_idx_prev) &&
         (dist_test_bias < FIND_NEAR_CYCLE_THRESHOLD_MIN)) {
       data->hit_cycle.dist_bias = dist_test_bias;
       data->hit_cycle.dist = dist_test;
-      data->hit_cycle.index = index;
+      data->hit_cycle.idx = idx;
       data->hit_cycle.vert = eve;
     }
   }
 }
 
-BMVert *EDBM_vert_find_nearest_ex(ViewContext *vc,
+MVert *editmesh_vert_find_nearest_ex(ViewCx *vc,
                                   float *dist_px_manhattan_p,
-                                  const bool use_select_bias,
+                                  const bool use_sel_bias,
                                   bool use_cycle,
                                   Base **bases,
                                   uint bases_len,
-                                  uint *r_base_index)
+                                  uint *r_base_idx)
 {
-  uint base_index = 0;
+  uint base_idx = 0;
 
   if (!XRAY_FLAG_ENABLED(vc->v3d)) {
     uint dist_px_manhattan_test = (uint)ed_view3d_backbuf_sample_size_clamp(vc->rgn,
