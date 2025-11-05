@@ -3437,92 +3437,88 @@ void MESH_OT_select_linked(wmOperatorType *ot)
 #endif
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Select Linked (Cursor Pick) Operator
- * \{ */
+/* Select Linked (Cursor Pick) Op */
+static int editmesh_sel_linked_pick_exec(Cx *C, wmOp *op);
 
-static int edbm_select_linked_pick_exec(bContext *C, wmOperator *op);
-
-static void edbm_select_linked_pick_ex(BMEditMesh *em, BMElem *ele, bool sel, int delimit)
+static void editmesh_select_linked_pick_ex(MEditMesh *em, MElem *ele, bool sel, int delimit)
 {
-  BMesh *bm = em->bm;
-  BMWalker walker;
+  Mesh *m = em->mesh;
+  MWalker walker;
 
-  select_linked_delimit_validate(bm, &delimit);
+  sel_linked_delimit_validate(m, &delimit);
 
   if (delimit) {
-    select_linked_delimit_begin(bm, delimit);
+    sel_linked_delimit_begin(m, delimit);
   }
 
-  /* NOTE: logic closely matches #edbm_select_linked_exec, keep in sync. */
+  /* NOTE: logic closely matches #editmesh_sel_linked_exec, keep in sync. */
+  if (ele->head.htype == M_VERT) {
+    MVert *eve = (MVert *)ele;
 
-  if (ele->head.htype == BM_VERT) {
-    BMVert *eve = (BMVert *)ele;
-
-    BMW_init(&walker,
-             bm,
-             delimit ? BMW_LOOP_SHELL_WIRE : BMW_VERT_SHELL,
-             BMW_MASK_NOP,
-             delimit ? BMO_ELE_TAG : BMW_MASK_NOP,
-             BMW_MASK_NOP,
-             BMW_FLAG_TEST_HIDDEN,
-             BMW_NIL_LAY);
+    m_init(&walker,
+            m,
+            delimit ? MW_LOOP_SHELL_WIRE : MW_VERT_SHELL,
+            MW_MASK_NOP,
+            delimit ? MO_ELE_TAG : MW_MASK_NOP,
+            MW_MASK_NOP,
+            MW_FLAG_TEST_HIDDEN,
+            MW_NIL_LAY);
 
     if (delimit) {
-      BMElem *ele_walk;
-      BMW_ITER (ele_walk, &walker, eve) {
-        if (ele_walk->head.htype == BM_LOOP) {
-          BMVert *v_step = ((BMLoop *)ele_walk)->v;
-          BM_vert_select_set(bm, v_step, sel);
+      MElem *ele_walk;
+      MW_ITER (ele_walk, &walker, eve) {
+        if (ele_walk->head.htype == M_LOOP) {
+          MVert *v_step = ((MLoop *)ele_walk)->v;
+          m_vert_sel_set(m, v_step, sel);
         }
         else {
-          BMEdge *e_step = (BMEdge *)ele_walk;
-          BLI_assert(ele_walk->head.htype == BM_EDGE);
-          BM_edge_select_set(bm, e_step, sel);
+          MEdge *e_step = (MEdge *)ele_walk;
+          lib_assert(ele_walk->head.htype == M_EDGE);
+          m_edge_sel_set(m, e_step, sel);
         }
       }
     }
     else {
-      BMEdge *e_walk;
-      BMW_ITER (e_walk, &walker, eve) {
-        BM_edge_select_set(bm, e_walk, sel);
+      MEdge *e_walk;
+      MW_ITER (e_walk, &walker, eve) {
+        m_edge_sel_set(m, e_walk, sel);
       }
     }
 
-    BMW_end(&walker);
+    mw_end(&walker);
 
-    EDBM_selectmode_flush(em);
+    editmesh_selmode_flush(em);
   }
-  else if (ele->head.htype == BM_EDGE) {
-    BMEdge *eed = (BMEdge *)ele;
+  else if (ele->head.htype == M_EDGE) {
+    MEdge *eed = (MEdge *)ele;
 
-    BMW_init(&walker,
-             bm,
-             delimit ? BMW_LOOP_SHELL_WIRE : BMW_VERT_SHELL,
-             BMW_MASK_NOP,
-             delimit ? BMO_ELE_TAG : BMW_MASK_NOP,
-             BMW_MASK_NOP,
-             BMW_FLAG_TEST_HIDDEN,
-             BMW_NIL_LAY);
+    mw_init(&walker,
+             m,
+             delimit ? MW_LOOP_SHELL_WIRE : MW_VERT_SHELL,
+             MW_MASK_NOP,
+             delimit ? MO_ELE_TAG : MW_MASK_NOP,
+             MW_MASK_NOP,
+             MW_FLAG_TEST_HIDDEN,
+             MW_NIL_LAY);
 
     if (delimit) {
-      BMElem *ele_walk;
-      BMW_ITER (ele_walk, &walker, eed) {
-        if (ele_walk->head.htype == BM_LOOP) {
-          BMEdge *e_step = ((BMLoop *)ele_walk)->e;
-          BM_edge_select_set(bm, e_step, sel);
+      MElem *ele_walk;
+      MW_ITER (ele_walk, &walker, eed) {
+        if (ele_walk->head.htype == M_LOOP) {
+          MEdge *e_step = ((MLoop *)ele_walk)->e;
+          m_edge_sel_set(m, e_step, sel);
         }
         else {
-          BMEdge *e_step = (BMEdge *)ele_walk;
-          BLI_assert(ele_walk->head.htype == BM_EDGE);
-          BM_edge_select_set(bm, e_step, sel);
+          MEdge *e_step = (MEdge *)ele_walk;
+          lib_assert(ele_walk->head.htype == M_EDGE);
+          m_edge_sel_set(m, e_step, sel);
         }
       }
     }
     else {
-      BMEdge *e_walk;
-      BMW_ITER (e_walk, &walker, eed) {
-        BM_edge_select_set(bm, e_walk, sel);
+      MEdge *e_walk;
+      MW_ITER (e_walk, &walker, eed) {
+        m_edge_select_set(bm, e_walk, sel);
       }
     }
 
@@ -3592,7 +3588,7 @@ static int edbm_select_linked_pick_invoke(bContext *C, wmOperator *op, const wmE
     }
     if (has_edges == false) {
       MEM_freeN(bases);
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
   }
 
@@ -3605,42 +3601,42 @@ static int edbm_select_linked_pick_invoke(bContext *C, wmOperator *op, const wmE
     const bool ok = unified_findnearest(&vc, bases, bases_len, &base_index, &eve, &eed, &efa);
     if (!ok) {
       MEM_freeN(bases);
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
-    basact = bases[base_index];
+    basact = bases[base_idx];
   }
 
-  ED_view3d_viewcontext_init_object(&vc, basact->object);
-  BMEditMesh *em = vc.em;
-  BMesh *bm = em->bm;
+  ed_view3d_viewcx_init_object(&vc, basact->object);
+  MEditMesh *em = vc.em;
+  Mesh *bm = em->mesh;
 
 #ifdef USE_LINKED_SELECT_DEFAULT_HACK
-  int delimit = select_linked_delimit_default_from_op(op, vc.scene->toolsettings->selectmode);
+  int delimit = select_linked_delimit_default_from_op(op, vc.scene->toolsettings->selmode);
 #else
-  int delimit = RNA_enum_get(op->ptr, "delimit");
+  int delimit = api_enum_get(op->ptr, "delimit");
 #endif
 
-  BMElem *ele = EDBM_elem_from_selectmode(em, eve, eed, efa);
+  MElem *ele = editmesh_elem_from_selmode(em, eve, eed, efa);
 
-  edbm_select_linked_pick_ex(em, ele, sel, delimit);
+  edbm_sel_linked_pick_ex(em, ele, sel, delimit);
 
   /* To support redo. */
   {
     /* Note that the `base_index` can't be used as the index depends on the 3D Viewport
      * which might not be available on redo. */
-    BM_mesh_elem_index_ensure(bm, ele->head.htype);
+    m_elem_idx_ensure(bm, ele->head.htype);
     int object_index;
-    index = EDBM_elem_to_index_any_multi(vc.view_layer, em, ele, &object_index);
-    BLI_assert(object_index >= 0);
-    RNA_int_set(op->ptr, "object_index", object_index);
-    RNA_int_set(op->ptr, "index", index);
+    index = editmesh_elem_to_idx_any_multi(vc.view_layer, em, ele, &object_idx);
+    lib_assert(object_index >= 0);
+    api_int_set(op->ptr, "object_index", object_index);
+    api_int_set(op->ptr, "index", index);
   }
 
-  DEG_id_tag_update(basact->object->data, ID_RECALC_SELECT);
-  WM_event_add_notifier(C, NC_GEOM | ND_SELECT, basact->object->data);
+  graph_id_tag_update(basact->object->data, ID_RECALC_SELECT);
+  wm_event_add_notifier(C, NC_GEOM | ND_SELECT, basact->object->data);
 
   MEM_freeN(bases);
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 static int edbm_select_linked_pick_exec(bContext *C, wmOperator *op)
