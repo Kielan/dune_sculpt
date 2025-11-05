@@ -208,12 +208,12 @@ void mesh_ot_uvs_rotate(struct wmOpType *ot);
 void mesh_ot_uvs_reverse(struct wmOpType *ot);
 void mesh_ot_colors_rotate(struct wmOpType *ot);
 void mesh_ot_colors_reverse(struct wmOpType *ot);
-void mesh_OT_delete(struct wmOpType *ot);
-void mesh_OT_delete_loose(struct wmOpType *ot);
-void mesh_OT_edge_collapse(struct wmOpeType *ot);
-void MESH_OT_faces_shade_smooth(struct wmOpType *ot);
-void MESH_OT_faces_shade_flat(struct wmOpType *ot);
-void MESH_OT_split(struct wmOpType *ot);
+void mesh_ot_delete(struct wmOpType *ot);
+void mesh_ot_delete_loose(struct wmOpType *ot);
+void mesh_ot_edge_collapse(struct wmOpeType *ot);
+void MESH_ot_faces_shade_smooth(struct wmOpType *ot);
+void MESH_ot_faces_shade_flat(struct wmOpType *ot);
+void MESH_ot_split(struct wmOpType *ot);
 void MESH_OT_edge_rotate(struct wmOpType *ot);
 void MESH_OT_hide(struct wmOpType *ot);
 void MESH_OT_reveal(struct wmOpType *ot);
@@ -238,41 +238,41 @@ void MESH_OT_dissolve_limited(struct wmOpType *ot);
 void MESH_OT_dissolve_degenerate(struct wmOpType *ot);
 void MESH_OT_delete_edgeloop(struct wmOpType *ot);
 void MESH_OT_edge_face_add(struct wmOpType *ot);
-void MESH_OT_duplicate(struct wmOpType *ot);
-void MESH_OT_merge(struct wmOpType *ot);
-void MESH_OT_remove_doubles(struct wmOpType *ot);
-void MESH_OT_poke(struct wmOpType *ot);
-void MESH_OT_point_normals(struct wmOpType *ot);
-void MESH_OT_merge_normals(struct wmOpType *ot);
-void MESH_OT_split_normals(struct wmOpType *ot);
-void mesh_OT_normals_tools(struct wmOpType *ot);
-void mesh_OT_set_normals_from_faces(struct wmOpType *ot);
-void mesh_OT_average_normals(struct wmOpType *ot);
-void mesh_OT_smooth_normals(struct wmOpType *ot);
-void mesh_OT_mod_weighted_strength(struct wmOpType *ot);
+void mesh_ot_duplicate(struct wmOpType *ot);
+void mesh_ot_merge(struct wmOpType *ot);
+void mesh_ot_remove_doubles(struct wmOpType *ot);
+void mesh_ot_poke(struct wmOpType *ot);
+void mesh_ot_point_normals(struct wmOpType *ot);
+void mesh_ot_merge_normals(struct wmOpType *ot);
+void mesh_ot_split_normals(struct wmOpType *ot);
+void mesh_ot_normals_tools(struct wmOpType *ot);
+void mesh_ot_set_normals_from_faces(struct wmOpType *ot);
+void mesh_ot_average_normals(struct wmOpType *ot);
+void mesh_ot_smooth_normals(struct wmOpType *ot);
+void mesh_ot_mod_weighted_strength(struct wmOpType *ot);
 
-/* *** editmesh_mask_extract.c */
-void MESH_OT_paint_mask_extract(struct wmOpType *ot);
-void MESH_OT_face_set_extract(struct wmOpType *ot);
-void MESH_OT_paint_mask_slice(struct wmOpType *ot);
+/* editmesh_mask_extract.c */
+void mesh_ot_paint_mask_extract(struct wmOpType *ot);
+void mesh_ot_face_set_extract(struct wmOpType *ot);
+void mesh_ot_paint_mask_slice(struct wmOpType *ot);
 
 /** Called in transform_ops.c, on each regeneration of key-maps. */
 struct wmKeyMap *point_normals_modal_keymap(wmKeyConfig *keyconf);
 
 #if defined(WITH_FREESTYLE)
-void MESH_OT_mark_freestyle_edge(struct wmOpType *ot);
-void MESH_OT_mark_freestyle_face(struct wmOpType *ot);
+void mesh_ot_mark_freestyle_edge(struct wmOpType *ot);
+void mesh_it_mark_freestyle_face(struct wmOpType *ot);
 #endif
 
 /* *** mesh_data.c *** */
-void MESH_OT_uv_texture_add(struct wmOperatorType *ot);
-void MESH_OT_uv_texture_remove(struct wmOperatorType *ot);
-void MESH_OT_vertex_color_add(struct wmOperatorType *ot);
-void MESH_OT_vertex_color_remove(struct wmOperatorType *ot);
-void MESH_OT_sculpt_vertex_color_add(struct wmOperatorType *ot);
-void MESH_OT_sculpt_vertex_color_remove(struct wmOperatorType *ot);
-void MESH_OT_customdata_mask_clear(struct wmOperatorType *ot);
-void MESH_OT_customdata_skin_add(struct wmOperatorType *ot);
-void MESH_OT_customdata_skin_clear(struct wmOperatorType *ot);
-void MESH_OT_customdata_custom_splitnormals_add(struct wmOperatorType *ot);
-void MESH_OT_customdata_custom_splitnormals_clear(struct wmOperatorType *ot);
+void mesh_ot_uv_texture_add(struct wmOpType *ot);
+void mesh_ot_uv_texture_remove(struct wmOpType *ot);
+void mesh_ot_vert_color_add(struct wmOpType *ot);
+void mesh_ot_vert_color_remove(struct wmOpType *ot);
+void mesh_ot_sculpt_vert_color_add(struct wmOpType *ot);
+void mesh_ot_sculpt_vert_color_remove(struct wmOpType *ot);
+void mesh_ot_customdata_mask_clear(struct wmOpType *ot);
+void mesh_ot_customdata_skin_add(struct wmOpType *ot);
+void mesh_ot_customdata_skin_clear(struct wmOpType *ot);
+void mesh_ot_customdata_custom_splitnormals_add(struct wmOpType *ot);
+void mesh_ot_customdata_custom_splitnormals_clear(struct wmOpType *ot);
