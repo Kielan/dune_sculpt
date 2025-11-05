@@ -1,9 +1,5 @@
-/** \file
- * \ingroup edmesh
- */
-
-/* Internal for editmesh_xxxx.c functions */
-
+/* edmesh */
+/* Internal for editmesh_xxxx.c fns */
 #pragma once
 
 struct MEditMesh;
@@ -132,10 +128,10 @@ void mesh_ot_polybuild_delete_at_cursor(struct wmOpType *ot);
 /* editmesh_inset.c */
 void MESH_OT_inset(struct wmOpType *ot);
 
-/* *** editmesh_intersect */
-void MESH_OT_intersect(struct wmOpType *ot);
-void MESH_OT_intersect_boolean(struct wmOpType *ot);
-void MESH_OT_face_split_by_edges(struct wmOpType *ot);
+/* editmesh_intersect */
+void mesh_ot_intersect(struct wmOpType *ot);
+void mesh_ot_intersect_boolean(struct wmOpType *ot);
+void mesh_ot_face_split_by_edges(struct wmOpType *ot);
 
 /* editmesh_knife.c *** */
 void mesh_ot_knife_tool(struct wmOpType *ot);
@@ -192,29 +188,29 @@ void mesh_ot_subdivide_edgering(struct wmOpType *ot);
 void mesh_ot_unsubdivide(struct wmOpType *ot);
 void mesh_ot_normals_make_consistent(struct wmOpType *ot);
 void mesh_ot_verts_smooth(struct wmOpType *ot);
-void mesh_OT_verts_smooth_laplacian(struct wmOpType *ot);
-void mesh_OT_vert_connect(struct wmOpType *ot);
-void mesh_OT_vert_connect_path(struct wmOpType *ot);
-void mesh_OT_vert_connect_concave(struct wmOpType *ot);
-void mesh_OT_vert_connect_nonplanar(struct wmOpType *ot);
-void mesh_OT_face_make_planar(struct wmOpType *ot);
-void mesh_OT_edge_split(struct wmOpType *ot);
-void mesh_OT_bridge_edge_loops(struct wmOpType *ot);
-void mesh_OT_offset_edge_loops(struct wmOpType *ot);
-void mesh_OT_wireframe(struct wmOpType *ot);
-void mesh_OT_convex_hull(struct wmOpType *ot);
-void mesh_OT_symmetrize(struct wmOpType *ot);
-void mesh_OT_symmetry_snap(struct wmOpType *ot);
-void mesh_OT_shape_propagate_to_all(struct wmOpType *ot);
-void mesh_OT_blend_from_shape(struct wmOpType *ot);
-void mesh_OT_sort_elements(struct wmOpType *ot);
-void mesh_OT_uvs_rotate(struct wmOpType *ot);
-void mesh_OT_uvs_reverse(struct wmOpType *ot);
-void mesh_OT_colors_rotate(struct wmOpType *ot);
-void MESH_OT_colors_reverse(struct wmOpType *ot);
-void MESH_OT_delete(struct wmOpType *ot);
-void MESH_OT_delete_loose(struct wmOpType *ot);
-void MESH_OT_edge_collapse(struct wmOpeType *ot);
+void mesh_ot_verts_smooth_laplacian(struct wmOpType *ot);
+void mesh_ot_vert_connect(struct wmOpType *ot);
+void mesh_ot_vert_connect_path(struct wmOpType *ot);
+void mesh_ot_vert_connect_concave(struct wmOpType *ot);
+void mesh_ot_vert_connect_nonplanar(struct wmOpType *ot);
+void mesh_ot_face_make_planar(struct wmOpType *ot);
+void mesh_ot_edge_split(struct wmOpType *ot);
+void mesh_ot_bridge_edge_loops(struct wmOpType *ot);
+void mesh_ot_offset_edge_loops(struct wmOpType *ot);
+void mesh_ot_wireframe(struct wmOpType *ot);
+void mesh_ot_convex_hull(struct wmOpType *ot);
+void mesh_ot_symmetrize(struct wmOpType *ot);
+void mesh_ot_symmetry_snap(struct wmOpType *ot);
+void mesh_ot_shape_propagate_to_all(struct wmOpType *ot);
+void mesh_ot_blend_from_shape(struct wmOpType *ot);
+void mesh_ot_sort_elements(struct wmOpType *ot);
+void mesh_ot_uvs_rotate(struct wmOpType *ot);
+void mesh_ot_uvs_reverse(struct wmOpType *ot);
+void mesh_ot_colors_rotate(struct wmOpType *ot);
+void mesh_ot_colors_reverse(struct wmOpType *ot);
+void mesh_OT_delete(struct wmOpType *ot);
+void mesh_OT_delete_loose(struct wmOpType *ot);
+void mesh_OT_edge_collapse(struct wmOpeType *ot);
 void MESH_OT_faces_shade_smooth(struct wmOpType *ot);
 void MESH_OT_faces_shade_flat(struct wmOpType *ot);
 void MESH_OT_split(struct wmOpType *ot);
