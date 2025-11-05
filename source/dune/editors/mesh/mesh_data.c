@@ -1,81 +1,81 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_view3d_types.h"
+#include "types_mesh_types.h"
+#include "types_meshdata_types.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
+#include "types_view3d_types.h"
 
-#include "BLI_alloca.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_alloca.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_editmesh.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_report.h"
+#include "dune_cx.h"
+#include "dune_customdata.h"
+#include "dune_editmesh.h"
+#include "dune_mesh.h"
+#include "dune_mesh_runtime.h"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_mesh.h"
-#include "ED_object.h"
-#include "ED_paint.h"
-#include "ED_screen.h"
-#include "ED_uvedit.h"
-#include "ED_view3d.h"
+#include "ed_mesh.h"
+#include "ed_object.h"
+#include "ed_paint.h"
+#include "ed_screen.h"
+#include "ed_uvedit.h"
+#include "ed_view3d.h"
 
 #include "mesh_intern.h" /* own include */
 
 static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_tot)
 {
   CustomData *data;
-  BMesh *bm = (me->edit_mesh) ? me->edit_mesh->bm : NULL;
+  Mesh *m = (me->edit_mesh) ? me->edit_mesh->bm : NULL;
   int tot;
 
   switch (htype) {
-    case BM_VERT:
-      if (bm) {
-        data = &bm->vdata;
-        tot = bm->totvert;
+    case M_VERT:
+      if (m) {
+        data = &m->vdata;
+        tot = m->totvert;
       }
       else {
         data = &me->vdata;
         tot = me->totvert;
       }
       break;
-    case BM_EDGE:
-      if (bm) {
-        data = &bm->edata;
-        tot = bm->totedge;
+    case M_EDGE:
+      if (m) {
+        data = &m->edata;
+        tot = m->totedge;
       }
       else {
         data = &me->edata;
         tot = me->totedge;
       }
       break;
-    case BM_LOOP:
-      if (bm) {
-        data = &bm->ldata;
-        tot = bm->totloop;
+    case M_LOOP:
+      if (m) {
+        data = &m->ldata;
+        tot = m->totloop;
       }
       else {
         data = &me->ldata;
         tot = me->totloop;
       }
       break;
-    case BM_FACE:
-      if (bm) {
-        data = &bm->pdata;
-        tot = bm->totface;
+    case M_FACE:
+      if (m) {
+        data = &m->pdata;
+        tot = m->totface;
       }
       else {
         data = &me->pdata;
@@ -83,7 +83,7 @@ static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_t
       }
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       tot = 0;
       data = NULL;
       break;
@@ -93,36 +93,36 @@ static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_t
   return data;
 }
 
-#define GET_CD_DATA(me, data) ((me)->edit_mesh ? &(me)->edit_mesh->bm->data : &(me)->data)
+#define GET_CD_DATA(me, data) ((me)->edit_mesh ? &(me)->edit_mesh->mesh->data : &(me)->data)
 static void delete_customdata_layer(Mesh *me, CustomDataLayer *layer)
 {
   const int type = layer->type;
   CustomData *data;
-  int layer_index, tot, n;
+  int layer_idx, tot, n;
 
-  char htype = BM_FACE;
-  if (ELEM(type, CD_MLOOPCOL, CD_MLOOPUV)) {
-    htype = BM_LOOP;
+  char htype = M_FACE;
+  if (elem(type, CD_MLOOPCOL, CD_MLOOPUV)) {
+    htype = M_LOOP;
   }
-  else if (ELEM(type, CD_PROP_COLOR)) {
-    htype = BM_VERT;
+  else if (elem(type, CD_PROP_COLOR)) {
+    htype = M_VERT;
   }
 
   data = mesh_customdata_get_type(me, htype, &tot);
-  layer_index = CustomData_get_layer_index(data, type);
-  n = (layer - &data->layers[layer_index]);
-  BLI_assert(n >= 0 && (n + layer_index) < data->totlayer);
+  layer_idx = CustomData_get_layer_idx(data, type);
+  n = (layer - &data->layers[layer_idx]);
+  lib_assert(n >= 0 && (n + layer_idx) < data->totlayer);
 
   if (me->edit_mesh) {
-    BM_data_layer_free_n(me->edit_mesh->bm, data, type, n);
+    m_data_layer_free_n(me->edit_mesh->mesh, data, type, n);
   }
   else {
-    CustomData_free_layer(data, type, tot, layer_index + n);
-    BKE_mesh_update_customdata_pointers(me, true);
+    CustomData_free_layer(data, type, tot, layer_idx + n);
+    dune_mesh_update_customdata_ptrs(me, true);
   }
 }
 
-static void mesh_uv_reset_array(float **fuv, const int len)
+static void mesh_uv_reset_arr(float **fuv, const int len)
 {
   if (len == 3) {
     fuv[0][0] = 0.0;
@@ -162,23 +162,23 @@ static void mesh_uv_reset_array(float **fuv, const int len)
   }
 }
 
-static void mesh_uv_reset_bmface(BMFace *f, const int cd_loop_uv_offset)
+static void mesh_uv_reset_mface(MFace *f, const int cd_loop_uv_offset)
 {
-  float **fuv = BLI_array_alloca(fuv, f->len);
-  BMIter liter;
-  BMLoop *l;
+  float **fuv = lib_arr_alloca(fuv, f->len);
+  MIter liter;
+  MLoop *l;
   int i;
 
-  BM_ITER_ELEM_INDEX (l, &liter, f, BM_LOOPS_OF_FACE, i) {
-    fuv[i] = ((MLoopUV *)BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset))->uv;
+  M_ITER_ELEM_IDX (l, &liter, f, M_LOOPS_OF_FACE, i) {
+    fuv[i] = ((MLoopUV *)M_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset))->uv;
   }
 
-  mesh_uv_reset_array(fuv, f->len);
+  mesh_uv_reset_arr(fuv, f->len);
 }
 
 static void mesh_uv_reset_mface(MPoly *mp, MLoopUV *mloopuv)
 {
-  float **fuv = BLI_array_alloca(fuv, mp->totloop);
+  float **fuv = lib_arr_alloca(fuv, mp->totloop);
 
   for (int i = 0; i < mp->totloop; i++) {
     fuv[i] = mloopuv[mp->loopstart + i].uv;
@@ -187,21 +187,21 @@ static void mesh_uv_reset_mface(MPoly *mp, MLoopUV *mloopuv)
   mesh_uv_reset_array(fuv, mp->totloop);
 }
 
-void ED_mesh_uv_loop_reset_ex(struct Mesh *me, const int layernum)
+void ed_mesh_uv_loop_reset_ex(struct Mesh *me, const int layernum)
 {
-  BMEditMesh *em = me->edit_mesh;
+  MEditMesh *em = me->edit_mesh;
 
   if (em) {
     /* Collect BMesh UVs */
-    const int cd_loop_uv_offset = CustomData_get_n_offset(&em->bm->ldata, CD_MLOOPUV, layernum);
+    const int cd_loop_uv_offset = CustomData_get_n_offset(&em->mesh->ldata, CD_MLOOPUV, layernum);
 
-    BMFace *efa;
-    BMIter iter;
+    MFace *efa;
+    MIter iter;
 
-    BLI_assert(cd_loop_uv_offset != -1);
+    lib_assert(cd_loop_uv_offset != -1);
 
-    BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-      if (!BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+    M_ITER_MESH (efa, &iter, em->mesh, M_FACES_OF_MESH) {
+      if (!m_elem_flag_test(efa, M_ELEM_SEL)) {
         continue;
       }
 
@@ -210,7 +210,7 @@ void ED_mesh_uv_loop_reset_ex(struct Mesh *me, const int layernum)
   }
   else {
     /* Collect Mesh UVs */
-    BLI_assert(CustomData_has_layer(&me->ldata, CD_MLOOPUV));
+    lib_assert(CustomData_has_layer(&me->ldata, CD_MLOOPUV));
     MLoopUV *mloopuv = CustomData_get_layer_n(&me->ldata, CD_MLOOPUV, layernum);
 
     for (int i = 0; i < me->totpoly; i++) {
@@ -218,25 +218,25 @@ void ED_mesh_uv_loop_reset_ex(struct Mesh *me, const int layernum)
     }
   }
 
-  DEG_id_tag_update(&me->id, 0);
+  graph_id_tag_update(&me->id, 0);
 }
 
-void ED_mesh_uv_loop_reset(struct bContext *C, struct Mesh *me)
+void ed_mesh_uv_loop_reset(struct Cx *C, struct Mesh *me)
 {
   /* could be ldata or pdata */
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int layernum = CustomData_get_active_layer(ldata, CD_MLOOPUV);
-  ED_mesh_uv_loop_reset_ex(me, layernum);
+  ed_mesh_uv_loop_reset_ex(me, layernum);
 
-  WM_event_add_notifier(C, NC_GEOM | ND_DATA, me);
+  wm_event_add_notifier(C, NC_GEOM | ND_DATA, me);
 }
 
-int ED_mesh_uv_texture_add(
+int ed_mesh_uv_texture_add(
     Mesh *me, const char *name, const bool active_set, const bool do_init, ReportList *reports)
 {
   /* NOTE: keep in sync with #ED_mesh_color_add. */
 
-  BMEditMesh *em;
+  MEditMesh *em;
   int layernum_dst;
 
   bool is_init = false;
@@ -246,27 +246,27 @@ int ED_mesh_uv_texture_add(
 
     layernum_dst = CustomData_number_of_layers(&em->bm->ldata, CD_MLOOPUV);
     if (layernum_dst >= MAX_MTFACE) {
-      BKE_reportf(reports, RPT_WARNING, "Cannot add more than %i UV maps", MAX_MTFACE);
+      dune_reportf(reports, RPT_WARNING, "Cannot add more than %i UV maps", MAX_MTFACE);
       return -1;
     }
 
     /* CD_MLOOPUV */
-    BM_data_layer_add_named(em->bm, &em->bm->ldata, CD_MLOOPUV, name);
+    mesh_data_layer_add_named(em->mesh, &em->mesh->ldata, CD_MLOOPUV, name);
     /* copy data from active UV */
     if (layernum_dst && do_init) {
-      const int layernum_src = CustomData_get_active_layer(&em->bm->ldata, CD_MLOOPUV);
-      BM_data_layer_copy(em->bm, &em->bm->ldata, CD_MLOOPUV, layernum_src, layernum_dst);
+      const int layernum_src = CustomData_get_active_layer(&em->mesh->ldata, CD_MLOOPUV);
+      mesh_data_layer_copy(em->mesh, &em->mesh->ldata, CD_MLOOPUV, layernum_src, layernum_dst);
 
       is_init = true;
     }
     if (active_set || layernum_dst == 0) {
-      CustomData_set_layer_active(&em->bm->ldata, CD_MLOOPUV, layernum_dst);
+      CustomData_set_layer_active(&em->mesh->ldata, CD_MLOOPUV, layernum_dst);
     }
   }
   else {
     layernum_dst = CustomData_number_of_layers(&me->ldata, CD_MLOOPUV);
     if (layernum_dst >= MAX_MTFACE) {
-      BKE_reportf(reports, RPT_WARNING, "Cannot add more than %i UV maps", MAX_MTFACE);
+      dune_reportf(reports, RPT_WARNING, "Cannot add more than %i UV maps", MAX_MTFACE);
       return -1;
     }
 
@@ -283,49 +283,49 @@ int ED_mesh_uv_texture_add(
       CustomData_set_layer_active(&me->ldata, CD_MLOOPUV, layernum_dst);
     }
 
-    BKE_mesh_update_customdata_pointers(me, true);
+    dune_mesh_update_customdata_ptrs(me, true);
   }
 
   /* don't overwrite our copied coords */
   if (!is_init && do_init) {
-    ED_mesh_uv_loop_reset_ex(me, layernum_dst);
+    ed_mesh_uv_loop_reset_ex(me, layernum_dst);
   }
 
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return layernum_dst;
 }
 
-void ED_mesh_uv_texture_ensure(struct Mesh *me, const char *name)
+void ed_mesh_uv_texture_ensure(struct Mesh *me, const char *name)
 {
-  BMEditMesh *em;
+  MEditMesh *em;
   int layernum_dst;
 
   if (me->edit_mesh) {
     em = me->edit_mesh;
 
-    layernum_dst = CustomData_number_of_layers(&em->bm->ldata, CD_MLOOPUV);
+    layernum_dst = CustomData_number_of_layers(&em->mesh->ldata, CD_MLOOPUV);
     if (layernum_dst == 0) {
-      ED_mesh_uv_texture_add(me, name, true, true, NULL);
+      ed_mesh_uv_texture_add(me, name, true, true, NULL);
     }
   }
   else {
     layernum_dst = CustomData_number_of_layers(&me->ldata, CD_MLOOPUV);
     if (layernum_dst == 0) {
-      ED_mesh_uv_texture_add(me, name, true, true, NULL);
+      ed_mesh_uv_texture_add(me, name, true, true, NULL);
     }
   }
 }
 
-bool ED_mesh_uv_texture_remove_index(Mesh *me, const int n)
+bool ed_mesh_uv_texture_remove_index(Mesh *me, const int n)
 {
   CustomData *ldata = GET_CD_DATA(me, ldata);
   CustomDataLayer *cdlu;
   int index;
 
-  index = CustomData_get_layer_index_n(ldata, CD_MLOOPUV, n);
-  cdlu = (index == -1) ? NULL : &ldata->layers[index];
+  idx = CustomData_get_layer_idx_n(ldata, CD_MLOOPUV, n);
+  cdlu = (index == -1) ? NULL : &ldata->layers[idx];
 
   if (!cdlu) {
     return false;
@@ -333,8 +333,8 @@ bool ED_mesh_uv_texture_remove_index(Mesh *me, const int n)
 
   delete_customdata_layer(me, cdlu);
 
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return true;
 }
@@ -345,47 +345,47 @@ bool ED_mesh_uv_texture_remove_active(Mesh *me)
   const int n = CustomData_get_active_layer(ldata, CD_MLOOPUV);
 
   if (n != -1) {
-    return ED_mesh_uv_texture_remove_index(me, n);
+    return ed_mesh_uv_texture_remove_idx(me, n);
   }
   return false;
 }
-bool ED_mesh_uv_texture_remove_named(Mesh *me, const char *name)
+bool ed_mesh_uv_texture_remove_named(Mesh *me, const char *name)
 {
   /* texpoly/uv are assumed to be in sync */
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int n = CustomData_get_named_layer(ldata, CD_MLOOPUV, name);
   if (n != -1) {
-    return ED_mesh_uv_texture_remove_index(me, n);
+    return ed_mesh_uv_texture_remove_idx(me, n);
   }
   return false;
 }
 
-int ED_mesh_color_add(
+int ed_mesh_color_add(
     Mesh *me, const char *name, const bool active_set, const bool do_init, ReportList *reports)
 {
   /* NOTE: keep in sync with #ED_mesh_uv_texture_add. */
 
-  BMEditMesh *em;
+  MEditMesh *em;
   int layernum;
 
   if (me->edit_mesh) {
     em = me->edit_mesh;
 
-    layernum = CustomData_number_of_layers(&em->bm->ldata, CD_MLOOPCOL);
+    layernum = CustomData_number_of_layers(&em->mesh->ldata, CD_MLOOPCOL);
     if (layernum >= MAX_MCOL) {
-      BKE_reportf(reports, RPT_WARNING, "Cannot add more than %i vertex color layers", MAX_MCOL);
+      dune_reportf(reports, RPT_WARNING, "Cannot add more than %i vertex color layers", MAX_MCOL);
       return -1;
     }
 
     /* CD_MLOOPCOL */
-    BM_data_layer_add_named(em->bm, &em->bm->ldata, CD_MLOOPCOL, name);
+    m_data_layer_add_named(em->mesh, &em->mesh->ldata, CD_MLOOPCOL, name);
     /* copy data from active vertex color layer */
     if (layernum && do_init) {
       const int layernum_dst = CustomData_get_active_layer(&em->bm->ldata, CD_MLOOPCOL);
-      BM_data_layer_copy(em->bm, &em->bm->ldata, CD_MLOOPCOL, layernum_dst, layernum);
+      m_data_layer_copy(em->mesh, &em->mesh->ldata, CD_MLOOPCOL, layernum_dst, layernum);
     }
     if (active_set || layernum == 0) {
-      CustomData_set_layer_active(&em->bm->ldata, CD_MLOOPCOL, layernum);
+      CustomData_set_layer_active(&em->mesh->ldata, CD_MLOOPCOL, layernum);
     }
   }
   else {
@@ -407,85 +407,83 @@ int ED_mesh_color_add(
       CustomData_set_layer_active(&me->ldata, CD_MLOOPCOL, layernum);
     }
 
-    BKE_mesh_update_customdata_pointers(me, true);
+    dune_mesh_update_customdata_pointers(me, true);
   }
 
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return layernum;
 }
 
-bool ED_mesh_color_ensure(struct Mesh *me, const char *name)
+bool ed_mesh_color_ensure(struct Mesh *me, const char *name)
 {
-  BLI_assert(me->edit_mesh == NULL);
+  lib_assert(me->edit_mesh == NULL);
 
   if (!me->mloopcol && me->totloop) {
     CustomData_add_layer_named(&me->ldata, CD_MLOOPCOL, CD_DEFAULT, NULL, me->totloop, name);
     BKE_mesh_update_customdata_pointers(me, true);
   }
 
-  DEG_id_tag_update(&me->id, 0);
+  graph_id_tag_update(&me->id, 0);
 
   return (me->mloopcol != NULL);
 }
 
-bool ED_mesh_color_remove_index(Mesh *me, const int n)
+bool ed_mesh_color_remove_idx(Mesh *me, const int n)
 {
   CustomData *ldata = GET_CD_DATA(me, ldata);
   CustomDataLayer *cdl;
-  int index;
+  int idx;
 
-  index = CustomData_get_layer_index_n(ldata, CD_MLOOPCOL, n);
-  cdl = (index == -1) ? NULL : &ldata->layers[index];
+  idx = CustomData_get_layer_idx_n(ldata, CD_MLOOPCOL, n);
+  cdl = (idx == -1) ? NULL : &ldata->layers[idx];
 
   if (!cdl) {
     return false;
   }
 
   delete_customdata_layer(me, cdl);
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return true;
 }
-bool ED_mesh_color_remove_active(Mesh *me)
+bool ed_mesh_color_remove_active(Mesh *me)
 {
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int n = CustomData_get_active_layer(ldata, CD_MLOOPCOL);
   if (n != -1) {
-    return ED_mesh_color_remove_index(me, n);
+    return ed_mesh_color_remove_idx(me, n);
   }
   return false;
 }
-bool ED_mesh_color_remove_named(Mesh *me, const char *name)
+bool ed_mesh_color_remove_named(Mesh *me, const char *name)
 {
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int n = CustomData_get_named_layer(ldata, CD_MLOOPCOL, name);
   if (n != -1) {
-    return ED_mesh_color_remove_index(me, n);
+    return ed_mesh_color_remove_index(me, n);
   }
   return false;
 }
 
 /*********************** General poll ************************/
-
-static bool layers_poll(bContext *C)
+static bool layers_poll(Cx *C)
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   ID *data = (ob) ? ob->data : NULL;
   return (ob && !ID_IS_LINKED(ob) && ob->type == OB_MESH && data && !ID_IS_LINKED(data));
 }
 
-/*********************** Sculpt Vertex colors operators ************************/
-
-static bool sculpt_vertex_color_remove_poll(bContext *C)
+/*********************** Sculpt Vertex colors ops ************************/
+static bool sculpt_vert_color_remove_poll(Cx *C)
 {
   if (!layers_poll(C)) {
     return false;
   }
 
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
   CustomData *vdata = GET_CD_DATA(me, vdata);
   const int active = CustomData_get_active_layer(vdata, CD_PROP_COLOR);
@@ -496,40 +494,39 @@ static bool sculpt_vertex_color_remove_poll(bContext *C)
   return false;
 }
 
-int ED_mesh_sculpt_color_add(
+int ed_mesh_sculpt_color_add(
     Mesh *me, const char *name, const bool active_set, const bool do_init, ReportList *reports)
 {
-  /* NOTE: keep in sync with #ED_mesh_uv_texture_add. */
-
-  BMEditMesh *em;
+  /* NOTE: keep in sync with #ed_mesh_uv_texture_add. */
+  MEditMesh *em;
   int layernum;
 
   if (me->edit_mesh) {
     em = me->edit_mesh;
 
-    layernum = CustomData_number_of_layers(&em->bm->vdata, CD_PROP_COLOR);
+    layernum = CustomData_number_of_layers(&em->mesh->vdata, CD_PROP_COLOR);
     if (layernum >= MAX_MCOL) {
-      BKE_reportf(
+      dune_reportf(
           reports, RPT_WARNING, "Cannot add more than %i sculpt vertex color layers", MAX_MCOL);
       return -1;
     }
 
     /* CD_PROP_COLOR */
-    BM_data_layer_add_named(em->bm, &em->bm->vdata, CD_PROP_COLOR, name);
-    /* copy data from active vertex color layer */
+    m_data_layer_add_named(em->mesh, &em->mesh->vdata, CD_PROP_COLOR, name);
+    /* copy data from active vert color layer */
     if (layernum && do_init) {
-      const int layernum_dst = CustomData_get_active_layer(&em->bm->vdata, CD_PROP_COLOR);
-      BM_data_layer_copy(em->bm, &em->bm->vdata, CD_PROP_COLOR, layernum_dst, layernum);
+      const int layernum_dst = CustomData_get_active_layer(&em->mesh->vdata, CD_PROP_COLOR);
+      m_data_layer_copy(em->mesh, &em->mesh->vdata, CD_PROP_COLOR, layernum_dst, layernum);
     }
     if (active_set || layernum == 0) {
-      CustomData_set_layer_active(&em->bm->vdata, CD_PROP_COLOR, layernum);
+      CustomData_set_layer_active(&em->mesh->vdata, CD_PROP_COLOR, layernum);
     }
   }
   else {
     layernum = CustomData_number_of_layers(&me->vdata, CD_PROP_COLOR);
     if (layernum >= MAX_MCOL) {
-      BKE_reportf(
-          reports, RPT_WARNING, "Cannot add more than %i sculpt vertex color layers", MAX_MCOL);
+      dune_reportf(
+          reports, RPT_WARNING, "Cannot add more than %i sculpt vert color layers", MAX_MCOL);
       return -1;
     }
 
@@ -546,76 +543,75 @@ int ED_mesh_sculpt_color_add(
       CustomData_set_layer_active(&me->vdata, CD_PROP_COLOR, layernum);
     }
 
-    BKE_mesh_update_customdata_pointers(me, true);
+    dune_mesh_update_customdata_ptrs(me, true);
   }
 
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return layernum;
 }
 
-bool ED_mesh_sculpt_color_ensure(struct Mesh *me, const char *name)
+bool ed_mesh_sculpt_color_ensure(struct Mesh *me, const char *name)
 {
   BLI_assert(me->edit_mesh == NULL);
 
   if (me->totvert && !CustomData_has_layer(&me->vdata, CD_PROP_COLOR)) {
     CustomData_add_layer_named(&me->vdata, CD_PROP_COLOR, CD_DEFAULT, NULL, me->totvert, name);
-    BKE_mesh_update_customdata_pointers(me, true);
+    dune_mesh_update_customdata_ptrs(me, true);
   }
 
-  DEG_id_tag_update(&me->id, 0);
+  graph_id_tag_update(&me->id, 0);
 
   return (me->mloopcol != NULL);
 }
 
-bool ED_mesh_sculpt_color_remove_index(Mesh *me, const int n)
+bool ed_mesh_sculpt_color_remove_index(Mesh *me, const int n)
 {
   CustomData *vdata = GET_CD_DATA(me, vdata);
   CustomDataLayer *cdl;
-  int index;
+  int idx;
 
-  index = CustomData_get_layer_index_n(vdata, CD_PROP_COLOR, n);
-  cdl = (index == -1) ? NULL : &vdata->layers[index];
+  idx = CustomData_get_layer_idx_n(vdata, CD_PROP_COLOR, n);
+  cdl = (idx == -1) ? NULL : &vdata->layers[idx];
 
   if (!cdl) {
     return false;
   }
 
   delete_customdata_layer(me, cdl);
-  DEG_id_tag_update(&me->id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+  graph_id_tag_update(&me->id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, me);
 
   return true;
 }
-bool ED_mesh_sculpt_color_remove_active(Mesh *me)
+bool ed_mesh_sculpt_color_remove_active(Mesh *me)
 {
   CustomData *vdata = GET_CD_DATA(me, vdata);
   const int n = CustomData_get_active_layer(vdata, CD_PROP_COLOR);
   if (n != -1) {
-    return ED_mesh_sculpt_color_remove_index(me, n);
+    return ed_mesh_sculpt_color_remove_index(me, n);
   }
   return false;
 }
-bool ED_mesh_sculpt_color_remove_named(Mesh *me, const char *name)
+bool ed_mesh_sculpt_color_remove_named(Mesh *me, const char *name)
 {
   CustomData *vdata = GET_CD_DATA(me, vdata);
   const int n = CustomData_get_named_layer(vdata, CD_PROP_COLOR, name);
   if (n != -1) {
-    return ED_mesh_sculpt_color_remove_index(me, n);
+    return ed_mesh_sculpt_color_remove_index(me, n);
   }
   return false;
 }
 
-/*********************** UV texture operators ************************/
-
-static bool uv_texture_remove_poll(bContext *C)
+/* UV texture ops */
+static bool uv_texture_remove_poll(Cx *C)
 {
   if (!layers_poll(C)) {
     return false;
   }
 
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int active = CustomData_get_active_layer(ldata, CD_MLOOPUV);
@@ -626,25 +622,25 @@ static bool uv_texture_remove_poll(bContext *C)
   return false;
 }
 
-static int mesh_uv_texture_add_exec(bContext *C, wmOperator *op)
+static int mesh_uv_texture_add_exec(Cx *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
-  if (ED_mesh_uv_texture_add(me, NULL, true, true, op->reports) == -1) {
-    return OPERATOR_CANCELLED;
+  if (ed_mesh_uv_texture_add(me, NULL, true, true, op->reports) == -1) {
+    return OP_CANCELLED;
   }
 
   if (ob->mode & OB_MODE_TEXTURE_PAINT) {
-    Scene *scene = CTX_data_scene(C);
-    ED_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
-    WM_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
+    Scene *scene = cx_data_scene(C);
+    ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
+    wm_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_uv_texture_add(wmOperatorType *ot)
+void mesh_ot_uv_texture_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add UV Map";
@@ -659,25 +655,25 @@ void MESH_OT_uv_texture_add(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int mesh_uv_texture_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int mesh_uv_texture_remove_exec(Cx *C, wmOp *UNUSED(op))
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
-  if (!ED_mesh_uv_texture_remove_active(me)) {
-    return OPERATOR_CANCELLED;
+  if (!ed_mesh_uv_texture_remove_active(me)) {
+    return OP_CANCELLED;
   }
 
   if (ob->mode & OB_MODE_TEXTURE_PAINT) {
-    Scene *scene = CTX_data_scene(C);
-    ED_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
-    WM_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
+    Scene *scene = cx_data_scene(C);
+    ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
+    wm_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_uv_texture_remove(wmOperatorType *ot)
+void mesh_ot_uv_texture_remove(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Remove UV Map";
@@ -692,15 +688,14 @@ void MESH_OT_uv_texture_remove(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/*********************** vertex color operators ************************/
-
-static bool vertex_color_remove_poll(bContext *C)
+/* vertex color ops */
+static bool vert_color_remove_poll(Cx *C)
 {
   if (!layers_poll(C)) {
     return false;
   }
 
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
   CustomData *ldata = GET_CD_DATA(me, ldata);
   const int active = CustomData_get_active_layer(ldata, CD_MLOOPCOL);
@@ -711,99 +706,98 @@ static bool vertex_color_remove_poll(bContext *C)
   return false;
 }
 
-static int mesh_vertex_color_add_exec(bContext *C, wmOperator *op)
+static int mesh_vert_color_add_exec(Cx *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
-  if (ED_mesh_color_add(me, NULL, true, true, op->reports) == -1) {
-    return OPERATOR_CANCELLED;
+  if (ed_mesh_color_add(me, NULL, true, true, op->reports) == -1) {
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_vertex_color_add(wmOperatorType *ot)
+void mesh_ot_vert_color_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Vertex Color";
   ot->description = "Add vertex color layer";
-  ot->idname = "MESH_OT_vertex_color_add";
+  ot->idname = "mesh_ot_vert_color_add";
 
   /* api callbacks */
   ot->poll = layers_poll;
-  ot->exec = mesh_vertex_color_add_exec;
+  ot->exec = mesh_vert_color_add_exec;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int mesh_vertex_color_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int mesh_vert_color_remove_exec(Cx *C, wmOp *UNUSED(op))
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
   if (!ED_mesh_color_remove_active(me)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_vertex_color_remove(wmOperatorType *ot)
+void mesh_ot_vert_color_remove(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Remove Vertex Color";
   ot->description = "Remove vertex color layer";
-  ot->idname = "MESH_OT_vertex_color_remove";
+  ot->idname = "mesh_ot_vert_color_remove";
 
   /* api callbacks */
-  ot->exec = mesh_vertex_color_remove_exec;
-  ot->poll = vertex_color_remove_poll;
+  ot->exec = mesh_vert_color_remove_exec;
+  ot->poll = vert_color_remove_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
 /*********************** Sculpt Vertex Color Operators ************************/
-
-static int mesh_sculpt_vertex_color_add_exec(bContext *C, wmOperator *op)
+static int mesh_sculpt_vert_color_add_exec(Cx *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
-  if (ED_mesh_sculpt_color_add(me, NULL, true, true, op->reports) == -1) {
-    return OPERATOR_CANCELLED;
+  if (ed_mesh_sculpt_color_add(me, NULL, true, true, op->reports) == -1) {
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_sculpt_vertex_color_add(wmOperatorType *ot)
+void mesh_ot_sculpt_vert_color_add(wmOpType *ot)
 {
   /* identifiers */
-  ot->name = "Add Sculpt Vertex Color";
-  ot->description = "Add vertex color layer";
-  ot->idname = "MESH_OT_sculpt_vertex_color_add";
+  ot->name = "Add Sculpt Vert Color";
+  ot->description = "Add vert color layer";
+  ot->idname = "mesh_ot_sculpt_vert_color_add";
 
   /* api callbacks */
   ot->poll = layers_poll;
-  ot->exec = mesh_sculpt_vertex_color_add_exec;
+  ot->exec = mesh_sculpt_vert_color_add_exec;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int mesh_sculpt_vertex_color_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int mesh_sculpt_vert_color_remove_exec(Cx *C, wmOp *UNUSED(op))
 {
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cx(C);
   Mesh *me = ob->data;
 
-  if (!ED_mesh_sculpt_color_remove_active(me)) {
-    return OPERATOR_CANCELLED;
+  if (!ed_mesh_sculpt_color_remove_active(me)) {
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void MESH_OT_sculpt_vertex_color_remove(wmOperatorType *ot)
