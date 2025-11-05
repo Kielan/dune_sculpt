@@ -1883,108 +1883,98 @@ void MESH_OT_edgering_select(wmOperatorType *ot)
   RNA_def_property_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name (De)Select All Operator
- * \{ */
-
-static int edbm_select_all_exec(bContext *C, wmOperator *op)
+/* (De)Select All Op */
+static int edbm_sel_all_exec(Cx *C, wmOp *op)
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  int action = RNA_enum_get(op->ptr, "action");
+  ViewLayer *view_layer = cx_data_view_layer(C);
+  int action = api_enum_get(op->ptr, "action");
 
   uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_arr_from_objects_in_edit_mode_unique_data(
+      view_layer, cx_wm_view3d(C), &objects_len);
 
   if (action == SEL_TOGGLE) {
     action = SEL_SELECT;
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      Object *obedit = objects[ob_index];
-      BMEditMesh *em = BKE_editmesh_from_object(obedit);
-      if (em->bm->totvertsel || em->bm->totedgesel || em->bm->totfacesel) {
+    for (uint ob_idx = 0; ob_idx < objects_len; ob_idx++) {
+      Object *obedit = objects[ob_idx];
+      MEditMesh *em = dune_editmesh_from_object(obedit);
+      if (em->mesh->totvertsel || em->mesh->totedgesel || em->mesh->totfacesel) {
         action = SEL_DESELECT;
         break;
       }
     }
   }
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  for (uint ob_idx = 0; ob_idx < objects_len; ob_idx++) {
+    Object *obedit = objects[ob_idx];
+    MEditMesh *em = dune_editmesh_from_object(obedit);
     switch (action) {
       case SEL_SELECT:
-        EDBM_flag_enable_all(em, BM_ELEM_SELECT);
+        editmesh_flag_enable_all(em, M_ELEM_SEL);
         break;
       case SEL_DESELECT:
-        EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+        editmesh_flag_disable_all(em, M_ELEM_SEL);
         break;
       case SEL_INVERT:
-        EDBM_select_swap(em);
-        EDBM_selectmode_flush(em);
+        editmesh_sel_swap(em);
+        editmesh_selectmode_flush(em);
         break;
     }
-    DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+    graph_id_tag_update(obedit->data, ID_RECALC_SEL);
+    wm_event_add_notifier(C, NC_GEOM | ND_SEL, obedit->data);
   }
 
   MEM_freeN(objects);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_select_all(wmOperatorType *ot)
+void mesh_ot_sel_all(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "(De)select All";
-  ot->idname = "MESH_OT_select_all";
+  ot->idname = "mesh_ot_select_all";
   ot->description = "(De)select all vertices, edges or faces";
 
   /* api callbacks */
-  ot->exec = edbm_select_all_exec;
-  ot->poll = ED_operator_editmesh;
+  ot->exec = editmesh_sel_all_exec;
+  ot->poll = ed_op_editmesh;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  wm_op_props_select_all(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select Interior Faces Operator
- * \{ */
-
-static int edbm_faces_select_interior_exec(bContext *C, wmOperator *UNUSED(op))
+/* Select Interior Faces Op */
+static int edbm_faces_select_interior_exec(Cx *C, wmOp *UNUSED(op))
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cx_data_view_layer(C);
   uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_arr_from_objects_in_edit_mode_unique_data(
+      view_layer, cx_wm_view3d(C), &objects_len);
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+  for (uint ob_idx = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
-    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    MEditMesh *em = dune_editmesh_from_object(obedit);
 
-    if (!EDBM_select_interior_faces(em)) {
+    if (!editmesh_sel_interior_faces(em)) {
       continue;
     }
 
-    DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+    graph_id_tag_update(obedit->data, ID_RECALC_SELECT);
+    wm_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
   }
   MEM_freeN(objects);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_select_interior_faces(wmOperatorType *ot)
+void mesh_ot_select_interior_faces(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Select Interior Faces";
-  ot->idname = "MESH_OT_select_interior_faces";
+  ot->idname = "mesh_ot_sel_interior_faces";
   ot->description = "Select faces where all edges have more than 2 face users";
 
   /* api callbacks */
@@ -1995,90 +1985,85 @@ void MESH_OT_select_interior_faces(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select Picking API
+/* Select Picking API
  *
  * Here actual select happens,
- * Gets called via generic mouse select operator.
- * \{ */
-
-bool EDBM_select_pick(bContext *C, const int mval[2], const struct SelectPick_Params *params)
+ * Gets called via generic mouse select op. */
+bool editmesh_sel_pick(Cx *C, const int mval[2], const struct SelectPick_Params *params)
 {
-  ViewContext vc;
+  ViewCx vc;
 
-  int base_index_active = -1;
-  BMVert *eve = NULL;
-  BMEdge *eed = NULL;
-  BMFace *efa = NULL;
+  int base_idx_active = -1;
+  MVert *eve = NULL;
+  MEdge *eed = NULL;
+  MFace *efa = NULL;
 
-  /* setup view context for argument to callbacks */
-  em_setup_viewcontext(C, &vc);
+  /* setup view cx for arg to cbs */
+  em_setup_viewcx(C, &vc);
   vc.mval[0] = mval[0];
   vc.mval[1] = mval[1];
 
   uint bases_len = 0;
-  Base **bases = BKE_view_layer_array_from_bases_in_edit_mode(vc.view_layer, vc.v3d, &bases_len);
+  Base **bases = dune_view_layer_arr_from_bases_in_edit_mode(vc.view_layer, vc.v3d, &bases_len);
 
   bool changed = false;
-  bool found = unified_findnearest(&vc, bases, bases_len, &base_index_active, &eve, &eed, &efa);
+  bool found = unified_findnearest(&vc, bases, bases_len, &base_idx_active, &eve, &eed, &efa);
 
   if (params->sel_op == SEL_OP_SET) {
-    BMElem *ele = efa ? (BMElem *)efa : (eed ? (BMElem *)eed : (BMElem *)eve);
-    if ((found && params->select_passthrough) && BM_elem_flag_test(ele, BM_ELEM_SELECT)) {
+    MElem *ele = efa ? (MElem *)efa : (eed ? (MElem *)eed : (MElem *)eve);
+    if ((found && params->sel_passthrough) && m_elem_flag_test(ele, M_ELEM_SEL)) {
       found = false;
     }
     else if (found || params->deselect_all) {
       /* Deselect everything. */
-      for (uint base_index = 0; base_index < bases_len; base_index++) {
-        Base *base_iter = bases[base_index];
+      for (uint base_idx = 0; base_idx < bases_len; base_index++) {
+        Base *base_iter = bases[base_idx];
         Object *ob_iter = base_iter->object;
-        EDBM_flag_disable_all(BKE_editmesh_from_object(ob_iter), BM_ELEM_SELECT);
-        DEG_id_tag_update(ob_iter->data, ID_RECALC_SELECT);
-        WM_event_add_notifier(C, NC_GEOM | ND_SELECT, ob_iter->data);
+        editmesh_flag_disable_all(dune_editmesh_from_object(ob_iter), M_ELEM_SEL);
+        graph_id_tag_update(ob_iter->data, ID_RECALC_SEL);
+        wm_event_add_notifier(C, NC_GEOM | ND_SELECT, ob_iter->data);
       }
       changed = true;
     }
   }
 
   if (found) {
-    Base *basact = bases[base_index_active];
-    ED_view3d_viewcontext_init_object(&vc, basact->object);
+    Base *basact = bases[base_idx_active];
+    ed_view3d_viewcx_init_object(&vc, basact->object);
 
     if (efa) {
       switch (params->sel_op) {
         case SEL_OP_ADD: {
-          BM_mesh_active_face_set(vc.em->bm, efa);
+          m_active_face_set(vc.em->mesh, efa);
 
           /* Work-around: deselect first, so we can guarantee it will
            * be active even if it was already selected. */
-          BM_select_history_remove(vc.em->bm, efa);
-          BM_face_select_set(vc.em->bm, efa, false);
-          BM_select_history_store(vc.em->bm, efa);
-          BM_face_select_set(vc.em->bm, efa, true);
+          m_sel_history_remove(vc.em->mesh, efa);
+          m_face_sel_set(vc.em->mesh, efa, false);
+          m_select_history_store(vc.em->mesh, efa);
+          m_face_sel_set(vc.em->mesh, efa, true);
           break;
         }
         case SEL_OP_SUB: {
-          BM_select_history_remove(vc.em->bm, efa);
-          BM_face_select_set(vc.em->bm, efa, false);
+          m_sel_history_remove(vc.em->mesh, efa);
+          m_face_sel_set(vc.em->mesh, efa, false);
           break;
         }
         case SEL_OP_XOR: {
-          BM_mesh_active_face_set(vc.em->bm, efa);
-          if (!BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
-            BM_select_history_store(vc.em->bm, efa);
-            BM_face_select_set(vc.em->bm, efa, true);
+          m_active_face_set(vc.em->mesh, efa);
+          if (!n_elem_flag_test(efa, M_ELEM_SEL)) {
+            m_sel_history_store(vc.em->mesh, efa);
+            m_face_sel_set(vc.em->mesh, efa, true);
           }
           else {
-            BM_select_history_remove(vc.em->bm, efa);
-            BM_face_select_set(vc.em->bm, efa, false);
+            m_sel_history_remove(vc.em->mesh, efa);
+            m_face_sel_set(vc.em->mesh, efa, false);
           }
           break;
         }
         case SEL_OP_SET: {
-          BM_mesh_active_face_set(vc.em->bm, efa);
-          if (!BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+          BM_mesh_active_face_set(vc.em->mesh, efa);
+          if (!BM_elem_flag_test(efa, M_ELEM_SEL)) {
             BM_select_history_store(vc.em->bm, efa);
             BM_face_select_set(vc.em->bm, efa, true);
           }
