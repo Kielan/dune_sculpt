@@ -211,14 +211,14 @@ void mesh_ot_colors_reverse(struct wmOpType *ot);
 void mesh_ot_delete(struct wmOpType *ot);
 void mesh_ot_delete_loose(struct wmOpType *ot);
 void mesh_ot_edge_collapse(struct wmOpeType *ot);
-void MESH_ot_faces_shade_smooth(struct wmOpType *ot);
-void MESH_ot_faces_shade_flat(struct wmOpType *ot);
-void MESH_ot_split(struct wmOpType *ot);
-void MESH_OT_edge_rotate(struct wmOpType *ot);
-void MESH_OT_hide(struct wmOpType *ot);
-void MESH_OT_reveal(struct wmOpType *ot);
-void MESH_OT_mark_seam(struct wmOpType *ot);
-void MESH_OT_mark_sharp(struct wmOpType *ot);
+void mesh_ot_faces_shade_smooth(struct wmOpType *ot);
+void mesh_ot_faces_shade_flat(struct wmOpType *ot);
+void mesh_ot_split(struct wmOpType *ot);
+void mesh_OT_edge_rotate(struct wmOpType *ot);
+void mesh_OT_hide(struct wmOpType *ot);
+void mesh_OT_reveal(struct wmOpType *ot);
+void mesh_OT_mark_seam(struct wmOpType *ot);
+void mesh_OT_mark_sharp(struct wmOpType *ot);
 void MESH_OT_flip_normals(struct wmOpType *ot);
 void MESH_OT_solidify(struct wmOpType *ot);
 void MESH_OT_knife_cut(struct wmOpType *ot);
@@ -233,11 +233,11 @@ void MESH_OT_decimate(struct wmOpType *ot);
 void MESH_OT_dissolve_verts(struct wmOpType *ot);
 void MESH_OT_dissolve_edges(struct wmOpType *ot);
 void MESH_OT_dissolve_faces(struct wmOpType *ot);
-void MESH_OT_dissolve_mode(struct wmOpType *ot);
-void MESH_OT_dissolve_limited(struct wmOpType *ot);
-void MESH_OT_dissolve_degenerate(struct wmOpType *ot);
-void MESH_OT_delete_edgeloop(struct wmOpType *ot);
-void MESH_OT_edge_face_add(struct wmOpType *ot);
+void MESH_ot_dissolve_mode(struct wmOpType *ot);
+void MESH_ot_dissolve_limited(struct wmOpType *ot);
+void MESH_ot_dissolve_degenerate(struct wmOpType *ot);
+void MESH_ot_delete_edgeloop(struct wmOpType *ot);
+void mesh_ot_edge_face_add(struct wmOpType *ot);
 void mesh_ot_duplicate(struct wmOpType *ot);
 void mesh_ot_merge(struct wmOpType *ot);
 void mesh_ot_remove_doubles(struct wmOpType *ot);
@@ -256,7 +256,7 @@ void mesh_ot_paint_mask_extract(struct wmOpType *ot);
 void mesh_ot_face_set_extract(struct wmOpType *ot);
 void mesh_ot_paint_mask_slice(struct wmOpType *ot);
 
-/** Called in transform_ops.c, on each regeneration of key-maps. */
+/* Called in transform_ops.c, on each regeneration of key-maps. */
 struct wmKeyMap *point_normals_modal_keymap(wmKeyConfig *keyconf);
 
 #if defined(WITH_FREESTYLE)
@@ -264,7 +264,7 @@ void mesh_ot_mark_freestyle_edge(struct wmOpType *ot);
 void mesh_it_mark_freestyle_face(struct wmOpType *ot);
 #endif
 
-/* *** mesh_data.c *** */
+/* mesh_data.c */
 void mesh_ot_uv_texture_add(struct wmOpType *ot);
 void mesh_ot_uv_texture_remove(struct wmOpType *ot);
 void mesh_ot_vert_color_add(struct wmOpType *ot);
