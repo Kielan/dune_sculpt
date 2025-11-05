@@ -31,9 +31,9 @@
 /* own include */
 void paintface_flush_flags(struct Cx *C, Object *ob, short flag)
 {
-  Mesh *me = dune_mesh_from_object(ob);
+  Mesh *me = dune_mesh_from_obj(ob);
   MPoly *polys, *mp_orig;
-  const int *index_array = NULL;
+  const int *index_arr = NULL;
   int totpoly;
 
   lib_assert((flag & ~(SELECT | ME_HIDE)) == 0);
@@ -50,7 +50,7 @@ void paintface_flush_flags(struct Cx *C, Object *ob, short flag)
     dune_mesh_flush_select_from_polys(me);
   }
 
-  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Graph *graph = cx_data_ensure_eval_graph(C);
   Object *ob_eval = graph_get_eval_object(graph, ob);
 
   if (ob_eval == NULL) {
@@ -72,15 +72,15 @@ void paintface_flush_flags(struct Cx *C, Object *ob, short flag)
       updated = true;
     }
     /* Mesh polys => Final derived polys */
-    else if ((index_array = CustomData_get_layer(&me_eval->pdata, CD_ORIGINDEX))) {
+    else if ((idx_arr = CustomData_get_layer(&me_eval->pdata, CD_ORIGIDX))) {
       polys = me_eval->mpoly;
       totpoly = me_eval->totpoly;
 
       /* loop over final derived polys */
       for (int i = 0; i < totpoly; i++) {
-        if (index_array[i] != ORIGINDEX_NONE) {
+        if (idx_arr[i] != ORIGIDX_NONE) {
           /* Copy flags onto the final derived poly from the original mesh poly */
-          mp_orig = me->mpoly + index_array[i];
+          mp_orig = me->mpoly + idx_arr[i];
           polys[i].flag = mp_orig->flag;
         }
       }
@@ -112,7 +112,7 @@ void paintface_hide(Cx *C, Object *ob, const bool unselected)
   MPoly *mpoly;
   int a;
 
-  me = dune_mesh_from_object(ob);
+  me = dune_mesh_from_obj(ob);
   if (me == NULL || me->totpoly == 0) {
     return;
   }
@@ -165,7 +165,7 @@ void paintface_reveal(Cx *C, Object *ob, const bool select)
 }
 
 /* Set tface seams based on edge data, uses hash table to find seam edges. */
-static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bool select)
+static void select_linked_tfaces_w_seams(Mesh *me, const uint index, const bool select)
 {
   MPoly *mp;
   MLoop *ml;
@@ -173,8 +173,8 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
   bool do_it = true;
   bool mark = false;
 
-  LIB_bitmap *edge_tag = LIB_BITMAP_NEW(me->totedge, __func__);
-  LIB_bitmap *poly_tag = LIB_BITMAP_NEW(me->totpoly, __func__);
+  lib_bitmap *edge_tag = LIB_BITMAP_NEW(me->totedge, __func__);
+  lib_bitmap *poly_tag = LIB_BITMAP_NEW(me->totpoly, __func__);
 
   if (index != (uint)-1) {
     /* only put face under cursor in array */
@@ -365,16 +365,16 @@ bool paintface_mouse_select(struct Cx *C,
 {
   Mesh *me;
   MPoly *mpoly_sel = NULL;
-  uint index;
+  uint idx;
   bool changed = false;
   bool found = false;
 
   /* Get the face under the cursor */
   me = dune_mesh_from_object(ob);
 
-  if (ed_mesh_pick_face(C, ob, mval, ED_MESH_PICK_DEFAULT_FACE_DIST, &index)) {
-    if (index < me->totpoly) {
-      mpoly_sel = me->mpoly + index;
+  if (ed_mesh_pick_face(C, ob, mval, ED_MESH_PICK_DEFAULT_FACE_DIST, &idx)) {
+    if (idx < me->totpoly) {
+      mpoly_sel = me->mpoly + idx;
       if ((mpoly_sel->flag & ME_HIDE) == 0) {
         found = true;
       }
@@ -424,7 +424,7 @@ bool paintface_mouse_select(struct Cx *C,
 
     /* image window redraw */
     paintface_flush_flags(C, ob, SELECT);
-    ed_region_tag_redraw(cxt_wm_region(C)); /* XXX: should redraw all 3D views. */
+    ed_rgn_tag_redraw(cx_wm_rgn(C)); /* XXX: should redraw all 3D views. */
     changed = true;
   }
   return changed || found;
@@ -432,10 +432,10 @@ bool paintface_mouse_select(struct Cx *C,
 
 void paintvert_flush_flags(Object *ob)
 {
-  Mesh *me = dune_mesh_from_object(ob);
-  Mesh *me_eval = dune_object_get_evaluated_mesh(ob);
+  Mesh *me = dune_mesh_from_obj(ob);
+  Mesh *me_eval = dune_obj_get_evaluated_mesh(ob);
   MVert *mvert_eval, *mv;
-  const int *index_array = NULL;
+  const int *idx_arr = NULL;
   int totvert;
   int i;
 
@@ -451,19 +451,19 @@ void paintvert_flush_flags(Object *ob)
     return;
   }
 
-  index_array = CustomData_get_layer(&me_eval->vdata, CD_ORIGINDEX);
+  idx_arr = CustomData_get_layer(&me_eval->vdata, CD_ORIGIDX);
 
   mvert_eval = me_eval->mvert;
   totvert = me_eval->totvert;
 
   mv = mvert_eval;
 
-  if (index_array) {
-    int orig_index;
+  if (idx_arr) {
+    int orig_idx;
     for (i = 0; i < totvert; i++, mv++) {
-      orig_index = index_array[i];
-      if (orig_index != ORIGINDEX_NONE) {
-        mv->flag = me->mvert[index_array[i]].flag;
+      orig_idx = idx_arr[i];
+      if (orig_idx != ORIGIDX_NONE) {
+        mv->flag = me->mvert[idx_arr[i]].flag;
       }
     }
   }
@@ -476,7 +476,7 @@ void paintvert_flush_flags(Object *ob)
   dune_mesh_batch_cache_dirty_tag(me, DUNE_MESH_BATCH_DIRTY_ALL);
 }
 
-void paintvert_tag_select_update(struct Cxt *C, struct Object *ob)
+void paintvert_tag_select_update(struct Cx *C, struct Object *ob)
 {
   graph_id_tag_update(ob->data, ID_RECALC_COPY_ON_WRITE | ID_RECALC_SELECT);
   wm_event_add_notifier(C, NC_GEOM | ND_SELECT, ob->data);
@@ -488,7 +488,7 @@ bool paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
   MVert *mvert;
   int a;
 
-  me = dune_mesh_from_object(ob);
+  me = dune_mesh_from_obj(ob);
   if (me == NULL) {
     return false;
   }
@@ -553,7 +553,7 @@ bool paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
   return changed;
 }
 
-void paintvert_select_ungrouped(Object *ob, bool extend, bool flush_flags)
+void paintvert_sel_ungrouped(Object *ob, bool extend, bool flush_flags)
 {
   Mesh *me = dune_mesh_from_object(ob);
   MVert *mv;
