@@ -1,6 +1,4 @@
-/**
- * Physics utilities for effectors and collision.
- */
+/* Phys utils for effectors and collision. */
 
 #pragma once
 
@@ -27,13 +25,13 @@ typedef enum ePhysRelationType {
 /* Get collision/effector relations from collection or entire scene. These
  * created during dgraph relations building and should only be accessed
  * during evaluation. */
-struct ListBase *graph_get_effector_relations(const struct Graph *graph,
+struct List *graph_get_effector_relations(const struct Graph *graph,
                                             struct Collection *collection);
-struct ListBase *graph_get_collision_relations(const struct Graph *graph,
+struct List *graph_get_collision_relations(const struct Graph *graph,
                                              struct Collection *collection,
                                              unsigned int modifier_type);
 
-/* Build collision/effector relations for dgraph. */
+/* Build collision/effector relations for graph. */
 typedef bool (*graph_CollobjFilterFn)(struct Object *obj, struct ModifierData *md);
 
 void graph_add_collision_relations(struct GraphNodeHandle *handle,
