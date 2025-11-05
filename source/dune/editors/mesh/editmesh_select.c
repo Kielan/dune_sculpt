@@ -12,7 +12,7 @@
 #include "lib_string.h"
 #include "lib_utildefines_stack.h"
 
-#include "dune_cxt.h"
+#include "dune_cx.h"
 #include "dune_customdata.h"
 #include "dune_deform.h"
 #include "dune_editmesh.h"
