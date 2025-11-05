@@ -255,20 +255,20 @@ BMVert *EDBM_vert_find_nearest_ex(ViewContext *vc,
   uint base_index = 0;
 
   if (!XRAY_FLAG_ENABLED(vc->v3d)) {
-    uint dist_px_manhattan_test = (uint)ED_view3d_backbuf_sample_size_clamp(vc->region,
+    uint dist_px_manhattan_test = (uint)ed_view3d_backbuf_sample_size_clamp(vc->rgn,
                                                                             *dist_px_manhattan_p);
-    uint index;
-    BMVert *eve;
+    uint idx;
+    MVert *eve;
 
     /* No afterqueue (yet), so we check it now, otherwise the bm_xxxofs indices are bad. */
     {
-      DRW_select_buffer_context_create(bases, bases_len, SCE_SELECT_VERTEX);
+      drw_sel_buf_cx_create(bases, bases_len, SCE_SEL_VERT);
 
-      index = DRW_select_buffer_find_nearest_to_point(
-          vc->depsgraph, vc->region, vc->v3d, vc->mval, 1, UINT_MAX, &dist_px_manhattan_test);
+      idx = drw_sel_buf_find_nearest_to_point(
+          vc->graph, vc->rgn, vc->v3d, vc->mval, 1, UINT_MAX, &dist_px_manhattan_test);
 
       if (index) {
-        eve = (BMVert *)edbm_select_id_bm_elem_get(bases, index, &base_index);
+        eve = (BMVert *)edm_sel_id_mesh_elem_get(bases, idx, &base_idx);
       }
       else {
         eve = NULL;
@@ -292,25 +292,25 @@ BMVert *EDBM_vert_find_nearest_ex(ViewContext *vc,
   const eV3DProjTest clip_flag = RV3D_CLIPPING_ENABLED(vc->v3d, vc->rv3d) ?
                                      V3D_PROJ_TEST_CLIP_DEFAULT :
                                      V3D_PROJ_TEST_CLIP_DEFAULT & ~V3D_PROJ_TEST_CLIP_BB;
-  BMesh *prev_select_bm = NULL;
+  Mesh *prev_sel_mesh = NULL;
 
   static struct {
-    int index;
-    const BMVert *elem;
-    const BMesh *bm;
-  } prev_select = {0};
+    int idx;
+    const MVert *elem;
+    const Mesh *m;
+  } prev_sel = {0};
 
   data.mval_fl[0] = vc->mval[0];
   data.mval_fl[1] = vc->mval[1];
-  data.use_select_bias = use_select_bias;
+  data.use_sel_bias = use_sel_bias;
   data.use_cycle = use_cycle;
 
-  for (; base_index < bases_len; base_index++) {
-    Base *base_iter = bases[base_index];
-    ED_view3d_viewcontext_init_object(vc, base_iter->object);
-    if (use_cycle && prev_select.bm == vc->em->bm &&
-        prev_select.elem == BM_vert_at_index_find_or_table(vc->em->bm, prev_select.index)) {
-      data.cycle_index_prev = prev_select.index;
+  for (; base_index < bases_len; base_idx++) {
+    Base *base_iter = bases[base_idx];
+    ed_view3d_viewcx_init_object(vc, base_iter->object);
+    if (use_cycle && prev_sel.mesh == vc->em->mesh &&
+        prev_sel.elem == m_vert_at_idx_find_or_table(vc->em->bm, prev_sel.idx)) {
+      data.cycle_idx_prev = prev_sel.idx;
       /* No need to compare in the rest of the loop. */
       use_cycle = false;
     }
@@ -475,22 +475,22 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
                                   BMEdge **r_eed_zbuf,
                                   Base **bases,
                                   uint bases_len,
-                                  uint *r_base_index)
+                                  uint *r_base_idx)
 {
-  uint base_index = 0;
+  uint base_idx = 0;
 
   if (!XRAY_FLAG_ENABLED(vc->v3d)) {
-    uint dist_px_manhattan_test = (uint)ED_view3d_backbuf_sample_size_clamp(vc->region,
+    uint dist_px_manhattan_test = (uint)ed_view3d_backbuf_sample_size_clamp(vc->rgn,
                                                                             *dist_px_manhattan_p);
-    uint index;
-    BMEdge *eed;
+    uint idx;
+    MEdge *eed;
 
     /* No afterqueue (yet), so we check it now, otherwise the bm_xxxofs indices are bad. */
     {
-      DRW_select_buffer_context_create(bases, bases_len, SCE_SELECT_EDGE);
+      drw_sel_buf_cx_create(bases, bases_len, SCE_SEL_EDGE);
 
-      index = DRW_select_buffer_find_nearest_to_point(
-          vc->depsgraph, vc->region, vc->v3d, vc->mval, 1, UINT_MAX, &dist_px_manhattan_test);
+      index = drw_sel_buf_find_nearest_to_point(
+          vc->graph, vc->rgn, vc->v3d, vc->mval, 1, UINT_MAX, &dist_px_manhattan_test);
 
       if (index) {
         eed = (BMEdge *)edbm_select_id_bm_elem_get(bases, index, &base_index);
@@ -513,7 +513,7 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
       data.dist = FLT_MAX;
       data.edge_test = eed;
 
-      ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
+      ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
 
       mesh_foreachScreenEdge(vc,
                              find_nearest_edge_center__doZBuf,
@@ -526,8 +526,8 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
 
     if (eed) {
       if (dist_px_manhattan_test < *dist_px_manhattan_p) {
-        if (r_base_index) {
-          *r_base_index = base_index;
+        if (r_base_idx) {
+          *r_base_idx = base_idx;
         }
         *dist_px_manhattan_p = dist_px_manhattan_test;
         return eed;
@@ -540,25 +540,25 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
   const struct NearestEdgeUserData_Hit *hit = NULL;
   /* interpolate along the edge before doing a clipping plane test */
   const eV3DProjTest clip_flag = V3D_PROJ_TEST_CLIP_DEFAULT & ~V3D_PROJ_TEST_CLIP_BB;
-  BMesh *prev_select_bm = NULL;
+  Mesh *prev_sel_mesh = NULL;
 
   static struct {
-    int index;
-    const BMEdge *elem;
-    const BMesh *bm;
-  } prev_select = {0};
+    int idx;
+    const MEdge *elem;
+    const Mesh *bm;
+  } prev_sel = {0};
 
   data.vc = *vc;
   data.mval_fl[0] = vc->mval[0];
   data.mval_fl[1] = vc->mval[1];
-  data.use_select_bias = use_select_bias;
+  data.use_sel_bias = use_sel_bias;
   data.use_cycle = use_cycle;
 
-  for (; base_index < bases_len; base_index++) {
+  for (; base_idx < bases_len; base_index++) {
     Base *base_iter = bases[base_index];
-    ED_view3d_viewcontext_init_object(vc, base_iter->object);
-    if (use_cycle && prev_select.bm == vc->em->bm &&
-        prev_select.elem == BM_edge_at_index_find_or_table(vc->em->bm, prev_select.index)) {
+    ed_view3d_viewcx_init_object(vc, base_iter->object);
+    if (use_cycle && prev_select.mesh == vc->em->mesh &&
+        prev_select.elem == m_edge_at_idx_find_or_table(vc->em->mesh, prev_select.index)) {
       data.cycle_index_prev = prev_select.index;
       /* No need to compare in the rest of the loop. */
       use_cycle = false;
@@ -570,7 +570,7 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
     data.hit.dist = data.hit_cycle.dist = data.hit.dist_bias = data.hit_cycle.dist_bias =
         *dist_px_manhattan_p;
 
-    ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
+    ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
     mesh_foreachScreenEdge(
         vc, find_nearest_edge__doClosest, &data, clip_flag | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
 
@@ -600,7 +600,7 @@ BMEdge *EDBM_edge_find_nearest_ex(ViewContext *vc,
   return hit->edge;
 }
 
-BMEdge *EDBM_edge_find_nearest(ViewContext *vc, float *dist_px_manhattan_p)
+BMEdge *edm_edge_find_nearest(ViewContext *vc, float *dist_px_manhattan_p)
 {
   Base *base = BKE_view_layer_base_find(vc->view_layer, vc->obact);
   return EDBM_edge_find_nearest_ex(
