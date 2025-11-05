@@ -1,71 +1,68 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_array.h"
-#include "BLI_bitmap.h"
-#include "BLI_heap.h"
-#include "BLI_linklist.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_bits.h"
-#include "BLI_rand.h"
-#include "BLI_string.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_arr.h"
+#include "lib_bitmap.h"
+#include "lib_heap.h"
+#include "lib_linklist.h"
+#include "lib_linklist_stack.h"
+#include "lib_list.h"
+#include "lib_math.h"
+#include "lib_math_bits.h"
+#include "lib_rand.h"
+#include "lib_string.h"
+#include "lib_utildefines_stack.h"
 
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_editmesh.h"
-#include "BKE_layer.h"
-#include "BKE_report.h"
+#include "dune_cxt.h"
+#include "dune_customdata.h"
+#include "dune_deform.h"
+#include "dune_editmesh.h"
+#include "dune_layer.h"
+#include "dune_report.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "ED_mesh.h"
-#include "ED_object.h"
-#include "ED_screen.h"
-#include "ED_select_utils.h"
-#include "ED_transform.h"
-#include "ED_view3d.h"
+#include "ed_mesh.h"
+#include "ed_object.h"
+#include "ed_screen.h"
+#include "ed_select_utils.h"
+#include "ed_transform.h"
+#include "ed_view3d.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_object.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "bmesh_tools.h"
+#include "mesh_tools.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "DRW_select_buffer.h"
+#include "drw_sel_buf.h"
 
 #include "mesh_intern.h" /* own include */
 
-/* use bmesh operator flags for a few operators */
-#define BMO_ELE_TAG 1
+/* use mesh op flags for a few ops */
+#define MO_ELEM_TAG 1
 
-/* -------------------------------------------------------------------- */
-/** \name Select Mirror
- * \{ */
-
-void EDBM_select_mirrored(BMEditMesh *em,
-                          const Mesh *me,
-                          const int axis,
-                          const bool extend,
-                          int *r_totmirr,
-                          int *r_totfail)
+/* Select Mirror*/
+void edm_sel_mirrored(MEditMesh *em,
+                      const Mesh *me,
+                      const int axis,
+                      const bool extend,
+                      int *r_totmirr,
+                      int *r_totfail)
 {
-  BMesh *bm = em->bm;
-  BMIter iter;
+  Mesh *m = em->mesh;
+  MIter iter;
   int totmirr = 0;
   int totfail = 0;
   bool use_topology = me->editflag & ME_EDIT_MIRROR_TOPO;
@@ -73,22 +70,22 @@ void EDBM_select_mirrored(BMEditMesh *em,
   *r_totmirr = *r_totfail = 0;
 
   /* select -> tag */
-  if (bm->selectmode & SCE_SELECT_VERTEX) {
-    BMVert *v;
-    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-      BM_elem_flag_set(v, BM_ELEM_TAG, BM_elem_flag_test(v, BM_ELEM_SELECT));
+  if (m->selectmode & SCE_SEL_VERT) {
+    MVert *v;
+    M_ITER_MESH (v, &iter, m, M_VERTS_OF_MESH) {
+      m_elem_flag_set(v, M_ELEM_TAG, m_elem_flag_test(v, M_ELEM_SELECT));
     }
   }
-  else if (em->selectmode & SCE_SELECT_EDGE) {
-    BMEdge *e;
-    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-      BM_elem_flag_set(e, BM_ELEM_TAG, BM_elem_flag_test(e, BM_ELEM_SELECT));
+  else if (em->selectmode & SCE_SEL_EDGE) {
+    MEdge *e;
+    M_ITER_MESH (e, &iter, bm, M_EDGES_OF_MESH) {
+      m_elem_flag_set(e, M_ELEM_TAG, m_elem_flag_test(e, M_ELEM_SEL));
     }
   }
   else {
-    BMFace *f;
-    BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-      BM_elem_flag_set(f, BM_ELEM_TAG, BM_elem_flag_test(f, BM_ELEM_SELECT));
+    MFace *f;
+    M_ITER_MESH (f, &iter, m, BM_FACES_OF_MESH) {
+      m_elem_flag_set(f, M_ELEM_TAG, m_elem_flag_test(f, M_ELEM_SELECT));
     }
   }
 
