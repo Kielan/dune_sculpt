@@ -13,6 +13,155 @@
     </style>
   </head>
   <body>
-    <script type="module" src="/src/main.ts"></script>
+    <script>
+  	class Noise {
+  		static hash(x: number, y: number, z: number): number {
+  			return Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453 % 1;
+  		}
+  	}
+  	class FBM {
+  	  static sample(x: number, y: number, z: number, octaves = 5): number {
+  		let value = 0;
+  		let amplitude = 0.5;
+  		let frequency = 1;
+  
+  		for (let i = 0; i < octaves; i++) {
+  		  value += amplitude * Noise.hash(x * frequency, y * frequency, z * frequency);
+  		  frequency *= 2;
+  		  amplitude *= 0.5;
+  		}
+  
+  		return value;
+  	  }
+  	}
+  	class HeightGenerator {
+  	  getHeight(normal: THREE.Vector3): number {
+  		return FBM.sample(normal.x, normal.y, normal.z) * 0.2;
+  	  }
+  	}
+  	class PlanetMesh {
+  	  mesh: THREE.Mesh;
+  
+  	  constructor() {
+  		const geometry = new THREE.IcosahedronGeometry(1, 6);
+  		const generator = new HeightGenerator();
+  
+  		const position = geometry.attributes.position;
+  		for (let i = 0; i < position.count; i++) {
+  		  const v = new THREE.Vector3().fromBufferAttribute(position, i);
+  		  const height = generator.getHeight(v.normalize());
+  		  v.multiplyScalar(1 + height);
+  		  position.setXYZ(i, v.x, v.y, v.z);
+  		}
+  
+  		geometry.computeVertexNormals();
+  
+  		const material = new THREE.MeshStandardMaterial({
+  		  color: 0x4caf50,
+  		  flatShading: false
+  		});
+  
+  		this.mesh = new THREE.Mesh(geometry, material);
+  	  }
+  	}
+  	class Planet {
+  	  object3D = new THREE.Object3D();
+  	  mesh: PlanetMesh;
+  
+  	  constructor() {
+  		this.mesh = new PlanetMesh();
+  		this.object3D.add(this.mesh.mesh);
+  	  }
+  	}
+  	function createLighting(scene: THREE.Scene) {
+  	  // Soft global light (space ambient)
+  	  const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+  	  scene.add(ambient);
+  
+  	  // Main sun light
+  	  const directional = new THREE.DirectionalLight(0xffffff, 1.2);
+  	  directional.position.set(5, 3, 5);
+  	  directional.castShadow = true;
+  
+  	  directional.shadow.mapSize.width = 2048;
+  	  directional.shadow.mapSize.height = 2048;
+  
+  	  scene.add(directional);
+  	}
+  	class CameraController {
+  	  camera: THREE.PerspectiveCamera;
+  
+  	  private radius = 3;
+  	  private theta = 0;
+  	  private phi = Math.PI / 2;
+  
+  	  private isDragging = false;
+  	  private lastX = 0;
+  	  private lastY = 0;
+  
+  	  constructor(domElement: HTMLElement) {
+  		this.camera = new THREE.PerspectiveCamera(
+  		  60,
+  		  window.innerWidth / window.innerHeight,
+  		  0.01,
+  		  1000
+  		);
+  
+  		this.updateCamera();
+  
+  		domElement.addEventListener("mousedown", this.onMouseDown);
+  		domElement.addEventListener("mousemove", this.onMouseMove);
+  		domElement.addEventListener("mouseup", this.onMouseUp);
+  		domElement.addEventListener("wheel", this.onWheel);
+  	  }
+  
+  	  update() {
+  		this.updateCamera();
+  	  }
+  
+  	  resize() {
+  		this.camera.aspect = window.innerWidth / window.innerHeight;
+  		this.camera.updateProjectionMatrix();
+  	  }
+  
+  	  private updateCamera() {
+  		const x = this.radius * Math.sin(this.phi) * Math.cos(this.theta);
+  		const y = this.radius * Math.cos(this.phi);
+  		const z = this.radius * Math.sin(this.phi) * Math.sin(this.theta);
+  
+  		this.camera.position.set(x, y, z);
+  		this.camera.lookAt(0, 0, 0);
+  	  }
+  
+  	  private onMouseDown = (e: MouseEvent) => {
+  		this.isDragging = true;
+  		this.lastX = e.clientX;
+  		this.lastY = e.clientY;
+  	  };
+  
+  	  private onMouseMove = (e: MouseEvent) => {
+  		if (!this.isDragging) return;
+  
+  		const dx = e.clientX - this.lastX;
+  		const dy = e.clientY - this.lastY;
+  
+  		this.theta -= dx * 0.005;
+  		this.phi -= dy * 0.005;
+  		this.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.phi));
+  
+  		this.lastX = e.clientX;
+  		this.lastY = e.clientY;
+  	  };
+  
+  	  private onMouseUp = () => {
+  		this.isDragging = false;
+  	  };
+  
+  	  private onWheel = (e: WheelEvent) => {
+  		this.radius += e.deltaY * 0.002;
+  		this.radius = Math.max(1.5, Math.min(10, this.radius));
+  	  };
+  	}    
+   </script>
   </body>
 </html>
