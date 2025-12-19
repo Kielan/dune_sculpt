@@ -51,4 +51,36 @@ autopep8 --in-place --aggressive --max-line-length=88 <filename>
 ### Tests
 Using `ctest`.
 
+### Typescrip Port
+
+procedural-planet/
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── index.html
+├── README.md
+├── public/
+│   └── textures/
+├── src/
+│   ├── main.ts
+│   ├── app.ts
+│   ├── scene/
+│   │   ├── SceneManager.ts
+│   │   ├── CameraController.ts
+│   │   └── Lighting.ts
+│   ├── planet/
+│   │   ├── Planet.ts
+│   │   ├── PlanetMesh.ts
+│   │   ├── PlanetMaterial.ts
+│   │   └── PlanetConfig.ts
+│   ├── procedural/
+│   │   ├── Noise.ts
+│   │   ├── FBM.ts
+│   │   └── HeightGenerator.ts
+│   ├── utils/
+│   │   ├── MathUtils.ts
+│   │   └── Debug.ts
+│   └── types/
+│       └── global.d.ts
+
 ## Contributors
