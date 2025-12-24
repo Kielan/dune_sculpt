@@ -1,383 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Procedural Planet</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: black;
-      }
-    </style>
-  </head>
-  <body>
-  
-  <script type="importmap">
-	{
-	  "imports": {
-		"three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-	  }
-	}
-	</script>
-    <script type="module">
-	import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-	import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+<head>
+<meta charset="UTF-8" />
+<title>Procedural Planet – Hex Sphere</title>
+<style>
+  body { margin: 0; overflow: hidden; background: black; }
+</style>
+</head>
+<body>
 
-	//const script = document.createElement("script");
-	//script.type = "module";
-	//script.textContent = `import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js"; /* code */`;
-	//document.body.appendChild(script);
-
-    /*
-  	class Noise {
-  		static hash(x: number, y: number, z: number): number {
-  			return Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453 % 1;
-  		}
-  	}
-  	class FBM {
-  	  static sample(x: number, y: number, z: number, octaves = 5): number {
-  		let value = 0;
-  		let amplitude = 0.5;
-  		let frequency = 1;
-  
-  		for (let i = 0; i < octaves; i++) {
-  		  value += amplitude * Noise.hash(x * frequency, y * frequency, z * frequency);
-  		  frequency *= 2;
-  		  amplitude *= 0.5;
-  		}
-  
-  		return value;
-  	  }
-  	}
-  	class HeightGenerator {
-  	  getHeight(normal: THREE.Vector3): number {
-  		return FBM.sample(normal.x, normal.y, normal.z) * 0.2;
-  	  }
-  	}
-  	class PlanetMesh {
-  	  mesh: THREE.Mesh;
-  
-  	  constructor() {
-  		const geometry = new THREE.IcosahedronGeometry(1, 6);
-  		const generator = new HeightGenerator();
-  
-  		const position = geometry.attributes.position;
-  		for (let i = 0; i < position.count; i++) {
-  		  const v = new THREE.Vector3().fromBufferAttribute(position, i);
-  		  const height = generator.getHeight(v.normalize());
-  		  v.multiplyScalar(1 + height);
-  		  position.setXYZ(i, v.x, v.y, v.z);
-  		}
-  
-  		geometry.computeVertexNormals();
-  
-  		const material = new THREE.MeshStandardMaterial({
-  		  color: 0x4caf50,
-  		  flatShading: false
-  		});
-  
-  		this.mesh = new THREE.Mesh(geometry, material);
-  	  }
-  	}
-  	class Planet {
-  	  object3D = new THREE.Object3D();
-  	  mesh: PlanetMesh;
-  
-  	  constructor() {
-  		this.mesh = new PlanetMesh();
-  		this.object3D.add(this.mesh.mesh);
-  	  }
-  	}
-  	function createLighting(scene: THREE.Scene) {
-  	  // Soft global light (space ambient)
-  	  const ambient = new THREE.AmbientLight(0xffffff, 0.3);
-  	  scene.add(ambient);
-  
-  	  // Main sun light
-  	  const directional = new THREE.DirectionalLight(0xffffff, 1.2);
-  	  directional.position.set(5, 3, 5);
-  	  directional.castShadow = true;
-  
-  	  directional.shadow.mapSize.width = 2048;
-  	  directional.shadow.mapSize.height = 2048;
-  
-  	  scene.add(directional);
-  	}
-  	class CameraController {
-  	  camera: THREE.PerspectiveCamera;
-  
-  	  private radius = 3;
-  	  private theta = 0;
-  	  private phi = Math.PI / 2;
-  
-  	  private isDragging = false;
-  	  private lastX = 0;
-  	  private lastY = 0;
-  
-  	  constructor(domElement: HTMLElement) {
-  		this.camera = new THREE.PerspectiveCamera(
-  		  60,
-  		  window.innerWidth / window.innerHeight,
-  		  0.01,
-  		  1000
-  		);
-  
-  		this.updateCamera();
-  
-  		domElement.addEventListener("mousedown", this.onMouseDown);
-  		domElement.addEventListener("mousemove", this.onMouseMove);
-  		domElement.addEventListener("mouseup", this.onMouseUp);
-  		domElement.addEventListener("wheel", this.onWheel);
-  	  }
-  
-  	  update() {
-  		this.updateCamera();
-  	  }
-  
-  	  resize() {
-  		this.camera.aspect = window.innerWidth / window.innerHeight;
-  		this.camera.updateProjectionMatrix();
-  	  }
-  
-  	  private updateCamera() {
-  		const x = this.radius * Math.sin(this.phi) * Math.cos(this.theta);
-  		const y = this.radius * Math.cos(this.phi);
-  		const z = this.radius * Math.sin(this.phi) * Math.sin(this.theta);
-  
-  		this.camera.position.set(x, y, z);
-  		this.camera.lookAt(0, 0, 0);
-  	  }
-  
-  	  private onMouseDown = (e: MouseEvent) => {
-  		this.isDragging = true;
-  		this.lastX = e.clientX;
-  		this.lastY = e.clientY;
-  	  };
-  
-  	  private onMouseMove = (e: MouseEvent) => {
-  		if (!this.isDragging) return;
-  
-  		const dx = e.clientX - this.lastX;
-  		const dy = e.clientY - this.lastY;
-  
-  		this.theta -= dx * 0.005;
-  		this.phi -= dy * 0.005;
-  		this.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.phi));
-  
-  		this.lastX = e.clientX;
-  		this.lastY = e.clientY;
-  	  };
-  
-  	  private onMouseUp = () => {
-  		this.isDragging = false;
-  	  };
-  
-  	  private onWheel = (e: WheelEvent) => {
-  		this.radius += e.deltaY * 0.002;
-  		this.radius = Math.max(1.5, Math.min(10, this.radius));
-  	  };
-  	} */
-      
-/* ---------- (JS VERSION) ---------- */
-class Noise {
-  static hash(x, y, z) {
-    return (Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453) % 1;
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
   }
 }
-class FBM {
-  static sample(x, y, z, octaves = 5) {
-    let value = 0;
-    let amplitude = 0.5;
-    let frequency = 1;
-    for (let i = 0; i < octaves; i++) {
-      value += amplitude * Noise.hash(x * frequency, y * frequency, z * frequency);
-      frequency *= 2;
-      amplitude *= 0.5;
-    }
-    return value;
-  }
-}
-class HeightGenerator {
-  getHeight(normal) {
-    return FBM.sample(normal.x, normal.y, normal.z) * 0.2;
-  }
-}
-class PlanetMesh {
-  constructor() {
-    const geometry = new THREE.IcosahedronGeometry(1, 6);
-    const generator = new HeightGenerator();
-    const position = geometry.attributes.position;
-    for (let i = 0; i < position.count; i++) {
-      const v = new THREE.Vector3().fromBufferAttribute(position, i);
-      const height = generator.getHeight(v.clone().normalize());
-      v.multiplyScalar(1 + height);
-      position.setXYZ(i, v.x, v.y, v.z);
-    }
-    geometry.computeVertexNormals();
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x4caf50
-    });
-    this.mesh = new THREE.Mesh(geometry, material);
-  }
+</script>
+
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm';
+
+/* =========================================================
+   🔷 SHARED CORNER CACHE
+========================================================= */
+const sharedCornerCache = new Map();
+function getSharedCorner(v) {
+  const key =
+    v.x.toFixed(6) + "_" +
+    v.y.toFixed(6) + "_" +
+    v.z.toFixed(6);
+  if (!sharedCornerCache.has(key)) sharedCornerCache.set(key, v);
+  return sharedCornerCache.get(key);
 }
 
-class HexSphere {
-  static create(subdivisions, radius)/*: THREE.BufferGeometry */ {
-    let vertices = HexSphere.icosahedronVertices();
-    let indices = HexSphere.icosahedronIndices();
-
+/* =========================================================
+   🔷 GOLDBERG SPHERE
+========================================================= */
+class GoldbergSphere {
+  static create(subdivisions, radius) {
+    let vertices = this.icosahedronVertices();
+    let indices = this.icosahedronIndices();
     for (let i = 0; i < subdivisions; i++) {
-      ({ vertices, indices } = HexSphere.subdivide(vertices, indices));
+      ({ vertices, indices } = this.subdivide(vertices, indices));
     }
-
-    // Project to sphere
     vertices = vertices.map(v => v.normalize().multiplyScalar(radius));
+    const faceCenters = this.computeFaceCenters(vertices, indices);
+    const vertexFaces = this.buildAdjacency(indices, vertices.length);
+    return { cells: this.buildCells(vertices, indices, faceCenters, vertexFaces, radius) };
+  }
 
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(vertices.length * 3);
+  static buildCells(vertices, indices, faceCenters, vertexFaces, radius) {
+    const cells = [];
+    for (let vi = 0; vi < vertexFaces.length; vi++) {
+      const faces = vertexFaces[vi];
+      if (faces.length < 5) continue;
+      const center = vertices[vi].clone().normalize().multiplyScalar(radius);
+      const normal = center.clone().normalize();
+      const corners = faces.map(fi => faceCenters[fi].clone().multiplyScalar(radius));
+      const tangent = new THREE.Vector3().crossVectors(normal, Math.abs(normal.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
+      const bitangent = new THREE.Vector3().crossVectors(normal, tangent);
+      corners.sort((a,b)=>{
+        const da=a.clone().sub(center), db=b.clone().sub(center);
+        return Math.atan2(da.dot(bitangent),da.dot(tangent)) - Math.atan2(db.dot(bitangent),db.dot(tangent));
+      });
+      cells.push({ center, corners, isPentagon: corners.length===5 });
+    }
+    return cells;
+  }
 
-    vertices.forEach((v, i) => {
-      positions[i * 3 + 0] = v.x;
-      positions[i * 3 + 1] = v.y;
-      positions[i * 3 + 2] = v.z;
+  static computeFaceCenters(vertices, indices) {
+    const centers = [];
+    for (let i = 0; i < indices.length; i += 3) {
+      const a = vertices[indices[i]], b = vertices[indices[i+1]], c = vertices[indices[i+2]];
+      centers.push(new THREE.Vector3().add(a).add(b).add(c).divideScalar(3).normalize());
+    }
+    return centers;
+  }
+
+  static buildAdjacency(indices, count) {
+    const vf = Array(count).fill(0).map(() => []);
+    for (let i = 0; i < indices.length; i += 3) {
+      const f = i/3;
+      vf[indices[i]].push(f);
+      vf[indices[i+1]].push(f);
+      vf[indices[i+2]].push(f);
+    }
+    return vf;
+  }
+
+  static subdivide(vertices, indices) {
+    const newVerts = [...vertices], newIdx = [], cache = new Map();
+    const mid = (a,b) => {
+      const k = a<b?`${a}_${b}`:`${b}_${a}`;
+      if (cache.has(k)) return cache.get(k);
+      const v = vertices[a].clone().add(vertices[b]).multiplyScalar(0.5);
+      const i = newVerts.length; newVerts.push(v); cache.set(k,i); return i;
+    };
+    for (let i=0;i<indices.length;i+=3){
+      const a=indices[i],b=indices[i+1],c=indices[i+2];
+      const ab=mid(a,b), bc=mid(b,c), ca=mid(c,a);
+      newIdx.push(a,ab,ca, b,bc,ab, c,ca,bc, ab,bc,ca);
+    }
+    return { vertices:newVerts, indices:newIdx };
+  }
+
+  static icosahedronVertices() {
+    const t=(1+Math.sqrt(5))/2;
+    return [
+      new THREE.Vector3(-1,t,0), new THREE.Vector3(1,t,0),
+      new THREE.Vector3(-1,-t,0), new THREE.Vector3(1,-t,0),
+      new THREE.Vector3(0,-1,t), new THREE.Vector3(0,1,t),
+      new THREE.Vector3(0,-1,-t), new THREE.Vector3(0,1,-t),
+      new THREE.Vector3(t,0,-1), new THREE.Vector3(t,0,1),
+      new THREE.Vector3(-t,0,-1), new THREE.Vector3(-t,0,1)
+    ];
+  }
+
+  static icosahedronIndices() {
+    return [
+      0,11,5,0,5,1,0,1,7,0,7,10,0,10,11,
+      1,5,9,5,11,4,11,10,2,10,7,6,7,1,8,
+      3,9,4,3,4,2,3,2,6,3,6,8,3,8,9,
+      4,9,5,2,4,11,6,2,10,8,6,7,9,8,1
+    ];
+  }
+}
+
+/* =========================================================
+   🔷 TRIANGULATE POLYGON
+========================================================= */
+function triangulatePolygon3D(corners, normal) {
+  const tangent = new THREE.Vector3().crossVectors(normal, Math.abs(normal.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
+  const bitangent = new THREE.Vector3().crossVectors(normal, tangent);
+  const pts2D = corners.map(p=>new THREE.Vector2(p.dot(tangent),p.dot(bitangent)));
+  const tris = THREE.ShapeUtils.triangulateShape(pts2D, []);
+  const out=[];
+  for(const t of tris) for(const i of t) out.push(corners[i]);
+  return out;
+}
+
+/* =========================================================
+   🔷 PLANET WITH CENTER SPHERES
+========================================================= */
+class Planet {
+  constructor(scene){
+    this.object3D = new THREE.Object3D();
+    this.goldberg = GoldbergSphere.create(3,1);
+    this.centerSpheres = []; // collect spheres for GUI toggle
+
+    this.goldberg.cells.forEach(cell=>{
+      const geom = new THREE.BufferGeometry();
+      const verts = [];
+      const normal = cell.center.clone().normalize();
+
+      const projectedCorners = cell.corners.map(corner=>{
+        const toCorner = corner.clone().sub(cell.center);
+        const dist = toCorner.dot(normal);
+        return corner.clone().sub(normal.clone().multiplyScalar(dist));
+      });
+
+      const triangles = triangulatePolygon3D(projectedCorners, normal);
+      triangles.forEach(v=>verts.push(v.x,v.y,v.z));
+      geom.setAttribute("position",new THREE.Float32BufferAttribute(verts,3));
+      geom.computeVertexNormals();
+
+      const tileMesh = new THREE.Mesh(
+        geom,
+        new THREE.MeshStandardMaterial({
+          color: cell.isPentagon?0xff7043:0x4caf50,
+          flatShading:false,
+          roughness:0.8,
+          metalness:0.0
+        })
+      );
+
+      // 🔵 TILE CENTER SPHERE
+      const centerSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.015,12,12),
+        new THREE.MeshStandardMaterial({
+          color:0x66ccff,
+          emissive:0x226688,
+          emissiveIntensity:0.4,
+          roughness:0.4
+        })
+      );
+
+      // convert to local tileMesh space and offset outward
+      const localCenter = cell.center.clone();
+      tileMesh.worldToLocal(localCenter);
+      localCenter.add(normal.clone().multiplyScalar(0.04));
+      centerSphere.position.copy(localCenter);
+
+      tileMesh.add(centerSphere);
+      tileMesh.userData = { cell, normal: normal.clone(), phase: Math.random()*Math.PI*2, centerSphere };
+      this.centerSpheres.push(centerSphere);
+
+      this.object3D.add(tileMesh);
     });
 
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-
-    return geometry;
-  }
-
-  static icosahedronVertices()/*: THREE.Vector3[]*/ {
-    const t = (1 + Math.sqrt(5)) / 2;
-    return [
-      new THREE.Vector3(-1,  t,  0),
-      new THREE.Vector3( 1,  t,  0),
-      new THREE.Vector3(-1, -t,  0),
-      new THREE.Vector3( 1, -t,  0),
-      new THREE.Vector3( 0, -1,  t),
-      new THREE.Vector3( 0,  1,  t),
-      new THREE.Vector3( 0, -1, -t),
-      new THREE.Vector3( 0,  1, -t),
-      new THREE.Vector3( t,  0, -1),
-      new THREE.Vector3( t,  0,  1),
-      new THREE.Vector3(-t,  0, -1),
-      new THREE.Vector3(-t,  0,  1),
-    ];
-  }
-
-  static icosahedronIndices()/*: number[]*/ {
-    return [
-      0,11,5, 0,5,1, 0,1,7, 0,7,10, 0,10,11,
-      1,5,9, 5,11,4, 11,10,2, 10,7,6, 7,1,8,
-      3,9,4, 3,4,2, 3,2,6, 3,6,8, 3,8,9,
-      4,9,5, 2,4,11, 6,2,10, 8,6,7, 9,8,1,
-    ];
-  }
-
-  static subdivide(
-    vertices/*: THREE.Vector3[]*/,
-    indices/*: number[]*/
-  )/*: { vertices: THREE.Vector3[]; indices: number[] }*/ {
-
-    const newVertices = [...vertices];
-    const newIndices= [];
-    const midpointCache = new Map();
-
-    const midpoint = (a, b) => {
-      const key = a < b ? `${a}_${b}` : `${b}_${a}`;
-      if (midpointCache.has(key)) return midpointCache.get(key);
-
-      const v = vertices[a].clone().add(vertices[b]).multiplyScalar(0.5);
-      const index = newVertices.length;
-      newVertices.push(v);
-      midpointCache.set(key, index);
-      return index;
-    };
-
-    for (let i = 0; i < indices.length; i += 3) {
-      const a = indices[i];
-      const b = indices[i + 1];
-      const c = indices[i + 2];
-
-      const ab = midpoint(a, b);
-      const bc = midpoint(b, c);
-      const ca = midpoint(c, a);
-
-      newIndices.push(
-        a, ab, ca,
-        b, bc, ab,
-        c, ca, bc,
-        ab, bc, ca
-      );
-    }
-
-    return { vertices: newVertices, indices: newIndices };
+    scene.add(this.object3D);
   }
 }
 
-class Planet {
-  constructor() {
-	////new THREE.Object3D();
-    //this.hexSphere = new HexSphere;
-    this.geometry = HexSphere.create(3, 1);
-	this.surface = new THREE.Mesh(
-	  geometry,
-	  new THREE.MeshStandardMaterial({
-		color: 0x4caf50,
-		roughness: 0.8,
-	  })
-	);
-	scene.add(surface);
-//	this.mesh = new PlanetMesh();
-//    this.object3D.add(this.mesh.mesh);
-  }
-}
-
-function createLighting(scene) {
-  scene.add(new THREE.AmbientLight(0xffffff, 0.3));
-
-  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-  sun.position.set(5, 3, 5);
-  scene.add(sun);
-}
-
-/* ---------- BOOTSTRAP (REQUIRED) ---------- */
+/* =========================================================
+   🔷 BOOTSTRAP
+========================================================= */
 const scene = new THREE.Scene();
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 100);
+camera.position.set(3,2,3);
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.01,
-  1000
-);
-camera.position.set(3, 2, 3);
-camera.lookAt(0, 0, 0);
+scene.add(new THREE.AmbientLight(0xffffff,0.4));
+const sun = new THREE.DirectionalLight(0xffffff,1.2);
+sun.position.set(5,3,5);
+scene.add(sun);
 
-// Orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+const planet = new Planet(scene);
 
-createLighting(scene);
-const planet = new Planet();
-scene.add(planet.object3D);
-function animate() {
+/* =========================================================
+   🔷 GUI TOGGLE FOR CENTER SPHERES
+========================================================= */
+const gui = new GUI({ title:'Tiles', width:220 });
+gui.domElement.style.backgroundColor = '#1e1e1e';
+gui.domElement.style.color = '#eee';
+
+const settings = { showSpheres:true };
+gui.add(settings,'showSpheres').name('Show Centers').onChange(value=>{
+  planet.centerSpheres.forEach(s => s.visible = value);
+});
+
+/* =========================================================
+   🔷 ANIMATION LOOP
+========================================================= */
+function animate(){
   requestAnimationFrame(animate);
   planet.object3D.rotation.y += 0.002;
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-   </script>
-  </body>
+
+</script>
+</body>
 </html>
