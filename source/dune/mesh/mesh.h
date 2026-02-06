@@ -1,7 +1,6 @@
 #pragma once
 
-/**
- * Mesh is a non-manifold boundary representation
+/* Mesh is a non-manifold boundary representation
  * designed to support advanced editing operations.
  * m_structure The Structure
  *
@@ -44,10 +43,10 @@
  * and should not end up in the final mesh.
  * mesh_edges_and_verts Edges and Vertices
  *
- * Edges and Vertices in Mesh are primitive structures.
+ * Edges and Verts in Mesh are primitive structures.
  *
  * There can be more than one edge between two vertices in Mesh,
- * though the rest of Blender (i.e. DNA and evaluated Mesh) does not support this.
+ * though the rest of Dune (i.e. DNA and evaluated Mesh) does not support this.
  * So it should only occur temporarily during editing operations.
  * m_queries Queries
  *
@@ -69,7 +68,7 @@
  *
  * Most topological queries in Mesh go through an iterator API (see Queries above).
  * These are defined in mesh_iterators.h.
- * If you can, please use the MESH_ITER_MESH, MESH_ITER_ELEM macros in bmesh_iterators.h
+ * If you can, please use the MESH_ITER_MESH, MESH_ITER_ELEM macros in mesh_iters.h
  * subsectionm_walker_api Walker API
  *
  * Topological queries that require a stack (e.g. recursive queries) go through the Walker API,
@@ -77,23 +76,23 @@
  * though a mechanism for plugging in new walkers needs to be added at some point.
  *
  * Most topological queries should go through these two APIs;
- * there are additional functions you can use for topological iteration,
- * but their meant for internal bmesh code.
+ * there are additional fns you can use for topological iter,
+ * but their meant for internal mesh code.
  *
- * Note that the walker API supports delimiter flags,
- * to allow the caller to flag elements not to walk past.
- * subsection m_ops Operators
+ * The walker API supports delimiter flags,
+ * to allow the caller to flag elems not to walk past.
+ * subsection m_ops Ops
  *
- * Operators are an integral part of Mesh. Unlike regular dune operators,
- *Mesh operators **mo's** are designed to be nested (e.g. call other operators).
+ * Ops are an integral part of Mesh. Unlike regular dune ops,
+ *Mesh ops **mo's** are designed to be nested (e.g. call other ops).
  *
- * Each operator has a number of input/output "slots"
- * which are used to pass settings & data into/out of the operator
- * (and allows for chaining operators together).
+ * Each op has a number of input/output "slots"
+ * which are used to pass settings & data into/out of the op
+ * (and allows for chaining ops together).
  *
  * These slots are identified by name, using strings.
  *
- * Access to slots is done with `mesh_op_slot_***()` functions.
+ * Access to slots is done with `mesh_op_slot_***()` fns.
  * m_tool_flags Tool Flags
  *
  * The Mesh API provides a set of flags for faces, edges and vertices,
@@ -164,8 +163,7 @@
  * - Ability to call MO's with option not to create return data (will save some time)
  * - Binary diff UNDO, currently this uses huge amount of ram
  *   when all shapes are stored for each undo step for eg.
- * - Use two different iterator types for BMO map/buffer types.
- */
+ * - Use two diff iterator types for BMO map/buffer types. */
 
 #include "types_customdata.h" /* BMesh struct in bmesh_class.h uses */
 #include "types_listBase.h"   /* selection history uses */
