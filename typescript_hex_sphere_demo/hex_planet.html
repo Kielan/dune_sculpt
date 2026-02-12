@@ -22,9 +22,7 @@ import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm';
 
-/* =========================================================
-   🔷 SHARED CORNER CACHE
-========================================================= */
+/* 🔷 SHARED CORNER CACHE */
 const sharedCornerCache = new Map();
 function getSharedCorner(v) {
   const key =
@@ -35,9 +33,7 @@ function getSharedCorner(v) {
   return sharedCornerCache.get(key);
 }
 
-/* =========================================================
-   🔷 GOLDBERG SPHERE
-========================================================= */
+/* 🔷 GOLDBERG SPHERE */
 class GoldbergSphere {
   static create(subdivisions, radius) {
     let vertices = this.icosahedronVertices();
@@ -128,9 +124,7 @@ class GoldbergSphere {
   }
 }
 
-/* =========================================================
-   🔷 TRIANGULATE POLYGON
-========================================================= */
+/* 🔷 TRIANGULATE POLYGON */
 function triangulatePolygon3D(corners, normal) {
   const tangent = new THREE.Vector3().crossVectors(normal, Math.abs(normal.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
   const bitangent = new THREE.Vector3().crossVectors(normal, tangent);
@@ -141,9 +135,7 @@ function triangulatePolygon3D(corners, normal) {
   return out;
 }
 
-/* =========================================================
-   🔷 PLANET WITH CENTER SPHERES
-========================================================= */
+/* 🔷 PLANET WITH CENTER SPHERES */
 class Planet {
   constructor(scene){
     this.object3D = new THREE.Object3D();
@@ -204,9 +196,7 @@ class Planet {
   }
 }
 
-/* =========================================================
-   🔷 BOOTSTRAP
-========================================================= */
+/* 🔷 BOOTSTRAP */
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 100);
 camera.position.set(3,2,3);
@@ -223,9 +213,7 @@ scene.add(sun);
 const controls = new OrbitControls(camera, renderer.domElement);
 const planet = new Planet(scene);
 
-/* =========================================================
-   🔷 GUI TOGGLE FOR CENTER SPHERES
-========================================================= */
+/* 🔷 GUI TOGGLE FOR CENTER SPHERES */
 const gui = new GUI({ title:'Tiles', width:220 });
 gui.domElement.style.backgroundColor = '#1e1e1e';
 gui.domElement.style.color = '#eee';
@@ -234,6 +222,63 @@ const settings = { showSpheres:true };
 gui.add(settings,'showSpheres').name('Show Centers').onChange(value=>{
   planet.centerSpheres.forEach(s => s.visible = value);
 });
+
+/* 🔷 VORONOI SEED SYSTEM */
+const voronoiSettings = {
+  seedIndices: [],   // stores the 3 chosen indices
+  activeSeed: "None",
+  generateSeeds: () => generateRandomSeeds()
+};
+
+const seedFolder = gui.addFolder("Voronoi Seeds");
+seedFolder.add(voronoiSettings, "generateSeeds").name("Generate Random Seeds");
+
+seedFolder.add(voronoiSettings, "activeSeed", ["None", "Seed 0", "Seed 1", "Seed 2"])
+  .name("View Seed")
+  .onChange(updateSeedVisibility);
+
+seedFolder.add(voronoiSettings, "showVoronoiSeedSpheres")
+  .name('Show Voronoi Seed Spheres')
+  .onChange(value=>{
+    voronoiSettings.seedIndices[activeSeed].forEach(s => s.visible = value);
+  });
+
+function generateRandomSeeds() {
+  // reset previous highlights
+  planet.centerSpheres.forEach(s => {
+    s.material.emissive.setHex(0x226688);
+  });
+  const total = planet.centerSpheres.length;
+  const selected = new Set();
+  while (selected.size < 3) {
+    selected.add(Math.floor(Math.random() * total));
+  }
+  voronoiSettings.seedIndices = Array.from(selected);
+  console.log("New Voronoi Seeds:", voronoiSettings.seedIndices);
+  // highlight all 3 in red initially
+  voronoiSettings.seedIndices.forEach(i => {
+    planet.centerSpheres[i].material.emissive.setHex(0xff0000);
+  });
+  voronoiSettings.activeSeed = "None";
+}
+
+function updateSeedVisibility(value) {
+  // reset all spheres
+  planet.centerSpheres.forEach(s => {
+    s.material.emissive.setHex(0x226688);
+  });
+  if (value === "None") {
+    return;
+  }
+  const index = parseInt(value.split(" ")[1]);
+  if (
+    voronoiSettings.seedIndices.length === 3 &&
+    voronoiSettings.seedIndices[index] !== undefined
+  ) {
+    const sphereIndex = voronoiSettings.seedIndices[index];
+    planet.centerSpheres[sphereIndex].material.emissive.setHex(0x00ff00);
+  }
+}
 
 /* =========================================================
    🔷 ANIMATION LOOP
