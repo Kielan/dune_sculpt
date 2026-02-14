@@ -192,7 +192,85 @@ class Planet {
       this.object3D.add(tileMesh);
     });
 
+    //this.buildGraph();
+    //Expected:
+    //{ 5: 12, 6: 240 }
+    //this.enforceSixNeighbors();
+    //Expected:
+    //{ 6: 252 }
+    
     scene.add(this.object3D);
+  }//end constructor
+  buildGraph() {
+    // Map center position → cell index
+    const centerMap = new Map();
+    this.goldberg.cells.forEach((cell, i) => {
+      const key = cell.center.toArray().map(v => v.toFixed(6)).join("_");
+      centerMap.set(key, i);
+    });
+    // Initialize neighbor list
+    this.graph = this.goldberg.cells.map(() => []);
+    // Two cells are neighbors if they share 2 corners
+    for (let i = 0; i < this.goldberg.cells.length; i++) {
+      for (let j = i + 1; j < this.goldberg.cells.length; j++) {
+        const a = this.goldberg.cells[i];
+        const b = this.goldberg.cells[j];
+        let shared = 0;
+        for (let ca of a.corners) {
+          for (let cb of b.corners) {
+            if (ca.distanceTo(cb) < 1e-5) shared++;
+          }
+        }
+        if (shared >= 2) {
+          this.graph[i].push(j);
+          this.graph[j].push(i);
+        }
+      }
+    }
+    console.log("Initial Valence Histogram:");
+    this.printValenceHistogram();
+  }//end buildgraph
+  printValenceHistogram() {
+    const hist = {};
+    this.graph.forEach(n => {
+      hist[n.length] = (hist[n.length] || 0) + 1;
+    });
+    console.log(hist);
+  }//end printValenceHistogram
+  //expected
+  //{ 5: 12, 6: 240 }
+  enforceSixNeighbors() {
+    for (let i = 0; i < this.graph.length; i++) {
+      while (this.graph[i].length < 6) {
+        const secondRing = new Set();
+        // gather neighbors of neighbors
+        this.graph[i].forEach(n => {
+          this.graph[n].forEach(nn => {
+            if (nn !== i && !this.graph[i].includes(nn)) {
+              secondRing.add(nn);
+            }
+          });
+        });
+        if (secondRing.size === 0) break;
+        // choose best candidate by minimal angular deviation
+        let best = null;
+        let bestAngle = Infinity;
+        const center = this.goldberg.cells[i].center.clone().normalize();
+        secondRing.forEach(candidate => {
+          const dir = this.goldberg.cells[candidate].center.clone().normalize();
+          const angle = center.angleTo(dir);
+          if (angle < bestAngle) {
+            bestAngle = angle;
+            best = candidate;
+          }
+        });
+        if (best === null) break;
+        this.graph[i].push(best);
+        this.graph[best].push(i);
+      }
+    }
+    console.log("After Enforcement:");
+    this.printValenceHistogram();
   }
 }
 
