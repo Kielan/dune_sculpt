@@ -22,6 +22,18 @@ import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm';
 
+/** 
+TODO:
+Next we are going to draw a line between 5 sided tiles, to close off
+continental regions.
+
+Make *Special* Tiles clickable and connectable with a boarder tile type and color.
+
+Next:
+Select 1 region to choose for the sed
+then build an original seed continent plate. 
+**/
+  
 /* 🔷 SHARED CORNER CACHE */
 const sharedCornerCache = new Map();
 function getSharedCorner(v) {
@@ -185,14 +197,19 @@ class Planet {
       this.object3D.add(tileMesh);
     });
 
-    //this.buildGraph();
+    this.buildGraph();
     //Expected:
     //{ 5: 12, 6: 240 }
-    //this.enforceSixNeighbors();
+    this.enforceSixNeighbors();
     //Expected:
     //{ 6: 252 }
+    //Current:
+    //{ 6: 630, 7: 12}
+    this.buildPureHexGraph();
     
     scene.add(this.object3D);
+
+    planet.simulateWave(0);
   }//end constructor
   buildGraph() {
     // Map center position → cell index
@@ -276,6 +293,27 @@ class Planet {
     }
     console.log("Pure hex graph created.");
   }
+  simulateWave(originIndex) {
+    const visited = new Set();
+    const queue = [{ index: originIndex, depth: 0 }];
+
+    while (queue.length > 0) {
+
+      const { index, depth } = queue.shift();
+
+      if (visited.has(index)) continue;
+      visited.add(index);
+
+      const tile = this.object3D.children[index];
+      tile.material.color.setHSL(depth * 0.05, 1, 0.5);
+
+      this.hexNodes[index].neighbors.forEach(n => {
+        if (!visited.has(n)) {
+          queue.push({ index: n, depth: depth + 1 });
+        }
+      });
+    }
+  }
 }
 
 /* 🔷 BOOTSTRAP */
@@ -319,11 +357,11 @@ seedFolder.add(voronoiSettings, "activeSeed", ["None", "Seed 0", "Seed 1", "Seed
   .name("View Seed")
   .onChange(updateSeedVisibility);
 
-seedFolder.add(voronoiSettings, "showVoronoiSeedSpheres")
-  .name('Show Voronoi Seed Spheres')
-  .onChange(value=>{
-    voronoiSettings.seedIndices[activeSeed].forEach(s => s.visible = value);
-  });
+//seedFolder.add(voronoiSettings, "showVoronoiSeedSpheres")
+//  .name('Show Voronoi Seed Spheres')
+//  .onChange(value=>{
+//    voronoiSettings.seedIndices[activeSeed].forEach(s => s.visible = value);
+//  });
 
 function generateRandomSeeds() {
   // reset previous highlights
@@ -362,9 +400,7 @@ function updateSeedVisibility(value) {
   }
 }
 
-/* =========================================================
-   🔷 ANIMATION LOOP
-========================================================= */
+/* 🔷 ANIMATION LOOP */
 function animate(){
   requestAnimationFrame(animate);
   planet.object3D.rotation.y += 0.002;
