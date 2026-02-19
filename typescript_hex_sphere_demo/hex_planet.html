@@ -276,7 +276,9 @@ class Planet {
         });
         if (best === null) break;
         this.graph[i].push(best);
-        this.graph[best].push(i);
+        if (this.graph[best].length < 6) {
+          this.graph[best].push(i);
+        }
       }
     }
     console.log("After Enforcement:");
