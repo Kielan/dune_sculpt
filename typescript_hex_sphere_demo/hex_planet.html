@@ -31,9 +31,83 @@ Make *Special* Tiles clickable and connectable with a boarder tile type and colo
 
 Next:
 Select 1 region to choose for the sed
-then build an original seed continent plate. 
+then build an original seed continent plate.
+
+TODO: We replace GoldbergSphere with:
+HexGridPatch → ProjectToSphere → ExtrudeHexColumns → VoxelCore
+q, r axial coords
+x = size * (3/2 * q)
+y = size * (√3/2 * q + √3 * r)
+
+1) VoxelSphere         ← Solid interior
+2) ContinentMask       ← Which voxels are land
+3) HeightField         ← Elevation logic
+4) HexSurfaceLayer     ← Visual surface tiles
+
+1/3 of planet
+Area cap = 2πR² (1 - cosθ)
+Total = 4πR²
+=> (1 - cosθ)/2 ≈ 1/3
+=> cosθ ≈ 1 - 2/3 = 1/3
+=> θ ≈ acos(1/3) ≈ 1.23 rad (~70°)
 **/
-  
+
+class VoxelSphere {
+  constructor(radius, resolution) {
+    this.radius = radius;
+    this.resolution = resolution;
+    this.grid = new Map(); // key = "x_y_z" → solid boolean
+    this.generate();
+  }
+  key(x,y,z) {
+    return `${x}_${y}_${z}`;
+  }
+  generate() {
+    const r = this.resolution;
+    for (let x = -r; x <= r; x++) {
+      for (let y = -r; y <= r; y++) {
+        for (let z = -r; z <= r; z++) {
+          const p = new THREE.Vector3(x,y,z);
+          if (p.length() <= r) {
+            this.grid.set(this.key(x,y,z), true);
+          }
+        }
+      }
+    }
+    console.log("Voxel sphere generated:", this.grid.size);
+  }
+  isSolid(x,y,z) {
+    return this.grid.has(this.key(x,y,z));
+  }
+  remove(x,y,z) {
+    this.grid.delete(this.key(x,y,z));
+  }
+}
+
+class ContinentMask {
+  constructor(normal, coverageAngle) {
+    this.normal = normal.clone().normalize();
+    this.coverage = coverageAngle; // radians
+  }
+  contains(direction) {
+    return direction.angleTo(this.normal) < this.coverage;
+  }
+}
+
+
+
+const PLANET_RADIUS = 2;
+const plateNormal = new THREE.Vector3(0.3, 0.7, 0.6).normalize();
+const tangent = new THREE.Vector3()
+  .crossVectors(
+    plateNormal,
+    Math.abs(plateNormal.y) < 0.9
+      ? new THREE.Vector3(0,1,0)
+      : new THREE.Vector3(1,0,0)
+  ).normalize();
+const bitangent = new THREE.Vector3()
+  .crossVectors(plateNormal, tangent)
+  .normalize();
 /* 🔷 SHARED CORNER CACHE */
 const sharedCornerCache = new Map();
 function getSharedCorner(v) {
@@ -43,6 +117,192 @@ function getSharedCorner(v) {
     v.z.toFixed(6);
   if (!sharedCornerCache.has(key)) sharedCornerCache.set(key, v);
   return sharedCornerCache.get(key);
+}
+
+/* 🔷 HexPlate */
+class HexPlate {
+  constructor(scene, centerNormal, radius, hexSize, gridRadius) {
+    this.object3D = new THREE.Object3D();
+    const tangent = new THREE.Vector3()
+      .crossVectors(
+        centerNormal,
+        Math.abs(centerNormal.y) < 0.9
+          ? new THREE.Vector3(0,1,0)
+          : new THREE.Vector3(1,0,0)
+      ).normalize();
+    const bitangent = new THREE.Vector3()
+      .crossVectors(centerNormal, tangent)
+      .normalize();
+
+    for (let q = -gridRadius; q <= gridRadius; q++) {
+      for (let r = -gridRadius; r <= gridRadius; r++) {
+        if (Math.abs(q + r) > gridRadius) continue;
+        const x2D = hexSize * (1.5 * q);
+        const y2D = hexSize * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+        // Lift into 3D
+        const point = new THREE.Vector3()
+          .addScaledVector(tangent, x2D)
+          .addScaledVector(bitangent, y2D)
+          .addScaledVector(centerNormal, radius);
+        const projected = point.clone().normalize().multiplyScalar(radius);
+        const wedge = this.createHexWedge(
+          direction,
+          surfaceRadius,
+          hexSize,
+          PLANET_RADIUS
+        );
+        this.object3D.add(wedge);
+      }
+    }
+    scene.add(this.object3D);
+  }
+  createHexColumn(center, normal, size) {
+    const geom = new THREE.CylinderGeometry(
+      size, size, 0.15, 6, 1, false
+    );
+    const mesh = new THREE.Mesh(
+      geom,
+      new THREE.MeshStandardMaterial({
+        color: 0x4caf50,
+        roughness: 0.8
+      })
+    );
+    mesh.position.copy(center);
+    // align to sphere normal
+    const up = new THREE.Vector3(0,1,0);
+    const quat = new THREE.Quaternion().setFromUnitVectors(up, normal);
+    mesh.quaternion.copy(quat);
+    return mesh;
+  }
+  createHexWedge(centerDirection, surfaceRadius, size, planetRadius) {
+
+  const vertices = [];
+  const indices = [];
+
+  const normal = centerDirection.clone().normalize();
+
+  // Build tangent basis
+  const tangent = new THREE.Vector3()
+    .crossVectors(
+      normal,
+      Math.abs(normal.y) < 0.9
+        ? new THREE.Vector3(0,1,0)
+        : new THREE.Vector3(1,0,0)
+    ).normalize();
+  const bitangent = new THREE.Vector3()
+    .crossVectors(normal, tangent);
+  const surfaceCenter = normal.clone().multiplyScalar(surfaceRadius);
+  // 6 surface corners
+  const ring = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = i / 6 * Math.PI * 2;
+    const offset =
+      tangent.clone().multiplyScalar(Math.cos(angle) * size)
+      .add(
+        bitangent.clone().multiplyScalar(Math.sin(angle) * size)
+      );
+    const corner = surfaceCenter.clone().add(offset)
+      .normalize()
+      .multiplyScalar(surfaceRadius);
+    ring.push(corner);
+  }
+  // Apex toward center
+  const apex = normal.clone().multiplyScalar(planetRadius * 0.2);
+  // Push vertices
+  ring.forEach(v => vertices.push(v.x, v.y, v.z));
+  vertices.push(apex.x, apex.y, apex.z);
+  const apexIndex = 6;
+  // Top face triangulation (fan)
+  for (let i = 1; i < 5; i++) {
+    indices.push(0, i, i+1);
+  }
+  // Side faces
+  for (let i = 0; i < 6; i++) {
+    const next = (i+1) % 6;
+    indices.push(i, next, apexIndex);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(vertices, 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x4caf50,
+    flatShading: true
+  });
+  return new THREE.Mesh(geometry, material);
+  }
+}
+
+createHexWedge(centerDirection, surfaceRadius, size, planetRadius) {
+
+  const vertices = [];
+  const indices = [];
+
+  const normal = centerDirection.clone().normalize();
+
+  // Build tangent basis
+  const tangent = new THREE.Vector3()
+    .crossVectors(
+      normal,
+      Math.abs(normal.y) < 0.9
+        ? new THREE.Vector3(0,1,0)
+        : new THREE.Vector3(1,0,0)
+    ).normalize();
+
+  const bitangent = new THREE.Vector3()
+    .crossVectors(normal, tangent);
+
+  const surfaceCenter = normal.clone().multiplyScalar(surfaceRadius);
+
+  // 6 surface corners
+  const ring = [];
+  for (let i = 0; i < 6; i++) {
+
+    const angle = i / 6 * Math.PI * 2;
+
+    const offset =
+      tangent.clone().multiplyScalar(Math.cos(angle) * size)
+      .add(
+        bitangent.clone().multiplyScalar(Math.sin(angle) * size)
+      );
+
+    const corner = surfaceCenter.clone().add(offset)
+      .normalize()
+      .multiplyScalar(surfaceRadius);
+
+    ring.push(corner);
+  }
+
+  // Apex toward center
+  const apex = normal.clone().multiplyScalar(planetRadius * 0.2);
+  // Push vertices
+  ring.forEach(v => vertices.push(v.x, v.y, v.z));
+  vertices.push(apex.x, apex.y, apex.z);
+  const apexIndex = 6;
+  // Top face triangulation (fan)
+  for (let i = 1; i < 5; i++) {
+    indices.push(0, i, i+1);
+  }
+  // Side faces
+  for (let i = 0; i < 6; i++) {
+    const next = (i+1) % 6;
+    indices.push(i, next, apexIndex);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(vertices, 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x4caf50,
+    flatShading: true
+  });
+  return new THREE.Mesh(geometry, material);
 }
 
 /* 🔷 GOLDBERG SPHERE */
@@ -331,31 +591,35 @@ sun.position.set(5,3,5);
 scene.add(sun);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-const planet = new Planet(scene);
+//const planet = new Planet(scene);
+const plate = new HexPlate(
+  scene,
+  new THREE.Vector3(0.3,0.7,0.6).normalize(),
+  2, 0.1, 12
+);
 
 /* 🔷 GUI TOGGLE FOR CENTER SPHERES */
-const gui = new GUI({ title:'Tiles', width:220 });
-gui.domElement.style.backgroundColor = '#1e1e1e';
-gui.domElement.style.color = '#eee';
-
-const settings = { showSpheres:true };
-gui.add(settings,'showSpheres').name('Show Centers').onChange(value=>{
-  planet.centerSpheres.forEach(s => s.visible = value);
-});
+// const gui = new GUI({ title:'Tiles', width:220 });
+// gui.domElement.style.backgroundColor = '#1e1e1e';
+// gui.domElement.style.color = '#eee';
+// const settings = { showSpheres:true };
+// gui.add(settings,'showSpheres').name('Show Centers').onChange(value=>{
+//   planet.centerSpheres.forEach(s => s.visible = value);
+// });
 
 /* 🔷 VORONOI SEED SYSTEM */
-const voronoiSettings = {
-  seedIndices: [],   // stores the 3 chosen indices
-  activeSeed: "None",
-  generateSeeds: () => generateRandomSeeds()
-};
+// const voronoiSettings = {
+//   seedIndices: [],   // stores the 3 chosen indices
+//   activeSeed: "None",
+//   generateSeeds: () => generateRandomSeeds()
+// };
 
-const seedFolder = gui.addFolder("Voronoi Seeds");
-seedFolder.add(voronoiSettings, "generateSeeds").name("Generate Random Seeds");
+// const seedFolder = gui.addFolder("Voronoi Seeds");
+// seedFolder.add(voronoiSettings, "generateSeeds").name("Generate Random Seeds");
 
-seedFolder.add(voronoiSettings, "activeSeed", ["None", "Seed 0", "Seed 1", "Seed 2"])
-  .name("View Seed")
-  .onChange(updateSeedVisibility);
+// seedFolder.add(voronoiSettings, "activeSeed", ["None", "Seed 0", "Seed 1", "Seed 2"])
+//   .name("View Seed")
+//   .onChange(updateSeedVisibility);
 
 //seedFolder.add(voronoiSettings, "showVoronoiSeedSpheres")
 //  .name('Show Voronoi Seed Spheres')
@@ -363,50 +627,50 @@ seedFolder.add(voronoiSettings, "activeSeed", ["None", "Seed 0", "Seed 1", "Seed
 //    voronoiSettings.seedIndices[activeSeed].forEach(s => s.visible = value);
 //  });
 
-function generateRandomSeeds() {
-  // reset previous highlights
-  planet.centerSpheres.forEach(s => {
-    s.material.emissive.setHex(0x226688);
-  });
-  const total = planet.centerSpheres.length;
-  const selected = new Set();
-  while (selected.size < 3) {
-    selected.add(Math.floor(Math.random() * total));
-  }
-  voronoiSettings.seedIndices = Array.from(selected);
-  console.log("New Voronoi Seeds:", voronoiSettings.seedIndices);
-  // highlight all 3 in red initially
-  voronoiSettings.seedIndices.forEach(i => {
-    planet.centerSpheres[i].material.emissive.setHex(0xff0000);
-  });
-  voronoiSettings.activeSeed = "None";
-}
+// function generateRandomSeeds() {
+//   // reset previous highlights
+//   planet.centerSpheres.forEach(s => {
+//     s.material.emissive.setHex(0x226688);
+//   });
+//   const total = planet.centerSpheres.length;
+//   const selected = new Set();
+//   while (selected.size < 3) {
+//     selected.add(Math.floor(Math.random() * total));
+//   }
+//   voronoiSettings.seedIndices = Array.from(selected);
+//   console.log("New Voronoi Seeds:", voronoiSettings.seedIndices);
+//   // highlight all 3 in red initially
+//   voronoiSettings.seedIndices.forEach(i => {
+//     planet.centerSpheres[i].material.emissive.setHex(0xff0000);
+//   });
+//   voronoiSettings.activeSeed = "None";
+// }
 
-function updateSeedVisibility(value) {
-  // reset all spheres
-  planet.centerSpheres.forEach(s => {
-    s.material.emissive.setHex(0x226688);
-  });
-  if (value === "None") {
-    return;
-  }
-  const index = parseInt(value.split(" ")[1]);
-  if (
-    voronoiSettings.seedIndices.length === 3 &&
-    voronoiSettings.seedIndices[index] !== undefined
-  ) {
-    const sphereIndex = voronoiSettings.seedIndices[index];
-    planet.centerSpheres[sphereIndex].material.emissive.setHex(0x00ff00);
-  }
-}
+// function updateSeedVisibility(value) {
+//   // reset all spheres
+//   planet.centerSpheres.forEach(s => {
+//     s.material.emissive.setHex(0x226688);
+//   });
+//   if (value === "None") {
+//     return;
+//   }
+//   const index = parseInt(value.split(" ")[1]);
+//   if (
+//     voronoiSettings.seedIndices.length === 3 &&
+//     voronoiSettings.seedIndices[index] !== undefined
+//   ) {
+//     const sphereIndex = voronoiSettings.seedIndices[index];
+//     planet.centerSpheres[sphereIndex].material.emissive.setHex(0x00ff00);
+//   }
+// }
 
 /* 🔷 ANIMATION LOOP */
-function animate(){
-  requestAnimationFrame(animate);
-  planet.object3D.rotation.y += 0.002;
-  renderer.render(scene,camera);
-}
-animate();
+// function animate(){
+//   requestAnimationFrame(animate);
+//   planet.object3D.rotation.y += 0.002;
+//   renderer.render(scene,camera);
+// }
+// animate();
 
 </script>
 </body>
