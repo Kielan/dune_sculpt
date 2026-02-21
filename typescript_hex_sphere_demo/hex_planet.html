@@ -22,8 +22,7 @@ import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import GUI from 'https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm';
 
-/** 
-TODO:
+/** TODO:
 Next we are going to draw a line between 5 sided tiles, to close off
 continental regions.
 
@@ -117,6 +116,16 @@ function getSharedCorner(v) {
   return sharedCornerCache.get(key);
 }
 
+function computeElevation(direction, continentMask) {
+  if (!continentMask.contains(direction)) {
+    return -0.2; // ocean cut
+  }
+  const noise = Math.sin(direction.x * 12) * 0.1 +
+                Math.sin(direction.y * 8)  * 0.1;
+  const ridge = Math.max(0, noise);
+  return 0.1 + ridge * 0.5;
+}
+  
 /* 🔷 HexPlate */
 class HexPlate {
   constructor(scene, centerNormal, radius, hexSize, gridRadius) {
