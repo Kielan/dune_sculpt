@@ -94,8 +94,6 @@ class ContinentMask {
   }
 }
 
-
-
 const PLANET_RADIUS = 2;
 const plateNormal = new THREE.Vector3(0.3, 0.7, 0.6).normalize();
 const tangent = new THREE.Vector3()
@@ -175,72 +173,8 @@ class HexPlate {
     return mesh;
   }
   createHexWedge(centerDirection, surfaceRadius, size, planetRadius) {
-
   const vertices = [];
   const indices = [];
-
-  const normal = centerDirection.clone().normalize();
-
-  // Build tangent basis
-  const tangent = new THREE.Vector3()
-    .crossVectors(
-      normal,
-      Math.abs(normal.y) < 0.9
-        ? new THREE.Vector3(0,1,0)
-        : new THREE.Vector3(1,0,0)
-    ).normalize();
-  const bitangent = new THREE.Vector3()
-    .crossVectors(normal, tangent);
-  const surfaceCenter = normal.clone().multiplyScalar(surfaceRadius);
-  // 6 surface corners
-  const ring = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = i / 6 * Math.PI * 2;
-    const offset =
-      tangent.clone().multiplyScalar(Math.cos(angle) * size)
-      .add(
-        bitangent.clone().multiplyScalar(Math.sin(angle) * size)
-      );
-    const corner = surfaceCenter.clone().add(offset)
-      .normalize()
-      .multiplyScalar(surfaceRadius);
-    ring.push(corner);
-  }
-  // Apex toward center
-  const apex = normal.clone().multiplyScalar(planetRadius * 0.2);
-  // Push vertices
-  ring.forEach(v => vertices.push(v.x, v.y, v.z));
-  vertices.push(apex.x, apex.y, apex.z);
-  const apexIndex = 6;
-  // Top face triangulation (fan)
-  for (let i = 1; i < 5; i++) {
-    indices.push(0, i, i+1);
-  }
-  // Side faces
-  for (let i = 0; i < 6; i++) {
-    const next = (i+1) % 6;
-    indices.push(i, next, apexIndex);
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(vertices, 3)
-  );
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x4caf50,
-    flatShading: true
-  });
-  return new THREE.Mesh(geometry, material);
-  }
-}
-
-createHexWedge(centerDirection, surfaceRadius, size, planetRadius) {
-
-  const vertices = [];
-  const indices = [];
-
   const normal = centerDirection.clone().normalize();
 
   // Build tangent basis
@@ -260,19 +194,15 @@ createHexWedge(centerDirection, surfaceRadius, size, planetRadius) {
   // 6 surface corners
   const ring = [];
   for (let i = 0; i < 6; i++) {
-
     const angle = i / 6 * Math.PI * 2;
-
     const offset =
       tangent.clone().multiplyScalar(Math.cos(angle) * size)
       .add(
         bitangent.clone().multiplyScalar(Math.sin(angle) * size)
       );
-
     const corner = surfaceCenter.clone().add(offset)
       .normalize()
       .multiplyScalar(surfaceRadius);
-
     ring.push(corner);
   }
 
