@@ -51,10 +51,7 @@ const BIOMES = {
   mountain: new THREE.Color(0x888888)
 };
 
-// ----------------------------
 // Continent Seed (single continent)
-// ----------------------------
-
 const continentNormal = new THREE.Vector3(0.2, 0.8, 0.4).normalize();
 const continentAngle = Math.acos(1/3); // ~1/3 sphere
 
@@ -197,10 +194,7 @@ function buildContinent() {
 const continentMesh = buildContinent();
 scene.add(continentMesh);
 
-// ----------------------------
 // GUI
-// ----------------------------
-
 const gui = new GUI();
 const settings = { rotate: true };
 gui.add(settings, "rotate").name("Rotate");
