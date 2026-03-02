@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Hex BMesh Advanced Tooling</title>
+<style>
+body { margin: 0; overflow: hidden; background:#111; }
+</style>
+</head>
+<body>
+
+<script type="module">
+
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js";
+import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
+
+// ----------------------
+// Basic Arena Structures
+// ----------------------
+
+class Arena {
+    constructor(){ this.items=[]; }
+    add(i){ i.id=this.items.length; this.items.push(i); return i; }
+    forEach(cb){ this.items.forEach(cb); }
+    get(i){ return this.items[i]; }
+}
+
+class MVert { constructor(pos){ this.position=pos.clone(); } }
+class MEdge { constructor(v1,v2){ this.v1=v1; this.v2=v2; } }
+class MFace { constructor(verts){ this.verts=verts; } }
+
+class Mesh {
+    constructor(){
+        this.verts=new Arena();
+        this.edges=new Arena();
+        this.faces=new Arena();
+    }
+    addVert(p){ return this.verts.add(new MVert(p)); }
+    addEdge(a,b){ return this.edges.add(new MEdge(a,b)); }
+    addFace(v){ return this.faces.add(new MFace(v)); }
+}
+
+// ----------------------
+// Build Initial Hex
+// ----------------------
+
+function buildHex(){
+    const mesh=new Mesh();
+    const r=1;
+    const verts=[];
+
+    for(let i=0;i<6;i++){
+        const a=i/6*Math.PI*2;
+        verts.push(mesh.addVert(new THREE.Vector3(Math.cos(a)*r,0,Math.sin(a)*r)));
+    }
+
+    for(let i=0;i<6;i++)
+        mesh.addEdge(verts[i],verts[(i+1)%6]);
+
+    mesh.addFace(verts);
+
+    return mesh;
+}
+
+// ----------------------
+// Convert to Three Mesh
+// ----------------------
+
+function meshToGeometry(mesh){
+
+    const verts=[];
+    mesh.verts.forEach(v=>verts.push(v.position.x,v.position.y,v.position.z));
+
+    const indices=[];
+    mesh.faces.forEach(f=>{
+        for(let i=1;i<f.verts.length-1;i++){
+            indices.push(f.verts[0].id,f.verts[i].id,f.verts[i+1].id);
+        }
+    });
+
+    const g=new THREE.BufferGeometry();
+    g.setAttribute("position",new THREE.Float32BufferAttribute(verts,3));
+    g.setIndex(indices);
+    g.computeVertexNormals();
+    return g;
+}
+
+// ----------------------
+// Scene Setup
+// ----------------------
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);
+camera.position.set(3,2,3);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+const d=new THREE.DirectionalLight(0xffffff,1);
+d.position.set(5,5,5);
+scene.add(d);
+
+// ----------------------
+// Tool Modes
+// ----------------------
+
+const Tool={VERT:"VERT",EDGE:"EDGE",FACE:"FACE",EXTRUDE:"EXTRUDE"};
+let currentTool=Tool.VERT;
+
+const mesh=buildHex();
+let geometry=meshToGeometry(mesh);
+
+const mat=new THREE.MeshStandardMaterial({color:0x4caf50,side:THREE.DoubleSide});
+const threeMesh=new THREE.Mesh(geometry,mat);
+scene.add(threeMesh);
+
+// ----------------------
+// Handles
+// ----------------------
+
+const vertHandles=[];
+const edgeHandles=[];
+const faceHandles=[];
+
+function rebuildHandles(){
+
+    vertHandles.forEach(h=>scene.remove(h));
+    edgeHandles.forEach(h=>scene.remove(h));
+    faceHandles.forEach(h=>scene.remove(h));
+
+    vertHandles.length=0;
+    edgeHandles.length=0;
+    faceHandles.length=0;
+
+    mesh.verts.forEach(v=>{
+        const s=new THREE.Mesh(
+            new THREE.SphereGeometry(0.07,12,12),
+            new THREE.MeshBasicMaterial({color:0xff0000})
+        );
+        s.position.copy(v.position);
+        s.userData.vert=v;
+        scene.add(s);
+        vertHandles.push(s);
+    });
+
+    mesh.edges.forEach(e=>{
+        const g=new THREE.BufferGeometry().setFromPoints([e.v1.position,e.v2.position]);
+        const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:0x00ffff}));
+        l.userData.edge=e;
+        scene.add(l);
+        edgeHandles.push(l);
+    });
+
+    mesh.faces.forEach(f=>{
+        const center=new THREE.Vector3();
+        f.verts.forEach(v=>center.add(v.position));
+        center.divideScalar(f.verts.length);
+        const s=new THREE.Mesh(
+            new THREE.SphereGeometry(0.1,12,12),
+            new THREE.MeshBasicMaterial({color:0xffff00})
+        );
+        s.position.copy(center);
+        s.userData.face=f;
+        scene.add(s);
+        faceHandles.push(s);
+    });
+}
+
+rebuildHandles();
+
+// ----------------------
+// Raycasting
+// ----------------------
+
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+
+window.addEventListener("pointerdown",(e)=>{
+
+    mouse.x=e.clientX/window.innerWidth*2-1;
+    mouse.y=-(e.clientY/window.innerHeight*2-1);
+    raycaster.setFromCamera(mouse,camera);
+
+    let objects=[];
+
+    if(currentTool===Tool.VERT) objects=vertHandles;
+    if(currentTool===Tool.EDGE) objects=edgeHandles;
+    if(currentTool===Tool.FACE || currentTool===Tool.EXTRUDE) objects=faceHandles;
+
+    const hit=raycaster.intersectObjects(objects);
+
+    if(hit.length>0){
+
+        if(currentTool===Tool.EXTRUDE){
+            extrudeFace(hit[0].object.userData.face);
+        }
+    }
+});
+
+// ----------------------
+// Extrude
+// ----------------------
+
+function extrudeFace(face){
+
+    const newVerts=[];
+
+    face.verts.forEach(v=>{
+        const nv=mesh.addVert(v.position.clone().add(new THREE.Vector3(0,0.5,0)));
+        newVerts.push(nv);
+    });
+
+    mesh.addFace(newVerts);
+
+    for(let i=0;i<newVerts.length;i++){
+        mesh.addEdge(newVerts[i],newVerts[(i+1)%newVerts.length]);
+    }
+
+    updateMesh();
+}
+
+// ----------------------
+// Update Mesh
+// ----------------------
+
+function updateMesh(){
+    scene.remove(threeMesh);
+    geometry=meshToGeometry(mesh);
+    threeMesh.geometry=geometry;
+    scene.add(threeMesh);
+    rebuildHandles();
+}
+
+// ----------------------
+// GUI
+// ----------------------
+
+const gui=new GUI();
+gui.add({tool:Tool.VERT},"tool",Object.values(Tool)).onChange(v=>currentTool=v);
+
+// ----------------------
+// Render Loop
+// ----------------------
+
+function animate(){
+    requestAnimationFrame(animate);
+    renderer.render(scene,camera);
+}
+
+animate();
+
+</script>
+</body>
+</html>
