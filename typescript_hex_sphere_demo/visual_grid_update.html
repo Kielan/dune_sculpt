@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Hex BMesh Tooling</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; }
+</style>
+</head>
+<body>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js";
+import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
+/* CONFIG */
+const GRID_SIZE = 0.25;
+const SNAP_DISTANCE = 0.2;
+/* DATA STRUCTURES */
+class Arena {
+  constructor() { this.items = []; }
+  add(item) { item.id = this.items.length; this.items.push(item); return item; }
+  get(id) { return this.items[id]; }
+  forEach(cb) { this.items.forEach(cb); }
+}
+class MVert {
+  constructor(position) { this.position = position.clone(); }
+}
+class MEdge {
+  constructor(v1, v2) { this.v1 = v1; this.v2 = v2; }
+}
+class MFace {
+  constructor(verts) { this.verts = verts; }
+}
+class Mesh {
+  constructor() {
+    this.verts = new Arena();
+    this.edges = new Arena();
+    this.faces = new Arena();
+  }
+  addVert(pos) { return this.verts.add(new MVert(pos)); }
+  addEdge(v1, v2) { return this.edges.add(new MEdge(v1, v2)); }
+  addFace(verts) { return this.faces.add(new MFace(verts)); }
+}
+/* BUILD GEOMETRY */
+function buildGeometry() {
+  const mesh = new Mesh();
+  const radius = 1;
+  const verts = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const v = mesh.addVert(
+      new THREE.Vector3(
+        Math.cos(angle) * radius,
+        0,
+        Math.sin(angle) * radius
+      )
+    );
+    verts.push(v);
+  }
+  for (let i = 0; i < 6; i++) {
+    mesh.addEdge(verts[i], verts[(i+1)%6]);
+  }
+  mesh.addFace(verts);
+  return mesh;
+}
+function meshToThree(mesh) {
+  const vertices = [];
+  const indices = [];
+  mesh.verts.forEach(v => {
+    vertices.push(v.position.x, v.position.y, v.position.z);
+  });
+  const face = mesh.faces.get(0);
+  for (let i = 1; i < face.verts.length - 1; i++) {
+    indices.push(
+      face.verts[0].id,
+      face.verts[i].id,
+      face.verts[i+1].id
+    );
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(vertices, 3)
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+/* SCENE SETUP */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 100);
+camera.position.set(3,2,3);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5,5,5);
+scene.add(light);
+const controls = new OrbitControls(camera, renderer.domElement);
+/* MESH */
+const mesh = buildGeometry();
+const geometry = meshToThree(mesh);
+const material = new THREE.MeshStandardMaterial({
+  color: 0x4caf50,
+  side: THREE.DoubleSide
+});
+const hexMesh = new THREE.Mesh(geometry, material);
+scene.add(hexMesh);
+/* HANDLES */
+const handleMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const vertexHandles = [];
+mesh.verts.forEach((v) => {
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07, 16, 16),
+    handleMaterial.clone()
+  );
+  sphere.position.copy(v.position);
+  sphere.userData.vert = v;
+  scene.add(sphere);
+  vertexHandles.push(sphere);
+});
+/* GRID */
+scene.add(new THREE.GridHelper(10, 10));
+const gridYZ = new THREE.GridHelper(10, 10);
+gridYZ.rotation.z = Math.PI / 2;
+scene.add(gridYZ);
+const gridXY = new THREE.GridHelper(10, 10);
+gridXY.rotation.x = Math.PI / 2;
+scene.add(gridXY);
+const localGrid = new THREE.GridHelper(2, 8, 0x00ffcc, 0x006666);
+localGrid.visible = false;
+scene.add(localGrid);
+/* SNAP MARKER (STEP 5) */
+const snapMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.05),
+  new THREE.MeshBasicMaterial({ color: 0x00ffff })
+);
+snapMarker.visible = false;
+scene.add(snapMarker);
+/* INTERACTION */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredHandle = null;
+let selectedHandle = null;
+let snapEnabled = true;
+function clearHover() {
+  if (!hoveredHandle) return;
+  hoveredHandle.material.color.set(0xff0000);
+  hoveredHandle = null;
+}
+/* TRANSFORM */
+const transform = new TransformControls(camera, renderer.domElement);
+scene.add(transform);
+transform.addEventListener("dragging-changed", (e) => {
+  controls.enabled = !e.value;
+});
+transform.addEventListener("objectChange", () => {
+  if (!selectedHandle) return;
+
+  const vert = selectedHandle.userData.vert;
+  const pos = selectedHandle.position;
+
+  let snapped = false;
+
+  // GRID SNAP (Y axis only)
+  if (transform.showY && !transform.showX && !transform.showZ) {
+    pos.y = Math.round(pos.y / GRID_SIZE) * GRID_SIZE;
+  }
+  if (snapEnabled) {
+    // VERTEX SNAP
+    const vSnap = getClosestVertex(pos);
+    if (vSnap && vSnap !== vert) {
+      pos.copy(vSnap.position);
+      snapMarker.position.copy(vSnap.position);
+      snapMarker.visible = true;
+      snapped = true;
+    } else {
+      // EDGE SNAP
+      const eSnap = getClosestEdgePoint(pos);
+      if (eSnap) {
+        pos.copy(eSnap);
+        snapMarker.position.copy(eSnap);
+        snapMarker.visible = true;
+        snapped = true;
+      }
+    }
+  }
+  if (!snapped) {
+    snapMarker.visible = false;
+  }
+  vert.position.copy(pos);
+  updateGeometry();
+});
+transform.addEventListener("mouseUp", () => {
+  localGrid.visible = false;
+  snapMarker.visible = false;
+});
+/* SELECTION */
+function selectVertex(handle) {
+  clearHover();
+  selectedHandle = handle;
+  transform.attach(handle);
+  localGrid.position.copy(handle.position);
+  localGrid.visible = true;
+}
+/* SNAPPING */
+function getClosestVertex(position) {
+  let closest = null;
+  let minDist = Infinity;
+  mesh.verts.forEach(v => {
+    const dist = position.distanceTo(v.position);
+    if (dist < SNAP_DISTANCE && dist < minDist) {
+      closest = v;
+      minDist = dist;
+    }
+  });
+  return closest;
+}
+function closestPointOnEdge(p, a, b) {
+  const ab = new THREE.Vector3().subVectors(b, a);
+  const t = THREE.MathUtils.clamp(
+    new THREE.Vector3().subVectors(p, a).dot(ab) / ab.lengthSq(),
+    0, 1
+  );
+  return new THREE.Vector3().copy(a).add(ab.multiplyScalar(t));
+}
+function getClosestEdgePoint(position) {
+  let closestPoint = null;
+  let minDist = Infinity;
+  mesh.edges.forEach(edge => {
+    const p = closestPointOnEdge(
+      position,
+      edge.v1.position,
+      edge.v2.position
+    );
+    const dist = position.distanceTo(p);
+    if (dist < SNAP_DISTANCE && dist < minDist) {
+      closestPoint = p;
+      minDist = dist;
+    }
+  });
+  return closestPoint;
+}
+/* UPDATE */
+function updateGeometry() {
+  const pos = geometry.attributes.position;
+  mesh.verts.forEach((v, i) => {
+    pos.array[i*3 + 0] = v.position.x;
+    pos.array[i*3 + 1] = v.position.y;
+    pos.array[i*3 + 2] = v.position.z;
+  });
+  pos.needsUpdate = true;
+  geometry.computeVertexNormals();
+}
+/* INPUT */
+window.addEventListener("pointermove", (event) => {
+  if (transform.dragging) return;
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(vertexHandles);
+  if (intersects.length > 0) {
+    const handle = intersects[0].object;
+    if (hoveredHandle !== handle) {
+      clearHover();
+      hoveredHandle = handle;
+      hoveredHandle.material.color.set(0xffff00);
+    }
+  } else {
+    clearHover();
+  }
+});
+window.addEventListener("pointerdown", (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(vertexHandles);
+  if (intersects.length > 0) {
+    selectVertex(intersects[0].object);
+  }
+});
+window.addEventListener("keydown", (e) => {
+  const key = e.key.toLowerCase();
+  if (key === "x") {
+    transform.showX = true; transform.showY = false; transform.showZ = false;
+  }
+  if (key === "y") {
+    transform.showX = false; transform.showY = true; transform.showZ = false;
+  }
+  if (key === "z") {
+    transform.showX = false; transform.showY = false; transform.showZ = true;
+  }
+  if (e.ctrlKey && key === "s") {
+    e.preventDefault();
+    snapEnabled = !snapEnabled;
+    console.log("Snap:", snapEnabled);
+  }
+});
+/* RENDER */
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
