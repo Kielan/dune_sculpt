@@ -26,7 +26,9 @@ import {
   disposeBoundsTree,
   acceleratedRaycast
 } from "three-mesh-bvh";
-/* BVH SETUP */
+/* BVH SETUP
+priority:
+Vertex → Edge → Face */
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 /* CONFIG */
 const SNAP_DISTANCE = 0.15;
