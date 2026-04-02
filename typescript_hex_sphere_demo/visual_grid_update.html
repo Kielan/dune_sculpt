@@ -21,7 +21,15 @@ import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js";
 import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
-/* CONFIG */
+  /** TODO
+  🧲 Snap modes toggle (like Blender)
+  Vertex / Edge / Face checkboxes
+  🎯 “Closest / Center / Median” snapping modes
+  🖱️ Raycast snapping (cursor-based instead of distance-based)
+  → this is how Blender actually feels so precise
+  ⚡ BVH acceleration (massive performance boost)
+  **/
+  /* CONFIG */
 const GRID_SIZE = 0.25;
 const SNAP_DISTANCE = 0.2;
 /* DATA STRUCTURES */
