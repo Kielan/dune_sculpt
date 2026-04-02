@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>True Blender Snapping (BVH)</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; }
+</style>
+</head>
+<body>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.7.4/build/index.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
+import {
+  computeBoundsTree,
+  disposeBoundsTree,
+  acceleratedRaycast
+} from "three-mesh-bvh";
+/* BVH SETUP */
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+/* CONFIG */
+const SNAP_DISTANCE = 0.15;
+/* BASIC MESH */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 100);
+camera.position.set(3,2,3);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5,5,5);
+scene.add(light);
+const controls = new OrbitControls(camera, renderer.domElement);
+/* GEOMETRY */
+const geometry = new THREE.CircleGeometry(1, 6);
+geometry.rotateX(-Math.PI / 2);
+geometry.computeBoundsTree = computeBoundsTree;
+geometry.disposeBoundsTree = disposeBoundsTree;
+geometry.computeBoundsTree();
+const mesh = new THREE.Mesh(
+  geometry,
+  new THREE.MeshStandardMaterial({ color: 0x4caf50, side: THREE.DoubleSide })
+);
+scene.add(mesh);
+/* HANDLES */
+const handles = [];
+const posAttr = geometry.attributes.position;
+for (let i = 0; i < posAttr.count; i++) {
+  const v = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+  const h = new THREE.Mesh(
+    new THREE.SphereGeometry(0.07),
+    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+  );
+  h.position.copy(v);
+  h.userData.index = i;
+  scene.add(h);
+  handles.push(h);
+}
+/* TRANSFORM */
+const transform = new TransformControls(camera, renderer.domElement);
+scene.add(transform);
+transform.addEventListener("dragging-changed", e => {
+  controls.enabled = !e.value;
+});
+/* SNAP MARKER */
+const snapMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.05),
+  new THREE.MeshBasicMaterial({ color: 0xffffff })
+);
+scene.add(snapMarker);
+snapMarker.visible = false;
+/* RAYCAST */
+const raycaster = new THREE.Raycaster();
+raycaster.firstHitOnly = true;
+const mouse = new THREE.Vector2();
+/* SNAP HELPERS */
+function getClosestVertexFromHit(hit) {
+  const pos = geometry.attributes.position;
+  let closest = null;
+  let minDist = Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(pos, i);
+    const dist = hit.point.distanceTo(v);
+    if (dist < SNAP_DISTANCE && dist < minDist) {
+      closest = v;
+      minDist = dist;
+    }
+  }
+  return closest;
+}
+function getClosestEdgeFromHit(hit) {
+  const index = geometry.index;
+  const pos = geometry.attributes.position;
+  const a = new THREE.Vector3().fromBufferAttribute(pos, index.getX(hit.face.a));
+  const b = new THREE.Vector3().fromBufferAttribute(pos, index.getX(hit.face.b));
+  const c = new THREE.Vector3().fromBufferAttribute(pos, index.getX(hit.face.c));
+  const edges = [[a,b],[b,c],[c,a]];
+  let closest = null;
+  let minDist = Infinity;
+  for (let [p1, p2] of edges) {
+    const ab = new THREE.Vector3().subVectors(p2, p1);
+    const t = THREE.MathUtils.clamp(
+      new THREE.Vector3().subVectors(hit.point, p1).dot(ab) / ab.lengthSq(),
+      0, 1
+    );
+    const p = new THREE.Vector3().copy(p1).add(ab.multiplyScalar(t));
+    const dist = hit.point.distanceTo(p);
+    if (dist < SNAP_DISTANCE && dist < minDist) {
+      closest = p;
+      minDist = dist;
+    }
+  }
+  return closest;
+}
+/* INTERACTION */
+let selected = null;
+window.addEventListener("pointerdown", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(handles);
+  if (hits.length) {
+    selected = hits[0].object;
+    transform.attach(selected);
+  }
+});
+/* TRUE SNAPPING */
+transform.addEventListener("objectChange", () => {
+  if (!selected) return;
+  // Raycast from mouse
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObject(mesh);
+  if (!hits.length) {
+    snapMarker.visible = false;
+    return;
+  }
+  const hit = hits[0];
+  let snapped = null;
+  // Vertex
+  const vSnap = getClosestVertexFromHit(hit);
+  if (vSnap) {
+    snapped = vSnap;
+    snapMarker.material.color.set(0x00ffff);
+  } else {
+    // Edge
+    const eSnap = getClosestEdgeFromHit(hit);
+    if (eSnap) {
+      snapped = eSnap;
+      snapMarker.material.color.set(0xffff00);
+    } else {
+      // Face
+      snapped = hit.point;
+      snapMarker.material.color.set(0xff00ff);
+    }
+  }
+  if (snapped) {
+    selected.position.copy(snapped);
+    snapMarker.position.copy(snapped);
+    snapMarker.visible = true;
+    // update geometry
+    const i = selected.userData.index;
+    posAttr.setXYZ(i, snapped.x, snapped.y, snapped.z);
+    posAttr.needsUpdate = true;
+    geometry.computeVertexNormals();
+  }
+});
+/* POINTER MOVE */
+window.addEventListener("pointermove", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+});
+/* LOOP */
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
