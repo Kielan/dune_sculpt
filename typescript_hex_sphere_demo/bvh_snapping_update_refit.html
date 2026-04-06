@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>True Blender Snapping (BVH + Axis Lock)</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #111; }
+</style>
+</head>
+<body>
+
+<script type="module">
+
+import * as THREE from "https://esm.sh/three@0.160.0";
+import { OrbitControls } from "https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "https://esm.sh/three@0.160.0/examples/jsm/controls/TransformControls.js";
+import {
+  computeBoundsTree,
+  disposeBoundsTree,
+  acceleratedRaycast,
+  refitBoundsTree
+} from "https://esm.sh/three-mesh-bvh@0.7.4";
+
+/* ================= BVH SETUP ================= */
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+/* ================= CONFIG ================= */
+const SNAP_DISTANCE = 0.15;
+
+/* ================= SCENE ================= */
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.01, 100);
+camera.position.set(3,2,3);
+
+camera.layers.enable(0);
+camera.layers.enable(1);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5,5,5);
+scene.add(light);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+
+/* ================= GEOMETRY ================= */
+const geometry = new THREE.CircleGeometry(1, 6);
+geometry.rotateX(-Math.PI / 2);
+
+geometry.computeBoundsTree = computeBoundsTree;
+geometry.disposeBoundsTree = disposeBoundsTree;
+geometry.computeBoundsTree();
+
+const mesh = new THREE.Mesh(
+  geometry,
+  new THREE.MeshStandardMaterial({ color: 0x4caf50, side: THREE.DoubleSide })
+);
+mesh.layers.set(0);
+scene.add(mesh);
+
+/* ================= HANDLES ================= */
+const handles = [];
+const posAttr = geometry.attributes.position;
+
+for (let i = 0; i < posAttr.count; i++) {
+  const v = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+
+  const h = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1),
+    new THREE.MeshStandardMaterial({ color: 0xff0000 })
+  );
+
+  h.position.copy(v);
+  h.userData.index = i;
+  h.layers.set(1);
+
+  scene.add(h);
+  handles.push(h);
+}
+
+/* ================= GRID ================= */
+scene.add(new THREE.GridHelper(10, 10));
+
+/* ================= TRANSFORM ================= */
+const transform = new TransformControls(camera, renderer.domElement);
+scene.add(transform);
+
+transform.addEventListener("dragging-changed", e => {
+  controls.enabled = !e.value;
+});
+
+/* ================= SNAP MARKER ================= */
+const snapMarker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.05),
+  new THREE.MeshBasicMaterial({ color: 0xffffff })
+);
+scene.add(snapMarker);
+snapMarker.visible = false;
+
+/* ================= RAYCAST ================= */
+const raycaster = new THREE.Raycaster();
+raycaster.firstHitOnly = false;
+
+const mouse = new THREE.Vector2();
+
+/* ================= INTERACTION ================= */
+let selected = null;
+
+renderer.domElement.addEventListener("pointerdown", (e) => {
+
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  raycaster.layers.set(1);
+
+  transform.enabled = false;
+  const hits = raycaster.intersectObjects(handles, false);
+  if (hits.length) {
+    selected = hits[0].object;
+    transform.attach(selected);
+  }
+  transform.enabled = true;
+
+}, true);
+
+/* ================= TRUE SNAPPING ================= */
+transform.addEventListener("objectChange", () => {
+  if (!selected) return;
+
+  const pos = selected.position;
+  let snapped = null;
+  let minDist = Infinity;
+
+  // --- Vertex snap ---
+  for (let i = 0; i < posAttr.count; i++) {
+    if (i === selected.userData.index) continue;
+    const v = new THREE.Vector3().fromBufferAttribute(posAttr, i);
+    const dist = pos.distanceTo(v);
+    if (dist < SNAP_DISTANCE && dist < minDist) {
+      snapped = v;
+      minDist = dist;
+      snapMarker.material.color.set(0x00ffff);
+    }
+  }
+
+  // --- Edge snap ---
+  if (!snapped) {
+    const index = geometry.index;
+    for (let i = 0; i < index.count; i += 3) {
+      const a = new THREE.Vector3().fromBufferAttribute(posAttr, index.getX(i));
+      const b = new THREE.Vector3().fromBufferAttribute(posAttr, index.getX(i+1));
+      const c = new THREE.Vector3().fromBufferAttribute(posAttr, index.getX(i+2));
+
+      const edges = [[a,b],[b,c],[c,a]];
+
+      for (let [p1, p2] of edges) {
+        const ab = new THREE.Vector3().subVectors(p2, p1);
+        const t = THREE.MathUtils.clamp(
+          new THREE.Vector3().subVectors(pos, p1).dot(ab) / ab.lengthSq(),
+          0, 1
+        );
+        const p = new THREE.Vector3().copy(p1).add(ab.multiplyScalar(t));
+        const dist = pos.distanceTo(p);
+        if (dist < SNAP_DISTANCE && dist < minDist) {
+          snapped = p;
+          minDist = dist;
+          snapMarker.material.color.set(0xffff00);
+        }
+      }
+    }
+  }
+
+  if (!snapped) {
+    snapped = pos.clone();
+    snapMarker.material.color.set(0xff00ff);
+  }
+
+  selected.position.copy(snapped);
+  snapMarker.position.copy(snapped);
+  snapMarker.visible = true;
+
+  const i = selected.userData.index;
+  posAttr.setXYZ(i, snapped.x, snapped.y, snapped.z);
+  posAttr.needsUpdate = true;
+  geometry.computeVertexNormals();
+
+  // 🔥 BVH RE-FIT instead of rebuild
+  if (geometry.boundsTree) {
+    refitBoundsTree(geometry.boundsTree, geometry);
+  } else {
+    geometry.computeBoundsTree();
+  }
+});
+
+/* ================= AXIS LOCKING ================= */
+window.addEventListener("keydown", (e) => {
+  if (!selected) return;
+  const key = e.key.toLowerCase();
+
+  transform.showX = transform.showY = transform.showZ = true;
+
+  if (key === "x") transform.showX = true, transform.showY = false, transform.showZ = false;
+  if (key === "y") transform.showX = false, transform.showY = true, transform.showZ = false;
+  if (key === "z") transform.showX = false, transform.showY = false, transform.showZ = true;
+});
+
+/* ================= POINTER MOVE ================= */
+window.addEventListener("pointermove", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+});
+
+/* ================= LOOP ================= */
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+animate();
+
+</script>
+</body>
+</html>
