@@ -19,6 +19,7 @@ import {
   disposeBoundsTree,
   acceleratedRaycast
 } from "https://esm.sh/three-mesh-bvh@0.7.4";
+//import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
 
 /* ================= BVH SETUP ================= */
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -156,7 +157,25 @@ function getClosestEdgeFromHit(hit) {
 
 /* ================= INTERACTION ================= */
 let selected = null;
-
+/*
+window.addEventListener("pointermove", (event) => {
+  if (transform.dragging) return;
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(vertexHandles);
+  if (intersects.length > 0) {
+    const handle = intersects[0].object;
+    if (hoveredHandle !== handle) {
+      clearHover();
+      hoveredHandle = handle;
+      hoveredHandle.material.color.set(0xffff00);
+    }
+  } else {
+    clearHover();
+  }
+});
+*/
 renderer.domElement.addEventListener("pointerdown", (e) => {
   // --- compute mouse ---
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
@@ -245,6 +264,11 @@ window.addEventListener("pointermove", (e) => {
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / innerHeight) * 2 + 1;
 });
+
+
+// GUI
+//const gui=new GUI();
+//gui.add({tool:Tool.VERT},"tool",Object.values(Tool)).onChange(v=>currentTool=v);
 
 /* ================= LOOP ================= */
 function animate() {
