@@ -17,10 +17,15 @@
 }
 </script>
 <script type="module">
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
-import { TransformControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/TransformControls.js";
-import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
+import * as THREE from "https://esm.sh/three@0.160.0";
+import { OrbitControls } from "https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+import { TransformControls } from "https://esm.sh/three@0.160.0/examples/jsm/controls/TransformControls.js";
+import {
+  computeBoundsTree,
+  disposeBoundsTree,
+  acceleratedRaycast
+} from "https://esm.sh/three-mesh-bvh@0.7.4";
+import GUI from "https://esm.sh/lil-gui@0.18.2";
   /** TODO
   🧲 Snap modes toggle (like Blender)
   Vertex / Edge / Face checkboxes
@@ -29,7 +34,10 @@ import GUI from "https://cdn.jsdelivr.net/npm/lil-gui@0.18/+esm";
   → this is how Blender actually feels so precise
   ⚡ BVH acceleration (massive performance boost)
   **/
-  /* CONFIG */
+
+/* ================= BVH SETUP ================= */
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+/* CONFIG */
 const GRID_SIZE = 0.25;
 const SNAP_DISTANCE = 0.2;
 /* DATA STRUCTURES */
@@ -101,6 +109,10 @@ function meshToThree(mesh) {
   );
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  //comment the 3 lines below for no bvh
+  geometry.computeBoundsTree = computeBoundsTree;
+  geometry.disposeBoundsTree = disposeBoundsTree;
+  geometry.computeBoundsTree();
   return geometry;
 }
 /* SCENE SETUP */
