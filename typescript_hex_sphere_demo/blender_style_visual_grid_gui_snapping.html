@@ -89,17 +89,29 @@ class Planet {
           roughness:0.4
         })
       );
-      // convert to local tileMesh space and offset outward
-      const localCenter = cell.center.clone();
-      tileMesh.worldToLocal(localCenter);
-      localCenter.add(normal.clone().multiplyScalar(0.04));
-      centerSphere.position.copy(localCenter);
-      tileMesh.add(centerSphere);
-      tileMesh.userData = { cell, normal: normal.clone(), phase: Math.random()*Math.PI*2, centerSphere };
-      this.centerSpheres.push(centerSphere);
-      this.object3D.add(tileMesh);
-    }
 
+
+        console.log('scene', scene)
+//      return { cells: this.buildCells(scene.mesh.vertices, scene.mesh.indices, scene.mesh.faceCenters, scene.mesh.vertexFaces, scene.mesh.radius) };
+    }
+    static buildCells(vertices, indices, faceCenters, vertexFaces, radius) {
+      const cells = [];
+      for (let vi = 0; vi < vertexFaces.length; vi++) {
+        const faces = vertexFaces[vi];
+        if (faces.length < 5) continue;
+        const center = vertices[vi].clone().normalize().multiplyScalar(radius);
+        const normal = center.clone().normalize();
+        const corners = faces.map(fi => faceCenters[fi].clone().multiplyScalar(radius));
+        const tangent = new THREE.Vector3().crossVectors(normal, Math.abs(normal.y)<0.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
+        const bitangent = new THREE.Vector3().crossVectors(normal, tangent);
+        corners.sort((a,b)=>{
+          const da=a.clone().sub(center), db=b.clone().sub(center);
+          return Math.atan2(da.dot(bitangent),da.dot(tangent)) - Math.atan2(db.dot(bitangent),db.dot(tangent));
+        });
+        cells.push({ center, corners, isPentagon: corners.length===5 });
+      }
+      return cells;
+    }
     //this.buildGraph();
     //Expected:
     //{ 5: 12, 6: 240 }
@@ -215,7 +227,7 @@ const material = new THREE.MeshStandardMaterial({
 });
 const hexMesh = new THREE.Mesh(geometry, material);
 scene.add(hexMesh);
-//const planet = new Planet(scene);
+const planet = new Planet(scene);
 
 // Tool Modes
 const ToolMode = {
