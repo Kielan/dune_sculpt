@@ -66,10 +66,58 @@ class Mesh {
   addEdge(v1, v2) { return this.edges.add(new MEdge(v1, v2)); }
   addFace(verts) { return this.faces.add(new MFace(verts)); }
 }
+class HexNodeGraph {
+  constructor() {
+    this.verts = new Arena();
+    this.edges = new Arena();
+    this.faces = new Arena();
+  }
+  addVert(pos) { return this.verts.add(new MVert(pos)); }
+  addEdge(v1, v2) { return this.edges.add(new MEdge(v1, v2)); }
+  addFace(verts) { return this.faces.add(new MFace(verts)); }
+}
+/* 🔷 PLANET WITH CENTER SPHERES */
+class Planet {
+  constructor(scene){
+      // 🔵 TILE CENTER SPHERE
+      const centerSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.015,12,12),
+        new THREE.MeshStandardMaterial({
+          color:0x66ccff,
+          emissive:0x226688,
+          emissiveIntensity:0.4,
+          roughness:0.4
+        })
+      );
+      // convert to local tileMesh space and offset outward
+      const localCenter = cell.center.clone();
+      tileMesh.worldToLocal(localCenter);
+      localCenter.add(normal.clone().multiplyScalar(0.04));
+      centerSphere.position.copy(localCenter);
+      tileMesh.add(centerSphere);
+      tileMesh.userData = { cell, normal: normal.clone(), phase: Math.random()*Math.PI*2, centerSphere };
+      this.centerSpheres.push(centerSphere);
+      this.object3D.add(tileMesh);
+    }
 
+    //this.buildGraph();
+    //Expected:
+    //{ 5: 12, 6: 240 }
+    //this.enforceSixNeighbors();
+    //Expected:
+    //{ 6: 252 }
+    //Current:
+    //{ 6: 630, 7: 12}
+    //this.buildPureHexGraph();
+    
+    //scene.add(this.object3D);
+
+    //planet.simulateWave(0);
+}//end constructor
 /* BUILD GEOMETRY */
 function buildGeometry() {
   const mesh = new Mesh();
+  const hexNodeGraph = new HexNodeGraph();
   const radius = 1;
   const verts = [];
   for (let i = 0; i < 6; i++) {
@@ -90,6 +138,18 @@ function buildGeometry() {
   console.log("Initial Valence Histogram:");
   return mesh;
 }
+// function buildPureHexGraph(mesh) {
+//     const hexGraphHist = {};
+//     mesh.verts.forEach(cell => ({
+//       position: cell.center.clone(),
+//       neighbors: []
+//     }));
+//     // copy enforced graph
+//     for (let i = 0; i < mesh.verts.length; i++) {
+//       hexNodes[i].neighbors = [...this.graph[i]];
+//     }
+//     console.log("Pure hex graph created.");
+// }
 function printValenceHistogram(mesh) {
   const hist = {};
   mesh.verts.forEach(n => {
@@ -97,6 +157,13 @@ function printValenceHistogram(mesh) {
   });
   console.log(hist);
 }//end printValenceHistogram
+function printPureHexGraph(mesh) {
+  const hist = {};
+  mesh.verts.forEach(n => {
+    hist[n.length] = (hist[n.length] || 0) + 1;
+  });
+  console.log(hist);
+}//end printPureHexGraph
 function meshToThree(mesh) {
   const vertices = [];
   const indices = [];
@@ -139,6 +206,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 /* MESH */
 const mesh = buildGeometry();
 printValenceHistogram(mesh);
+//buildPureHexGraph(mesh);
 
 const geometry = meshToThree(mesh);
 const material = new THREE.MeshStandardMaterial({
@@ -147,6 +215,8 @@ const material = new THREE.MeshStandardMaterial({
 });
 const hexMesh = new THREE.Mesh(geometry, material);
 scene.add(hexMesh);
+//const planet = new Planet(scene);
+
 // Tool Modes
 const ToolMode = {
   SELECT: "SELECT",
