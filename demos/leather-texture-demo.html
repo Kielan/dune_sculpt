@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ThreeJS Leather Node Editor</title>
+
+<style>
+html, body {
+    margin:0;
+    overflow:hidden;
+    width:100%;
+    height:100%;
+    background:#1e1e1e;
+    font-family:Inter,Arial,sans-serif;
+    color:white;
+}
+
+#app {
+    display:flex;
+    width:100%;
+    height:100%;
+}
+
+#viewport {
+    flex:1;
+    position:relative;
+    overflow:hidden;
+}
+
+canvas {
+    display:block;
+}
+
+#editor {
+    width:520px;
+    background:#242424;
+    border-left:1px solid #444;
+    position:relative;
+    overflow:hidden;
+}
+
+#nodeArea {
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    background:
+        linear-gradient(#2b2b2b 1px, transparent 1px),
+        linear-gradient(90deg,#2b2b2b 1px, transparent 1px);
+    background-size:20px 20px;
+}
+
+.node {
+    position:absolute;
+    width:220px;
+    background:#303030;
+    border:1px solid #555;
+    border-radius:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.5);
+    user-select:none;
+}
+
+.node-header {
+    background:#444;
+    padding:10px;
+    border-radius:12px 12px 0 0;
+    font-weight:bold;
+    cursor:grab;
+    font-size:14px;
+}
+
+.node-content {
+    padding:10px;
+}
+
+.row {
+    margin-bottom:10px;
+}
+
+.row label {
+    display:block;
+    font-size:12px;
+    color:#bbb;
+    margin-bottom:4px;
+}
+
+input[type=range],
+input[type=number],
+select {
+    width:100%;
+}
+
+input[type=color] {
+    width:100%;
+    height:32px;
+    border:none;
+    background:none;
+}
+
+.socket {
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:#ffb347;
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+}
+
+.socket.in {
+    left:-6px;
+    background:#55aaff;
+}
+
+.socket.out {
+    right:-6px;
+    background:#ffaa55;
+}
+
+#connections {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+
+.titlebar {
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:10;
+    background:rgba(0,0,0,0.5);
+    padding:10px 14px;
+    border-radius:10px;
+    backdrop-filter:blur(6px);
+}
+
+.titlebar h1 {
+    margin:0;
+    font-size:16px;
+}
+
+.titlebar p {
+    margin:4px 0 0 0;
+    color:#aaa;
+    font-size:12px;
+}
+
+button {
+    background:#555;
+    border:none;
+    color:white;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover {
+    background:#666;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+    <div id="viewport">
+        <div class="titlebar">
+            <h1>ThreeJS Leather Material Node Editor</h1>
+            <p>Drag nodes • Live procedural leather shader</p>
+        </div>
+    </div>
+
+    <div id="editor">
+        <svg id="connections"></svg>
+        <div id="nodeArea"></div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import * as THREE from 'https://esm.sh/three@0.165.0';
+import { OrbitControls } from 'https://esm.sh/three@0.165.0/examples/jsm/controls/OrbitControls.js';
+
+//////////////////////////////////////////////////////////////
+// THREEJS SCENE
+//////////////////////////////////////////////////////////////
+
+const viewport = document.getElementById("viewport");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+const camera = new THREE.PerspectiveCamera(
+    55,
+    viewport.clientWidth / viewport.clientHeight,
+    0.1,
+    100
+);
+
+camera.position.set(0, 1.5, 4);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias:true
+});
+
+renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+renderer.setPixelRatio(devicePixelRatio);
+
+viewport.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+//////////////////////////////////////////////////////////////
+// LIGHTS
+//////////////////////////////////////////////////////////////
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x222222, 1.4);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff, 3);
+dir.position.set(5, 10, 7);
+scene.add(dir);
+
+//////////////////////////////////////////////////////////////
+// GEOMETRY
+//////////////////////////////////////////////////////////////
+
+const geometry = new THREE.SphereGeometry(1.3, 256, 256);
+
+//////////////////////////////////////////////////////////////
+// NODE PARAMETERS
+//////////////////////////////////////////////////////////////
+
+const params = {
+
+    noiseScale: 14,
+    noiseDetail: 4,
+    voronoiScale: 24,
+    bumpStrength: 0.12,
+
+    leatherColor1: "#4a2419",
+    leatherColor2: "#2a120d",
+
+    roughness: 0.95,
+    metalness: 0.05,
+
+    mixFactor: 0.75
+};
+
+//////////////////////////////////////////////////////////////
+// PROCEDURAL LEATHER SHADER
+//////////////////////////////////////////////////////////////
+
+const material = new THREE.ShaderMaterial({
+
+    uniforms: {
+
+        time: { value: 0 },
+
+        noiseScale: { value: params.noiseScale },
+        noiseDetail: { value: params.noiseDetail },
+        voronoiScale: { value: params.voronoiScale },
+        bumpStrength: { value: params.bumpStrength },
+
+        color1: { value: new THREE.Color(params.leatherColor1) },
+        color2: { value: new THREE.Color(params.leatherColor2) },
+
+        mixFactor: { value: params.mixFactor }
+
+    },
+
+    vertexShader: `
+
+        varying vec2 vUv;
+        varying vec3 vPos;
+        varying vec3 vNormal;
+
+        uniform float time;
+        uniform float noiseScale;
+        uniform float bumpStrength;
+
+        // Hash
+        float hash(vec3 p){
+            p = fract(p * 0.3183099 + .1);
+            p *= 17.0;
+            return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+        }
+
+        // Noise
+        float noise(vec3 x){
+
+            vec3 i = floor(x);
+            vec3 f = fract(x);
+
+            f = f*f*(3.0-2.0*f);
+
+            return mix(
+                mix(
+                    mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                    mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x),
+                    f.y
+                ),
+                mix(
+                    mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                    mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x),
+                    f.y
+                ),
+                f.z
+            );
+        }
+
+        void main(){
+
+            vUv = uv;
+            vPos = position;
+            vNormal = normal;
+
+            float n = noise(position * noiseScale);
+
+            vec3 displaced = position + normal * n * bumpStrength;
+
+            gl_Position = projectionMatrix *
+                          modelViewMatrix *
+                          vec4(displaced,1.0);
+
+        }
+    `,
+
+    fragmentShader: `
+
+        varying vec2 vUv;
+        varying vec3 vPos;
+        varying vec3 vNormal;
+
+        uniform float noiseScale;
+        uniform float voronoiScale;
+        uniform float mixFactor;
+
+        uniform vec3 color1;
+        uniform vec3 color2;
+
+        float random(vec2 p){
+            return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
+        }
+
+        float noise(vec2 p){
+
+            vec2 i = floor(p);
+            vec2 f = fract(p);
+
+            vec2 u = f*f*(3.0-2.0*f);
+
+            return mix(
+                mix(random(i + vec2(0,0)), random(i + vec2(1,0)), u.x),
+                mix(random(i + vec2(0,1)), random(i + vec2(1,1)), u.x),
+                u.y
+            );
+        }
+
+        float voronoi(vec2 x){
+
+            vec2 n = floor(x);
+            vec2 f = fract(x);
+
+            float md = 8.0;
+
+            for(int j=-1;j<=1;j++){
+                for(int i=-1;i<=1;i++){
+
+                    vec2 g = vec2(float(i), float(j));
+                    vec2 o = vec2(random(n + g), random(n + g + 1.0));
+
+                    vec2 r = g + o - f;
+
+                    float d = dot(r,r);
+
+                    md = min(md,d);
+                }
+            }
+
+            return md;
+        }
+
+        void main(){
+
+            float n = noise(vUv * noiseScale * 3.0);
+
+            float v = voronoi(vUv * voronoiScale);
+
+            float leather = mix(n, 1.0-v, mixFactor);
+
+            leather = smoothstep(0.25, 0.9, leather);
+
+            vec3 col = mix(color2, color1, leather);
+
+            vec3 lightDir = normalize(vec3(1.0,1.0,1.0));
+            float diff = max(dot(normalize(vNormal), lightDir), 0.0);
+
+            col *= diff * 0.7 + 0.3;
+
+            gl_FragColor = vec4(col,1.0);
+        }
+    `
+});
+
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+//////////////////////////////////////////////////////////////
+// NODE EDITOR
+//////////////////////////////////////////////////////////////
+
+const nodeArea = document.getElementById("nodeArea");
+const svg = document.getElementById("connections");
+
+function createNode(title, x, y, contentHTML){
+
+    const node = document.createElement("div");
+    node.className = "node";
+    node.style.left = x + "px";
+    node.style.top = y + "px";
+
+    node.innerHTML = `
+        <div class="node-header">${title}</div>
+        <div class="node-content">
+            ${contentHTML}
+        </div>
+    `;
+
+    nodeArea.appendChild(node);
+
+    const header = node.querySelector(".node-header");
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    header.addEventListener("mousedown", e => {
+
+        dragging = true;
+
+        offsetX = e.clientX - node.offsetLeft;
+        offsetY = e.clientY - node.offsetTop;
+
+    });
+
+    window.addEventListener("mousemove", e => {
+
+        if(!dragging) return;
+
+        node.style.left = (e.clientX - offsetX) + "px";
+        node.style.top = (e.clientY - offsetY) + "px";
+
+        drawConnections();
+
+    });
+
+    window.addEventListener("mouseup", () => {
+        dragging = false;
+    });
+
+    return node;
+}
+
+//////////////////////////////////////////////////////////////
+// NODES
+//////////////////////////////////////////////////////////////
+
+createNode(
+    "Noise Texture",
+    20,
+    30,
+    `
+    <div class="row">
+        <label>Scale</label>
+        <input id="noiseScale" type="range" min="1" max="40" step="0.1" value="${params.noiseScale}">
+    </div>
+
+    <div class="row">
+        <label>Detail</label>
+        <input id="noiseDetail" type="range" min="1" max="12" step="0.1" value="${params.noiseDetail}">
+    </div>
+    `
+);
+
+createNode(
+    "Value",
+    260,
+    40,
+    `
+    <div class="row">
+        <label>Mix Factor</label>
+        <input id="mixFactor" type="range" min="0" max="1" step="0.01" value="${params.mixFactor}">
+    </div>
+    `
+);
+
+createNode(
+    "Mix",
+    180,
+    240,
+    `
+    <div class="row">
+        <label>Color A</label>
+        <input id="color1" type="color" value="${params.leatherColor1}">
+    </div>
+
+    <div class="row">
+        <label>Color B</label>
+        <input id="color2" type="color" value="${params.leatherColor2}">
+    </div>
+    `
+);
+
+createNode(
+    "Texture Coordinate",
+    20,
+    420,
+    `
+    <div class="row">
+        <label>UV Mapping</label>
+        <select>
+            <option>UV</option>
+            <option>Object</option>
+            <option>Generated</option>
+        </select>
+    </div>
+    `
+);
+
+createNode(
+    "Voronoi Texture",
+    260,
+    430,
+    `
+    <div class="row">
+        <label>Scale</label>
+        <input id="voronoiScale" type="range" min="1" max="60" step="0.1" value="${params.voronoiScale}">
+    </div>
+    `
+);
+
+createNode(
+    "Color Ramp",
+    520,
+    40,
+    `
+    <div class="row">
+        <label>Contrast</label>
+        <input type="range" min="0" max="1" step="0.01" value="0.5">
+    </div>
+    `
+);
+
+createNode(
+    "Principled BSDF",
+    520,
+    260,
+    `
+    <div class="row">
+        <label>Roughness</label>
+        <input id="roughness" type="range" min="0" max="1" step="0.01" value="${params.roughness}">
+    </div>
+
+    <div class="row">
+        <label>Metalness</label>
+        <input id="metalness" type="range" min="0" max="1" step="0.01" value="${params.metalness}">
+    </div>
+    `
+);
+
+createNode(
+    "Bump Node",
+    520,
+    470,
+    `
+    <div class="row">
+        <label>Strength</label>
+        <input id="bumpStrength" type="range" min="0" max="0.5" step="0.001" value="${params.bumpStrength}">
+    </div>
+    `
+);
+
+createNode(
+    "Material Output",
+    780,
+    260,
+    `
+    <div class="row">
+        <label>Surface</label>
+        <button>Connected</button>
+    </div>
+    `
+);
+
+//////////////////////////////////////////////////////////////
+// CONNECTIONS
+//////////////////////////////////////////////////////////////
+
+const connectionData = [
+
+    [120, 90, 260, 90],
+    [360, 90, 520, 90],
+    [360, 480, 520, 480],
+    [120, 480, 260, 480],
+    [360, 280, 520, 280],
+    [740, 310, 780, 310]
+];
+
+function drawConnections(){
+
+    svg.innerHTML = "";
+
+    svg.setAttribute("width", nodeArea.scrollWidth);
+    svg.setAttribute("height", nodeArea.scrollHeight);
+
+    document.querySelectorAll(".node").forEach((n,i)=>{
+
+    });
+
+    connectionData.forEach(c=>{
+
+        const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+        );
+
+        const [x1,y1,x2,y2] = c;
+
+        const d = `
+            M ${x1} ${y1}
+            C ${x1+100} ${y1},
+              ${x2-100} ${y2},
+              ${x2} ${y2}
+        `;
+
+        path.setAttribute("d", d);
+        path.setAttribute("stroke", "#ffb347");
+        path.setAttribute("stroke-width", "4");
+        path.setAttribute("fill", "none");
+
+        svg.appendChild(path);
+
+    });
+}
+
+drawConnections();
+
+//////////////////////////////////////////////////////////////
+// UI -> SHADER BINDINGS
+//////////////////////////////////////////////////////////////
+
+function bind(id, callback){
+
+    document.getElementById(id)
+        .addEventListener("input", e=>{
+            callback(e.target.value);
+        });
+}
+
+bind("noiseScale", v=>{
+    material.uniforms.noiseScale.value = parseFloat(v);
+});
+
+bind("voronoiScale", v=>{
+    material.uniforms.voronoiScale.value = parseFloat(v);
+});
+
+bind("mixFactor", v=>{
+    material.uniforms.mixFactor.value = parseFloat(v);
+});
+
+bind("bumpStrength", v=>{
+    material.uniforms.bumpStrength.value = parseFloat(v);
+});
+
+bind("color1", v=>{
+    material.uniforms.color1.value.set(v);
+});
+
+bind("color2", v=>{
+    material.uniforms.color2.value.set(v);
+});
+
+//////////////////////////////////////////////////////////////
+// ANIMATION
+//////////////////////////////////////////////////////////////
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    mesh.rotation.y += 0.0025;
+
+    material.uniforms.time.value += 0.01;
+
+    renderer.render(scene, camera);
+}
+
+animate();
+
+//////////////////////////////////////////////////////////////
+// RESIZE
+//////////////////////////////////////////////////////////////
+
+window.addEventListener("resize", ()=>{
+
+    camera.aspect =
+        viewport.clientWidth / viewport.clientHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        viewport.clientWidth,
+        viewport.clientHeight
+    );
+
+});
+
+</script>
+</body>
+</html>
