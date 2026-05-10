@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pure JS CAD Gear Workflow Demo</title>
+
+<style>
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#202124;
+    color:#ddd;
+}
+
+#app{
+    display:flex;
+    width:100%;
+    height:100%;
+}
+
+/* LEFT INSPECTOR */
+
+#sidebar{
+    width:280px;
+    background:#2a2b2f;
+    border-right:1px solid #444;
+    display:flex;
+    flex-direction:column;
+}
+
+.panelTitle{
+    padding:10px;
+    font-size:14px;
+    font-weight:bold;
+    background:#32343a;
+    border-bottom:1px solid #444;
+}
+
+.tree{
+    flex:1;
+    overflow:auto;
+}
+
+.treeItem{
+    padding:8px 12px;
+    cursor:pointer;
+    border-bottom:1px solid #3a3a3a;
+    user-select:none;
+}
+
+.treeItem:hover{
+    background:#3a3b42;
+}
+
+.treeItem.active{
+    background:#4a4f63;
+}
+
+.sub{
+    padding-left:20px;
+    color:#aaa;
+}
+
+#properties{
+    border-top:1px solid #444;
+    background:#25262a;
+    padding:10px;
+    overflow:auto;
+    height:320px;
+}
+
+.prop{
+    margin-bottom:12px;
+}
+
+.prop label{
+    display:block;
+    margin-bottom:4px;
+    font-size:12px;
+    color:#aaa;
+}
+
+.prop input{
+    width:100%;
+}
+
+button{
+    background:#505764;
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#646d7d;
+}
+
+/* MAIN AREA */
+
+#main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+/* TOP TOOLBAR */
+
+#toolbar{
+    height:52px;
+    background:#2f3136;
+    border-bottom:1px solid #444;
+    display:flex;
+    align-items:center;
+    padding:0 10px;
+    gap:8px;
+}
+
+.tool{
+    background:#4a4f5a;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    user-select:none;
+}
+
+.tool:hover{
+    background:#5a6170;
+}
+
+.tool.active{
+    background:#6a82c7;
+}
+
+/* VIEWPORT */
+
+#viewport{
+    position:relative;
+    flex:1;
+    overflow:hidden;
+}
+
+canvas{
+    display:block;
+}
+
+/* STATUS BAR */
+
+#status{
+    position:absolute;
+    left:12px;
+    bottom:12px;
+    background:rgba(0,0,0,0.55);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+    pointer-events:none;
+    backdrop-filter:blur(4px);
+}
+
+/* NODE EDITOR */
+
+#nodeEditor{
+    position:absolute;
+    right:20px;
+    top:20px;
+    width:300px;
+    height:360px;
+    background:#27282c;
+    border:1px solid #555;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,0.5);
+}
+
+#nodeHeader{
+    padding:10px;
+    background:#3a3d44;
+    font-weight:bold;
+}
+
+.node{
+    margin:10px;
+    background:#35383f;
+    border-radius:8px;
+    padding:10px;
+    border:1px solid #555;
+}
+
+.node label{
+    display:block;
+    font-size:12px;
+    margin-bottom:4px;
+    color:#aaa;
+}
+
+.node input{
+    width:100%;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- LEFT SIDEBAR -->
+    <div id="sidebar">
+
+        <div class="panelTitle">
+            Feature Manager
+        </div>
+
+        <div class="tree" id="tree">
+
+            <div class="treeItem active">
+                Part1 (Default)
+            </div>
+
+            <div class="treeItem sub">
+                History
+            </div>
+
+            <div class="treeItem sub">
+                Sensors
+            </div>
+
+            <div class="treeItem sub">
+                Annotations
+            </div>
+
+            <div class="treeItem sub" id="frontPlane">
+                Front Plane
+            </div>
+
+            <div class="treeItem sub" id="topPlane">
+                Top Plane
+            </div>
+
+            <div class="treeItem sub" id="rightPlane">
+                Right Plane
+            </div>
+
+            <div class="treeItem sub">
+                Origin
+            </div>
+
+            <div class="treeItem sub">
+                Gear Body
+            </div>
+
+        </div>
+
+        <!-- PROPERTIES -->
+        <div id="properties">
+
+            <div class="prop">
+                <label>Gear Teeth</label>
+                <input type="range" min="6" max="40" value="14" id="teethRange">
+            </div>
+
+            <div class="prop">
+                <label>Inner Radius</label>
+                <input type="range" min="0.2" max="1.5" step="0.01" value="0.6" id="innerRadius">
+            </div>
+
+            <div class="prop">
+                <label>Outer Radius</label>
+                <input type="range" min="1" max="3" step="0.01" value="1.6" id="outerRadius">
+            </div>
+
+            <div class="prop">
+                <label>Gear Thickness</label>
+                <input type="range" min="0.1" max="2" step="0.01" value="0.6" id="thickness">
+            </div>
+
+            <div class="prop">
+                <label>Tooth Depth</label>
+                <input type="range" min="0.05" max="0.6" step="0.01" value="0.22" id="toothDepth">
+            </div>
+
+            <button id="createGear">
+                Rebuild Gear
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- MAIN -->
+    <div id="main">
+
+        <!-- TOP TOOLBAR -->
+        <div id="toolbar">
+
+            <div class="tool active" data-tool="select">
+                Select
+            </div>
+
+            <div class="tool" data-tool="line">
+                Line
+            </div>
+
+            <div class="tool" data-tool="circle">
+                Circle
+            </div>
+
+            <div class="tool" data-tool="lasso">
+                Lasso
+            </div>
+
+            <div class="tool" data-tool="extrude">
+                Extrude
+            </div>
+
+        </div>
+
+        <!-- VIEWPORT -->
+        <div id="viewport">
+
+            <div id="status">
+                Ready
+            </div>
+
+            <!-- NODE EDITOR -->
+            <div id="nodeEditor">
+
+                <div id="nodeHeader">
+                    Blender-style Geometry Nodes
+                </div>
+
+                <div class="node">
+                    <label>Tooth Count</label>
+                    <input id="nodeTeeth" type="range" min="6" max="40" value="14">
+                </div>
+
+                <div class="node">
+                    <label>Radius</label>
+                    <input id="nodeRadius" type="range" min="1" max="3" step="0.01" value="1.6">
+                </div>
+
+                <div class="node">
+                    <label>Extrude</label>
+                    <input id="nodeThickness" type="range" min="0.1" max="2" step="0.01" value="0.6">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script type="module">
+
+import * as THREE from 'https://esm.sh/three@0.165.0';
+import { OrbitControls } from 'https://esm.sh/three@0.165.0/examples/jsm/controls/OrbitControls.js';
+
+//////////////////////////////////////////////////////////////
+// BASIC SCENE
+//////////////////////////////////////////////////////////////
+
+const viewport = document.getElementById("viewport");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe5e5e5);
+
+const camera = new THREE.PerspectiveCamera(
+    45,
+    viewport.clientWidth / viewport.clientHeight,
+    0.1,
+    1000
+);
+
+camera.position.set(5,5,5);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias:true
+});
+
+renderer.setSize(
+    viewport.clientWidth,
+    viewport.clientHeight
+);
+
+renderer.setPixelRatio(devicePixelRatio);
+
+viewport.appendChild(renderer.domElement);
+
+//////////////////////////////////////////////////////////////
+// CONTROLS
+//////////////////////////////////////////////////////////////
+
+const controls = new OrbitControls(
+    camera,
+    renderer.domElement
+);
+
+controls.enableDamping = true;
+
+//////////////////////////////////////////////////////////////
+// GRID + AXES
+//////////////////////////////////////////////////////////////
+
+const grid = new THREE.GridHelper(20,20);
+scene.add(grid);
+
+const axes = new THREE.AxesHelper(3);
+scene.add(axes);
+
+//////////////////////////////////////////////////////////////
+// LIGHTS
+//////////////////////////////////////////////////////////////
+
+const hemi = new THREE.HemisphereLight(
+    0xffffff,
+    0x444444,
+    1.5
+);
+
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+dir.position.set(5,10,8);
+scene.add(dir);
+
+//////////////////////////////////////////////////////////////
+// GEAR PARAMETERS
+//////////////////////////////////////////////////////////////
+
+const params = {
+
+    teeth:14,
+    innerRadius:0.6,
+    outerRadius:1.6,
+    thickness:0.6,
+    toothDepth:0.22
+
+};
+
+//////////////////////////////////////////////////////////////
+// GEAR GENERATION
+//////////////////////////////////////////////////////////////
+
+let gearMesh;
+
+function buildGear(){
+
+    if(gearMesh){
+        scene.remove(gearMesh);
+        gearMesh.geometry.dispose();
+    }
+
+    const shape = new THREE.Shape();
+
+    const teeth = params.teeth;
+
+    const step = Math.PI * 2 / teeth;
+
+    for(let i=0;i<teeth;i++){
+
+        const a = i * step;
+
+        const r1 = params.outerRadius;
+        const r2 = params.outerRadius + params.toothDepth;
+
+        const p1x = Math.cos(a) * r1;
+        const p1y = Math.sin(a) * r1;
+
+        const p2x = Math.cos(a + step*0.25) * r2;
+        const p2y = Math.sin(a + step*0.25) * r2;
+
+        const p3x = Math.cos(a + step*0.5) * r2;
+        const p3y = Math.sin(a + step*0.5) * r2;
+
+        const p4x = Math.cos(a + step*0.75) * r1;
+        const p4y = Math.sin(a + step*0.75) * r1;
+
+        if(i===0){
+            shape.moveTo(p1x,p1y);
+        }
+
+        shape.lineTo(p2x,p2y);
+        shape.lineTo(p3x,p3y);
+        shape.lineTo(p4x,p4y);
+    }
+
+    // HOLE
+    const hole = new THREE.Path();
+
+    hole.absellipse(
+        0,
+        0,
+        params.innerRadius,
+        params.innerRadius,
+        0,
+        Math.PI*2
+    );
+
+    shape.holes.push(hole);
+
+    const geo = new THREE.ExtrudeGeometry(
+        shape,
+        {
+            depth:params.thickness,
+            bevelEnabled:false
+        }
+    );
+
+    geo.center();
+
+    const mat = new THREE.MeshStandardMaterial({
+        color:0x666666,
+        metalness:0.4,
+        roughness:0.5
+    });
+
+    gearMesh = new THREE.Mesh(geo,mat);
+
+    scene.add(gearMesh);
+}
+
+buildGear();
+
+//////////////////////////////////////////////////////////////
+// TOOLBAR
+//////////////////////////////////////////////////////////////
+
+let currentTool = "select";
+
+document.querySelectorAll(".tool").forEach(tool=>{
+
+    tool.addEventListener("click", ()=>{
+
+        document
+            .querySelectorAll(".tool")
+            .forEach(t=>t.classList.remove("active"));
+
+        tool.classList.add("active");
+
+        currentTool = tool.dataset.tool;
+
+        setStatus(
+            "Tool: " + currentTool
+        );
+    });
+
+});
+
+//////////////////////////////////////////////////////////////
+// STATUS
+//////////////////////////////////////////////////////////////
+
+function setStatus(text){
+    document.getElementById("status").innerText = text;
+}
+
+//////////////////////////////////////////////////////////////
+// PROPERTY BINDINGS
+//////////////////////////////////////////////////////////////
+
+function bindSlider(id,key){
+
+    document
+        .getElementById(id)
+        .addEventListener("input",(e)=>{
+
+            params[key] = parseFloat(e.target.value);
+
+            buildGear();
+
+        });
+}
+
+bindSlider("teethRange","teeth");
+bindSlider("innerRadius","innerRadius");
+bindSlider("outerRadius","outerRadius");
+bindSlider("thickness","thickness");
+bindSlider("toothDepth","toothDepth");
+
+//////////////////////////////////////////////////////////////
+// NODE EDITOR BINDINGS
+//////////////////////////////////////////////////////////////
+
+document
+.getElementById("nodeTeeth")
+.addEventListener("input",e=>{
+
+    params.teeth = parseInt(e.target.value);
+
+    document.getElementById("teethRange").value =
+        params.teeth;
+
+    buildGear();
+});
+
+document
+.getElementById("nodeRadius")
+.addEventListener("input",e=>{
+
+    params.outerRadius = parseFloat(e.target.value);
+
+    document.getElementById("outerRadius").value =
+        params.outerRadius;
+
+    buildGear();
+});
+
+document
+.getElementById("nodeThickness")
+.addEventListener("input",e=>{
+
+    params.thickness = parseFloat(e.target.value);
+
+    document.getElementById("thickness").value =
+        params.thickness;
+
+    buildGear();
+});
+
+//////////////////////////////////////////////////////////////
+// CREATE TOOL INTERACTION
+//////////////////////////////////////////////////////////////
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+renderer.domElement.addEventListener(
+    "pointerdown",
+    e=>{
+
+        mouse.x =
+            (e.clientX / viewport.clientWidth)*2 -1;
+
+        mouse.y =
+            -(e.clientY / viewport.clientHeight)*2 +1;
+
+        raycaster.setFromCamera(mouse,camera);
+
+        if(currentTool==="circle"){
+
+            setStatus(
+                "Circle sketch started..."
+            );
+
+        }
+
+        if(currentTool==="line"){
+
+            setStatus(
+                "Line sketch started..."
+            );
+
+        }
+
+        if(currentTool==="lasso"){
+
+            setStatus(
+                "Lasso selection..."
+            );
+
+        }
+
+    }
+);
+
+//////////////////////////////////////////////////////////////
+// CAMERA PLANE SHORTCUTS
+//////////////////////////////////////////////////////////////
+
+document
+.getElementById("frontPlane")
+.addEventListener("click",()=>{
+
+    camera.position.set(0,0,6);
+    controls.target.set(0,0,0);
+
+});
+
+document
+.getElementById("topPlane")
+.addEventListener("click",()=>{
+
+    camera.position.set(0,6,0.001);
+    controls.target.set(0,0,0);
+
+});
+
+document
+.getElementById("rightPlane")
+.addEventListener("click",()=>{
+
+    camera.position.set(6,0,0);
+    controls.target.set(0,0,0);
+
+});
+
+//////////////////////////////////////////////////////////////
+// ANIMATION
+//////////////////////////////////////////////////////////////
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    gearMesh.rotation.z += 0.002;
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+//////////////////////////////////////////////////////////////
+// RESIZE
+//////////////////////////////////////////////////////////////
+
+window.addEventListener("resize",()=>{
+
+    camera.aspect =
+        viewport.clientWidth /
+        viewport.clientHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        viewport.clientWidth,
+        viewport.clientHeight
+    );
+
+});
+
+</script>
+</body>
+</html>
