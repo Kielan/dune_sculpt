@@ -164,7 +164,6 @@ canvas{
 }
 
 /* NODE EDITOR */
-
 #nodeEditor{
     position:absolute;
     right:20px;
@@ -532,6 +531,512 @@ function buildGear(){
 
 buildGear();
 
+ <!--
+ADD THIS ENTIRE BLOCK INSIDE THE EXISTING <script type="module"> SECTION
+OF YOUR CURRENT CAD GEAR DEMO HTML FILE.
+
+PLACE IT BELOW:
+//////////////////////////////////////////////////////////////
+// GEAR GENERATION
+//////////////////////////////////////////////////////////////
+
+This expands the CAD scene into:
+[✓] Gear
+[✓] Battery
+[✓] Ignition Switch
+[✓] Fuse
+[✓] Relay
+[✓] Starter Motor
+[✓] Wire Harness Visualization
+[✓] Scene Part Library
+[✓] Pure JS Object Graph Wiring
+-->
+
+//////////////////////////////////////////////////////////////
+// PART LIBRARY / HARNESS SYSTEM
+//////////////////////////////////////////////////////////////
+
+const partLibrary = {
+
+    gear:{
+        type:"mechanical",
+        name:"Spur Gear",
+        outputs:["rotation"]
+    },
+
+    battery:{
+        type:"electrical",
+        name:"12V Battery",
+        outputs:["positive","negative"]
+    },
+
+    ignition:{
+        type:"electrical",
+        name:"Ignition Switch",
+        outputs:["batteryOut","fuseOut"]
+    },
+
+    fuse:{
+        type:"electrical",
+        name:"Fuse",
+        outputs:["relayOut"]
+    },
+
+    relay:{
+        type:"electrical",
+        name:"Starter Relay",
+        outputs:[
+            "batteryPositive",
+            "batteryNegative",
+            "starterMotor"
+        ]
+    },
+
+    starter:{
+        type:"electrical",
+        name:"Starter Motor",
+        outputs:["torque"]
+    }
+
+};
+
+//////////////////////////////////////////////////////////////
+// SCENE PARTS
+//////////////////////////////////////////////////////////////
+
+const sceneParts = [];
+
+//////////////////////////////////////////////////////////////
+// MATERIALS
+//////////////////////////////////////////////////////////////
+
+const redMat = new THREE.MeshStandardMaterial({
+    color:0xff3333,
+    emissive:0x330000
+});
+
+const blueMat = new THREE.MeshStandardMaterial({
+    color:0x3366ff,
+    emissive:0x000022
+});
+
+const yellowMat = new THREE.MeshStandardMaterial({
+    color:0xffcc22
+});
+
+const grayMat = new THREE.MeshStandardMaterial({
+    color:0x666666
+});
+
+const darkMat = new THREE.MeshStandardMaterial({
+    color:0x333333
+});
+
+//////////////////////////////////////////////////////////////
+// BATTERY
+//////////////////////////////////////////////////////////////
+
+function createBattery(){
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2,0.8,0.8),
+        darkMat
+    );
+
+    group.add(body);
+
+    const pos = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08,0.08,0.1,16),
+        redMat
+    );
+
+    pos.rotation.x = Math.PI/2;
+    pos.position.set(-0.3,0.45,0);
+
+    group.add(pos);
+
+    const neg = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08,0.08,0.1,16),
+        blueMat
+    );
+
+    neg.rotation.x = Math.PI/2;
+    neg.position.set(0.3,0.45,0);
+
+    group.add(neg);
+
+    group.position.set(-4,0,0);
+
+    scene.add(group);
+
+    sceneParts.push({
+        id:"battery",
+        mesh:group
+    });
+
+    return group;
+}
+
+//////////////////////////////////////////////////////////////
+// IGNITION SWITCH
+//////////////////////////////////////////////////////////////
+
+function createIgnition(){
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35,0.35,0.3,32),
+        grayMat
+    );
+
+    body.rotation.z = Math.PI/2;
+
+    group.add(body);
+
+    const keyhole = new THREE.Mesh(
+        new THREE.BoxGeometry(0.05,0.16,0.05),
+        darkMat
+    );
+
+    group.add(keyhole);
+
+    group.position.set(-1.8,0,0);
+
+    scene.add(group);
+
+    sceneParts.push({
+        id:"ignition",
+        mesh:group
+    });
+
+    return group;
+}
+
+//////////////////////////////////////////////////////////////
+// FUSE
+//////////////////////////////////////////////////////////////
+
+function createFuse(){
+
+    const group = new THREE.Group();
+
+    const glass = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12,0.12,0.7,24),
+        new THREE.MeshStandardMaterial({
+            color:0x99ddff,
+            transparent:true,
+            opacity:0.7
+        })
+    );
+
+    glass.rotation.z = Math.PI/2;
+
+    group.add(glass);
+
+    group.position.set(0,0,0);
+
+    scene.add(group);
+
+    sceneParts.push({
+        id:"fuse",
+        mesh:group
+    });
+
+    return group;
+}
+
+//////////////////////////////////////////////////////////////
+// RELAY
+//////////////////////////////////////////////////////////////
+
+function createRelay(){
+
+    const group = new THREE.Group();
+
+    const box = new THREE.Mesh(
+        new THREE.BoxGeometry(1,1,1),
+        grayMat
+    );
+
+    group.add(box);
+
+    // 4 SOCKETS
+
+    for(let i=0;i<4;i++){
+
+        const socket = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.06,0.06,0.2,12),
+            yellowMat
+        );
+
+        socket.rotation.z = Math.PI/2;
+
+        socket.position.y = 0.35 - i*0.23;
+        socket.position.x = -0.55;
+
+        group.add(socket);
+    }
+
+    group.position.set(2,0,0);
+
+    scene.add(group);
+
+    sceneParts.push({
+        id:"relay",
+        mesh:group
+    });
+
+    return group;
+}
+
+//////////////////////////////////////////////////////////////
+// STARTER MOTOR
+//////////////////////////////////////////////////////////////
+
+function createStarterMotor(){
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.4,0.4,1.2,32),
+        darkMat
+    );
+
+    body.rotation.z = Math.PI/2;
+
+    group.add(body);
+
+    const nose = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2,0.2,0.4,16),
+        grayMat
+    );
+
+    nose.rotation.z = Math.PI/2;
+    nose.position.x = 0.7;
+
+    group.add(nose);
+
+    group.position.set(4.8,0,0);
+
+    scene.add(group);
+
+    sceneParts.push({
+        id:"starter",
+        mesh:group
+    });
+
+    return group;
+}
+
+//////////////////////////////////////////////////////////////
+// CREATE PARTS
+//////////////////////////////////////////////////////////////
+
+const batteryPart = createBattery();
+const ignitionPart = createIgnition();
+const fusePart = createFuse();
+const relayPart = createRelay();
+const starterPart = createStarterMotor();
+
+//////////////////////////////////////////////////////////////
+// WIRE HARNESS
+//////////////////////////////////////////////////////////////
+
+function createWire(start,end,color=0xff0000){
+
+    const points = [];
+
+    points.push(start);
+
+    const mid = new THREE.Vector3(
+        (start.x + end.x)/2,
+        start.y + 0.7,
+        (start.z + end.z)/2
+    );
+
+    points.push(mid);
+
+    points.push(end);
+
+    const curve = new THREE.CatmullRomCurve3(points);
+
+    const geo = new THREE.TubeGeometry(
+        curve,
+        32,
+        0.04,
+        12,
+        false
+    );
+
+    const mat = new THREE.MeshStandardMaterial({
+        color
+    });
+
+    const tube = new THREE.Mesh(geo,mat);
+
+    scene.add(tube);
+
+    return tube;
+}
+
+//////////////////////////////////////////////////////////////
+// HARNESS CONNECTIONS
+//////////////////////////////////////////////////////////////
+
+// Battery positive -> ignition
+
+createWire(
+    new THREE.Vector3(-3.5,0.4,0),
+    new THREE.Vector3(-2.1,0.2,0),
+    0xff0000
+);
+
+// Ignition -> fuse
+
+createWire(
+    new THREE.Vector3(-1.5,0,0),
+    new THREE.Vector3(-0.3,0,0),
+    0xff8800
+);
+
+// Fuse -> relay
+
+createWire(
+    new THREE.Vector3(0.3,0,0),
+    new THREE.Vector3(1.5,0.3,0),
+    0xffff00
+);
+
+// Battery positive -> relay
+
+createWire(
+    new THREE.Vector3(-3.5,0.4,0),
+    new THREE.Vector3(1.5,0.1,0),
+    0xff3333
+);
+
+// Battery negative -> relay
+
+createWire(
+    new THREE.Vector3(-3.5,-0.4,0),
+    new THREE.Vector3(1.5,-0.1,0),
+    0x3366ff
+);
+
+// Relay -> starter motor
+
+createWire(
+    new THREE.Vector3(2.5,-0.3,0),
+    new THREE.Vector3(4.2,0,0),
+    0x00ff88
+);
+
+//////////////////////////////////////////////////////////////
+// PART TREE UI ADDITIONS
+//////////////////////////////////////////////////////////////
+
+const tree = document.getElementById("tree");
+
+tree.innerHTML += `
+
+<div class="treeItem">
+    Electrical System
+</div>
+
+<div class="treeItem sub">
+    Battery
+</div>
+
+<div class="treeItem sub">
+    Ignition Switch
+</div>
+
+<div class="treeItem sub">
+    Fuse
+</div>
+
+<div class="treeItem sub">
+    Relay Box
+</div>
+
+<div class="treeItem sub">
+    Starter Motor
+</div>
+
+`;
+
+//////////////////////////////////////////////////////////////
+// ELECTRICAL ANIMATION
+//////////////////////////////////////////////////////////////
+
+let pulseTime = 0;
+
+function animateElectrical(){
+
+    pulseTime += 0.04;
+
+    const glow = (
+        Math.sin(pulseTime)*0.5 + 0.5
+    );
+
+    redMat.emissiveIntensity = glow * 2.0;
+    blueMat.emissiveIntensity = glow * 0.6;
+    yellowMat.emissiveIntensity = glow * 1.4;
+}
+
+//////////////////////////////////////////////////////////////
+// MODIFY YOUR EXISTING animate() FUNCTION
+//////////////////////////////////////////////////////////////
+
+// INSIDE animate():
+//
+// add this:
+//
+// animateElectrical();
+
+//////////////////////////////////////////////////////////////
+// OPTIONAL CAMERA FOCUS SHORTCUTS
+//////////////////////////////////////////////////////////////
+
+window.addEventListener("keydown",(e)=>{
+
+    if(e.key==="1"){
+
+        controls.target.copy(
+            batteryPart.position
+        );
+
+    }
+
+    if(e.key==="2"){
+
+        controls.target.copy(
+            ignitionPart.position
+        );
+
+    }
+
+    if(e.key==="3"){
+
+        controls.target.copy(
+            relayPart.position
+        );
+
+    }
+
+    if(e.key==="4"){
+
+        controls.target.copy(
+            starterPart.position
+        );
+
+    }
+
+});
+  
 //////////////////////////////////////////////////////////////
 // TOOLBAR
 //////////////////////////////////////////////////////////////
