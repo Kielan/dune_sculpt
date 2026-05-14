@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ThreeJS Sand Shader Node Demo</title>
+
+<style>
+html, body {
+    margin: 0;
+    overflow: hidden;
+    background: #0d0d0d;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+#root {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+#viewport {
+    flex: 1;
+    position: relative;
+}
+
+#nodeEditor {
+    width: 420px;
+    background: #161616;
+    border-left: 1px solid #333;
+    overflow: auto;
+    position: relative;
+}
+
+canvas {
+    display: block;
+}
+
+.node {
+    position: absolute;
+    width: 180px;
+    background: #242424;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.5);
+    user-select: none;
+}
+
+.node-header {
+    padding: 10px;
+    font-weight: bold;
+    background: #303030;
+    border-radius: 10px 10px 0 0;
+    cursor: move;
+}
+
+.node-body {
+    padding: 10px;
+    font-size: 13px;
+    color: #bbb;
+}
+
+.socket {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.in {
+    background: #4aa3ff;
+}
+
+.out {
+    background: #ffb347;
+}
+
+svg#wires {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.label {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 20;
+}
+</style>
+</head>
+
+<body>
+
+<div id="root">
+
+    <div id="viewport">
+        <div class="label">
+            ThreeJS Sand Shader Demo<br/>
+            Procedural sand using Noise + Wave textures
+        </div>
+    </div>
+
+    <div id="nodeEditor">
+
+        <svg id="wires"></svg>
+
+        <!-- Texture Coordinate -->
+        <div class="node" id="node1" style="left:20px; top:30px;">
+            <div class="node-header">Texture Coordinate</div>
+            <div class="node-body">
+                <div><span class="socket out"></span>UV</div>
+            </div>
+        </div>
+
+        <!-- Mapping -->
+        <div class="node" id="node2" style="left:220px; top:40px;">
+            <div class="node-header">Mapping</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Vector</div>
+                <div><span class="socket out"></span>Vector</div>
+            </div>
+        </div>
+
+        <!-- Noise -->
+        <div class="node" id="node3" style="left:20px; top:220px;">
+            <div class="node-header">Noise Texture</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Vector</div>
+                <div><span class="socket out"></span>Fac</div>
+            </div>
+        </div>
+
+        <!-- Wave -->
+        <div class="node" id="node4" style="left:220px; top:240px;">
+            <div class="node-header">Wave Texture</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Vector</div>
+                <div><span class="socket out"></span>Fac</div>
+            </div>
+        </div>
+
+        <!-- ColorRamp -->
+        <div class="node" id="node5" style="left:20px; top:420px;">
+            <div class="node-header">Color Ramp</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Fac</div>
+                <div><span class="socket out"></span>Color</div>
+            </div>
+        </div>
+
+        <!-- Bump -->
+        <div class="node" id="node6" style="left:220px; top:450px;">
+            <div class="node-header">Bump</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Height</div>
+                <div><span class="socket out"></span>Normal</div>
+            </div>
+        </div>
+
+        <!-- BSDF -->
+        <div class="node" id="node7" style="left:120px; top:650px;">
+            <div class="node-header">Principled BSDF</div>
+            <div class="node-body">
+                <div><span class="socket in"></span>Base Color</div>
+                <div><span class="socket in"></span>Normal</div>
+                <div><span class="socket out"></span>Material</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="module">
+
+import * as THREE from "https://esm.sh/three@0.161.0";
+import { OrbitControls } from "https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js";
+
+////////////////////////////////////////////////////////////
+// SCENE
+////////////////////////////////////////////////////////////
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    (window.innerWidth - 420) / window.innerHeight,
+    0.1,
+    1000
+);
+
+camera.position.set(0, 1.5, 4);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
+
+renderer.setSize(window.innerWidth - 420, window.innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+
+document.getElementById("viewport").appendChild(renderer.domElement);
+
+////////////////////////////////////////////////////////////
+// CONTROLS
+////////////////////////////////////////////////////////////
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+////////////////////////////////////////////////////////////
+// LIGHTS
+////////////////////////////////////////////////////////////
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff, 2);
+dir.position.set(5, 10, 5);
+scene.add(dir);
+
+////////////////////////////////////////////////////////////
+// GEOMETRY
+////////////////////////////////////////////////////////////
+
+const geo = new THREE.SphereGeometry(1, 256, 256);
+
+////////////////////////////////////////////////////////////
+// PROCEDURAL SAND SHADER
+////////////////////////////////////////////////////////////
+
+const material = new THREE.ShaderMaterial({
+
+    uniforms: {
+        time: { value: 0 }
+    },
+
+    vertexShader: /* glsl */`
+
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+
+        void main() {
+
+            vUv = uv;
+            vNormal = normal;
+            vPosition = position;
+
+            gl_Position =
+                projectionMatrix *
+                modelViewMatrix *
+                vec4(position, 1.0);
+
+        }
+
+    `,
+
+    fragmentShader: /* glsl */`
+
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+
+        uniform float time;
+
+        ////////////////////////////////////////////////////
+        // SIMPLE NOISE
+        ////////////////////////////////////////////////////
+
+        float random(vec2 st) {
+            return fract(
+                sin(dot(st.xy, vec2(12.9898,78.233)))
+                * 43758.5453123
+            );
+        }
+
+        float noise(vec2 st) {
+
+            vec2 i = floor(st);
+            vec2 f = fract(st);
+
+            float a = random(i);
+            float b = random(i + vec2(1.0, 0.0));
+            float c = random(i + vec2(0.0, 1.0));
+            float d = random(i + vec2(1.0, 1.0));
+
+            vec2 u = f * f * (3.0 - 2.0 * f);
+
+            return mix(a, b, u.x)
+                + (c - a) * u.y * (1.0 - u.x)
+                + (d - b) * u.x * u.y;
+        }
+
+        ////////////////////////////////////////////////////
+        // WAVE TEXTURE
+        ////////////////////////////////////////////////////
+
+        float wave(vec2 uv) {
+
+            return sin(
+                uv.x * 40.0 +
+                sin(uv.y * 10.0)
+            ) * 0.5 + 0.5;
+
+        }
+
+        ////////////////////////////////////////////////////
+        // MAIN
+        ////////////////////////////////////////////////////
+
+        void main() {
+
+            ////////////////////////////////////////////////////
+            // Texture Coordinate + Mapping
+            ////////////////////////////////////////////////////
+
+            vec2 uv = vUv * 5.0;
+
+            ////////////////////////////////////////////////////
+            // Noise Texture
+            ////////////////////////////////////////////////////
+
+            float n = noise(uv * 3.0);
+
+            ////////////////////////////////////////////////////
+            // Wave Texture
+            ////////////////////////////////////////////////////
+
+            float w = wave(uv);
+
+            ////////////////////////////////////////////////////
+            // Mix textures
+            ////////////////////////////////////////////////////
+
+            float sand = mix(n, w, 0.35);
+
+            ////////////////////////////////////////////////////
+            // Color Ramp
+            ////////////////////////////////////////////////////
+
+            vec3 darkSand = vec3(0.46, 0.36, 0.25);
+            vec3 lightSand = vec3(0.82, 0.73, 0.55);
+
+            vec3 color = mix(
+                darkSand,
+                lightSand,
+                sand
+            );
+
+            ////////////////////////////////////////////////////
+            // Fake bump lighting
+            ////////////////////////////////////////////////////
+
+            vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+
+            float diffuse = dot(
+                normalize(vNormal + sand * 0.4),
+                lightDir
+            );
+
+            diffuse = max(diffuse, 0.2);
+
+            ////////////////////////////////////////////////////
+            // Final
+            ////////////////////////////////////////////////////
+
+            gl_FragColor = vec4(color * diffuse, 1.0);
+
+        }
+
+    `
+
+});
+
+////////////////////////////////////////////////////////////
+// MESH
+////////////////////////////////////////////////////////////
+
+const mesh = new THREE.Mesh(geo, material);
+scene.add(mesh);
+
+////////////////////////////////////////////////////////////
+// FLOOR
+////////////////////////////////////////////////////////////
+
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 1
+    })
+);
+
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -1.5;
+
+scene.add(floor);
+
+////////////////////////////////////////////////////////////
+// NODE WIRES
+////////////////////////////////////////////////////////////
+
+const svg = document.getElementById("wires");
+
+function wire(a, b) {
+
+    const path = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+    );
+
+    const ax = a.offsetLeft + 180;
+    const ay = a.offsetTop + 40;
+
+    const bx = b.offsetLeft;
+    const by = b.offsetTop + 40;
+
+    const d = `
+        M ${ax} ${ay}
+        C ${ax + 80} ${ay},
+          ${bx - 80} ${by},
+          ${bx} ${by}
+    `;
+
+    path.setAttribute("d", d);
+    path.setAttribute("stroke", "#888");
+    path.setAttribute("stroke-width", "3");
+    path.setAttribute("fill", "none");
+
+    svg.appendChild(path);
+}
+
+wire(node1, node2);
+wire(node2, node3);
+wire(node2, node4);
+wire(node3, node5);
+wire(node4, node5);
+wire(node5, node6);
+wire(node5, node7);
+wire(node6, node7);
+
+////////////////////////////////////////////////////////////
+// DRAG NODES
+////////////////////////////////////////////////////////////
+
+document.querySelectorAll(".node").forEach(node => {
+
+    const header = node.querySelector(".node-header");
+
+    let dragging = false;
+    let ox = 0;
+    let oy = 0;
+
+    header.addEventListener("mousedown", e => {
+
+        dragging = true;
+
+        ox = e.clientX - node.offsetLeft;
+        oy = e.clientY - node.offsetTop;
+
+    });
+
+    window.addEventListener("mousemove", e => {
+
+        if (!dragging) return;
+
+        node.style.left = (e.clientX - ox) + "px";
+        node.style.top  = (e.clientY - oy) + "px";
+
+        svg.innerHTML = "";
+
+        wire(node1, node2);
+        wire(node2, node3);
+        wire(node2, node4);
+        wire(node3, node5);
+        wire(node4, node5);
+        wire(node5, node6);
+        wire(node5, node7);
+        wire(node6, node7);
+
+    });
+
+    window.addEventListener("mouseup", () => {
+        dragging = false;
+    });
+
+});
+
+////////////////////////////////////////////////////////////
+// ANIMATION
+////////////////////////////////////////////////////////////
+
+function animate(t) {
+
+    requestAnimationFrame(animate);
+
+    material.uniforms.time.value = t * 0.001;
+
+    mesh.rotation.y += 0.003;
+
+    controls.update();
+
+    renderer.render(scene, camera);
+
+}
+
+animate();
+
+////////////////////////////////////////////////////////////
+// RESIZE
+////////////////////////////////////////////////////////////
+
+window.addEventListener("resize", () => {
+
+    const width = window.innerWidth - 420;
+    const height = window.innerHeight;
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(width, height);
+
+});
+
+</script>
+</body>
+</html>
