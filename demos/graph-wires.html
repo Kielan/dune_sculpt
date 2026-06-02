@@ -1,0 +1,443 @@
+<div id="graphEditor">
+
+<svg id="graphWires"></svg>
+
+</div>
+
+#graphEditor{
+    position:absolute;
+    left:0;
+    top:0;
+    width:340px;
+    height:100%;
+    overflow:hidden;
+}
+
+#graphWires{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
+
+.graphNode{
+
+    position:absolute;
+
+    width:160px;
+
+    background:#2c2c2c;
+
+    border:1px solid #444;
+
+    border-radius:8px;
+
+    color:white;
+
+    user-select:none;
+}
+
+.nodeHeader{
+
+    padding:8px;
+
+    background:#3b3b3b;
+
+    cursor:move;
+
+    border-radius:8px 8px 0 0;
+}
+
+.nodeBody{
+    padding:8px;
+}
+
+.socket{
+
+    width:12px;
+    height:12px;
+
+    border-radius:50%;
+
+    display:inline-block;
+
+    cursor:pointer;
+}
+
+.socketIn{
+    background:#4aa3ff;
+}
+
+.socketOut{
+    background:#ffaa33;
+}
+
+.row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:6px;
+}
+
+const graphEditor =
+document.getElementById(
+"graphEditor"
+);
+
+const svg =
+document.getElementById(
+"graphWires"
+);
+
+let selectedOutput=null;
+
+function createVisualNode(
+id,
+title,
+x,
+y,
+inputs=[],
+outputs=[]
+){
+
+const div =
+document.createElement("div");
+
+div.className=
+"graphNode";
+
+div.style.left=x+"px";
+div.style.top=y+"px";
+
+div.dataset.id=id;
+
+let html=
+`<div class="nodeHeader">
+${title}
+</div>
+<div class="nodeBody">`;
+
+inputs.forEach(name=>{
+
+html+=`
+<div class="row">
+
+<span>
+
+<span
+class="socket socketIn"
+data-node="${id}"
+data-input="${name}">
+</span>
+
+${name}
+
+</span>
+
+</div>
+`;
+
+});
+
+outputs.forEach(name=>{
+
+html+=`
+<div class="row">
+
+<span>${name}</span>
+
+<span
+class="socket socketOut"
+data-node="${id}"
+data-output="${name}">
+</span>
+
+</div>
+`;
+
+});
+
+html+=`</div>`;
+
+div.innerHTML=html;
+
+graphEditor.appendChild(div);
+
+enableDrag(div);
+
+return div;
+
+}
+
+function enableDrag(node){
+
+const header=
+node.querySelector(
+".nodeHeader"
+);
+
+let drag=false;
+
+let ox=0;
+let oy=0;
+
+header.addEventListener(
+"mousedown",
+e=>{
+
+drag=true;
+
+ox=
+e.clientX
+-
+node.offsetLeft;
+
+oy=
+e.clientY
+-
+node.offsetTop;
+
+}
+);
+
+window.addEventListener(
+"mousemove",
+e=>{
+
+if(!drag) return;
+
+node.style.left=
+(e.clientX-ox)+"px";
+
+node.style.top=
+(e.clientY-oy)+"px";
+
+drawConnections();
+
+}
+);
+
+window.addEventListener(
+"mouseup",
+()=>drag=false
+);
+
+}
+
+createVisualNode(
+1,
+"DiffuseBSDF",
+20,
+60,
+[],
+["shader"]
+);
+
+createVisualNode(
+2,
+"ShaderToRGB",
+180,
+60,
+["shader"],
+["color"]
+);
+
+createVisualNode(
+3,
+"ToonRamp",
+100,
+220,
+["fac"],
+["color"]
+);
+
+createVisualNode(
+4,
+"MaterialOutput",
+100,
+380,
+["surface"],
+[]
+);
+
+graphEditor.addEventListener(
+"click",
+e=>{
+
+const sock=
+e.target;
+
+if(
+sock.classList.contains(
+"socketOut"
+)
+){
+
+selectedOutput={
+
+node:
+Number(
+sock.dataset.node
+),
+
+output:
+sock.dataset.output
+
+};
+
+return;
+
+}
+
+if(
+sock.classList.contains(
+"socketIn"
+)
+&&
+selectedOutput
+){
+
+const targetNode=
+Number(
+sock.dataset.node
+);
+
+const inputName=
+sock.dataset.input;
+
+graph.connections.push({
+
+from:
+selectedOutput.node,
+
+to:
+targetNode,
+
+input:
+inputName
+
+});
+
+graph.nodes[targetNode]
+.inputs[inputName]
+=
+selectedOutput.node;
+
+selectedOutput=null;
+
+drawConnections();
+
+compileGraph();
+
+}
+
+}
+);
+
+function drawConnections(){
+
+svg.innerHTML="";
+
+for(
+const c
+of
+graph.connections
+){
+
+const a=
+document.querySelector(
+`.socketOut[data-node="${c.from}"]`
+);
+
+const b=
+document.querySelector(
+`.socketIn[data-node="${c.to}"][data-input="${c.input}"]`
+);
+
+if(!a||!b) continue;
+
+const ar=
+a.getBoundingClientRect();
+
+const br=
+b.getBoundingClientRect();
+
+const parent=
+graphEditor.getBoundingClientRect();
+
+const ax=
+ar.left-parent.left+6;
+
+const ay=
+ar.top-parent.top+6;
+
+const bx=
+br.left-parent.left+6;
+
+const by=
+br.top-parent.top+6;
+
+const path=
+document.createElementNS(
+"http://www.w3.org/2000/svg",
+"path"
+);
+
+path.setAttribute(
+"d",
+
+`M ${ax} ${ay}
+ C ${ax+80} ${ay},
+   ${bx-80} ${by},
+   ${bx} ${by}`
+);
+
+path.setAttribute(
+"stroke",
+"#999"
+);
+
+path.setAttribute(
+"fill",
+"none"
+);
+
+path.setAttribute(
+"stroke-width",
+"3"
+);
+
+svg.appendChild(path);
+
+}
+
+}
+
+graph.connections=[
+
+{
+from:1,
+to:2,
+input:"shader"
+},
+
+{
+from:2,
+to:3,
+input:"fac"
+},
+
+{
+from:3,
+to:4,
+input:"surface"
+}
+
+];
+
+graph.nodes[2].inputs.shader=1;
+graph.nodes[3].inputs.fac=2;
+graph.nodes[4].inputs.surface=3;
+
+drawConnections();
