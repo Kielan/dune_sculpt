@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Shader Graph Part 1</title>
+
+<style>
+html,body{
+    margin:0;
+    overflow:hidden;
+    background:#151515;
+    color:white;
+    font-family:Arial;
+}
+
+#ui{
+    position:absolute;
+    left:0;
+    top:0;
+    width:340px;
+    height:100%;
+    background:#202020;
+    border-right:1px solid #333;
+    overflow:auto;
+}
+
+#viewport{
+    position:absolute;
+    left:340px;
+    top:0;
+    right:0;
+    bottom:0;
+}
+
+button{
+    width:95%;
+    margin:5px;
+    padding:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+
+<h3>Runtime Shader Graph</h3>
+
+<button id="compileBtn">
+Compile Graph
+</button>
+
+<pre id="shaderCode"></pre>
+
+</div>
+
+<div id="viewport"></div>
+
+<script type="module">
+
+import * as THREE from
+'https://esm.sh/three@0.161.0';
+
+import { OrbitControls }
+from
+'https://esm.sh/three@0.161.0/examples/jsm/controls/OrbitControls.js';
+
+////////////////////////////////////////////////////////////
+// Scene
+////////////////////////////////////////////////////////////
+
+const scene = new THREE.Scene();
+scene.background =
+new THREE.Color(0x151515);
+
+const camera =
+new THREE.PerspectiveCamera(
+60,
+(window.innerWidth-340)/
+window.innerHeight,
+0.1,
+100
+);
+
+camera.position.set(0,1.5,4);
+
+const renderer =
+new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+window.innerWidth-340,
+window.innerHeight
+);
+
+document
+.getElementById("viewport")
+.appendChild(renderer.domElement);
+
+const controls =
+new OrbitControls(
+camera,
+renderer.domElement
+);
+
+////////////////////////////////////////////////////////////
+// Lights
+////////////////////////////////////////////////////////////
+
+scene.add(
+new THREE.HemisphereLight(
+0xffffff,
+0x444444,
+2
+)
+);
+
+const sun =
+new THREE.DirectionalLight(
+0xffffff,
+2
+);
+
+sun.position.set(
+5,
+10,
+5
+);
+
+scene.add(sun);
+
+////////////////////////////////////////////////////////////
+// Preview Mesh
+////////////////////////////////////////////////////////////
+
+const sphere =
+new THREE.Mesh(
+
+new THREE.SphereGeometry(
+1,
+128,
+128
+),
+
+new THREE.MeshNormalMaterial()
+
+);
+
+scene.add(sphere);
+
+////////////////////////////////////////////////////////////
+// Graph System
+////////////////////////////////////////////////////////////
+
+class ShaderNode {
+
+constructor(id,type){
+
+this.id=id;
+this.type=type;
+
+this.inputs={};
+this.outputs={};
+
+}
+
+build(ctx){
+return "";
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Diffuse BSDF
+////////////////////////////////////////////////////////////
+
+class DiffuseBSDFNode
+extends ShaderNode{
+
+constructor(id){
+
+super(
+id,
+"DiffuseBSDF"
+);
+
+}
+
+build(ctx){
+
+const v=
+`node_${this.id}`;
+
+ctx.code.push(`
+
+float ${v} = max(
+dot(
+normalize(vNormal),
+normalize(lightDir)
+),
+0.0
+);
+
+`);
+
+return v;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Shader To RGB
+////////////////////////////////////////////////////////////
+
+class ShaderToRGBNode
+extends ShaderNode{
+
+constructor(id){
+
+super(
+id,
+"ShaderToRGB"
+);
+
+}
+
+build(ctx){
+
+const input=
+ctx.resolve(
+this.inputs.shader
+);
+
+const v=
+`node_${this.id}`;
+
+ctx.code.push(`
+
+vec3 ${v} =
+vec3(${input});
+
+`);
+
+return v;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Toon Ramp
+////////////////////////////////////////////////////////////
+
+class ToonRampNode
+extends ShaderNode{
+
+constructor(id){
+
+super(
+id,
+"ToonRamp"
+);
+
+}
+
+build(ctx){
+
+const fac=
+ctx.resolve(
+this.inputs.fac
+);
+
+const v=
+`node_${this.id}`;
+
+ctx.code.push(`
+
+float bands=
+floor(
+${fac}.r*4.0
+)/4.0;
+
+vec3 ${v}=
+mix(
+
+vec3(
+0.22,
+0.45,
+0.55
+),
+
+vec3(
+0.8,
+0.95,
+1.0
+),
+
+bands
+
+);
+
+`);
+
+return v;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Material Output
+////////////////////////////////////////////////////////////
+
+class MaterialOutputNode
+extends ShaderNode{
+
+constructor(id){
+
+super(
+id,
+"MaterialOutput"
+);
+
+}
+
+build(ctx){
+
+const surface=
+ctx.resolve(
+this.inputs.surface
+);
+
+ctx.output=
+surface;
+
+return surface;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Registry
+////////////////////////////////////////////////////////////
+
+const NodeRegistry={
+
+DiffuseBSDF:
+DiffuseBSDFNode,
+
+ShaderToRGB:
+ShaderToRGBNode,
+
+ToonRamp:
+ToonRampNode,
+
+MaterialOutput:
+MaterialOutputNode
+
+};
+
+////////////////////////////////////////////////////////////
+// Graph
+////////////////////////////////////////////////////////////
+
+class ShaderGraph{
+
+constructor(){
+
+this.nodes={};
+
+}
+
+addNode(type,id){
+
+const Ctor=
+NodeRegistry[type];
+
+this.nodes[id]=
+new Ctor(id);
+
+return this.nodes[id];
+
+}
+
+connect(
+fromNode,
+toNode,
+inputName
+){
+
+this.nodes[toNode]
+.inputs[inputName]
+=
+fromNode;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Compiler
+////////////////////////////////////////////////////////////
+
+class GraphCompiler{
+
+constructor(graph){
+
+this.graph=graph;
+
+this.code=[];
+
+this.cache={};
+
+this.output=
+"vec3(1.0)";
+
+}
+
+resolve(nodeId){
+
+if(
+this.cache[nodeId]
+)
+return this.cache[nodeId];
+
+const node=
+this.graph.nodes[nodeId];
+
+const result=
+node.build(this);
+
+this.cache[nodeId]=
+result;
+
+return result;
+
+}
+
+build(outputNode){
+
+this.resolve(
+outputNode
+);
+
+return `
+
+varying vec3 vNormal;
+
+void main(){
+
+vec3 lightDir=
+vec3(
+1.0,
+1.0,
+1.0
+);
+
+${this.code.join("\n")}
+
+gl_FragColor=
+vec4(
+${this.output},
+1.0
+);
+
+}
+
+`;
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+// Demo Graph
+////////////////////////////////////////////////////////////
+
+const graph =
+new ShaderGraph();
+
+graph.addNode(
+"DiffuseBSDF",
+1
+);
+
+graph.addNode(
+"ShaderToRGB",
+2
+);
+
+graph.addNode(
+"ToonRamp",
+3
+);
+
+graph.addNode(
+"MaterialOutput",
+4
+);
+
+graph.connect(
+1,
+2,
+"shader"
+);
+
+graph.connect(
+2,
+3,
+"fac"
+);
+
+graph.connect(
+3,
+4,
+"surface"
+);
+
+////////////////////////////////////////////////////////////
+// Compile
+////////////////////////////////////////////////////////////
+
+function compileGraph(){
+
+const compiler=
+new GraphCompiler(
+graph
+);
+
+const fragment=
+compiler.build(4);
+
+document
+.getElementById(
+"shaderCode"
+)
+.textContent=
+fragment;
+
+sphere.material.dispose();
+
+sphere.material=
+new THREE.ShaderMaterial({
+
+vertexShader:`
+
+varying vec3 vNormal;
+
+void main(){
+
+vNormal=
+normalize(
+normalMatrix*
+normal
+);
+
+gl_Position=
+projectionMatrix*
+modelViewMatrix*
+vec4(
+position,
+1.0
+);
+
+}
+
+`,
+
+fragmentShader:
+fragment
+
+});
+
+}
+
+compileGraph();
+
+compileBtn.onclick=
+compileGraph;
+
+////////////////////////////////////////////////////////////
+// Render
+////////////////////////////////////////////////////////////
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+sphere.rotation.y+=
+0.005;
+
+controls.update();
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
