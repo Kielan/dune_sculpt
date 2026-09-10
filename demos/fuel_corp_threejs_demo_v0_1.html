@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>FUEL CORP — 2.5D Pixel Three.js Demo v0.1</title>
+<style>
+  :root{--bg:#0c1016;--panel:#111722;--panel2:#171f2b;--line:#2a3445;--text:#e9e6dc;--muted:#9ba7b8;--accent:#b72229;--teal:#2aa6a7;--gold:#f2c66d;}
+  *{box-sizing:border-box} html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:monospace;color:var(--text)}
+  #app{position:fixed;inset:0;display:grid;grid-template-columns:1fr 420px;grid-template-rows:1fr}
+  #sceneWrap{position:relative;min-width:0;background:#0b0e13}
+  canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+  #topbar{position:absolute;left:16px;top:14px;right:16px;display:flex;justify-content:space-between;z-index:8;pointer-events:none}
+  .brand{font-size:20px;font-weight:900;letter-spacing:2px;text-shadow:0 2px 0 #000}.brand b{font-size:26px}.tiny{font-size:12px;color:#b9c0cc}
+  #hud{position:absolute;left:18px;bottom:18px;display:flex;gap:10px;z-index:8}.key{background:rgba(8,10,14,.78);border:1px solid #3c4657;padding:8px 10px;border-radius:5px;font-size:12px}
+  #combat{position:absolute;right:18px;top:70px;z-index:8;width:220px;background:rgba(7,10,14,.72);border:1px solid #344052;padding:10px;border-radius:8px}
+  .bar{height:9px;background:#272d37;border:1px solid #444;position:relative;margin:4px 0 9px}.fill{height:100%;background:#b7272f;width:100%}.fill.mana{background:#209fa1;width:100%}
+  #panel{border-left:1px solid var(--line);background:linear-gradient(#101620,#0b1018);display:flex;flex-direction:column;min-width:0}
+  #panelHeader{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.panelTitle{font-weight:800}.badge{font-size:11px;color:#b7c4d4}
+  #tabs{display:flex;border-bottom:1px solid var(--line)} .tab{flex:1;text-align:center;padding:10px;font-size:12px;cursor:pointer;background:#111722}.tab.active{background:#1a2230;color:white}
+  .pane{display:none;overflow:auto;padding:12px}.pane.active{display:block}
+  .group{border:1px solid #293446;border-radius:8px;margin-bottom:12px;background:#0f151f}.group h3{font-size:12px;margin:0;padding:10px 12px;border-bottom:1px solid #293446;color:#d7dce5}.row{display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;padding:8px 12px;font-size:12px}.row input{width:100%}
+  button,select{font:inherit}.btn{background:#1a2331;border:1px solid #42506a;color:#edf0f6;border-radius:5px;padding:8px 10px;cursor:pointer}.btn.red{background:#7d171c;border-color:#e24a50;font-weight:900}.btn:hover{filter:brightness(1.15)}
+  #nodes{position:relative;height:620px;background-image:linear-gradient(#16202d 1px,transparent 1px),linear-gradient(90deg,#16202d 1px,transparent 1px);background-size:20px 20px;border:1px solid #293446;border-radius:8px;overflow:hidden}
+  .node{position:absolute;width:150px;background:#151b25;border:1px solid #45516a;border-radius:7px;box-shadow:0 6px 16px rgba(0,0,0,.35);font-size:11px}.node h4{margin:0;padding:7px 9px;border-radius:6px 6px 0 0;font-size:11px}.node .body{padding:7px 9px;line-height:1.7}.n1 h4{background:#7e2a38}.n2 h4{background:#8f5a22}.n3 h4{background:#24648d}.n4 h4,.n5 h4{background:#5b448d}.n6 h4{background:#2a7548}.n7 h4{background:#0e7757}.n8 h4{background:#7e2933}
+  svg#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .wire{fill:none;stroke:#e5c85c;stroke-width:3}.wire2{stroke:#b6c2d5}.wire3{stroke:#44d18f}
+  #startScreen{position:absolute;inset:0;z-index:20;background:rgba(5,7,10,.22);display:flex;align-items:center;justify-content:center}
+  #startCard{width:min(980px,90%);height:min(610px,86%);display:grid;grid-template-columns:42% 58%;border:1px solid #988a6a;background:rgba(16,13,11,.78);box-shadow:0 20px 80px #000;backdrop-filter:blur(5px)}
+  #startLeft{padding:30px;border-right:1px solid #6c604c}.logo{font-size:48px;line-height:.86;font-weight:1000;letter-spacing:2px}.logo small{display:block;font-size:12px;color:#bbaa88;line-height:1.2;margin-top:12px}.selectTitle{font-size:18px;text-align:center;margin:4px 0 24px;letter-spacing:3px}.selrow{display:grid;grid-template-columns:100px 1fr;gap:12px;align-items:center;margin:12px 0}.selval{display:flex;justify-content:space-between;align-items:center;border:1px solid #756b58;padding:7px 8px;background:#100e0d}.arrow{cursor:pointer;padding:0 8px}.desc{border:1px solid #70654f;margin-top:22px;padding:12px;color:#ddd1b8;line-height:1.5;font-size:12px}.startBtns{display:flex;gap:12px;margin-top:22px}.startBtns .btn{flex:1}.startBtns .red{font-size:18px;padding:12px}
+  #startPreview{position:relative}.previewCaption{position:absolute;left:18px;bottom:18px;right:18px;background:rgba(20,10,8,.75);border:1px solid #a34d4d;padding:12px;text-align:center;font-size:20px;font-weight:900}
+  #miniNote{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-size:11px;color:#bcb9b0;letter-spacing:2px}
+  .note{padding:10px 12px;color:#9aa6b5;font-size:11px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sceneWrap">
+    <div id="topbar"><div class="brand"><b>FUEL CORP</b><br><span class="tiny">REAL 3D · RETRO FEEL · MADE WITH PIXELS</span></div><div class="tiny">v0.1 interactive prototype</div></div>
+    <div id="combat"><div>HP</div><div class="bar"><div class="fill" id="hpFill"></div></div><div>ENERGY</div><div class="bar"><div class="fill mana" id="energyFill"></div></div><div class="tiny">LMB Shoot · Q Swing · Space Block · Shift Dash</div></div>
+    <div id="hud"><div class="key">WASD Move</div><div class="key">LMB Shoot</div><div class="key">Q Swing</div><div class="key">Space Block</div><div class="key">Shift Dash</div></div>
+    <div id="startScreen">
+      <div id="startCard">
+        <div id="startLeft">
+          <div class="logo">FUEL<br>CORP<small>CHARACTER SELECT</small></div>
+          <div class="selectTitle">START GAME</div>
+          <div class="selrow"><div>Class</div><div class="selval"><span class="arrow" data-k="class" data-dir="-1">‹</span><b id="classVal">KNIGHT</b><span class="arrow" data-k="class" data-dir="1">›</span></div></div>
+          <div class="selrow"><div>Hair</div><div class="selval"><span class="arrow" data-k="hair" data-dir="-1">‹</span><b id="hairVal">HAIR 2</b><span class="arrow" data-k="hair" data-dir="1">›</span></div></div>
+          <div class="selrow"><div>Hair Color</div><div class="selval"><span class="arrow" data-k="hairColor" data-dir="-1">‹</span><b id="hairColorVal">WHITE</b><span class="arrow" data-k="hairColor" data-dir="1">›</span></div></div>
+          <div class="selrow"><div>Body Type</div><div class="selval"><span class="arrow" data-k="body" data-dir="-1">‹</span><b id="bodyVal">MASCULINE</b><span class="arrow" data-k="body" data-dir="1">›</span></div></div>
+          <div class="desc" id="desc">A close-range fighter with a heavy block and fast sword burst. Built for direct pressure in compact arenas.</div>
+          <div class="startBtns"><button id="startBtn" class="btn red">START GAME</button><button id="backBtn" class="btn">BACK</button></div>
+        </div>
+        <div id="startPreview"><div id="miniNote">PIXELATED 3D CHARACTER PREVIEW</div><div class="previewCaption" id="classCaption">CLASS: KNIGHT</div></div>
+      </div>
+    </div>
+  </div>
+  <aside id="panel">
+    <div id="panelHeader"><div class="panelTitle">FUEL CORP — Material Editor</div><div class="badge">2.5D Pixelated</div></div>
+    <div id="tabs"><div class="tab active" data-pane="settingsPane">Shader</div><div class="tab" data-pane="nodesPane">Node Graph</div><div class="tab" data-pane="roadmapPane">Roadmap</div></div>
+    <div id="settingsPane" class="pane active">
+      <div class="group"><h3>Global Pixel Shader</h3>
+        <div class="row"><label>Pixel Size</label><input id="pixelSize" type="range" min="1" max="12" value="5" step="1"></div>
+        <div class="row"><label>Color Steps</label><input id="colorSteps" type="range" min="2" max="12" value="5" step="1"></div>
+        <div class="row"><label>Bloom</label><input id="bloom" type="range" min="0" max="2" value="0.75" step="0.05"></div>
+        <div class="row"><label>Dither</label><input id="dither" type="range" min="0" max="1" value="0.2" step="0.05"></div>
+      </div>
+      <div class="group"><h3>Lighting</h3>
+        <div class="row"><label>Key Light</label><input id="keyLight" type="range" min="0" max="5" value="2.2" step="0.1"></div>
+        <div class="row"><label>Warm Fill</label><input id="warmFill" type="range" min="0" max="5" value="1.8" step="0.1"></div>
+      </div>
+      <div class="group"><h3>Debug / Scene</h3>
+        <div class="row"><button class="btn" id="toggleFog">Toggle Fog</button><button class="btn" id="resetBtn">Reset</button></div>
+      </div>
+      <div class="note">This is intentionally a small first-pass stack: real 3D geometry + low internal render resolution + nearest-neighbor upscale + posterized material colors + warm point lights. It is the practical Three.js approximation of the node graph art direction.</div>
+    </div>
+    <div id="nodesPane" class="pane">
+      <div id="nodes">
+        <svg id="wires" viewBox="0 0 396 620" preserveAspectRatio="none">
+          <path class="wire2" d="M120,100 C150,100 140,100 170,100"/><path class="wire2" d="M320,100 C340,100 325,180 300,180"/>
+          <path class="wire" d="M150,180 C200,180 170,250 220,250"/><path class="wire" d="M370,250 C390,250 350,330 300,330"/>
+          <path class="wire" d="M150,405 C210,405 200,450 230,450"/><path class="wire3" d="M380,450 C390,450 390,520 350,520"/>
+        </svg>
+        <div class="node n1" style="left:12px;top:55px"><h4>Texture Coordinate</h4><div class="body">Generated ●<br>UV ●<br>Object ●</div></div>
+        <div class="node n2" style="left:170px;top:55px"><h4>Noise Texture</h4><div class="body">Scale 12<br>Detail 4<br>Roughness .5</div></div>
+        <div class="node n3" style="left:120px;top:190px"><h4>ColorRamp</h4><div class="body">Shadow ▬ Mid ▬ Light</div></div>
+        <div class="node n4" style="left:235px;top:285px"><h4>Pixelate</h4><div class="body">Pixel Size <span id="nodePixel">5</span></div></div>
+        <div class="node n5" style="left:25px;top:360px"><h4>Posterize</h4><div class="body">Steps <span id="nodeSteps">5</span></div></div>
+        <div class="node n6" style="left:220px;top:405px"><h4>Principled BSDF</h4><div class="body">Roughness .8<br>Specular .4</div></div>
+        <div class="node n7" style="left:220px;top:500px"><h4>Emission</h4><div class="body">Strength 1.4</div></div>
+        <div class="node n8" style="left:12px;top:500px"><h4>Material Output</h4><div class="body">Surface ●</div></div>
+      </div>
+    </div>
+    <div id="roadmapPane" class="pane"><div class="group"><h3>First 32 Features</h3><div class="note" id="roadmapText"></div></div></div>
+  </aside>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const wrap=document.getElementById('sceneWrap');
+const renderer=new THREE.WebGLRenderer({antialias:false}); renderer.setPixelRatio(1); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; wrap.prepend(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x11151b); scene.fog=new THREE.FogExp2(0x161b22,0.035);
+const camera=new THREE.PerspectiveCamera(54,1,.1,100); camera.position.set(7,6.8,10);
+const composer=new EffectComposer(renderer); const renderPass=new RenderPass(scene,camera); composer.addPass(renderPass); const bloomPass=new UnrealBloomPass(new THREE.Vector2(1280,720),.75,.4,.85); composer.addPass(bloomPass);
+let pixelSize=5, colorSteps=5;
+const rt=new THREE.WebGLRenderTarget(320,180,{magFilter:THREE.NearestFilter,minFilter:THREE.NearestFilter});
+
+function mat(c,em=0){ const m=new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:.05,emissive:new THREE.Color(c).multiplyScalar(em)}); return m; }
+function box(sx,sy,sz,c,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(c));o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;scene.add(o);return o}
+function cyl(r,h,c,x,y,z){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8),mat(c));o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;scene.add(o);return o}
+
+// room / stage
+box(18,.4,18,0x4b3727,0,-.2,0); box(18,6,.5,0x544b42,0,3,-7); box(.5,6,18,0x5a4a3d,-9,3,0);
+for(let x=-8;x<8;x+=1.2) for(let y=.3;y<5.8;y+=.75) box(1.05,.55,.35,(x+y)%2?0x5f554b:0x6d6257,x,y,-6.72);
+for(let i=-7;i<7;i+=2) box(.18,6,.18,0x2a1e15,i,3,-6.4);
+box(4,.15,6,0x7a2831,0,.03,0); box(3.3,.1,5.2,0xb0815a,0,.11,0);
+// fireplace
+box(4,3.6,.6,0x3b312b,5.7,1.8,-6.25); box(2.3,2.4,.8,0x18120e,5.7,1.2,-5.92); box(2.7,.35,.9,0x6b5140,5.7,3.1,-5.88);
+for(let i=0;i<8;i++){const f=new THREE.Mesh(new THREE.ConeGeometry(.28,.9,5),new THREE.MeshStandardMaterial({color:0xff9b21,emissive:0xff5a00,emissiveIntensity:3}));f.position.set(5.7+(i%4)*.25-.4,.55+Math.floor(i/4)*.2,-5.4);scene.add(f)}
+// table / props
+box(3,.25,1.5,0x65472f,-4,1.2,-4.5); for(const x of [-5.2,-2.8]) for(const z of [-5,-4]) box(.18,1.4,.18,0x4c3425,x,.6,z);
+for(let i=0;i<8;i++) cyl(.18,.65,0x6b4a2b,7,.35,-4.8+i*.25);
+
+const keyLight=new THREE.DirectionalLight(0xb7d7ff,2.2);keyLight.position.set(-3,8,5);keyLight.castShadow=true;scene.add(keyLight);
+const warm=new THREE.PointLight(0xff8a3d,1.8,18,2);warm.position.set(5.6,2,-4.8);warm.castShadow=true;scene.add(warm); scene.add(new THREE.HemisphereLight(0x44506d,0x1c120e,.75));
+
+function makeCharacter(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.65,1.55,4,8),mat(0x241c18));body.position.y=1.9;body.scale.z=.65;g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.53,8,6),mat(0xe8e1d0));head.position.y=3.35;g.add(head);
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(.6,8,6),mat(0xf7f2e6));hair.position.set(0,3.58,.02);hair.scale.set(1,.75,1);g.add(hair);
+  for(const sx of [-1,1]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.18,.85,3,6),mat(0x1f797b));arm.position.set(.78*sx,2.15,0);arm.rotation.z=sx*.1;g.add(arm);const boot=new THREE.Mesh(new THREE.BoxGeometry(.42,.8,.62),mat(0x186f73));boot.position.set(.33*sx,.48,.08);g.add(boot)}
+  const sword=new THREE.Group(); const blade=new THREE.Mesh(new THREE.BoxGeometry(.15,2.6,.12),new THREE.MeshStandardMaterial({color:0xd9e5eb,emissive:0x7abed4,emissiveIntensity:.35,metalness:.6,roughness:.25}));blade.position.y=1.4;sword.add(blade);boxToGroup(sword,.55,.12,.18,0x59321c,0,.08,0);sword.position.set(.18,1.5,-.5);sword.rotation.z=.55;g.add(sword);
+  g.position.set(0,0,2.2); return g;
+}
+function boxToGroup(gr,sx,sy,sz,c,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(c));o.position.set(x,y,z);gr.add(o);return o}
+const player=makeCharacter();scene.add(player);
+
+function enemyAt(x,z){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.CapsuleGeometry(.55,1.35,4,7),mat(0x4c1d22));b.position.y=1.55;g.add(b);const h=new THREE.Mesh(new THREE.SphereGeometry(.45,7,5),mat(0xb03b3f));h.position.y=2.9;g.add(h);g.position.set(x,0,z);g.userData.hp=100;scene.add(g);return g}
+const enemies=[enemyAt(4,1),enemyAt(5.5,-.5)];
+
+const keys={};let energy=100,hp=100,blocking=false,lastShot=0,lastSwing=0;
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyQ')swing();if(e.code==='Space')blocking=true}); addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space')blocking=false});
+renderer.domElement.addEventListener('mousedown',e=>{if(e.button===0)shoot()});
+function shoot(){const t=performance.now();if(t-lastShot<260||energy<8)return;lastShot=t;energy-=8;const dir=new THREE.Vector3(0,0,-1).applyQuaternion(player.quaternion).normalize();const orb=new THREE.Mesh(new THREE.SphereGeometry(.13,6,4),new THREE.MeshBasicMaterial({color:0xffd66d}));orb.position.copy(player.position).add(new THREE.Vector3(0,2.2,0));scene.add(orb);const light=new THREE.PointLight(0xffc04c,4,5);orb.add(light);orb.userData.v=dir.multiplyScalar(.24);orb.userData.life=120;projectiles.push(orb)}
+const projectiles=[];
+function swing(){const t=performance.now();if(t-lastSwing<500)return;lastSwing=t;player.rotation.y+=.45;setTimeout(()=>player.rotation.y-=.45,120); enemies.forEach(e=>{if(e.position.distanceTo(player.position)<2.4)e.userData.hp-=35})}
+function updatePlayer(){const v=new THREE.Vector3((keys.KeyD?1:0)-(keys.KeyA?1:0),0,(keys.KeyS?1:0)-(keys.KeyW?1:0));if(v.lengthSq()){v.normalize().multiplyScalar(keys.ShiftLeft?.11:.065);player.position.add(v);player.rotation.y=Math.atan2(v.x,v.z)}if(blocking) player.scale.set(1.03,.98,1.03); else player.scale.set(1,1,1); energy=Math.min(100,energy+.06);}
+
+const clock=new THREE.Clock();
+function render(){requestAnimationFrame(render);updatePlayer();for(let i=projectiles.length-1;i>=0;i--){const p=projectiles[i];p.position.add(p.userData.v);p.userData.life--;for(const e of enemies){if(e.userData.hp>0&&p.position.distanceTo(e.position)<.8){e.userData.hp-=25;p.userData.life=0;}}if(p.userData.life<=0){scene.remove(p);projectiles.splice(i,1)}}enemies.forEach(e=>{if(e.userData.hp<=0)e.visible=false}); const target=player.position.clone().add(new THREE.Vector3(0,1.8,0)); const desired=player.position.clone().add(new THREE.Vector3(7,5.8,9));camera.position.lerp(desired,.06);camera.lookAt(target);
+  document.getElementById('energyFill').style.width=energy+'%';document.getElementById('hpFill').style.width=hp+'%';
+  renderer.setRenderTarget(rt);renderer.setSize(Math.max(120,Math.floor(wrap.clientWidth/pixelSize)),Math.max(80,Math.floor(wrap.clientHeight/pixelSize)),false);renderer.render(scene,camera);renderer.setRenderTarget(null);
+  composer.setSize(wrap.clientWidth,wrap.clientHeight); composer.render();
+}
+function resize(){camera.aspect=wrap.clientWidth/wrap.clientHeight;camera.updateProjectionMatrix();renderer.setSize(wrap.clientWidth,wrap.clientHeight,false);composer.setSize(wrap.clientWidth,wrap.clientHeight)}addEventListener('resize',resize);resize();render();
+
+// shader controls
+pixelSize=+document.getElementById('pixelSize').value;
+document.getElementById('pixelSize').oninput=e=>{pixelSize=+e.target.value;document.getElementById('nodePixel').textContent=pixelSize};
+document.getElementById('colorSteps').oninput=e=>{colorSteps=+e.target.value;document.getElementById('nodeSteps').textContent=colorSteps};
+document.getElementById('bloom').oninput=e=>bloomPass.strength=+e.target.value;document.getElementById('keyLight').oninput=e=>keyLight.intensity=+e.target.value;document.getElementById('warmFill').oninput=e=>warm.intensity=+e.target.value;document.getElementById('toggleFog').onclick=()=>scene.fog=scene.fog?null:new THREE.FogExp2(0x161b22,.035);document.getElementById('resetBtn').onclick=()=>{player.position.set(0,0,2.2);energy=100;hp=100;};
+
+// tabs
+[...document.querySelectorAll('.tab')].forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.pane).classList.add('active')});
+
+// start screen selectors
+const vals={class:['KNIGHT','RANGER','PRIEST'],hair:['HAIR 1','HAIR 2','HAIR 3'],hairColor:['WHITE','BLACK','AUBURN'],body:['MASCULINE','LEAN','HEAVY']};const idx={class:0,hair:1,hairColor:0,body:0};const descs={KNIGHT:'A close-range fighter with a heavy block and fast sword burst. Built for direct pressure in compact arenas.',RANGER:'A mobile ranged fighter with quick shots, dash control, and distance pressure.',PRIEST:'A support-focused caster with radiant projectiles, mitigation, and sustain.'};
+[...document.querySelectorAll('.arrow')].forEach(a=>a.onclick=()=>{const k=a.dataset.k;idx[k]=(idx[k]+(+a.dataset.dir)+vals[k].length)%vals[k].length;document.getElementById(k+'Val').textContent=vals[k][idx[k]];if(k==='class'){document.getElementById('classCaption').textContent='CLASS: '+vals[k][idx[k]];document.getElementById('desc').textContent=descs[vals[k][idx[k]]]}});
+document.getElementById('startBtn').onclick=()=>document.getElementById('startScreen').style.display='none';document.getElementById('backBtn').onclick=()=>{};
+
+const roadmap=[
+'1. Character-select start screen','2. FUEL CORP top-left branding','3. Pixelated internal render scale','4. Nearest-neighbor presentation','5. Posterized material palette','6. Warm bloom lighting','7. Cozy stone-and-wood interior','8. Procedural low-poly hero','9. Knight / Ranger / Priest selectors','10. Hair / color / body selectors','11. Start Game transition','12. Third-person follow camera','13. WASD movement','14. Shift dash','15. LMB projectile shooting','16. Q sword swing','17. Hold-Space block state','18. HP and energy HUD','19. Enemy dummies','20. Projectile collision','21. Melee range damage','22. Enemy death visibility state','23. Fog toggle','24. Live key light slider','25. Live warm-fill slider','26. Live bloom slider','27. Live pixel-size slider','28. Node-graph visualization','29. Shader node value mirroring','30. Material-editor tab system','31. Reset / debug controls','32. Roadmap/code-review panel'];document.getElementById('roadmapText').innerHTML=roadmap.join('<br>');
+</script>
+</body>
+</html>
