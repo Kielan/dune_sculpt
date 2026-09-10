@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Bézier Surface Loop + Extrude Tool</title>
+<style>
+  *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#11151b;color:#eaf1f8;font-family:Inter,system-ui,sans-serif}canvas{display:block;touch-action:none}
+  #panel{position:fixed;left:16px;top:16px;width:min(330px,calc(100vw - 32px));padding:14px;background:#151a22eF;border:1px solid #344050;border-radius:14px;box-shadow:0 14px 42px #0008;z-index:5;backdrop-filter:blur(12px)}
+  h1{font-size:17px;margin:0 0 4px}.sub{font-size:12px;color:#9eb0c5;margin-bottom:12px}.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.row>*{flex:1}
+  button{border:1px solid #3a485b;background:#232b37;color:#eaf1f8;padding:10px 9px;border-radius:9px;font-weight:650;cursor:pointer}button:hover{background:#2c3746}button.active{background:#126f91;border-color:#55d9ff}button:disabled{opacity:.42;cursor:default}
+  label{font-size:12px;color:#b8c5d4;display:flex;align-items:center;gap:8px}input[type=range]{width:100%;accent-color:#36d4ff}.status{font:12px ui-monospace,monospace;color:#87e7ff;background:#0d1117;padding:9px;border-radius:8px;line-height:1.45}
+  #hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#10151dcc;border:1px solid #334155;padding:9px 14px;border-radius:999px;font-size:12px;color:#cad6e3;pointer-events:none;white-space:nowrap}
+  @media(max-width:600px){#panel{left:10px;top:10px;width:calc(100vw - 20px);padding:11px}#hint{bottom:10px;max-width:calc(100vw - 20px);white-space:normal;text-align:center}}
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Bézier Surface Extrude</h1><div class="sub">Sketch a smooth closed profile directly on the work surface.</div>
+  <div class="row"><button id="drawBtn" class="active">1 · Draw points</button><button id="closeBtn" disabled>2 · Close loop</button></div>
+  <div class="row"><button id="extrudeBtn" disabled>3 · Extrude mode</button><button id="undoBtn" disabled>Undo point</button><button id="clearBtn">Clear</button></div>
+  <label>Extrusion height <b id="heightOut">2.50</b><input id="height" type="range" min="0.1" max="8" step="0.05" value="2.5"></label>
+  <div id="status" class="status">DRAW · tap the surface to place point 1</div>
+</div>
+<div id="hint">Left-click/tap: add or drag point · Right-drag: orbit · Wheel: zoom</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x11151b); scene.fog=new THREE.Fog(0x11151b,28,65);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.1,120); camera.position.set(11,13,17);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; document.body.prepend(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,0,0); controls.enableDamping=true; controls.mouseButtons.LEFT=null; controls.mouseButtons.RIGHT=THREE.MOUSE.ROTATE; controls.touches.ONE=THREE.TOUCH.PAN; controls.touches.TWO=THREE.TOUCH.DOLLY_ROTATE;
+scene.add(new THREE.HemisphereLight(0xcbe7ff,0x26301f,1.7)); const sun=new THREE.DirectionalLight(0xffffff,3); sun.position.set(8,14,7); sun.castShadow=true; scene.add(sun);
+const grid=new THREE.GridHelper(30,30,0x415064,0x252d38); grid.position.y=-.025; scene.add(grid);
+const surface=new THREE.Mesh(new THREE.CircleGeometry(9,96),new THREE.MeshStandardMaterial({color:0x26303b,roughness:.88,metalness:.05,side:THREE.DoubleSide})); surface.rotation.x=-Math.PI/2; surface.receiveShadow=true; surface.name='DrawingSurface'; scene.add(surface);
+
+const ray=new THREE.Raycaster(), pointer=new THREE.Vector2(); const anchors=[]; const markers=new THREE.Group(); scene.add(markers); let curveLine=null,previewLine=null,solid=null,dragIndex=-1,dragExtrude=false,closed=false,mode='draw';
+const ui={draw:document.querySelector('#drawBtn'),close:document.querySelector('#closeBtn'),extrude:document.querySelector('#extrudeBtn'),undo:document.querySelector('#undoBtn'),clear:document.querySelector('#clearBtn'),height:document.querySelector('#height'),heightOut:document.querySelector('#heightOut'),status:document.querySelector('#status')};
+const markerGeo=new THREE.SphereGeometry(.14,18,12), markerMat=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0x1a7e9d,emissiveIntensity:.45});
+function ndc(e){const r=renderer.domElement.getBoundingClientRect(); pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1); ray.setFromCamera(pointer,camera)}
+function hitSurface(e){ndc(e); const h=ray.intersectObject(surface)[0]; return h?.point.clone()}
+function bezierSamples(points,segments=24){if(points.length<2)return points.map(p=>p.clone()); const out=[]; for(let i=0;i<(closed?points.length:points.length-1);i++){const p0=points[(i-1+points.length)%points.length],p1=points[i],p2=points[(i+1)%points.length],p3=points[(i+2)%points.length]; const c1=p1.clone().add(p2.clone().sub(p0).multiplyScalar(1/6)); const c2=p2.clone().sub(p3.clone().sub(p1).multiplyScalar(1/6)); const c=new THREE.CubicBezierCurve3(p1,c1,c2,p2); const s=c.getPoints(segments); if(i) s.shift(); out.push(...s)} return out}
+function lineFor(points,color,loop=false){const g=new THREE.BufferGeometry().setFromPoints(loop?[...points,points[0]]:points); return new THREE.Line(g,new THREE.LineBasicMaterial({color,depthTest:false,transparent:true,opacity:.95}))}
+function rebuild(){markers.clear(); anchors.forEach((p,i)=>{const m=new THREE.Mesh(markerGeo,markerMat.clone());m.position.copy(p).add(new THREE.Vector3(0,.08,0));m.userData.index=i;m.renderOrder=4;markers.add(m)}); if(curveLine){scene.remove(curveLine);curveLine.geometry.dispose()} const samples=bezierSamples(anchors); curveLine=samples.length>1?lineFor(samples,closed?0x62e6ff:0xffd166,closed):null;if(curveLine){curveLine.position.y=.055;curveLine.renderOrder=3;scene.add(curveLine)} if(closed) rebuildSolid(); updateUI()}
+function makeShape(){const pts=bezierSamples(anchors,18); const shape=new THREE.Shape(); shape.moveTo(pts[0].x,-pts[0].z); for(let i=1;i<pts.length;i++)shape.lineTo(pts[i].x,-pts[i].z); shape.closePath(); return shape}
+function rebuildSolid(){if(solid){scene.remove(solid);solid.geometry.dispose();solid.material.dispose()} const h=+ui.height.value; const g=new THREE.ExtrudeGeometry(makeShape(),{depth:h,bevelEnabled:true,bevelSize:.07,bevelThickness:.07,bevelSegments:2,curveSegments:1}); g.rotateX(-Math.PI/2); const mat=new THREE.MeshStandardMaterial({color:mode==='extrude'?0x268db2:0x4f7787,roughness:.48,metalness:.08,transparent:true,opacity:.9,side:THREE.DoubleSide}); solid=new THREE.Mesh(g,mat);solid.position.y=.02;solid.castShadow=true;solid.receiveShadow=true;scene.add(solid)}
+function updateUI(){ui.close.disabled=anchors.length<3||closed;ui.extrude.disabled=!closed;ui.undo.disabled=!anchors.length||closed;ui.draw.classList.toggle('active',mode==='draw');ui.extrude.classList.toggle('active',mode==='extrude'); ui.status.textContent=closed?(mode==='extrude'?`EXTRUDE · height ${(+ui.height.value).toFixed(2)} · drag the cyan cap or use slider`:`LOOP CLOSED · ${anchors.length} anchors · choose Extrude mode`):`DRAW · ${anchors.length} point${anchors.length===1?'':'s'} · ${anchors.length<3?'add at least '+(3-anchors.length)+' more':'close the loop when ready'}`}
+function setMode(v){mode=v; controls.enabled=true; if(closed)rebuildSolid();updateUI()}
+function addPoint(p){if(closed)return false;p.y=0;anchors.push(p);rebuild();return true}
+function closeLoop(){if(anchors.length<3)return false;closed=true;rebuild();return true}
+function clearAll(){anchors.length=0;closed=false;mode='draw';if(solid){scene.remove(solid);solid.geometry.dispose();solid=null}rebuild()}
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0)return;ndc(e); if(mode==='extrude'&&solid){const h=ray.intersectObject(solid)[0];if(h&&h.face?.normal.y>.6){dragExtrude=true;controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);return}} const mh=ray.intersectObjects(markers.children)[0];if(mh){dragIndex=mh.object.userData.index;controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);return} if(mode==='draw'){const p=hitSurface(e);if(p)addPoint(p)}});
+renderer.domElement.addEventListener('pointermove',e=>{if(dragIndex>=0){const p=hitSurface(e);if(p){anchors[dragIndex].copy(p);rebuild()}}else if(dragExtrude){const delta=-(e.movementY||0)*.035;ui.height.value=THREE.MathUtils.clamp(+ui.height.value+delta,.1,8);ui.heightOut.textContent=(+ui.height.value).toFixed(2);rebuildSolid();updateUI()}});
+renderer.domElement.addEventListener('pointerup',()=>{dragIndex=-1;dragExtrude=false;controls.enabled=true});
+ui.draw.onclick=()=>setMode('draw');ui.close.onclick=closeLoop;ui.extrude.onclick=()=>setMode('extrude');ui.undo.onclick=()=>{anchors.pop();rebuild()};ui.clear.onclick=clearAll;ui.height.oninput=()=>{ui.heightOut.textContent=(+ui.height.value).toFixed(2);if(closed)rebuildSolid();updateUI()};
+window.Codex={scene,camera,renderer,surface,get anchors(){return anchors.map(p=>p.clone())},addPoint:(x,z)=>addPoint(new THREE.Vector3(x,0,z)),closeLoop,setMode,setExtrudeHeight:h=>{ui.height.value=THREE.MathUtils.clamp(h,.1,8);ui.height.dispatchEvent(new Event('input'))},clear:clearAll,exportGeometry:()=>solid?.geometry.clone()||null};
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}); renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)}); updateUI();
+</script>
+</body></html>
