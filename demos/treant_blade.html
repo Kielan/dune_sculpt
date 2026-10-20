@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crystalophyll Sword — Three.js</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#252930;color:#d9e1e6;font:12px system-ui;overflow:hidden}
+header{height:42px;background:#191d23;display:flex;align-items:center;padding:0 16px;gap:20px}
+header b{color:#9cddd9}#view{position:absolute;inset:42px 0 0;touch-action:none}
+aside{position:absolute;right:14px;top:60px;width:220px;background:#20262ced;padding:16px;border:1px solid #46525d;border-radius:7px}
+label{display:flex;justify-content:space-between;align-items:center;margin:15px 0}
+button,select{background:#39434c;color:#e1e7eb;border:1px solid #53616c;padding:7px;border-radius:4px;cursor:pointer}
+nav{display:flex;gap:5px;flex-wrap:wrap}
+small{display:block;color:#9caab5;line-height:1.8;margin-top:14px}
+#error{position:absolute;left:20px;top:65px;color:#ffbc9a}
+@media(max-width:650px){aside{top:auto;bottom:12px;right:8px;width:195px;padding:12px}}
+</style>
+</head>
+<body>
+<header><b>CRYSTALOPHYLL SWORD</b><span>Mesh study</span></header>
+<div id="view"></div>
+<aside>
+<strong>Viewport</strong>
+<label>Display<select id="mode">
+<option value="color">Materials</option>
+<option value="wire">Wireframe</option>
+<option value="overlay">Solid + wire</option>
+<option value="clay">Clay</option>
+</select></label>
+<label>Crystal glow<input id="glow" type="checkbox" checked></label>
+<label>Turntable<input id="spin" type="checkbox"></label>
+<label>Ground grid<input id="grid" type="checkbox" checked></label>
+<nav>
+<button data-angle="0">Front</button>
+<button data-angle=".65">¾</button>
+<button data-angle="1.570796">Edge</button>
+<button data-angle="3.141593">Back</button>
+<button id="reset">Reset</button>
+<button id="export">Export OBJ</button>
+</nav>
+<small>Drag: orbit · Wheel: zoom<br>Right/Shift drag: pan<br>Touch: orbit · Pinch: zoom</small>
+</aside>
+<div id="error"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+if(!window.THREE){
+document.getElementById('error').textContent='Three.js could not load. Check your connection.';
+}else{
+const T=THREE,$=id=>document.getElementById(id),host=$('view');
+const scene=new T.Scene();scene.background=new T.Color(0x252d34);
+const renderer=new T.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=T.sRGBEncoding;
+renderer.toneMapping=T.ACESFilmicToneMapping;
+host.appendChild(renderer.domElement);
+const camera=new T.PerspectiveCamera(38,1,.01,100);
+scene.add(new T.HemisphereLight(0xdcffff,0x343143,1.5));
+const key=new T.DirectionalLight(0xffedd8,2.3);
+key.position.set(-5,7,6);scene.add(key);
+const fill=new T.DirectionalLight(0x75dfff,.9);
+fill.position.set(3,4,-4);scene.add(fill);
+const grid=new T.GridHelper(20,20,0x697c88,0x39464f);
+grid.position.y=-.14;scene.add(grid);
+const root=new T.Group();scene.add(root);
+const meshes=[],wires=[];
+const wireMat=new T.LineBasicMaterial({color:0xe0f4f5});
+const clay=new T.MeshStandardMaterial({
+color:0x929ca0,roughness:1,flatShading:true,side:T.DoubleSide,
+polygonOffset:true,polygonOffsetFactor:1});
+const crystal=new T.MeshStandardMaterial({
+color:0x43c9c3,emissive:0x18c8c7,emissiveIntensity:.65,
+roughness:.28,metalness:.15,flatShading:true,side:T.DoubleSide});
+const wood=new T.MeshStandardMaterial({color:0x523a30,roughness:.95,flatShading:true});
+const woodLight=wood.clone();woodLight.color.set(0x73503b);
+const leather=new T.MeshStandardMaterial({color:0x684a3e,roughness:1,flatShading:true});
+const collar=new T.MeshStandardMaterial({color:0xb5a48a,roughness:.7,flatShading:true});
+const leafMat=new T.MeshStandardMaterial({color:0x697c48,roughness:1,side:T.DoubleSide,flatShading:true});
+const gemMat=new T.MeshStandardMaterial({
+color:0x67e3d9,emissive:0x22c9c2,emissiveIntensity:.8,flatShading:true});
+
+function add(name,g,mat){
+g.computeVertexNormals();
+const m=new T.Mesh(g,mat);m.name=name;m.userData.original=mat;
+root.add(m);meshes.push(m);
+const w=new T.LineSegments(new T.WireframeGeometry(g),wireMat);
+root.add(w);wires.push(w);return m;
+}
+function tube(name,points,radius,mat,segments=12,sides=5){
+const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)));
+return add(name,new T.TubeGeometry(curve,segments,radius,sides,false),mat);
+}
+
+// Guard-to-tip blade sections: back edge and cutting edge.
+// The blade sweeps outward as it rises, rather than becoming a straight leaf.
+const sections=[
+[ 0.00,1.55,.17],
+[-.26,1.94,.46],
+[-.69,2.33,.68],
+[-1.13,2.72,.77],
+[-1.57,3.14,.82],
+[-1.98,3.60,.80],
+[-2.30,4.10,.68],
+[-2.53,4.63,.49],
+[-2.67,5.16,.25],
+[-2.76,5.65,.004]
+];
+const positions=[],indices=[];
+for(let side=0;side<2;side++){
+const sign=side===0?1:-1;
+for(let j=0;j<sections.length;j++){
+const [back,y,width]=sections[j];
+for(let k=0;k<4;k++){
+const u=k/3;
+const x=back-width*u;
+const z=sign*(k===0||k===3?.025:.10+
+ .035*Math.sin(j*2.7+k*1.3));
+positions.push(x,y,z);
+}
+}
+}
+const count=sections.length*4;
+for(let side=0;side<2;side++)for(let j=0;j<sections.length-1;j++){
+for(let k=0;k<3;k++){
+const a=side*count+j*4+k,b=a+1,c=a+4,d=c+1;
+if(side===0)indices.push(a,b,c,b,d,c);
+else indices.push(a,c,b,b,c,d);
+}
+}
+for(let j=0;j<sections.length-1;j++){
+for(const k of [0,3]){
+const a=j*4+k,b=(j+1)*4+k;
+indices.push(a,b,b+count,a,b+count,a+count);
+}
+}
+indices.push(0,count,3,3,count,count+3);
+const last=count-4;
+indices.push(last,last+3,last+count,last+3,last+count+3,last+count);
+const blade=new T.BufferGeometry();
+blade.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+blade.setIndex(indices);
+add('Faceted_crystal_blade',blade,crystal);
+
+// Wood follows only the blade's back edge.
+const spine=sections.slice(0,-1).map(([x,y])=>[x+.025,y,.015]);
+tube('Main_wooden_spine',spine,.12,wood,22,6);
+for(const side of [-1,1]){
+tube('Twisting_spine_root',spine.map((p,i)=>[
+p[0]+.065*Math.sin(i*1.5),p[1],side*.115
+]),.047,woodLight,22,5);
+}
+for(const j of [1,3,5,6]){
+const [x,y]=sections[j];
+tube('Spine_branch',[
+[x,y,.025],[x+.20,y+.12,.045],[x+.27,y+.39,.02]
+],.04,wood,5,5);
+}
+const roots=[
+[[0,1.60,0],[.34,1.75,0],[.52,1.66,0],[.60,1.83,0]],
+[[0,1.58,.02],[-.27,1.44,.04],[-.47,1.25,.04],[-.56,1.32,.02]],
+[[0,1.62,.05],[.17,1.35,.08],[.38,1.17,.04],[.45,1.24,0]],
+[[0,1.63,-.04],[-.23,1.83,-.09],[-.48,2.03,-.03]],
+[[0,1.57,.08],[-.13,1.28,.13],[-.29,1.09,.05]]
+];
+roots.forEach((p,i)=>tube('Branch_guard_'+i,p,.065,wood,9,5));
+
+function leaf(x,y,z,angle,size=.22){
+const p=[0,0,0,-size*.38,size*.48,0,0,size,.015,
+size*.38,size*.48,0,0,size*.48,.055];
+const g=new T.BufferGeometry();
+g.setAttribute('position',new T.Float32BufferAttribute(p,3));
+g.setIndex([0,1,4,1,2,4,2,3,4,3,0,4]);
+g.rotateZ(angle);g.translate(x,y,z);add('Leaf',g,leafMat);
+}
+tube('Leaf_sprig',[[.14,1.84,0],[.34,2.08,0],[.38,2.35,0]],.022,wood,6,4);
+leaf(.30,2.08,.02,-.85);leaf(.37,2.21,0,.4);
+leaf(.37,2.34,0,-.15,.18);
+
+const grip=new T.CylinderGeometry(.13,.14,1.04,8,7);
+grip.translate(0,.91,0);add('Wrapped_grip',grip,leather);
+for(let i=0;i<8;i++){
+const ring=new T.TorusGeometry(.137,.014,3,8);
+ring.rotateX(Math.PI/2);ring.translate(0,.45+i*.13,0);
+add('Grip_wrap',ring,woodLight);
+}
+for(const y of [.35,1.43]){
+const g=new T.CylinderGeometry(.18,.18,.12,8);
+g.translate(0,y,0);add('Grip_collar',g,collar);
+}
+const pommel=new T.OctahedronGeometry(.23,0);
+pommel.scale(1,1.2,.65);pommel.translate(0,.14,0);
+add('Diamond_pommel',pommel,collar);
+for(const [x,y,z] of [[.12,1.66,.15],[-.35,2.04,.15],
+[-.82,2.52,.15],[-1.55,3.2,.14],[-2.15,3.94,.12]]){
+const g=new T.IcosahedronGeometry(.045,0);
+g.translate(x,y,z);add('Crystal_node',g,gemMat);
+}
+
+let theta=.28,phi=1.45,distance=13;
+const target=new T.Vector3(-.55,2.8,0);
+function draw(){
+camera.position.set(target.x+distance*Math.sin(phi)*Math.sin(theta),
+target.y+distance*Math.cos(phi),target.z+distance*Math.sin(phi)*Math.cos(theta));
+camera.lookAt(target);renderer.render(scene,camera);
+}
+function display(){
+const mode=$('mode').value;
+meshes.forEach(m=>{
+m.visible=mode!=='wire';
+m.material=mode==='color'?m.userData.original:clay;
+});
+wires.forEach(w=>w.visible=mode==='wire'||mode==='overlay');
+crystal.emissiveIntensity=$('glow').checked?.65:0;
+gemMat.emissiveIntensity=$('glow').checked?.8:0;
+grid.visible=$('grid').checked;draw();
+}
+function resize(){
+renderer.setSize(host.clientWidth,host.clientHeight);
+camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();draw();
+}
+function reset(){
+theta=.28;phi=1.45;distance=innerWidth<650?16:13;
+target.set(innerWidth<650?-1.3:-.55,2.8,0);draw();
+}
+new ResizeObserver(resize).observe(host);
+for(const id of ['mode','glow','grid'])$(id).onchange=display;
+$('reset').onclick=reset;
+document.querySelectorAll('[data-angle]').forEach(b=>b.onclick=()=>{
+theta=+b.dataset.angle;phi=Math.PI/2;draw();
+});
+const pointers=new Map();let last;
+function state(){
+const p=[...pointers.values()];
+return{x:p.reduce((s,a)=>s+a.x,0)/p.length,
+y:p.reduce((s,a)=>s+a.y,0)/p.length,n:p.length,
+gap:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+}
+function pan(dx,dy){
+target.addScaledVector(new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),-dx*distance*.0012);
+target.addScaledVector(new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),dy*distance*.0012);
+}
+host.oncontextmenu=e=>e.preventDefault();
+host.onpointerdown=e=>{
+host.setPointerCapture(e.pointerId);
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});last=state();
+};
+host.onpointermove=e=>{
+if(!pointers.has(e.pointerId))return;
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=state();
+if(last&&last.n===c.n){
+const dx=c.x-last.x,dy=c.y-last.y;
+if(c.n>1){pan(dx,dy);if(c.gap&&last.gap)distance=Math.max(4,Math.min(30,distance*last.gap/c.gap));}
+else if(e.shiftKey||e.buttons===2)pan(dx,dy);
+else{theta-=dx*.007;phi=Math.max(.02,Math.min(Math.PI-.02,phi+dy*.007));}
+draw();
+}last=c;
+};
+host.onpointerup=host.onpointercancel=e=>{
+pointers.delete(e.pointerId);last=pointers.size?state():null;
+};
+host.addEventListener('wheel',e=>{
+e.preventDefault();distance=Math.max(4,Math.min(30,distance*Math.exp(e.deltaY*.001)));draw();
+},{passive:false});
+$('export').onclick=()=>{
+let text='# Crystalophyll sword — geometry only\n',offset=1;
+root.updateMatrixWorld(true);
+for(const m of meshes){
+text+='o '+m.name+'\n';
+const p=m.geometry.attributes.position,idx=m.geometry.index;
+for(let i=0;i<p.count;i++){
+const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld);
+text+=`v ${v.x} ${v.y} ${v.z}\n`;
+}
+for(let i=0;i<(idx?idx.count:p.count);i+=3)
+text+='f '+[0,1,2].map(k=>(idx?idx.getX(i+k):i+k)+offset).join(' ')+'\n';
+offset+=p.count;
+}
+const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+const a=document.createElement('a');a.href=url;a.download='crystalophyll_sword.obj';a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+let previous=performance.now();
+function animate(now){
+if($('spin').checked){theta+=(now-previous)*.00035;draw();}
+previous=now;requestAnimationFrame(animate);
+}
+resize();reset();display();requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
