@@ -1,0 +1,284 @@
+Save as butterfly_sword_scene.html and open in a browser. Includes wireframe/material views, orbit controls, turntable, and OBJ export.
+
+I can’t attach or test the file while the execution environment is unavailable. Internet is required to load Three.js.
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Butterfly Sword — Mesh Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#292a30;color:#ddd;font:12px system-ui;overflow:hidden}
+header{height:42px;display:flex;align-items:center;gap:20px;padding:0 16px;background:#1d1e23}
+header b{color:#e6ac74}#view{position:absolute;inset:42px 0 24px;touch-action:none}
+aside{position:absolute;right:14px;top:62px;width:225px;padding:16px;background:#24252bed;border:1px solid #4b4e59;border-radius:6px}
+h3{margin:0 0 15px;font-size:14px}label{display:flex;align-items:center;justify-content:space-between;margin:15px 0;gap:8px}
+button,select{background:#41434d;color:#eee;border:1px solid #575b67;padding:7px;border-radius:4px;cursor:pointer}
+nav{display:flex;gap:5px;flex-wrap:wrap}input{accent-color:#c291c9;max-width:112px}
+footer{position:absolute;bottom:0;height:24px;width:100%;background:#1d1e23;padding:5px 12px;color:#999}
+.hint{position:absolute;left:16px;top:60px;color:#a4a8b4;line-height:1.8;pointer-events:none}
+#error{position:absolute;left:16px;top:145px;color:#ffb59f}
+@media(max-width:650px){aside{top:auto;bottom:34px;right:8px;width:200px;padding:12px}label{margin:11px 0}}
+</style>
+</head>
+<body>
+<header><b>◈ BUTTERFLY SWORD</b><span>Mesh Studio</span></header>
+<div id="view"></div>
+<div class="hint">User Perspective<br>Drag: orbit · wheel: zoom<br>Shift/right drag: pan · pinch: zoom</div>
+<aside>
+<h3>▾ Sword study</h3>
+<label>Display<select id="mode">
+<option value="wire">Wireframe</option>
+<option value="overlay">Solid + topology</option>
+<option value="clay">Clay</option>
+<option value="color">Materials</option>
+</select></label>
+<label>Blade width<input id="width" type="range" min=".7" max="1.5" step=".01" value="1"></label>
+<label>Floral guard<input id="flowers" type="checkbox" checked></label>
+<label>Wing veins<input id="veins" type="checkbox" checked></label>
+<label>Turntable<input id="spin" type="checkbox"></label>
+<label>Grid<input id="grid" type="checkbox" checked></label>
+<nav>
+<button data-view="0">Front</button>
+<button data-view=".65">¾</button>
+<button data-view="1.570796">Edge</button>
+<button data-view="3.141593">Back</button>
+<button id="reset">Reset</button>
+<button id="export">Export OBJ</button>
+</nav>
+<p id="stats" style="color:#999"></p>
+</aside>
+<div id="error"></div>
+<footer>Butterfly sword · procedural low-poly concept</footer>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+if(!window.THREE){
+document.getElementById('error').textContent='Three.js could not load. Check your internet connection.';
+}else{
+const T=THREE,$=id=>document.getElementById(id),host=$('view');
+const scene=new T.Scene();scene.background=new T.Color(0x2b2d34);
+const camera=new T.PerspectiveCamera(38,1,.01,100);
+const renderer=new T.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=T.sRGBEncoding;host.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x403349,1.5));
+const light=new T.DirectionalLight(0xffe7d7,2);
+light.position.set(-4,7,6);scene.add(light);
+const fill=new T.DirectionalLight(0xc2e5ff,.8);
+fill.position.set(4,3,-5);scene.add(fill);
+const grid=new T.GridHelper(20,20,0x696c78,0x40434c);
+grid.position.y=-.12;scene.add(grid);
+const root=new T.Group();scene.add(root);
+const white=new T.LineBasicMaterial({color:0xe8eaf4});
+const clay=new T.MeshStandardMaterial({
+color:0x9699a3,roughness:1,flatShading:true,side:T.DoubleSide,
+polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+let meshes=[],wires=[];
+function add(name,geo,color,category='main'){
+geo.computeVertexNormals();
+const mat=new T.MeshStandardMaterial({
+color,roughness:.72,metalness:.15,flatShading:true,side:T.DoubleSide,
+polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+const m=new T.Mesh(geo,mat);m.name=name;
+m.userData={original:mat,category};root.add(m);meshes.push(m);
+const wire=new T.LineSegments(new T.EdgesGeometry(geo,12),white);
+wire.userData.category=category;root.add(wire);wires.push(wire);
+return m;
+}
+function path(points,color=0xe8eaf4,category='main'){
+const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));
+const l=new T.Line(g,color===0xe8eaf4?white:new T.LineBasicMaterial({color}));
+l.userData.category=category;root.add(l);wires.push(l);return l;
+}
+function plate(name,points,depth,color,category='main',z=0){
+const s=new T.Shape();s.moveTo(...points[0]);
+points.slice(1).forEach(p=>s.lineTo(...p));s.closePath();
+const g=new T.ExtrudeGeometry(s,{
+depth,bevelEnabled:false,steps:1,curveSegments:1});
+g.translate(0,0,z-depth/2);return add(name,g,color,category);
+}
+function tube(name,points,r,color,category='main',segments=12){
+const c=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)));
+return add(name,new T.TubeGeometry(c,segments,r,5,false),color,category);
+}
+function build(){
+meshes.forEach(m=>{m.geometry.dispose();m.userData.original.dispose();});
+wires.forEach(w=>{w.geometry.dispose();if(w.material!==white)w.material.dispose();});
+root.clear();meshes=[];wires=[];
+const w=+$('width').value;
+const rows=[];
+const p=[],idx=[];
+for(let j=0;j<=12;j++){
+const t=j/12,y=1.65+4.4*t;
+const cx=.16*t+.60*t*t;
+const half=w*(.16+.65*Math.sin(Math.PI*t))*(t===1?.015:1);
+rows.push({y,l:cx-half,r:cx+half,c:cx});
+p.push(cx-half,y,.04,cx,y,.075,cx+half,y,.04);
+if(j)for(let k=0;k<2;k++){
+const a=(j-1)*3+k,b=j*3+k;
+idx.push(a,a+1,b+1,a,b+1,b);
+}}
+const g=new T.BufferGeometry();
+g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.setIndex(idx);
+const blade=add('Wing_blade_front',g,0x394046);
+const back=g.clone();back.scale(1,1,-1);add('Wing_blade_back',back,0x394046);
+const outline=[...rows.map(r=>[r.l,r.y]),...rows.slice().reverse().map(r=>[r.r,r.y])];
+for(const z of [-.045,.045]){
+path([...outline,outline[0]].map(([x,y])=>[x,y,z]));
+}
+for(let i=0;i<rows.length;i+=2){
+const r=rows[i];
+path([[r.l,r.y,.046],[r.c,r.y,.077],[r.r,r.y,.046]]);
+}
+tube('Outer_rim_left',rows.map(r=>[r.l,r.y,0]),.035,0xa8d8da);
+tube('Outer_rim_right',rows.map(r=>[r.r,r.y,0]),.035,0xa8d8da);
+for(const z of [-.085,.085]){
+// Central vein and branching wing cells on both faces.
+tube('Central_vein',rows.map(r=>[r.c,r.y,z]),.018,0xd7bd77,'veins');
+for(let i=1;i<10;i+=2){
+const a=rows[i],b=rows[i+1],c=rows[i+2];
+for(const side of [-1,1]){
+const near=side<0?b.l:b.r;
+const cell=[
+[a.c,a.y],[b.c+(near-b.c)*.78,b.y-.16],
+[c.c+(near-c.c)*.58,c.y-.16],[c.c,c.y],
+[b.c,b.y+.03]];
+plate('Wing_cell',cell,.012,i%4===1?0xcbd6ad:0xbca8cb,'veins',z);
+}}
+}
+const grip=new T.CylinderGeometry(.13,.14,1.05,8,7);
+grip.translate(0,.95,0);add('Wrapped_grip',grip,0x714b43);
+for(let i=0;i<7;i++){
+const y=.52+i*.14;
+tube('Grip_wrap',[[.13,y,0],[0,y+.035,.13],[-.13,y+.07,0],
+[0,y+.105,-.13],[.13,y+.14,0]],.012,0x986b55,'main',8);
+}
+const pommel=new T.OctahedronGeometry(.23,0);
+pommel.scale(1,1.15,.55);pommel.translate(0,.27,0);
+add('Diamond_pommel',pommel,0xc3ad79);
+const center=new T.IcosahedronGeometry(.22,0);
+center.scale(1,1,.62);center.translate(0,1.58,0);
+add('Floral_center',center,0xd1ac67,'flowers');
+for(let i=0;i<8;i++){
+const a=i/8*Math.PI*2,dx=Math.cos(a),dy=Math.sin(a);
+const start=[dx*.10,1.58+dy*.10],end=[dx*.73,1.58+dy*.73];
+const nx=-dy*.14,ny=dx*.14;
+const points=[start,
+[start[0]+dx*.25+nx,start[1]+dy*.25+ny],
+[end[0],end[1]],
+[start[0]+dx*.25-nx,start[1]+dy*.25-ny]];
+plate('Guard_petal',points,.10,i%2?0xa563ad:0xc18ac5,'flowers');
+}
+for(const side of [-1,1]){
+tube('Antenna',[
+[side*.16,1.68,0],[side*.37,2.02,0],
+[side*.41,2.36,0],[side*.32,2.45,0]
+],.025,0xd1ac67,'flowers',10);
+const tip=new T.IcosahedronGeometry(.055,0);
+tip.translate(side*.32,2.45,0);add('Antenna_tip',tip,0xd1ac67,'flowers');
+}
+$('stats').textContent=meshes.length+' mesh parts';
+display();
+}
+function allowed(category){
+return category!=='flowers'||$('flowers').checked;
+}
+function display(){
+const mode=$('mode').value;
+meshes.forEach(m=>{
+const cat=m.userData.category;
+m.visible=mode!=='wire'&&allowed(cat)&&(cat!=='veins'||$('veins').checked);
+m.material=mode==='color'?m.userData.original:clay;
+});
+wires.forEach(l=>{
+const cat=l.userData.category;
+l.visible=(mode==='wire'||mode==='overlay')&&allowed(cat)&&(cat!=='veins'||$('veins').checked);
+});
+grid.visible=$('grid').checked;draw();
+}
+let theta=.35,phi=1.45,distance=13;
+const target=new T.Vector3(1,3,0);
+function draw(){
+camera.position.set(target.x+distance*Math.sin(phi)*Math.sin(theta),
+target.y+distance*Math.cos(phi),target.z+distance*Math.sin(phi)*Math.cos(theta));
+camera.lookAt(target);renderer.render(scene,camera);
+}
+function reset(){
+theta=.35;phi=1.45;distance=innerWidth<650?16:13;
+target.set(innerWidth<650?0:1,3,0);draw();
+}
+function resize(){
+renderer.setSize(host.clientWidth,host.clientHeight);
+camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();draw();
+}
+new ResizeObserver(resize).observe(host);
+$('width').oninput=build;
+for(const id of ['mode','grid','flowers','veins'])$(id).onchange=display;
+$('reset').onclick=reset;
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+theta=+b.dataset.view;phi=Math.PI/2;draw();
+});
+const pointers=new Map();let last;
+function state(){
+const p=[...pointers.values()];
+return{x:p.reduce((s,a)=>s+a.x,0)/p.length,
+y:p.reduce((s,a)=>s+a.y,0)/p.length,n:p.length,
+gap:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+}
+function pan(dx,dy){
+target.addScaledVector(new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),-dx*distance*.0012);
+target.addScaledVector(new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),dy*distance*.0012);
+}
+host.oncontextmenu=e=>e.preventDefault();
+host.onpointerdown=e=>{
+host.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});last=state();
+};
+host.onpointermove=e=>{
+if(!pointers.has(e.pointerId))return;
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=state();
+if(last&&c.n===last.n){
+const dx=c.x-last.x,dy=c.y-last.y;
+if(c.n>1){pan(dx,dy);if(c.gap&&last.gap)distance=Math.max(4,Math.min(30,distance*last.gap/c.gap));}
+else if(e.shiftKey||e.buttons===2)pan(dx,dy);
+else{theta-=dx*.007;phi=Math.max(.02,Math.min(Math.PI-.02,phi+dy*.007));}
+draw();
+}last=c;
+};
+host.onpointerup=host.onpointercancel=e=>{
+pointers.delete(e.pointerId);last=pointers.size?state():null;
+};
+host.addEventListener('wheel',e=>{
+e.preventDefault();distance=Math.max(4,Math.min(30,distance*Math.exp(e.deltaY*.001)));draw();
+},{passive:false});
+$('export').onclick=()=>{
+let text='# Butterfly sword — geometry only\n',offset=1;
+root.updateMatrixWorld(true);
+for(const m of meshes){
+const cat=m.userData.category;
+if(!allowed(cat)||(cat==='veins'&&!$('veins').checked))continue;
+text+='o '+m.name+'\n';
+const p=m.geometry.attributes.position,idx=m.geometry.index;
+for(let i=0;i<p.count;i++){
+const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld);
+text+=`v ${v.x} ${v.y} ${v.z}\n`;
+}
+const count=idx?idx.count:p.count;
+for(let i=0;i<count;i+=3)
+text+='f '+[0,1,2].map(k=>(idx?idx.getX(i+k):i+k)+offset).join(' ')+'\n';
+offset+=p.count;
+}
+const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+const a=document.createElement('a');a.href=url;a.download='butterfly_sword.obj';a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+let previous=performance.now();
+function animate(now){
+if($('spin').checked){theta+=(now-previous)*.00035;draw();}
+previous=now;requestAnimationFrame(animate);
+}
+build();resize();reset();requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
