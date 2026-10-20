@@ -1,0 +1,267 @@
+Save this as lunar_sword_scene.html and open it in a browser. Includes orbit, zoom, wireframe/material views, and OBJ export. Requires internet to load Three.js. I couldn’t test it with the execution environment unavailable.
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunar Sword — Mesh Study</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#28292d;color:#ddd;font:13px system-ui;overflow:hidden}
+header{height:44px;background:#191a1e;display:flex;align-items:center;padding:0 18px;gap:20px}
+header strong{color:#e9b176}header span{color:#94979e}
+#view{position:absolute;inset:44px 0 0;touch-action:none}
+aside{position:absolute;right:16px;top:64px;width:220px;padding:16px;background:#202126ed;border:1px solid #44464e;border-radius:8px}
+h3{margin:0 0 15px;font-size:14px}
+label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:13px 0}
+select,button{background:#393b43;color:white;border:1px solid #555862;border-radius:4px;padding:7px;cursor:pointer}
+nav{display:flex;gap:5px;flex-wrap:wrap;margin-top:14px}
+input{accent-color:#c5a36e;max-width:118px}
+footer{position:absolute;bottom:14px;left:18px;color:#a1a4ad;font-size:11px;line-height:1.8;pointer-events:none}
+#error{position:absolute;left:20px;top:70px;color:#ffbc9b}
+@media(max-width:600px){aside{width:190px;top:auto;bottom:12px;right:8px;padding:12px}footer{top:58px;bottom:auto}}
+</style>
+</head>
+<body>
+<header><strong>◈ LUNAR SWORD</strong><span>Low-poly mesh study</span></header>
+<div id="view"></div>
+<aside>
+<h3>Viewport</h3>
+<label>Display
+<select id="mode">
+<option value="wire">Wireframe</option>
+<option value="overlay">Solid + edges</option>
+<option value="clay">Clay</option>
+<option value="material">Materials</option>
+</select></label>
+<label>Blade width <input id="width" type="range" min=".6" max="1.5" step=".01" value="1"></label>
+<label>Blade curve <input id="curve" type="range" min=".1" max="1" step=".01" value=".55"></label>
+<label>Turntable <input id="spin" type="checkbox"></label>
+<label>Ground grid <input id="grid" type="checkbox" checked></label>
+<nav>
+<button data-angle="0">Front</button>
+<button data-angle=".65">¾</button>
+<button data-angle="1.570796">Edge</button>
+<button data-angle="3.141593">Back</button>
+<button id="reset">Reset</button>
+<button id="export">Export OBJ</button>
+</nav>
+<p id="stats" style="color:#999;font-size:11px"></p>
+</aside>
+<footer>Drag to orbit · Scroll to zoom<br>Right drag / Shift drag to pan · Pinch to zoom</footer>
+<div id="error"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+if(!window.THREE){
+ document.querySelector('#error').textContent='Three.js could not load. Check your internet connection.';
+}else{
+const T=THREE,$=id=>document.getElementById(id),host=$('view');
+const scene=new T.Scene();
+scene.background=new T.Color(0x2b2d33);
+const camera=new T.PerspectiveCamera(38,1,.01,100);
+const renderer=new T.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=T.sRGBEncoding;
+host.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x343447,1.4));
+const key=new T.DirectionalLight(0xffeee0,2);
+key.position.set(-3,7,6);scene.add(key);
+const fill=new T.DirectionalLight(0xbbd2ff,.7);
+fill.position.set(4,3,-4);scene.add(fill);
+const grid=new T.GridHelper(20,20,0x656976,0x3c4049);
+grid.position.y=-.08;scene.add(grid);
+const root=new T.Group();scene.add(root);
+const wireMat=new T.LineBasicMaterial({color:0xe7eaf1});
+const clay=new T.MeshStandardMaterial({
+ color:0x999da7,roughness:1,flatShading:true,side:T.DoubleSide,
+ polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1
+});
+let meshes=[],wires=[],triangleCount=0;
+function mesh(name,points,faces,color){
+ const positions=points.flat(),indices=[],edges=[],seen=new Set();
+ for(const face of faces){
+  for(let k=1;k<face.length-1;k++)indices.push(face[0],face[k],face[k+1]);
+  for(let k=0;k<face.length;k++){
+   const a=face[k],b=face[(k+1)%face.length];
+   const tag=[Math.min(a,b),Math.max(a,b)].join(':');
+   if(!seen.has(tag)){seen.add(tag);edges.push(...points[a],...points[b]);}
+  }
+ }
+ const g=new T.BufferGeometry();
+ g.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+ g.setIndex(indices);g.computeVertexNormals();
+ const mat=new T.MeshStandardMaterial({
+  color,roughness:.65,metalness:.25,flatShading:true,side:T.DoubleSide,
+  polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1
+ });
+ const m=new T.Mesh(g,mat);m.name=name;m.userData.original=mat;
+ root.add(m);meshes.push(m);
+ const e=new T.BufferGeometry();
+ e.setAttribute('position',new T.Float32BufferAttribute(edges,3));
+ const w=new T.LineSegments(e,wireMat);root.add(w);wires.push(w);
+ triangleCount+=indices.length/3;
+}
+function loft(name,rings,sides,color){
+ const p=[],f=[];
+ for(let j=0;j<rings.length;j++){
+  const [x,y,rx,rz]=rings[j];
+  for(let i=0;i<sides;i++){
+   const a=i/sides*Math.PI*2;
+   p.push([x+Math.cos(a)*rx,y,Math.sin(a)*rz]);
+   if(j){
+    const n=(i+1)%sides;
+    f.push([(j-1)*sides+i,(j-1)*sides+n,j*sides+n,j*sides+i]);
+   }
+  }
+ }
+ f.push(Array.from({length:sides},(_,i)=>sides-1-i));
+ f.push(Array.from({length:sides},(_,i)=>(rings.length-1)*sides+i));
+ mesh(name,p,f,color);
+}
+function build(){
+ for(const m of meshes){m.geometry.dispose();m.userData.original.dispose();}
+ for(const w of wires)w.geometry.dispose();
+ root.clear();meshes=[];wires=[];triangleCount=0;
+ const p=[],f=[],count=14;
+ const width=+$('width').value,curve=+$('curve').value;
+ // Broad curved blade. A central ridge and narrow edge bevels form its cross-section.
+ for(let j=0;j<=count;j++){
+  const t=j/count;
+  const cx=-curve*Math.sin(Math.PI*t)+.34*Math.pow(t,4);
+  const half=width*(.21+.19*Math.sin(Math.PI*t))*
+             (t>.78?Math.max(.006,(1-t)/.22):1);
+  const y=1.52+t*4.65;
+  const thickness=.075*(1-.7*t);
+  const section=[
+   [cx-half,0],[cx-half*.78,thickness*.65],[cx,thickness],
+   [cx+half*.78,thickness*.65],[cx+half,0],
+   [cx+half*.78,-thickness*.65],[cx,-thickness],
+   [cx-half*.78,-thickness*.65]
+  ];
+  for(const [x,z] of section)p.push([x,y,z]);
+  if(j)for(let i=0;i<8;i++)
+   f.push([(j-1)*8+i,(j-1)*8+(i+1)%8,j*8+(i+1)%8,j*8+i]);
+ }
+ f.push([7,6,5,4,3,2,1,0]);
+ f.push(Array.from({length:8},(_,i)=>count*8+i));
+ mesh('Lunar_blade',p,f,0xc5bec1);
+ // Short rectangular crossguard with subtly clipped corners.
+ const outline=[[-.43,-.11],[-.48,-.06],[-.48,.06],[-.43,.11],
+                [.43,.11],[.48,.06],[.48,-.06],[.43,-.11]];
+ const gp=[],gf=[];
+ for(const z of [-.14,.14])for(const [x,y] of outline)gp.push([x,1.48+y,z]);
+ for(let i=0;i<8;i++)gf.push([i,(i+1)%8,(i+1)%8+8,i+8]);
+ gf.push([7,6,5,4,3,2,1,0]);gf.push([8,9,10,11,12,13,14,15]);
+ mesh('Rectangular_guard',gp,gf,0xbca999);
+ const rings=[];
+ for(let i=0;i<=8;i++)rings.push([0,.43+i*.115,.13,.13]);
+ loft('Wrapped_grip',rings,8,0x303e64);
+ loft('Upper_grip_collar',[[0,1.32,.16,.16],[0,1.39,.16,.16]],8,0xbca999);
+ loft('Lower_grip_collar',[[0,.38,.16,.16],[0,.46,.16,.16]],8,0xbca999);
+ loft('Faceted_pommel',[
+  [0,.03,.025,.025],[0,.12,.16,.14],
+  [0,.25,.22,.18],[0,.38,.14,.13]
+ ],6,0xbca999);
+ $('stats').textContent=meshes.length+' parts · '+triangleCount+' triangles';
+ display();
+}
+function display(){
+ const mode=$('mode').value;
+ meshes.forEach(m=>{
+  m.visible=mode!=='wire';
+  m.material=mode==='material'?m.userData.original:clay;
+ });
+ wires.forEach(w=>w.visible=mode==='wire'||mode==='overlay');
+ grid.visible=$('grid').checked;draw();
+}
+let theta=.38,phi=1.45,distance=12;
+const target=new T.Vector3(0,3,0);
+function draw(){
+ camera.position.set(
+  target.x+distance*Math.sin(phi)*Math.sin(theta),
+  target.y+distance*Math.cos(phi),
+  target.z+distance*Math.sin(phi)*Math.cos(theta));
+ camera.lookAt(target);renderer.render(scene,camera);
+}
+function reset(){
+ theta=.38;phi=1.45;distance=innerWidth<650?15:12;
+ target.set(innerWidth<650?0:1,3,0);draw();
+}
+function resize(){
+ renderer.setSize(host.clientWidth,host.clientHeight);
+ camera.aspect=host.clientWidth/host.clientHeight;
+ camera.updateProjectionMatrix();draw();
+}
+new ResizeObserver(resize).observe(host);
+$('width').oninput=$('curve').oninput=build;
+$('mode').onchange=$('grid').onchange=display;
+$('reset').onclick=reset;
+document.querySelectorAll('[data-angle]').forEach(b=>b.onclick=()=>{
+ theta=+b.dataset.angle;phi=Math.PI/2;draw();
+});
+const pointers=new Map();let last;
+function pointerState(){
+ const p=[...pointers.values()];
+ return {x:p.reduce((s,a)=>s+a.x,0)/p.length,
+ y:p.reduce((s,a)=>s+a.y,0)/p.length,n:p.length,
+ gap:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+}
+function pan(dx,dy){
+ target.addScaledVector(new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),-dx*distance*.0012);
+ target.addScaledVector(new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),dy*distance*.0012);
+}
+host.oncontextmenu=e=>e.preventDefault();
+host.onpointerdown=e=>{
+ host.setPointerCapture(e.pointerId);
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});last=pointerState();
+};
+host.onpointermove=e=>{
+ if(!pointers.has(e.pointerId))return;
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ const c=pointerState();
+ if(last&&last.n===c.n){
+  const dx=c.x-last.x,dy=c.y-last.y;
+  if(c.n>1){
+   pan(dx,dy);
+   if(c.gap&&last.gap)distance=Math.max(3,Math.min(30,distance*last.gap/c.gap));
+  }else if(e.shiftKey||e.buttons===2)pan(dx,dy);
+  else{theta-=dx*.007;phi=Math.max(.02,Math.min(Math.PI-.02,phi+dy*.007));}
+  draw();
+ }
+ last=c;
+};
+host.onpointerup=host.onpointercancel=e=>{
+ pointers.delete(e.pointerId);last=pointers.size?pointerState():null;
+};
+host.addEventListener('wheel',e=>{
+ e.preventDefault();distance=Math.max(3,Math.min(30,distance*Math.exp(e.deltaY*.001)));
+ draw();
+},{passive:false});
+$('export').onclick=()=>{
+ let text='# Lunar sword — geometry only\n',offset=1;
+ root.updateMatrixWorld(true);
+ for(const m of meshes){
+  text+='o '+m.name+'\n';
+  const p=m.geometry.attributes.position,index=m.geometry.index;
+  for(let i=0;i<p.count;i++){
+   const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld);
+   text+=`v ${v.x} ${v.y} ${v.z}\n`;
+  }
+  for(let i=0;i<index.count;i+=3)
+   text+='f '+[0,1,2].map(k=>index.getX(i+k)+offset).join(' ')+'\n';
+  offset+=p.count;
+ }
+ const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+ const a=document.createElement('a');a.href=url;a.download='lunar_sword.obj';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+let previous=performance.now();
+function animate(now){
+ if($('spin').checked){theta+=(now-previous)*.00035;draw();}
+ previous=now;requestAnimationFrame(animate);
+}
+build();resize();reset();requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
