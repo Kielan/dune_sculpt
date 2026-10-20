@@ -1,0 +1,505 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Buster Sword — Mesh Studio</title>
+
+<style>
+
+*{box-sizing:border-box}body{margin:0;background:#292a2e;color:#d5d7dd;font:12px Arial;overflow:hidden}
+
+header{height:38px;background:#202125;display:flex;align-items:center;gap:24px;padding:0 15px}
+
+header b{color:#eda45e}.bar{height:37px;background:#34353b;display:flex;align-items:center;gap:7px;padding:5px 12px}
+
+button,select{background:#45464d;color:#eee;border:1px solid #202126;border-radius:4px;padding:6px 9px;cursor:pointer}
+
+button:hover{background:#585b66}#view{position:absolute;inset:75px 0 25px;touch-action:none}
+
+aside{position:absolute;right:14px;top:95px;width:230px;background:#26272ded;border:1px solid #50525c;border-radius:5px;padding:15px}
+
+h3{font-size:13px;margin:0 0 18px}label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0}
+
+input[type=range]{width:110px;accent-color:#82a9cf}
+
+footer{position:absolute;bottom:0;height:25px;background:#202125;width:100%;padding:6px 12px;color:#9b9fa9}
+
+.hint{position:absolute;left:17px;top:95px;line-height:1.8;color:#a4a8b1;pointer-events:none}
+
+#error{position:absolute;left:20px;top:150px;color:#ffb68f}
+
+@media(max-width:650px){aside{top:auto;bottom:38px;width:205px;padding:12px}label{margin:11px 0}.optional{display:none}}
+
+</style>
+
+</head>
+
+<body>
+
+<header><b>◉</b><span>Mesh Studio</span><span class="optional">Layout · Buster Sword</span></header>
+
+<div class="bar">
+
+<select id="mode">
+
+<option value="wire">Wireframe</option>
+
+<option value="overlay">Solid + topology</option>
+
+<option value="clay">Clay</option>
+
+<option value="color">Materials</option>
+
+</select>
+
+<button data-view="0">Front</button>
+
+<button data-view=".65">¾</button>
+
+<button data-view="1.570796">Edge</button>
+
+<button data-view="3.141593">Back</button>
+
+</div>
+
+<div id="view"></div>
+
+<div class="hint">User Perspective<br>Buster Sword · low-poly mesh<br>Drag: orbit · wheel: zoom<br>Shift/right drag: pan · pinch: zoom</div>
+
+<aside>
+
+<h3>▾ Sword geometry</h3>
+
+<label>Blade width<input id="width" type="range" min=".65" max="1.6" step=".01" value="1"></label>
+
+<label>Blade length<input id="length" type="range" min=".7" max="1.4" step=".01" value="1"></label>
+
+<label>Thickness<input id="thickness" type="range" min=".06" max=".25" step=".01" value=".13"></label>
+
+<label>Turntable<input id="spin" type="checkbox"></label>
+
+<label>Ground grid<input id="grid" type="checkbox" checked></label>
+
+<button id="reset">Reset view</button>
+
+<button id="export">Export OBJ</button>
+
+<p id="stats" style="color:#9297a3"></p>
+
+</aside>
+
+<div id="error"></div>
+
+<footer>Blender-inspired viewer · procedural sword</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
+<script>
+
+if(!window.THREE){
+
+document.getElementById('error').textContent='Unable to load Three.js. Check your internet connection.';
+
+}else{
+
+const T=THREE,$=id=>document.getElementById(id),host=$('view');
+
+const scene=new T.Scene();scene.background=new T.Color(0x303238);
+
+const camera=new T.PerspectiveCamera(38,1,.01,100);
+
+const renderer=new T.WebGLRenderer({antialias:true});
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+
+renderer.outputEncoding=T.sRGBEncoding;host.appendChild(renderer.domElement);
+
+scene.add(new T.HemisphereLight(0xffffff,0x484153,1.5));
+
+const light=new T.DirectionalLight(0xffead8,2.2);
+
+light.position.set(-4,6,7);scene.add(light);
+
+const fill=new T.DirectionalLight(0xc4d7ff,.8);
+
+fill.position.set(5,3,-4);scene.add(fill);
+
+const floor=new T.GridHelper(20,20,0x747984,0x42464e);
+
+floor.position.y=-.12;scene.add(floor);
+
+const root=new T.Group();scene.add(root);
+
+const lineMaterial=new T.LineBasicMaterial({color:0xe3e8f2});
+
+const clay=new T.MeshStandardMaterial({
+
+color:0x969aa3,roughness:1,flatShading:true,side:T.DoubleSide,
+
+polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+
+let meshes=[],lines=[],triangles=0;
+
+function part(name,p,faces,color){
+
+const indices=[],edges=[],seen=new Set();
+
+for(const f of faces){
+
+for(let i=1;i<f.length-1;i++)indices.push(f[0],f[i],f[i+1]);
+
+for(let i=0;i<f.length;i++){
+
+const a=f[i],b=f[(i+1)%f.length],key=[Math.min(a,b),Math.max(a,b)].join(':');
+
+if(!seen.has(key)){seen.add(key);edges.push(...p[a],...p[b]);}
+
+}}
+
+const g=new T.BufferGeometry();
+
+g.setAttribute('position',new T.Float32BufferAttribute(p.flat(),3));
+
+g.setIndex(indices);g.computeVertexNormals();
+
+const material=new T.MeshStandardMaterial({
+
+color,roughness:.7,metalness:.25,flatShading:true,side:T.DoubleSide,
+
+polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+
+const m=new T.Mesh(g,material);m.name=name;m.userData.original=material;
+
+root.add(m);meshes.push(m);
+
+const e=new T.BufferGeometry();
+
+e.setAttribute('position',new T.Float32BufferAttribute(edges,3));
+
+const wire=new T.LineSegments(e,lineMaterial);root.add(wire);lines.push(wire);
+
+triangles+=indices.length/3;
+
+}
+
+function prism(name,outline,depth,color,z=0){
+
+const p=[],f=[],n=outline.length;
+
+for(const d of [-depth/2,depth/2])for(const [x,y] of outline)p.push([x,y,z+d]);
+
+for(let i=0;i<n;i++)f.push([i,(i+1)%n,(i+1)%n+n,i+n]);
+
+const shape=outline.map(p=>new T.Vector2(...p));
+
+for(const tri of T.ShapeUtils.triangulateShape(shape,[])){
+
+f.push(tri.slice().reverse());f.push(tri.map(i=>i+n));
+
+}
+
+part(name,p,f,color);
+
+}
+
+function rings(name,spec,sides,color){
+
+const p=[],f=[];
+
+for(let j=0;j<spec.length;j++){
+
+const [y,rx,rz]=spec[j];
+
+for(let i=0;i<sides;i++){
+
+const a=i/sides*Math.PI*2;p.push([Math.cos(a)*rx,y,Math.sin(a)*rz]);
+
+if(j)f.push([(j-1)*sides+i,(j-1)*sides+(i+1)%sides,j*sides+(i+1)%sides,j*sides+i]);
+
+}}
+
+f.push(Array.from({length:sides},(_,i)=>sides-1-i));
+
+f.push(Array.from({length:sides},(_,i)=>(spec.length-1)*sides+i));
+
+part(name,p,f,color);
+
+}
+
+function build(){
+
+for(const m of meshes){m.geometry.dispose();m.userData.original.dispose();}
+
+for(const l of lines)l.geometry.dispose();
+
+root.clear();meshes=[];lines=[];triangles=0;
+
+const w=+$('width').value,L=+$('length').value,d=+$('thickness').value;
+
+const p=[],f=[],base=1.65;
+
+// Cross section includes edge bevels and a recessed central face panel.
+
+const xs=[-.62,-.52,-.36,.36,.52,.62];
+
+const zs=[.005,d*.85,d*.53,d*.53,d*.85,.005];
+
+for(let j=0;j<=9;j++){
+
+const t=j/9,y=base+4.5*L*t;
+
+for(let side=0;side<2;side++)for(let k=0;k<6;k++)
+
+p.push([xs[k]*w,y,zs[k]*(side?-1:1)]);
+
+if(j){
+
+const a=(j-1)*12,b=j*12;
+
+for(let k=0;k<5;k++){
+
+f.push([a+k,a+k+1,b+k+1,b+k]);
+
+f.push([a+6+k,b+6+k,b+7+k,a+7+k]);
+
+}
+
+f.push([a,a+6,b+6,b]);
+
+f.push([a+5,b+5,b+11,a+11]);
+
+}}
+
+f.push([0,1,2,3,4,5,11,10,9,8,7,6]);
+
+// Asymmetric chisel tip continues the blade's bevel topology.
+
+const end=9*12;
+
+for(let side=0;side<2;side++)for(let k=0;k<6;k++){
+
+const u=k/5;
+
+p.push([(.08+u*.54)*w,base+4.5*L+(.62+.24*u)*L,zs[k]*(side?-1:1)*.12]);
+
+}
+
+const tip=10*12;
+
+for(let k=0;k<5;k++){
+
+f.push([end+k,end+k+1,tip+k+1,tip+k]);
+
+f.push([end+6+k,tip+6+k,tip+7+k,end+7+k]);
+
+}
+
+f.push([end,end+6,tip+6,tip]);
+
+f.push([end+5,tip+5,tip+11,end+11]);
+
+f.push([tip,tip+1,tip+2,tip+3,tip+4,tip+5,tip+11,tip+10,tip+9,tip+8,tip+7,tip+6]);
+
+part('Broad_beveled_blade',p,f,0xaaa3a3);
+
+const guard=[[-.94,1.42],[-1.02,1.52],[-1.02,1.78],[-.91,1.88],
+
+[-.78,1.76],[-.40,1.76],[0,2.10],[.40,1.76],[.78,1.76],
+
+[.91,1.88],[1.02,1.78],[1.02,1.52],[.94,1.42],[.78,1.53],
+
+[.37,1.53],[0,1.22],[-.37,1.53],[-.78,1.53]];
+
+prism('Angular_guard',guard,.28,0x8c8588);
+
+const diamond=[[0,1.32],[.32,1.66],[0,2.00],[-.32,1.66]];
+
+prism('Guard_diamond_front',diamond,.09,0xc4b9ad,.19);
+
+prism('Guard_diamond_back',diamond,.09,0xc4b9ad,-.19);
+
+rings('Grip',Array.from({length:9},(_,i)=>[.40+i*.105,.14,.14]),8,0x6c4036);
+
+rings('Grip_upper_collar',[[1.22,.19,.19],[1.32,.19,.19]],8,0xaaa0a1);
+
+rings('Grip_lower_collar',[[.34,.18,.18],[.43,.18,.18]],8,0xaaa0a1);
+
+prism('Diamond_pommel',[[0,0],[.27,.23],[0,.47],[-.27,.23]],.22,0xa89ba0);
+
+$('stats').textContent=meshes.length+' parts · '+triangles+' triangles';
+
+display();
+
+}
+
+function display(){
+
+const mode=$('mode').value;
+
+meshes.forEach(m=>{m.visible=mode!=='wire';m.material=mode==='color'?m.userData.original:clay;});
+
+lines.forEach(l=>l.visible=mode==='wire'||mode==='overlay');
+
+floor.visible=$('grid').checked;draw();
+
+}
+
+let theta=.40,phi=1.43,distance=14;
+
+const target=new T.Vector3(1,3.5,0);
+
+function draw(){
+
+camera.position.set(target.x+distance*Math.sin(phi)*Math.sin(theta),
+
+target.y+distance*Math.cos(phi),target.z+distance*Math.sin(phi)*Math.cos(theta));
+
+camera.lookAt(target);renderer.render(scene,camera);
+
+}
+
+function reset(){
+
+theta=.40;phi=1.43;distance=innerWidth<650?18:14;
+
+target.set(innerWidth<650?0:1,3.5,0);draw();
+
+}
+
+function resize(){
+
+renderer.setSize(host.clientWidth,host.clientHeight);
+
+camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();draw();
+
+}
+
+new ResizeObserver(resize).observe(host);
+
+for(const id of ['width','length','thickness'])$(id).oninput=build;
+
+$('mode').onchange=$('grid').onchange=display;$('reset').onclick=reset;
+
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+
+theta=+b.dataset.view;phi=Math.PI/2;draw();
+
+});
+
+const pointers=new Map();let last;
+
+function state(){
+
+const p=[...pointers.values()];
+
+return{x:p.reduce((s,a)=>s+a.x,0)/p.length,y:p.reduce((s,a)=>s+a.y,0)/p.length,
+
+n:p.length,gap:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+
+}
+
+function pan(dx,dy){
+
+target.addScaledVector(new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),-dx*distance*.0012);
+
+target.addScaledVector(new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),dy*distance*.0012);
+
+}
+
+host.oncontextmenu=e=>e.preventDefault();
+
+host.onpointerdown=e=>{
+
+host.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});last=state();
+
+};
+
+host.onpointermove=e=>{
+
+if(!pointers.has(e.pointerId))return;
+
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=state();
+
+if(last&&c.n===last.n){
+
+const dx=c.x-last.x,dy=c.y-last.y;
+
+if(c.n>1){pan(dx,dy);if(c.gap&&last.gap)distance=Math.max(4,Math.min(35,distance*last.gap/c.gap));}
+
+else if(e.shiftKey||e.buttons===2)pan(dx,dy);
+
+else{theta-=dx*.007;phi=Math.max(.02,Math.min(Math.PI-.02,phi+dy*.007));}
+
+draw();
+
+}last=c;
+
+};
+
+host.onpointerup=host.onpointercancel=e=>{
+
+pointers.delete(e.pointerId);last=pointers.size?state():null;
+
+};
+
+host.addEventListener('wheel',e=>{
+
+e.preventDefault();distance=Math.max(4,Math.min(35,distance*Math.exp(e.deltaY*.001)));draw();
+
+},{passive:false});
+
+$('export').onclick=()=>{
+
+let text='# Buster sword geometry\n',offset=1;root.updateMatrixWorld(true);
+
+for(const m of meshes){
+
+text+='o '+m.name+'\n';const p=m.geometry.attributes.position,idx=m.geometry.index;
+
+for(let i=0;i<p.count;i++){
+
+const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld);
+
+text+=`v ${v.x} ${v.y} ${v.z}\n`;
+
+}
+
+for(let i=0;i<idx.count;i+=3)text+='f '+[0,1,2].map(k=>idx.getX(i+k)+offset).join(' ')+'\n';
+
+offset+=p.count;
+
+}
+
+const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+
+const a=document.createElement('a');a.href=url;a.download='buster_sword.obj';a.click();
+
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+
+};
+
+let previous=performance.now();
+
+function animate(now){
+
+if($('spin').checked){theta+=(now-previous)*.00035;draw();}
+
+previous=now;requestAnimationFrame(animate);
+
+}
+
+build();resize();reset();requestAnimationFrame(animate);
+
+}
+
+</script>
+
+</body>
+
+</html>
