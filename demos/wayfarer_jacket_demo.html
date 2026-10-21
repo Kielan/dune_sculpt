@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wayfarer Jacket — Mesh Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#2a2b30;color:#ddd;font:12px system-ui;overflow:hidden}
+header{height:38px;display:flex;align-items:center;gap:24px;padding:0 15px;background:#1d1e22}
+header b{color:#e7a15d}.bar{height:38px;display:flex;align-items:center;gap:7px;padding:5px 12px;background:#35363d}
+button,select{background:#44464f;color:#eee;border:1px solid #585c67;border-radius:4px;padding:6px 9px;cursor:pointer}
+button:hover{background:#586171}#view{position:absolute;inset:76px 0 25px;touch-action:none}
+aside{position:absolute;right:14px;top:96px;width:228px;background:#25262ced;border:1px solid #4a4c56;border-radius:6px;padding:16px}
+h3{font-size:14px;margin:0 0 15px}label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:15px 0}
+input[type=range]{width:112px;accent-color:#8da8cb}.hint{position:absolute;left:17px;top:96px;line-height:1.8;color:#adb0bb;pointer-events:none}
+footer{position:absolute;bottom:0;background:#202126;height:25px;width:100%;padding:5px 12px;color:#999}
+#error{position:absolute;left:18px;top:170px;color:#ffc09e}
+@media(max-width:650px){aside{top:auto;bottom:37px;right:8px;width:195px;padding:12px}label{margin:10px 0}}
+</style>
+</head>
+<body>
+<header><b>◉</b><span>Mesh Studio</span><span>Wayfarer Jacket</span></header>
+<div class="bar">
+<select id="mode">
+<option value="overlay">Solid + topology</option>
+<option value="wire">Wireframe only</option>
+<option value="clay">Clay</option>
+<option value="color">Materials</option>
+</select>
+<button data-view="0">Front</button>
+<button data-view=".65">¾</button>
+<button data-view="1.570796">Side</button>
+<button data-view="3.141593">Back</button>
+<button id="top">Top</button>
+</div>
+<div id="view"></div>
+<div class="hint">User Perspective<br>Wayfarer · Traveler jacket<br>Drag: orbit · Wheel: zoom<br>Shift/right drag: pan · Pinch: zoom</div>
+<aside>
+<h3>▾ Jacket geometry</h3>
+<label>Hem flare<input id="flare" type="range" min="1" max="1.7" step=".01" value="1.38"></label>
+<label>Collar height<input id="collar" type="range" min=".25" max=".65" step=".01" value=".45"></label>
+<label>Buttons<input id="buttons" type="checkbox" checked></label>
+<label>Pockets<input id="pockets" type="checkbox" checked></label>
+<label>Turntable<input id="spin" type="checkbox"></label>
+<label>Ground grid<input id="grid" type="checkbox" checked></label>
+<button id="reset">Reset view</button>
+<button id="export">Export OBJ</button>
+<p id="stats" style="color:#999"></p>
+</aside>
+<div id="error"></div>
+<footer>Blender-inspired viewport · procedural low-poly garment</footer>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+if(!window.THREE){
+document.getElementById('error').textContent='Three.js could not load. Check your connection.';
+}else{
+const T=THREE,$=id=>document.getElementById(id),host=$('view');
+const scene=new T.Scene();scene.background=new T.Color(0x34363c);
+const camera=new T.PerspectiveCamera(38,1,.01,100);
+const renderer=new T.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputEncoding=T.sRGBEncoding;host.appendChild(renderer.domElement);
+scene.add(new T.HemisphereLight(0xffffff,0x444052,1.5));
+const key=new T.DirectionalLight(0xffe8d7,2);
+key.position.set(-4,7,5);scene.add(key);
+const fill=new T.DirectionalLight(0xb8d4ff,.65);
+fill.position.set(4,4,-5);scene.add(fill);
+const grid=new T.GridHelper(20,20,0x747784,0x44474f);
+grid.position.y=-.04;scene.add(grid);
+const root=new T.Group();scene.add(root);
+const wireMat=new T.LineBasicMaterial({color:0xdde5ef});
+const cloth=new T.MeshStandardMaterial({
+color:0x936764,roughness:1,side:T.DoubleSide,flatShading:true,
+polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+const trim=cloth.clone();trim.color.set(0xa77d76);
+const dark=cloth.clone();dark.color.set(0x514541);
+const clay=cloth.clone();clay.color.set(0x9a9ca4);
+let meshes=[],lines=[],triangles=0;
+
+function part(name,p,faces,mat){
+const idx=[],edges=[],seen=new Set();
+for(const face of faces){
+for(let i=1;i<face.length-1;i++)idx.push(face[0],face[i],face[i+1]);
+for(let i=0;i<face.length;i++){
+const a=face[i],b=face[(i+1)%face.length];
+const k=[Math.min(a,b),Math.max(a,b)].join(':');
+if(!seen.has(k)){seen.add(k);edges.push(...p[a],...p[b]);}
+}}
+const g=new T.BufferGeometry();
+g.setAttribute('position',new T.Float32BufferAttribute(p.flat(),3));
+g.setIndex(idx);g.computeVertexNormals();
+const m=new T.Mesh(g,mat);m.name=name;m.userData.original=mat;
+root.add(m);meshes.push(m);
+const e=new T.BufferGeometry();
+e.setAttribute('position',new T.Float32BufferAttribute(edges,3));
+const l=new T.LineSegments(e,wireMat);root.add(l);lines.push(l);
+triangles+=idx.length/3;return m;
+}
+function patch(name,rows,mat,skip=()=>false){
+const p=rows.flat(),f=[],n=rows[0].length;
+for(let j=0;j<rows.length-1;j++)for(let i=0;i<n-1;i++){
+if(skip(j,i))continue;
+const a=j*n+i;f.push([a,a+1,a+n+1,a+n]);
+}
+return part(name,p,f,mat);
+}
+function ring(rx,rz,y,count=20){
+return Array.from({length:count+1},(_,i)=>{
+const a=.045+(Math.PI*2-.09)*i/count;
+return [Math.sin(a)*rx,y,Math.cos(a)*rz];
+});
+}
+function sleeve(side){
+const axis=new T.Vector3(side*.57,-.82,0).normalize();
+const u=new T.Vector3(0,0,1);
+const v=new T.Vector3().crossVectors(axis,u).normalize();
+const center=new T.Vector3(side*.91,3.22,0);
+function section(t,r){
+const c=center.clone().addScaledVector(axis,t);
+return Array.from({length:9},(_,i)=>{
+const a=i/8*Math.PI*2;
+return c.clone().addScaledVector(u,Math.cos(a)*r)
+.addScaledVector(v,Math.sin(a)*r).toArray();
+});
+}
+patch(side<0?'Left_sleeve':'Right_sleeve',
+[section(0,.35),section(.50,.34),section(1.05,.30),section(1.52,.29)],cloth);
+patch('Folded_cuff',[
+section(1.30,.35),section(1.67,.35),
+section(1.67,.29),section(1.31,.29)
+],trim);
+}
+function build(){
+meshes.forEach(m=>m.geometry.dispose());
+lines.forEach(l=>l.geometry.dispose());
+root.clear();meshes=[];lines=[];triangles=0;
+const flare=+$('flare').value,h=+$('collar').value;
+const specs=[
+[flare,.72,0],[flare-.09,.68,.42],
+[1.12,.59,1.1],[.91,.53,1.85],
+[.92,.55,2.5],[1.00,.56,3.18],[.84,.48,3.48]
+];
+const rows=specs.map(([rx,rz,y])=>ring(rx,rz,y));
+// Back hem vent, opening gradually from the lowest back vertices.
+rows[0][10][1]=.58;rows[1][10][1]=.68;
+patch('Coat_shell',rows,cloth);
+patch('Hem_thickness',[
+ring(flare,.72,.015),ring(flare-.045,.675,.015)
+],trim);
+patch('Shoulder_yoke',[ring(.84,.48,3.48),ring(.43,.34,3.69)],cloth);
+
+function collarRing(rx,rz,y){
+return ring(rx,rz,y).map((p,i)=>{
+const front=Math.max(0,Math.cos(.045+(Math.PI*2-.09)*i/20));
+p[1]-=.20*Math.pow(front,5);return p;
+});
+}
+patch('Raised_collar',[
+collarRing(.43,.34,3.65),
+collarRing(.58,.45,3.65+h),
+collarRing(.54,.41,3.65+h),
+collarRing(.40,.31,3.65)
+],trim);
+sleeve(-1);sleeve(1);
+
+// Separate front facings run along the open center seam.
+for(const side of [-1,1]){
+const facing=rows.map(r=>{
+const p=r[side===1?0:20];
+return [[p[0],p[1],p[2]+.012],
+[p[0]+side*.09,p[1],p[2]+.018]];
+});
+patch('Front_facing',facing,trim);
+}
+if($('buttons').checked)for(const y of [.92,1.62,2.32,3.02]){
+const g=new T.CylinderGeometry(.075,.075,.04,8);
+g.rotateX(Math.PI/2);g.translate(.12,y,y<1.2?.63:.57);
+const p=Array.from({length:g.attributes.position.count},(_,i)=>
+new T.Vector3().fromBufferAttribute(g.attributes.position,i).toArray());
+const f=[];
+for(let i=0;i<g.index.count;i+=3)
+f.push([g.index.getX(i),g.index.getX(i+1),g.index.getX(i+2)]);
+part('Button',p,f,dark);g.dispose();
+}
+if($('pockets').checked)for(const side of [-1,1]){
+const x=side*.78,z=.47;
+part('Pocket_welt',[
+[x-side*.09,1.29,z],[x+side*.04,1.31,z+.025],
+[x+side*.24,1.98,z+.025],[x+side*.11,1.96,z]
+],[[0,1,2,3]],dark);
+}
+$('stats').textContent=meshes.length+' parts · '+triangles+' triangles';
+display();
+}
+function display(){
+const mode=$('mode').value;
+meshes.forEach(m=>{
+m.visible=mode!=='wire';
+m.material=mode==='color'?m.userData.original:clay;
+});
+lines.forEach(l=>l.visible=mode==='wire'||mode==='overlay');
+grid.visible=$('grid').checked;draw();
+}
+let theta=.4,phi=1.40,distance=10.7;
+const target=new T.Vector3(.65,2,0);
+function draw(){
+camera.position.set(target.x+distance*Math.sin(phi)*Math.sin(theta),
+target.y+distance*Math.cos(phi),
+target.z+distance*Math.sin(phi)*Math.cos(theta));
+camera.lookAt(target);renderer.render(scene,camera);
+}
+function reset(){
+theta=.4;phi=1.40;distance=innerWidth<650?13:10.7;
+target.set(innerWidth<650?0:.65,2,0);draw();
+}
+function resize(){
+renderer.setSize(host.clientWidth,host.clientHeight);
+camera.aspect=host.clientWidth/host.clientHeight;
+camera.updateProjectionMatrix();draw();
+}
+new ResizeObserver(resize).observe(host);
+$('flare').oninput=$('collar').oninput=build;
+$('buttons').onchange=$('pockets').onchange=build;
+$('mode').onchange=$('grid').onchange=display;
+$('reset').onclick=reset;$('top').onclick=()=>{phi=.02;draw();};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
+theta=+b.dataset.view;phi=Math.PI/2;draw();
+});
+const pointers=new Map();let last;
+function state(){
+const p=[...pointers.values()];
+return{x:p.reduce((s,a)=>s+a.x,0)/p.length,
+y:p.reduce((s,a)=>s+a.y,0)/p.length,n:p.length,
+gap:p.length>1?Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y):0};
+}
+function pan(dx,dy){
+target.addScaledVector(new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),-dx*distance*.0012);
+target.addScaledVector(new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),dy*distance*.0012);
+}
+host.oncontextmenu=e=>e.preventDefault();
+host.onpointerdown=e=>{
+host.setPointerCapture(e.pointerId);
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});last=state();
+};
+host.onpointermove=e=>{
+if(!pointers.has(e.pointerId))return;
+pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});const c=state();
+if(last&&last.n===c.n){
+const dx=c.x-last.x,dy=c.y-last.y;
+if(c.n>1){pan(dx,dy);if(c.gap&&last.gap)distance=Math.max(3,Math.min(25,distance*last.gap/c.gap));}
+else if(e.shiftKey||e.buttons===2)pan(dx,dy);
+else{theta-=dx*.007;phi=Math.max(.02,Math.min(Math.PI-.02,phi+dy*.007));}
+draw();
+}last=c;
+};
+host.onpointerup=host.onpointercancel=e=>{
+pointers.delete(e.pointerId);last=pointers.size?state():null;
+};
+host.addEventListener('wheel',e=>{
+e.preventDefault();distance=Math.max(3,Math.min(25,distance*Math.exp(e.deltaY*.001)));draw();
+},{passive:false});
+$('export').onclick=()=>{
+let text='# Wayfarer jacket — geometry only\n',offset=1;
+root.updateMatrixWorld(true);
+for(const m of meshes){
+text+='o '+m.name+'\n';
+const p=m.geometry.attributes.position,idx=m.geometry.index;
+for(let i=0;i<p.count;i++){
+const v=new T.Vector3().fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld);
+text+=`v ${v.x} ${v.y} ${v.z}\n`;
+}
+for(let i=0;i<idx.count;i+=3)
+text+='f '+[0,1,2].map(k=>idx.getX(i+k)+offset).join(' ')+'\n';
+offset+=p.count;
+}
+const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+const a=document.createElement('a');a.href=url;a.download='wayfarer_jacket.obj';a.click();
+setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+let previous=performance.now();
+function animate(now){
+if($('spin').checked){theta+=(now-previous)*.00035;draw();}
+previous=now;requestAnimationFrame(animate);
+}
+build();resize();reset();requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
